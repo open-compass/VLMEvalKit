@@ -102,13 +102,46 @@ class NVLM(BaseModel):
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
 
-        self.model = AutoModel.from_pretrained(
-            model_path,
-            torch_dtype=torch.bfloat16,
-            low_cpu_mem_usage=True,
-            use_flash_attn=False,
-            trust_remote_code=True,
-            device_map="auto").eval()
+        self.use_vllm = kwargs.pop('use_vllm', False)
+
+        if self.use_vllm:
+            from vllm import LLM, SamplingParams
+            # Set tensor_parallel_size [8, 4, 2, 1] based on the number of available GPUs
+            gpu_count = torch.cuda.device_count()
+            if gpu_count >= 8:
+                tp_size = 8
+            elif gpu_count >= 4:
+                tp_size = 4
+            elif gpu_count >= 2:
+                tp_size = 2
+            else:
+                tp_size = 1
+            logging.info(
+                f'Using vLLM for NVLM inference with {tp_size} GPUs (available: {gpu_count})'
+            )
+            import os
+            if os.environ.get('VLLM_WORKER_MULTIPROC_METHOD') != 'spawn':
+                logging.warning(
+                    'VLLM_WORKER_MULTIPROC_METHOD is not set to spawn.'
+                    'Use \'export VLLM_WORKER_MULTIPROC_METHOD=spawn\' to avoid potential multi-process issues'
+                )
+            self.llm = LLM(
+                model=model_path,
+                max_num_seqs=4,
+                max_model_len=16384,
+                limit_mm_per_prompt={"image": self.limit_mm_per_prompt},
+                tensor_parallel_size=tp_size,
+                gpu_memory_utilization=kwargs.get("gpu_utils", 0.9),
+            )
+            # export VLLM_WORKER_MULTIPROC_METHOD=spawn
+        else:
+            self.model = AutoModel.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                low_cpu_mem_usage=True,
+                use_flash_attn=False,
+                trust_remote_code=True,
+                device_map="auto").eval()
 
         logging.info(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
         torch.cuda.empty_cache()

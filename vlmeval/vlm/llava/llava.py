@@ -843,3 +843,84 @@ class LLaVA_OneVision_HF(BaseModel):
             return self.generate_inner_video(message, dataset)
         else:
             return self.generate_inner_image(message, dataset)
+
+
+class LLaVA_OneVision_1_5(BaseModel):
+    INTERLEAVE = True
+    VIDEO_LLM = True
+
+    def __init__(self, model_path="lmms-lab/LLaVA-OneVision-1.5-8B-Instruct", **kwargs):
+        from transformers import AutoProcessor, AutoModelForCausalLM
+
+        assert model_path is not None, "Model path must be provided."
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_path, torch_dtype='auto', trust_remote_code=True).to('cuda')
+        self.model = self.model.to(self.device)
+        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+
+        self.model_path = model_path
+        kwargs.setdefault('max_new_tokens', 4096)
+        self.img_size = kwargs.pop('img_size', -1)
+        self.kwargs = kwargs
+
+    def prepare_itlist(self, inputs):
+        assert np.all([isinstance(x, dict) for x in inputs])
+        has_images = np.sum([x['type'] == 'image' for x in inputs])
+        if has_images:
+            content_list = []
+            for msg in inputs:
+                if msg['type'] == 'text':
+                    content_list.append(dict(type='text', text=msg['value']))
+                elif msg['type'] == 'image':
+                    from PIL import Image
+                    img = Image.open(msg['value'])
+                    b64 = encode_image_to_base64(img, target_size=self.img_size)
+                    content_list.append(dict(type='image_url', image_url=f'data:image/jpeg;base64,{b64}'))
+        else:
+            assert all([x['type'] == 'text' for x in inputs])
+            text = '\n'.join([x['value'] for x in inputs])
+            content_list = [dict(type='text', text=text)]
+        return content_list
+
+    def prepare_inputs(self, inputs):
+        input_msgs = []
+        assert isinstance(inputs, list) and isinstance(inputs[0], dict)
+        assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
+        if 'role' in inputs[0]:
+            assert inputs[-1]['role'] == 'user', inputs[-1]
+            for item in inputs:
+                input_msgs.append(dict(role=item['role'], content=self.prepare_itlist(item['content'])))
+        else:
+            input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
+        return input_msgs
+
+    def generate_inner(self, inputs, dataset=None):
+        from qwen_vl_utils import process_vision_info
+
+        message = self.prepare_inputs(inputs)
+        text = self.processor.apply_chat_template(
+            message, tokenize=False, add_generation_prompt=True
+        )
+        image_inputs, video_inputs = process_vision_info(message)
+        inputs = self.processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+            min_pixels=1280 * 28 * 28 // len(image_inputs),
+            max_pixels=32768 * 28 * 28 // len(image_inputs),
+        )
+        print(f'pixel_values.shape: {inputs["pixel_values"].shape}')
+        inputs = inputs.to(self.device)
+
+        # Inference: Generation of the output
+        generated_ids = self.model.generate(**inputs, **self.kwargs)
+        generated_ids_trimmed = [
+            out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        output_text = self.processor.batch_decode(
+            generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )
+        return output_text

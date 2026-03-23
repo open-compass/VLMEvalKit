@@ -69,6 +69,7 @@ class ImageShortQADataset(ImageBaseDataset):
         'LiveMMBench_Perception': '',
         'LiveMMBench_Reasoning': '',
         'LiveMMBench_Reasoning_circular': '',
+        'LiveMMBench_Spatial': '',
         'hle':'https://opencompass.openxlab.space/utils/VLMEval/hle.tsv',
     }
 
@@ -97,7 +98,7 @@ class ImageShortQADataset(ImageBaseDataset):
         if not osp.exists(storage):
             ans_map = {} if not osp.exists(tmp_file) else load(tmp_file)
 
-            model = judge_kwargs.get('model', 'gpt-4o-mini')
+            model = judge_kwargs.pop('model', 'gpt-4o-mini')
             if model == 'exact_matching':
                 model = None
             else:
