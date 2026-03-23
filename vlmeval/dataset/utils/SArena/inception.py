@@ -1,9 +1,11 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 
 from torch.hub import load_state_dict_from_url
+from vlmeval.smp.file import LMUDataRoot
 
 # Inception weights ported to Pytorch from
 # http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz
@@ -213,7 +215,16 @@ def fid_inception_v3():
     inception.Mixed_7b = FIDInceptionE_1(1280)
     inception.Mixed_7c = FIDInceptionE_2(2048)
 
-    state_dict = load_state_dict_from_url(FID_WEIGHTS_URL, progress=True)
+    local_path = os.path.join(LMUDataRoot(), 'aux_models', 'pt_inception-2015-12-05-6726825d.pth')
+    if os.path.exists(local_path):
+        state_dict = torch.load(local_path, map_location='cpu', weights_only=True)
+    else:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        # Download to aux_models directory
+        state_dict = load_state_dict_from_url(
+            FID_WEIGHTS_URL, progress=True, model_dir=os.path.dirname(local_path)
+        )
     inception.load_state_dict(state_dict)
     return inception
 

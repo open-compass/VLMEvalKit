@@ -7,7 +7,7 @@ from .claude import Claude_Wrapper, Claude3V
 from .reka import Reka
 from .glm_vision import GLMVisionAPI
 from .cloudwalk import CWWrapper
-from .sensechat_vision import SenseChatVisionAPI
+from .sensechat_vision import SenseChatVisionAPI, SenseChatVisionV2API
 from .siliconflow import SiliconFlowAPI, TeleMMAPI
 from .telemm import TeleMM2_API
 from .telemm_thinking import TeleMM2Thinking_API
@@ -18,7 +18,8 @@ from .jt_vl_chat import JTVLChatAPI
 from .jt_vl_chat_mini import JTVLChatAPI_Mini, JTVLChatAPI_2B
 from .video_chat_online_v2 import VideoChatOnlineV2API
 from .taiyi import TaiyiAPI
-from .lmdeploy import LMDeployAPI
+from .openai_sdk import OpenAISDKWrapper
+from .lmdeploy import LMDeployAPI, LMDeployWrapper
 from .arm_thinker import ARM_thinker
 from .taichu import TaichuVLAPI, TaichuVLRAPI
 from .doubao_vl_api import DoubaoVL
@@ -29,15 +30,16 @@ from .rbdashmm_chat3_5_api import RBdashMMChat3_78B_API, RBdashMMChat3_5_38B_API
 from .together import TogetherAPI
 from .gcp_vertex import GCPVertexAPI
 from .bedrock import BedrockAPI
+from .minimax_api import MiniMaxAPI
 
 __all__ = [
-    'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V', 'Gemini',
-    'QwenVLWrapper', 'QwenVLAPI', 'QwenAPI', 'Claude3V', 'Claude_Wrapper',
-    'Reka', 'GLMVisionAPI', 'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision',
-    'Qwen2VLAPI', 'BlueLMWrapper', 'BlueLM_API', 'JTVLChatAPI', 'JTVLChatAPI_Mini', 'JTVLChatAPI_2B',
-    'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI', 'ARM_thinker',
+    'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V', 'Gemini', 'QwenVLWrapper',
+    'QwenVLAPI', 'QwenAPI', 'Claude3V', 'Claude_Wrapper', 'Reka', 'GLMVisionAPI', 'CWWrapper',
+    'SenseChatVisionAPI', 'HunyuanVision', 'Qwen2VLAPI', 'BlueLMWrapper', 'BlueLM_API',
+    'JTVLChatAPI', 'JTVLChatAPI_Mini', 'JTVLChatAPI_2B', 'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI',
+    'SiliconFlowAPI', 'LMDeployAPI', 'ARM_thinker', 'OpenAISDKWrapper', 'LMDeployWrapper',
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
-    'VideoChatOnlineV2API', 'TeleMM2_API', 'TeleMM2Thinking_API',
-    'TogetherAPI', 'GCPVertexAPI', 'BedrockAPI',
+    'VideoChatOnlineV2API', 'TeleMM2_API', 'TeleMM2Thinking_API', 'TogetherAPI', 'GCPVertexAPI',
+    'BedrockAPI', 'SenseChatVisionV2API', 'MiniMaxAPI',
 ]

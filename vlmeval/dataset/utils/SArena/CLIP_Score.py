@@ -1,11 +1,13 @@
-import torch
-from tqdm import tqdm
-from torch.utils.data import DataLoader
-from torchmetrics.multimodal.clip_score import CLIPScore
-from torchmetrics.functional.multimodal.clip_score import _clip_score_update
-from torchvision.transforms import ToTensor
-from .base_metric import BaseMetric
 from typing import Literal
+
+import torch
+from torch.utils.data import DataLoader
+from torchmetrics.functional.multimodal.clip_score import _clip_score_update
+from torchmetrics.multimodal.clip_score import CLIPScore
+from torchvision.transforms import ToTensor
+from tqdm import tqdm
+
+from .base_metric import BaseMetric
 
 
 class CLIPScoreCalculator(BaseMetric):

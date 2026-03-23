@@ -16,15 +16,19 @@ class DINOScoreCalculator(BaseMetric):
         self.metric = self.calculate_DINOv2_similarity_score
 
     def get_DINOv2_model(self, model_size):
-        if model_size == "small":
-            model_size = "facebook/dinov2-small"
-        elif model_size == "base":
-            model_size = "facebook/dinov2-base"
-        elif model_size == "large":
-            model_size = "facebook/dinov2-large"
-        else:
+        model_map = {
+            "small": "facebook/dinov2-small",
+            "base": "facebook/dinov2-base",
+            "large": "facebook/dinov2-large",
+        }
+        name = model_map.get(model_size)
+        if not name:
             raise ValueError(f"model_size should be either 'small', 'base' or 'large', got {model_size}")
-        return AutoModel.from_pretrained(model_size), AutoImageProcessor.from_pretrained(model_size)
+
+        model = AutoModel.from_pretrained(name)
+        processor = AutoImageProcessor.from_pretrained(name)
+
+        return model, processor
 
     def process_input(self, image, processor):
         if isinstance(image, str):

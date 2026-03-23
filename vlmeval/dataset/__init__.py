@@ -42,6 +42,7 @@ from .erqa import ERQADataset
 from .simplevqa import SimpleVQA
 from .chartx import ChartX
 from .plotqa import PlotQA
+from .chartbench import ChartBench
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -138,7 +139,7 @@ from .hipho import HiPhODataset
 from .gsm8k_v import GSM8KVDataset
 from .macbench import MaCBench
 from .mmesci import MMESCIDataset
-from .sarena_mini import SArena_MINI
+from .sarena import SArena
 from .uni_svg import UniSVG
 from .vladbench import VLADBench
 from .design2code import Design2Code
@@ -291,6 +292,8 @@ IMAGE_DATASET = [
     ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
+    UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
+    FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset, 
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning
 ]
@@ -316,6 +319,7 @@ VIDEO_DATASET = [
 
 # add by EASI team
 VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench]
+
 TEXT_DATASET = [
     TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment,
     SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation, XSTestDataset, FlamesDataset
