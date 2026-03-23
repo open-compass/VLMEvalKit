@@ -370,8 +370,8 @@ class Valley3Chat(BaseModel):
                 "conversations": messages,
                 "images": images
             },
-            min_pixels=min_pixels,
-            max_pixels=max_pixels,
+            min_pixels=min_pixels // len(images),
+            max_pixels=max_pixels // len(images),
             enable_thinking=self._use_gthinker_thinking
         )
 
