@@ -1481,7 +1481,6 @@ qwen3_5_series = {
         LMDeployAPI,
         model="Qwen/Qwen3.5-122B-A10B",
         api_base="http://0.0.0.0:8000/v1/chat/completions",
-        model='Qwen3.5-35B',
         temperature=0.6,
         top_p=0.95,
         top_k=20,
