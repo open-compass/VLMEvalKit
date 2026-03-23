@@ -527,7 +527,6 @@ api_models = {
         timeout=3600,
         max_tokens=65536,
         img_detail='high',
-        img_size=3072,
     ),
     "GPT-5.4-2026-03-05": partial(
         GPT4V,
@@ -535,7 +534,6 @@ api_models = {
         retry=10,
         timeout=3600,
         max_tokens=65536,
-        img_size=8192,
         img_detail='high',
     ),
     "GPT-5.2": partial(
