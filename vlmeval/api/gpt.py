@@ -2,6 +2,7 @@ from ..smp import *
 import os
 import sys
 from .base import BaseAPI
+import math
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
@@ -44,6 +45,7 @@ class OpenAIWrapper(BaseAPI):
                  api_base: str = None,
                  max_tokens: int = 2048,
                  img_size: int = -1,
+                 total_img_size: int = -1,
                  img_detail: str = 'low',
                  use_azure: bool = False,
                  **kwargs):
@@ -109,6 +111,8 @@ class OpenAIWrapper(BaseAPI):
         self.key = key
         assert img_size > 0 or img_size == -1
         self.img_size = img_size
+        assert total_img_size > 0 or total_img_size == -1
+        self.total_img_size = total_img_size
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
         self.timeout = timeout
@@ -160,6 +164,7 @@ class OpenAIWrapper(BaseAPI):
     def prepare_itlist(self, inputs):
         assert np.all([isinstance(x, dict) for x in inputs])
         has_images = np.sum([x['type'] == 'image' for x in inputs])
+        image_num = len([x['type'] == 'image' for x in inputs])
         if has_images:
             content_list = []
             for msg in inputs:
@@ -168,7 +173,13 @@ class OpenAIWrapper(BaseAPI):
                 elif msg['type'] == 'image':
                     from PIL import Image
                     img = Image.open(msg['value'])
-                    b64 = encode_image_to_base64(img, target_size=self.img_size)
+                    target_size = math.inf
+                    if self.img_size > 0:
+                        target_size = self.img_size
+                    if self.total_img_size > 0:
+                        target_size = min(target_size, int(self.img_size / (image_num**0.5)))
+                    target_size = -1 if math.isinf(target_size) else target_size
+                    b64 = encode_image_to_base64(img, target_size=target_size)
                     img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
                     content_list.append(dict(type='image_url', image_url=img_struct))
         else:
