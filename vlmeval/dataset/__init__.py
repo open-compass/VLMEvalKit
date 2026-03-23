@@ -145,6 +145,14 @@ from .vladbench import VLADBench
 from .design2code import Design2Code
 from .chartcap import ChartCapDataset
 from .asclepius import Asclepius
+from .mmsafetybench import MMSafetyBenchDataset
+from .mssbench import MSSBenchDataset
+from .siuo import SIUODataset
+from .siuo_gen import SIUOGenDataset
+from .siuo_mcq import SIUOMCQDataset
+from .xstest import XSTestDataset
+from .flames import FlamesDataset
+from .m3oralbench import M3oralBenchDataset
 
 from .SGI_Bench_1_0.experimental_reasoning import SGI_Bench_Experimental_Reasoning
 from .SGI_Bench_1_0.deep_research import SGI_Bench_Deep_Research
@@ -284,6 +292,7 @@ IMAGE_DATASET = [
     ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
+    MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning
 ]
 
@@ -308,9 +317,10 @@ VIDEO_DATASET = [
 
 # add by EASI team
 VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench]
+
 TEXT_DATASET = [
     TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment,
-    SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation
+    SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation, XSTestDataset, FlamesDataset
 ]
 
 CUSTOM_DATASET = [
