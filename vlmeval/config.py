@@ -614,14 +614,9 @@ api_models = {
         use_role_tool=True,
     ),
     # lmdeploy api
-    "lmdeploy": partial(
-        LMDeployAPI,
-        api_base="http://0.0.0.0:23333/v1/chat/completions",
-        temperature=0,
-        retry=10,
-    ),
     "lmdeploy_internvl_78B_MPO": partial(
         LMDeployAPI,
+        model="InternVL2_5-78B-MPO",
         api_base="http://0.0.0.0:23333/v1/chat/completions",
         temperature=0,
         retry=10,
@@ -629,6 +624,7 @@ api_models = {
     ),
     "lmdeploy_qvq_72B_preview": partial(
         LMDeployAPI,
+        model="QVQ-72B-Preview",
         api_base="http://0.0.0.0:23333/v1/chat/completions",
         temperature=0,
         retry=10,
@@ -1371,6 +1367,7 @@ qwen3_5_series = {
     # vllm serve Qwen/Qwen3.5-122B-A10B --port 8000 --tensor-parallel-size 8 --max-model-len 262144 --reasoning-parser qwen3
     "Qwen3.5-122B-A10B_ThinkMode_vllm": partial(
         LMDeployAPI,
+        model="Qwen/Qwen3.5-122B-A10B",
         api_base="http://0.0.0.0:8000/v1/chat/completions",
         temperature=1.0,
         top_p=0.95,
@@ -1384,6 +1381,7 @@ qwen3_5_series = {
     ),
     "Qwen3.5-122B-A10B_InstructMode_vllm": partial(
         LMDeployAPI,
+        model="Qwen/Qwen3.5-122B-A10B",
         api_base="http://0.0.0.0:8000/v1/chat/completions",
         temperature=1.0,
         top_p=0.95,
