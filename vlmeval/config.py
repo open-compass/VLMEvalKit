@@ -465,6 +465,28 @@ api_models = {
         max_tokens=2048,
         retry=10,
     ),
+    # MiniMax (set MINIMAX_API_KEY)
+    "MiniMax-M2.7": partial(
+        MiniMaxAPI,
+        model="MiniMax-M2.7",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "MiniMax-M2.5": partial(
+        MiniMaxAPI,
+        model="MiniMax-M2.5",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "MiniMax-M2.5-highspeed": partial(
+        MiniMaxAPI,
+        model="MiniMax-M2.5-highspeed",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
     # Claude
     "Claude3V_Opus": partial(
         Claude3V, model="claude-3-opus-20240229", temperature=0, retry=10, verbose=False
