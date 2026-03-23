@@ -59,8 +59,8 @@ def _mss_behavior_judge(model, pred):
 class MSSBenchDataset(ImageBaseDataset):
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DATASET_URL = {'MSSBench': 'MSSBench.tsv'}
-    DATASET_MD5 = {}
+    DATASET_URL = {'MSSBench': 'https://opencompass.openxlab.space/utils/VLMEval/MSSBench.tsv'}
+    DATASET_MD5 = {'MSSBench': 'f5398724ede5cb8d1c725fc01c96241b'}
 
     @classmethod
     def supported_datasets(cls):
@@ -159,7 +159,13 @@ class MSSBenchDataset(ImageBaseDataset):
                 todo_tasks = [x for x, i in zip(tasks, indices) if i not in ans]
                 todo_idx = [i for i in indices if i not in ans]
                 if len(todo_idx):
-                    _ = track_progress_rich(_mss_behavior_judge, todo_tasks, nproc=nproc, chunksize=nproc, keys=todo_idx, save=tmp_file)
+                    _ = track_progress_rich(
+                        _mss_behavior_judge,
+                        todo_tasks,
+                        nproc=nproc,
+                        chunksize=nproc,
+                        keys=todo_idx,
+                        save=tmp_file)
                     ans = load(tmp_file)
                 data['pred_behavior'] = [ans[idx] for idx in indices]
                 data['judge_log'] = [str(ans[idx]) for idx in indices]

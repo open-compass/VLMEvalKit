@@ -98,10 +98,12 @@ class MMSafetyBenchDataset(ImageBaseDataset):
     MODALITY = 'IMAGE'
 
     DATASET_URL = {
-        'MMSafetyBench': 'MMSafetyBench.tsv',
+        'MMSafetyBench': 'https://opencompass.openxlab.space/utils/VLMEval/MMSafetyBench.tsv',
     }
 
-    DATASET_MD5 = {}
+    DATASET_MD5 = {
+        'MMSafetyBench': 'e0043f8c55b5e46a10d20b3b4c1b6bf1',
+    }
 
     @classmethod
     def supported_datasets(cls):

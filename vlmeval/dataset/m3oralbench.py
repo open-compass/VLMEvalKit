@@ -23,8 +23,8 @@ def _extract_option(pred):
 class M3oralBenchDataset(ImageBaseDataset):
     TYPE = 'MCQ'
     MODALITY = 'IMAGE'
-    DATASET_URL = {'M3oralBench': 'M3oralBench.tsv'}
-    DATASET_MD5 = {}
+    DATASET_URL = {'M3oralBench': 'https://opencompass.openxlab.space/utils/VLMEval/M3oralBench.tsv'}
+    DATASET_MD5 = {'M3oralBench': '0b8eacfdef15e1c1a510059910f3b2dc'}
 
     @classmethod
     def supported_datasets(cls):

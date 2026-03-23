@@ -55,8 +55,8 @@ def _flames_judge(model, dimension, question, response):
 class FlamesDataset(TextBaseDataset):
     TYPE = 'VQA'
     MODALITY = 'TEXT'
-    DATASET_URL = {'Flames': 'Flames.tsv'}
-    DATASET_MD5 = {'Flames': None}
+    DATASET_URL = {'Flames': 'https://opencompass.openxlab.space/utils/VLMEval/Flames.tsv'}
+    DATASET_MD5 = {'Flames': 'b567b6c96717c9e6c8bb9b458a85635a'}
 
     @classmethod
     def supported_datasets(cls):
@@ -88,14 +88,29 @@ class FlamesDataset(TextBaseDataset):
                 ans = load(tmp_file) if osp.exists(tmp_file) else {}
                 lines = [data.iloc[i] for i in range(len(data))]
                 indices = [line['index'] for line in lines]
-                tasks = [(judge, str(line.get('category', '')), str(line['question']), str(line['prediction'])) for line in lines]
+                tasks = [(judge, str(line.get('category',
+                                              '')), str(line['question']), str(line['prediction']))
+                         for line in lines]
                 todo_tasks = [x for x, i in zip(tasks, indices) if i not in ans]
                 todo_idx = [i for i in indices if i not in ans]
                 if len(todo_idx):
-                    _ = track_progress_rich(_flames_judge, todo_tasks, nproc=nproc, chunksize=nproc, keys=todo_idx, save=tmp_file)
+                    _ = track_progress_rich(
+                        _flames_judge,
+                        todo_tasks,
+                        nproc=nproc,
+                        chunksize=nproc,
+                        keys=todo_idx,
+                        save=tmp_file)
                     ans = load(tmp_file)
-                data['score_1to3'] = [ans[idx][0] if isinstance(ans[idx], (list, tuple)) else ans[idx] for idx in indices]
-                data['judge_log'] = [ans[idx][1] if isinstance(ans[idx], (list, tuple)) and len(ans[idx]) > 1 else '' for idx in indices]
+                data['score_1to3'] = [
+                    ans[idx][0] if isinstance(ans[idx], (list, tuple)) else ans[idx]
+                    for idx in indices
+                ]
+                data['judge_log'] = [
+                    ans[idx][1] if isinstance(ans[idx],
+                                              (list, tuple)) and len(ans[idx]) > 1 else ''
+                    for idx in indices
+                ]
 
         valid = data[data['score_1to3'].isin([1, 2, 3])].copy()
 

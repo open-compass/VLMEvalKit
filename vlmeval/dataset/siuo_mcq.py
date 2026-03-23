@@ -23,8 +23,8 @@ def _extract_option(pred):
 class SIUOMCQDataset(ImageBaseDataset):
     TYPE = 'MCQ'
     MODALITY = 'IMAGE'
-    DATASET_URL = {'SIUO_MCQ': 'SIUO_MCQ.tsv'}
-    DATASET_MD5 = {}
+    DATASET_URL = {'SIUO_MCQ': 'https://opencompass.openxlab.space/utils/VLMEval/SIUO_MCQ.tsv'}
+    DATASET_MD5 = {'SIUO_MCQ': 'a72a8a5789cbe8c83126890bb3a9a6e9'}
 
     @classmethod
     def supported_datasets(cls):
