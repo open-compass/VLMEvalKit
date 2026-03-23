@@ -348,7 +348,7 @@ def ChartX_auxeval(model, item):
                 hits = re.findall(r'\b(true|false)\b', response_lower)
                 if hits:
                     score = 1 if hits[0] == 'true' else 0
-        except BaseException:
+        except Exception:
             pass
 
         return {'score': score, 'log': response}
@@ -370,7 +370,7 @@ def ChartX_auxeval(model, item):
         metadata_str = item.get('metadata', '{}')
         try:
             metadata = json.loads(metadata_str)
-        except BaseException:
+        except Exception:
             metadata = {}
 
         title = metadata.get('title', 'Unknown Title')
@@ -404,7 +404,7 @@ def ChartX_auxeval(model, item):
                 hits = re.findall(r'[0-5]', response)
                 if hits:
                     score = int(hits[-1])
-        except BaseException:
+        except Exception:
             pass
 
         return {'score': score, 'log': response}
