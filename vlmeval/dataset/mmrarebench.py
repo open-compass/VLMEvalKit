@@ -54,13 +54,17 @@ def parse_json_list(val):
 def normalize_answer(answer: str) -> str:
     def remove_articles(text):
         return re.sub(r"\b(a|an|the)\b", " ", text)
+
     def white_space_fix(text):
         return " ".join(text.split())
+
     def remove_punc(text):
         exclude = set(string.punctuation)
         return "".join(ch for ch in text if ch not in exclude)
+
     def lower(text):
         return text.lower()
+
     return white_space_fix(remove_articles(remove_punc(lower(answer))))
 
 
@@ -100,14 +104,26 @@ def load_track_tsv(dataset_name):
 
 
 class MMRarebenchBase(ImageBaseDataset):
-    """Base class for MMRarebench datasets, inherits ImageBaseDataset for proper dataset integration."""
+    """Base class for MMRarebench datasets."""
 
     MODALITY = 'IMAGE'
     DATASET_URL = {
-        'MMRarebench_Diagnosis': 'https://huggingface.co/datasets/junzhin/MMrarebench/resolve/main/diagnosis/diagnosis_opened.tsv',
-        'MMRarebench_Treatment': 'https://huggingface.co/datasets/junzhin/MMrarebench/resolve/main/treatment/treatment_plan.tsv',
-        'MMRarebench_Crossmodal': 'https://huggingface.co/datasets/junzhin/MMrarebench/resolve/main/crossmodal/crossmodal_comparison.tsv',
-        'MMRarebench_Examination': 'https://huggingface.co/datasets/junzhin/MMrarebench/resolve/main/examination/examination_workup.tsv',
+        'MMRarebench_Diagnosis': (
+            'https://huggingface.co/datasets/junzhin/MMrarebench/resolve/main/'
+            'diagnosis/diagnosis_opened.tsv'
+        ),
+        'MMRarebench_Treatment': (
+            'https://huggingface.co/datasets/junzhin/MMrarebench/resolve/main/'
+            'treatment/treatment_plan.tsv'
+        ),
+        'MMRarebench_Crossmodal': (
+            'https://huggingface.co/datasets/junzhin/MMrarebench/resolve/main/'
+            'crossmodal/crossmodal_comparison.tsv'
+        ),
+        'MMRarebench_Examination': (
+            'https://huggingface.co/datasets/junzhin/MMrarebench/resolve/main/'
+            'examination/examination_workup.tsv'
+        ),
     }
     DATASET_MD5 = {}
 
@@ -558,7 +574,8 @@ class MMRarebenchTreatment(MMRarebenchOpenEndedBase):
         prompt += (
             '\nEvaluate with MAXIMUM strictness. Answer each question with YES or NO only:\n'
             '1. Does the response explicitly name the EXACT SAME specific treatments as the reference '
-            '(generic categories like "chemotherapy" or "antibiotics" without specifying the exact regimen do NOT count)? (YES/NO)\n'
+            '(generic categories like "chemotherapy" or "antibiotics" without specifying the '
+            'exact regimen do NOT count)? (YES/NO)\n'
             '2. Does the response include the CORRECT specific drug names AND dosages/routes that match the reference '
             '(mentioning a drug class without the specific agent is NO; omitting dosage is NO)? (YES/NO)\n'
             '3. Is the response COMPLETELY free of ALL safety violations, contraindications, drug interactions, '
