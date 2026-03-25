@@ -16,7 +16,6 @@ from .chartcap import ChartCapDataset
 from .chartmimic import ChartMimic
 from .chartmuseum import ChartMuseum
 from .chartqapro import ChartQAPro
-from .mmrarebench import MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination
 from .chartx import ChartX
 from .charxiv import CharXiv
 from .cmmmu import CMMMU
@@ -84,6 +83,8 @@ from .mmhelix import MMHELIX
 from .mmifeval import MMIFEval
 from .mmlongbench import MMLongBench
 from .mmmath import MMMath
+from .mmrarebench import (MMRarebenchCrossmodal, MMRarebenchDiagnosis, MMRarebenchExamination,
+                          MMRarebenchTreatment)
 from .mmsafetybench import MMSafetyBenchDataset
 from .mmsibench import MMSIBench, MMSIVideoBench
 from .moat import MOAT
