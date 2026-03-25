@@ -17,7 +17,6 @@ from ..utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import build_judge
 
-
 TRACK_CONFIG = {
     'MMRarebench_Diagnosis': {
         'track': 'diagnosis',
