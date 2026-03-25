@@ -1,5 +1,8 @@
-from ...smp import *
-import random
+from collections import defaultdict
+
+import pandas as pd
+
+from ...smp.file import load
 
 # for MMOral-OPG-Bench
 
@@ -18,7 +21,8 @@ Just complete the last space of the correctness score.
 
 Question | Ground truth | Prediction | Correctness
 --- | --- | --- | ---
-How many teeth are visualized in the radiograph? | 30 teeth are visualized with clear anatomical definition. | 30 | 1.0
+How many teeth are visualized in the radiograph? | 30 teeth are visualized with clear anatomical
+definition. | 30 | 1.0
 How many teeth are visualized in the radiograph? | 30 teeth are visualized with clear anatomical
 definition. | 29 teeth are visualized with clear anatomical definition. | 0.0
 What is the status of the wisdom teeth in the radiograph? | Three
