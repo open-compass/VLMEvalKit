@@ -1,8 +1,10 @@
+import warnings
+
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import warnings
-from .base import BaseModel
+
 from ..dataset import DATASET_TYPE
+from .base import BaseModel
 
 
 class Monkey(BaseModel):

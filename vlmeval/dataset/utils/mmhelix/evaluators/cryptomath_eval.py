@@ -1,7 +1,7 @@
-import re
-import json
 import ast
-from typing import Dict, Any, Union, List
+import json
+import re
+from typing import Any, Dict, Union
 
 
 class BaseEvaluator:
@@ -46,7 +46,7 @@ class CryptoMathEvaluator(BaseEvaluator):
                 if isinstance(mapping, dict):
                     mapping = {k: int(v) for k, v in mapping.items() if isinstance(k, str) and str(k).isalpha()}
                     return mapping
-            except:
+            except Exception:
                 pass
 
         # 方法2：尝试找到JSON对象格式
@@ -61,7 +61,7 @@ class CryptoMathEvaluator(BaseEvaluator):
                 # 确保值是整数类型
                 mapping = {k: int(v) for k, v in mapping.items()}
                 return mapping
-            except:
+            except Exception:
                 pass
 
         # 方法3：查找形如 "S"=9,"E"=5,... 的格式
@@ -189,7 +189,7 @@ class CryptoMathEvaluator(BaseEvaluator):
             left_side, right_side = eval_equation.split('=')
             if eval(left_side) != eval(right_side):
                 return False
-        except:
+        except Exception:
             return False  # 等式计算出错
 
         # 所有条件均满足，返回True

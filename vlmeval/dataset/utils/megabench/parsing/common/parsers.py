@@ -1,10 +1,11 @@
 import ast
 import json
 import re
-import regex  # Supports the non-standard ?R regex operator
 from typing import List
-from .utils import extract_code_block_content, extract_answer_at_beginning_of_line
 
+import regex  # Supports the non-standard ?R regex operator
+
+from .utils import extract_answer_at_beginning_of_line, extract_code_block_content
 
 PARSING_TIMEOUT = 0.1
 

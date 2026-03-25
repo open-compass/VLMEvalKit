@@ -1,8 +1,7 @@
-import re
 import ast
 import json
-from typing import Dict, Any, List, Union
-import numpy as np
+import re
+from typing import Any, Dict, List
 
 
 class FutoshikiEvaluator:
@@ -71,7 +70,7 @@ class FutoshikiEvaluator:
                     grid = ast.literal_eval(match)
                     if self._is_valid_grid(grid):
                         return grid
-                except:
+                except Exception:
                     continue
         return None
 
@@ -99,7 +98,7 @@ class FutoshikiEvaluator:
                 grid = ast.literal_eval(match)
                 if self._is_valid_grid(grid):
                     return grid
-            except:
+            except Exception:
                 continue
 
         return None

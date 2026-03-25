@@ -1,10 +1,13 @@
 import ast
-import os
 import json
+import os
+from collections import defaultdict
+
 import numpy as np
 import pandas as pd
-from collections import defaultdict
+
 from .score import evaluate_single_puzzle
+
 
 def get_eval(judge, content):
     """

@@ -1,12 +1,12 @@
-import json
-import os
+import os.path as osp
 
 import pandas as pd
 
-from .image_base import ImageBaseDataset
-from ..smp import *
-from .utils import build_judge, DEBUG_MESSAGE
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import get_intermediate_file_path
 from ..utils import track_progress_rich
+from .image_base import ImageBaseDataset
+from .utils import build_judge
 
 
 def generate_prompt(d):
@@ -91,7 +91,7 @@ def get_score_dict(data, score_raw):
                     cat_score_dict[key] = [val]
                 else:
                     cat_score_dict[key].append(val)
-        except:
+        except Exception:
             pass
     cat_score_dict_average = {}
     for key, val in cat_score_dict.items():

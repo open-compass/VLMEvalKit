@@ -1,12 +1,12 @@
-from PIL import Image
-import base64
-import math
 import ast
+import base64
+import io
+import math
+import os
 
 import torch
+from PIL import Image
 from transformers import StoppingCriteria
-import os
-import io
 
 if 'HIGHRES_BASE' in os.environ:
     # highresxpatch

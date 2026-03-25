@@ -1,10 +1,12 @@
-from typing import Any, Dict, List
-from datasets import load_dataset
-from ..text_base import TextBaseDataset
 import re
-import pandas as pd
-from ...smp.file import load, dump, get_intermediate_file_path
 from itertools import combinations
+from typing import Any, Dict, List
+
+import pandas as pd
+from datasets import load_dataset
+
+from vlmeval.smp import dump, get_intermediate_file_path, load
+from ..text_base import TextBaseDataset
 
 
 def parse_experiment_steps(text):
@@ -278,7 +280,7 @@ class SGI_Bench_Wet_Experiment(TextBaseDataset):
         return ["SGI-WetExperiment"]
 
     def load_data(self, dataset):
-        hf = load_dataset("InternScience/SGI-WetExperiment",split="test")
+        hf = load_dataset("InternScience/SGI-WetExperiment", split="test")
 
         rows: List[Dict[str, Any]] = []
         idx = 0

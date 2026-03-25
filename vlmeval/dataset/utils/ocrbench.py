@@ -1,4 +1,8 @@
-from ...smp import *
+from tqdm import tqdm
+
+from vlmeval.smp import dump, get_intermediate_file_path, get_logger, load
+
+logger = get_logger(__name__)
 
 
 def OCRBench_eval(eval_file):
@@ -14,9 +18,6 @@ def OCRBench_eval(eval_file):
         'Key Information Extraction': 0,
         'Handwritten Mathematical Expression Recognition': 0
     }
-
-    logger = get_logger('Evaluation')
-
     data = load(eval_file)
     lt = len(data)
     lines = [data.iloc[i] for i in range(lt)]

@@ -1,8 +1,8 @@
 import pandas as pd
+
+from vlmeval.smp import dump, load, toliststr
 from .image_base import ImageBaseDataset
 from .utils.gsm8k_v import evaluate_gsm8k_v
-from ..smp import *
-from ..smp import toliststr, dump
 
 
 class GSM8KVDataset(ImageBaseDataset):
@@ -62,8 +62,9 @@ class GSM8KVDataset(ImageBaseDataset):
         if 'image' not in line or pd.isna(line['image']) or line['image'] == '':
             return []
 
-        from ..smp import decode_base64_to_image_file
         import uuid
+
+        from ..smp import decode_base64_to_image_file
         image_list = toliststr(line['image'])
         tgt_paths = []
         for img_b64 in image_list:
@@ -96,8 +97,9 @@ class GSM8KVDataset(ImageBaseDataset):
                 'starting with "FINAL ANSWER: " followed by the number only.'
             ).format(question)
 
-            from PIL import Image
             import tempfile
+
+            from PIL import Image
             blank_img = Image.new('RGB', (10, 10), color='white')
             temp_path = tempfile.mktemp(suffix='.png')
             blank_img.save(temp_path)
@@ -157,7 +159,6 @@ class GSM8KVDataset(ImageBaseDataset):
                 print(f"Evaluating mode: {mode}")
                 print(f"{'=' * 60}")
                 mode_data = data.iloc[idx * orig_len:(idx + 1) * orig_len].copy()
-                import os
                 mode_eval_file = eval_file.replace('.xlsx', f'_{mode}.xlsx')
                 dump(mode_data, mode_eval_file)
                 results = evaluate_gsm8k_v(

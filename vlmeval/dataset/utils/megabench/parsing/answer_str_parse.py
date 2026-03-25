@@ -1,13 +1,6 @@
-import logging
 from .common.parsers import parse_json
-from .common.utils import (
-    extract_code_block_content,
-    extract_answer_content,
-    evaluate_as_string,
-    drop_additional_text,
-)
-
-logger = logging.getLogger("errorLogger")
+from .common.utils import (drop_additional_text, evaluate_as_string, extract_answer_content,
+                           extract_code_block_content)
 
 
 class AnswerStrParse:

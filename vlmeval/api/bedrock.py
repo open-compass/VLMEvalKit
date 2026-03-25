@@ -20,6 +20,7 @@ except ImportError:
     boto3 = None
     BotoCoreError = ClientError = Exception
 
+logger = get_logger(__name__)
 
 # Common Bedrock vision model IDs (region-specific; use full ID in config)
 BEDROCK_VISION_MODELS = {
@@ -78,7 +79,7 @@ class BedrockAPI(BaseAPI):
             service_name="bedrock-runtime",
             region_name=self.region_name,
         )
-        self.logger.info(
+        logger.info(
             f"BedrockAPI: model_id={self.model_id}, region={self.region_name}"
         )
 
@@ -153,7 +154,7 @@ class BedrockAPI(BaseAPI):
         except (BotoCoreError, ClientError) as e:
             err_msg = str(e)
             if self.verbose:
-                self.logger.error(f"Bedrock API error: {err_msg}")
+                logger.error(f"Bedrock API error: {err_msg}")
             return -1, self.fail_msg, err_msg
 
         answer = self.fail_msg
@@ -167,6 +168,6 @@ class BedrockAPI(BaseAPI):
             answer = "".join(texts).strip() if texts else self.fail_msg
         except Exception as e:
             if self.verbose:
-                self.logger.error(f"Parse response: {e}")
+                logger.error(f"Parse response: {e}")
 
         return 0, answer, response

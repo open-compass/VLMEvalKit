@@ -1,8 +1,10 @@
-import torch
-import sys
 import os.path as osp
+import sys
 import warnings
+
+import torch
 from transformers import StoppingCriteriaList
+
 from .base import BaseModel
 
 
@@ -41,9 +43,10 @@ class MiniGPT4(BaseModel):
         self.cfg = osp.join(this_dir, 'misc', cfg)
         sys.path.append(self.root)
 
-        from omegaconf import OmegaConf
         from minigpt4.common.registry import registry
-        from minigpt4.conversation.conversation import StoppingCriteriaSub, CONV_VISION_Vicuna0, CONV_VISION_minigptv2
+        from minigpt4.conversation.conversation import (CONV_VISION_minigptv2, CONV_VISION_Vicuna0,
+                                                        StoppingCriteriaSub)
+        from omegaconf import OmegaConf
 
         device = torch.cuda.current_device()
         self.device = device

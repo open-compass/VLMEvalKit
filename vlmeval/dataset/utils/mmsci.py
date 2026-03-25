@@ -1,10 +1,12 @@
 # flake8: noqa
-import evaluate
-from tqdm import tqdm
-import numpy as np
 import os.path as osp
+
+import evaluate
+import numpy as np
 import pandas as pd
-from vlmeval import load, dump, track_progress_rich
+from tqdm import tqdm
+
+from vlmeval import dump, load, track_progress_rich
 
 g_eval_prompt = """
 You will be given a oracle caption that describes an image. You will then be given a second caption written for the same image.
@@ -51,6 +53,7 @@ Model_Response:
 """
 
 from pycocoevalcap.cider.cider import Cider
+
 cider_scorer = Cider()
 
 

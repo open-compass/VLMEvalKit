@@ -5,16 +5,13 @@ Copyright (c) 2022-present NAVER Corp.
 MIT License
 """
 import json
-import os
-import sys
 import re
-import time
-from typing import Any, Dict, List, Tuple, Union
+from collections import Counter
+from typing import Any, Dict, List, Union
 
 import zss
-from zss import Node
-from collections import Counter
 from nltk import edit_distance
+from zss import Node
 
 # local import
 from .common import BaseMetric

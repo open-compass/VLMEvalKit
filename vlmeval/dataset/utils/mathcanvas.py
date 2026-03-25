@@ -1,16 +1,16 @@
+import base64
 import json
-import pandas as pd
-from collections import defaultdict
-from typing import Optional, List, Dict
-from tqdm import tqdm
-import warnings
+import os
+import re
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from typing import Dict, List, Optional
+
 from openai import OpenAI
 from pydantic import BaseModel, Field, model_validator
-from ...smp import *
-import re
-import base64
-from pathlib import Path
+from tqdm import tqdm
+
+from vlmeval.smp import load, load_env
 
 current_script_path = Path(__file__).resolve()
 current_dir = current_script_path.parent

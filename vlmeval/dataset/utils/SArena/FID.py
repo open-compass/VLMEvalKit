@@ -1,15 +1,16 @@
 import os
-import torch
-import clip
-import torchvision.transforms as TF
-import numpy as np
-from tqdm import tqdm
-from scipy import linalg
 
+import clip
+import numpy as np
+import torch
+import torchvision.transforms as TF
+from scipy import linalg
+from torch.nn.functional import adaptive_avg_pool2d
+from tqdm import tqdm
+
+from vlmeval.smp.file import LMUDataRoot
 from .base_metric import BaseMetric
 from .inception import InceptionV3
-from torch.nn.functional import adaptive_avg_pool2d
-from vlmeval.smp.file import LMUDataRoot
 
 
 class FIDCalculator(BaseMetric):

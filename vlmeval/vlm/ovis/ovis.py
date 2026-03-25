@@ -1,9 +1,9 @@
 import torch
 from transformers import AutoModelForCausalLM
 
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import cn_string, listinstr
 from ..base import BaseModel
-from ...dataset import DATASET_TYPE, DATASET_MODALITY
-from ...smp import *
 
 
 class Ovis(BaseModel):
@@ -63,7 +63,7 @@ class Ovis(BaseModel):
 
         # interleave dataset
         if dataset.startswith('MMMU_'):
-            from ... import MMMUDataset
+            from vlmeval.dataset import MMMUDataset
             message = MMMUDataset.split_MMMU(message)
 
         return message
@@ -220,7 +220,7 @@ class Ovis1_6(BaseModel):
 
         # interleave dataset
         if dataset.startswith('MMMU_'):
-            from ... import MMMUDataset
+            from vlmeval.dataset import MMMUDataset
             message = MMMUDataset.split_MMMU(message)
 
         return message
@@ -270,6 +270,7 @@ class Ovis1_6_Plus(Ovis1_6):
 
     def build_mmmu_prompt(self, line, dataset: str) -> list[dict[str, str]]:
         import string
+
         import pandas as pd
 
         question = line['question']
@@ -438,7 +439,7 @@ class Ovis2(BaseModel):
 
         # interleave dataset
         if dataset.startswith('MMMU_'):
-            from ... import MMMUDataset
+            from vlmeval.dataset import MMMUDataset
             message = MMMUDataset.split_MMMU(message)
 
         return message
@@ -631,7 +632,7 @@ class OvisU1(BaseModel):
 
         # interleave dataset
         if dataset.startswith('MMMU_'):
-            from ... import MMMUDataset
+            from vlmeval.dataset import MMMUDataset
             message = MMMUDataset.split_MMMU(message)
 
         return message
@@ -828,7 +829,7 @@ class Ovis2_5(BaseModel):
 
         # interleave dataset
         if dataset.startswith('MMMU_'):
-            from ... import MMMUDataset
+            from vlmeval.dataset import MMMUDataset
             message = MMMUDataset.split_MMMU(message)
 
         return message

@@ -1,15 +1,17 @@
 import collections
 import itertools
 import logging
-from numbers import Number
 import re
-from nltk.tokenize import sent_tokenize, word_tokenize
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import wordnet
-import pronouncing
-from .common.conversions import str_to_iterable
-from ..parsing.common.parsers import parse_nested_str_list, parse_syllable_ranges
 import signal
+from numbers import Number
+
+import pronouncing
+from nltk.corpus import wordnet
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import sent_tokenize, word_tokenize
+
+from ..parsing.common.parsers import parse_nested_str_list, parse_syllable_ranges
+from .common.conversions import str_to_iterable
 
 
 def custom_lemmatize(word, lemmatizer):

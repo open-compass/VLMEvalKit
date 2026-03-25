@@ -1,11 +1,13 @@
-from typing import List, Dict, Any, Tuple
-import random
+import argparse
 import copy
 import os
-import argparse
+import random
+from typing import Any, Dict, List, Tuple
 
+from .common_constriants import (Constraint, ConstraintColNoRepeat, ConstraintRowNoRepeat,
+                                 ConstraintSubGridNoRepeat)
 from .common_puzzle_factory import PuzzleFactory
-from .common_constriants import Constraint, ConstraintRowNoRepeat, ConstraintColNoRepeat, ConstraintSubGridNoRepeat
+
 
 class ConstraintCageSum(Constraint):
     def __init__(self) -> None:

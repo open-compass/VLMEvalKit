@@ -1,13 +1,15 @@
-import transformers
-from PIL import Image
-import torch
 import re
-from .base import BaseModel
-from ..dataset import DATASET_TYPE
-from ..smp import cn_string, listinstr
-import pandas as pd
 import string
 from typing import List
+
+import pandas as pd
+import torch
+import transformers
+from PIL import Image
+
+from ..dataset import DATASET_TYPE
+from ..smp import cn_string, listinstr
+from .base import BaseModel
 
 
 class POINTS(BaseModel):
@@ -22,8 +24,7 @@ class POINTS(BaseModel):
     """
 
     def __init__(self, model_path: str, **kwargs) -> None:
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-        from transformers import CLIPImageProcessor
+        from transformers import AutoModelForCausalLM, AutoTokenizer, CLIPImageProcessor
 
         version = transformers.__version__
         use_fast = True
@@ -152,8 +153,7 @@ class POINTSV15(BaseModel):
     """
 
     def __init__(self, model_path: str, **kwargs) -> None:
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-        from transformers import QuantoConfig
+        from transformers import AutoModelForCausalLM, AutoTokenizer, QuantoConfig
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_path, trust_remote_code=True)
         quant_config = QuantoConfig(modules_to_not_convert=['vision_encoder'])

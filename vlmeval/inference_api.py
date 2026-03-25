@@ -31,7 +31,7 @@ def _eval_subprocess_target(
 ):
     """Evaluate function in child processes."""
     setup_subprocess_logger(log_file)
-    logger.info(f"[Eval Start] {dataset_obj.dataset_name}")
+    logger.info(f"🔔 [Eval Start] {dataset_obj.dataset_name}")
 
     try:
         with open(log_file, 'a') as f:
@@ -166,6 +166,7 @@ class APIEvalPipeline:
         self.run_infer = run_infer
         self.run_eval = run_eval
         self.debug = debug
+        self.all_infer_done = False
 
         self.infer_executor = ThreadPoolExecutor(max_workers=concurrency)
         self.eval_executor = ProcessPoolExecutor(max_workers=4)
@@ -200,7 +201,7 @@ class APIEvalPipeline:
             try:
                 cfg.dataset_obj.data = None
                 gc.collect()
-                logger.info(f"   [{dataset_name}] Memory released.")
+                logger.info(f"🧹 [{dataset_name}] Memory released.")
             except Exception as e:
                 logger.warning(f"   [{dataset_name}] Failed to release dataset memory: {e}")
 
@@ -681,29 +682,28 @@ class APIEvalPipeline:
 
     async def _monitor_loop(self):
         """monitor task progress in loop."""
-        seconds = 0
+        last_log = 0
         while True:
             # Exit if all infer tasks done & all eval tasks done.
-            all_infer_done = (self.queue.empty() and self.active_workers == 0)
             all_eval_done = all(
                 cfg.eval_status in [EvalStatus.Done, EvalStatus.Error, EvalStatus.Skipped]
                 for cfg in self.states.values()
             )
 
-            if all_infer_done and all_eval_done:
+            if self.all_infer_done and all_eval_done:
                 break
 
-            if (seconds % self.monitor_interval) == 0:
-                if not all_infer_done:
+            if time.time() - last_log > self.monitor_interval:
+                if not self.all_infer_done:
                     logger.info(f'Infer task queue: {self.queue.qsize()}')
                     logger.info(f'Active workers: {self.active_workers}')
                 if not all_eval_done:
                     logger.info(', '.join(f'{cfg.dataset_name}: {cfg.eval_status.name}'
                                           for cfg in self.states.values()))
                 self._log_snapshot()
+                last_log = time.time()
 
             await asyncio.sleep(1)
-            seconds += 1
 
     def _log_snapshot(self):
         elapsed = time.time() - self.start_time
@@ -761,22 +761,25 @@ class APIEvalPipeline:
         logger.info(f"  Infer: {self.run_infer}")
         logger.info(f"  Eval: {self.run_eval}")
 
-        monitor_task = asyncio.create_task(self._monitor_loop())
-
         # Start producer
         producer_task = asyncio.create_task(self._producer())
-        # Start consumer
+
+        # Start monitor
+        monitor_task = asyncio.create_task(self._monitor_loop())
         try:
+            # Start consumer
             if self.run_infer:
                 workers = [
                     asyncio.create_task(self._worker())
                     for _ in range(self.concurrency)
                 ]
                 await producer_task
+                self.all_infer_done = True
                 await asyncio.gather(*workers)
                 logger.info("🎉 All inference tasks finished. Waiting for pending evaluations...")
             else:
                 await producer_task
+                self.all_infer_done = True
                 logger.info("📊 Eval mode only. Skipping inference...")
 
             await monitor_task

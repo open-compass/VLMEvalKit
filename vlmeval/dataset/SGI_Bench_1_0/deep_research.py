@@ -1,11 +1,13 @@
 from typing import Any, Dict, List
-from datasets import load_dataset
+
 import pandas as pd
-from ..utils.judge_util import build_judge
-from ...utils.mp_util import track_progress_rich
-from ..text_base import TextBaseDataset
-from ...smp.file import dump, load, get_intermediate_file_path
+from datasets import load_dataset
 from json_repair import repair_json
+
+from vlmeval.smp import dump, get_intermediate_file_path, load
+from vlmeval.utils.mp_util import track_progress_rich
+from ..text_base import TextBaseDataset
+from ..utils.judge_util import build_judge
 
 
 def extract_final_answer(answer_with_thinking: str, start_tag='<answer>', end_tag='</answer>'):
@@ -110,7 +112,7 @@ class SGI_Bench_Deep_Research(TextBaseDataset):
         return ["SGI-DeepResearch"]
 
     def load_data(self, dataset):
-        hf = load_dataset("InternScience/SGI-DeepResearch",split="test")
+        hf = load_dataset("InternScience/SGI-DeepResearch", split="test")
 
         rows: List[Dict[str, Any]] = []
         idx = 0
@@ -163,7 +165,7 @@ Step 2. ...
         out_list = track_progress_rich(
             func=eval_model_output,
             tasks=inp_list,
-            nproc=judge_kwargs.get('nproc',48)
+            nproc=judge_kwargs.get('nproc', 48)
         )
 
         exact_match = sum([item['exact_match'] for item in out_list]) / len(out_list)

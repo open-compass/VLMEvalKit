@@ -2,20 +2,16 @@ import os
 import string
 import time
 from typing import Optional
+
 import pandas as pd
 import requests
-from vlmeval.smp import (
-    LMUDataRoot,
-    osp,
-    read_ok,
-    decode_base64_to_image_file,
-    toliststr,
-    listinstr,
-    cn_string,
-)
+
 from vlmeval.api.base import BaseAPI
-from vlmeval.dataset import img_root_map
-from vlmeval.dataset import DATASET_TYPE
+from vlmeval.dataset import DATASET_TYPE, img_root_map
+from vlmeval.smp import (LMUDataRoot, cn_string, decode_base64_to_image_file, get_logger,
+                         listinstr, osp, read_ok, toliststr)
+
+logger = get_logger(__name__)
 
 
 class SenseChatVisionWrapper(BaseAPI):
@@ -268,27 +264,27 @@ class SenseChatVisionWrapper(BaseAPI):
             json=data,
         )
         request_id = response.headers.get("x-request-id", "")
-        self.logger.info(f"Request-id: {request_id}")
+        logger.info(f"Request-id: {request_id}")
 
         time.sleep(1)
         try:
             assert response.status_code == 200
             response = response.json()["data"]["choices"][0]["message"].strip()
             if self.verbose:
-                self.logger.info(f"inputs: {inputs}\nanswer: {response}")
+                logger.info(f"inputs: {inputs}\nanswer: {response}")
             return 0, response, "Succeeded! "
         except Exception as err:
             if self.verbose:
-                self.logger.error(
+                logger.error(
                     "---------------------------ERROR---------------------------"
                 )
-                self.logger.error(response.json())
-                self.logger.error(err)
-                self.logger.error(
+                logger.error(response.json())
+                logger.error(err)
+                logger.error(
                     "---------------------------request_id---------------------------"
                     + request_id
                 )
-                self.logger.error(
+                logger.error(
                     "api error"
                     + response.json()["error"]["message"]
                     + str(
@@ -298,7 +294,7 @@ class SenseChatVisionWrapper(BaseAPI):
                         ]
                     )
                 )
-                self.logger.error(f"The input messages are {inputs}.")
+                logger.error(f"The input messages are {inputs}.")
             return -1, response.json()["error"]["message"], ""
 
 
@@ -342,6 +338,7 @@ class SenseChatVisionV2API(BaseAPI):
 
     def prepare_itlist(self, inputs):
         import numpy as np
+
         from vlmeval.smp import encode_image_to_base64
 
         assert np.all([isinstance(x, dict) for x in inputs])

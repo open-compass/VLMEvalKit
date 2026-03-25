@@ -1,5 +1,6 @@
-from vlmeval.dataset import *
 from functools import partial
+
+from vlmeval.dataset import *
 
 vcrbench_dataset = {
     'VCRBench_8frame_nopack': partial(VCRBench, dataset='VCR-Bench', nframe=8, pack=False),

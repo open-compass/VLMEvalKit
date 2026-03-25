@@ -1,23 +1,28 @@
-import os
-import re
-import tempfile
-import itertools
-from functools import partial
-
-import pandas as pd
 import ast
+import itertools
+import json
+import os
+import os.path as osp
+import re
+from collections import defaultdict
 
-from ..image_base import ImageBaseDataset, img_root_map
-from ..utils import build_judge, DEBUG_MESSAGE
-from ...smp import *
-from ...utils import track_progress_rich
-from ipdb import set_trace as st
+import numpy as np
+import pandas as pd
+from PIL import Image
+from tqdm import tqdm
 
-logger = get_logger("RUN")
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, get_logger, load, toliststr
+
+logger = get_logger(__name__)
 
 SYSTEM_PROMPT = """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform pyautogui click/moveTo action to complete the task. The answer format is `pyautogui.click(x=?, y=?), x and y is necessary`"""  # noqa: E501
 
 USER_INSTRUCTION = """Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"""  # noqa: E501
+
+SYSTEM_PROMPT_V2 = """You are a GUI agent. You are given a screenshot of the screen and the description of a target element. You need to click the target element using `pyautogui.click`. The answer format is `pyautogui.click(x=?, y=?), x and y is necessary`"""  # noqa: E501
+
+USER_INSTRUCTION_V2 = """Please click the following target element using `pyautogui.click`:\n{description}"""
 
 
 def parse_bbox_aguvis(response):
@@ -261,7 +266,7 @@ class OSWorld_G(ImageBaseDataset):
                         results_dict[score_key + "_text"].append(score)
                     else:
                         results_dict[score_key + "_icon"].append(score)
-            except:
+            except Exception:
                 click_point = None
                 match = {score_key: False for score_key in scorers.keys() if score_key != "IoU"}
             result.append(

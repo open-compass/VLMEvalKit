@@ -14,14 +14,15 @@ import os.path as osp
 
 import numpy as np
 
-from ..smp import get_logger, encode_image_to_base64
+from ..smp import encode_image_to_base64, get_logger
 from .base import BaseAPI
 
 # Vertex AI (Gemini)
 try:
     import vertexai
-    from vertexai.generative_models import GenerativeModel, Part, GenerationConfig
+    from vertexai.generative_models import GenerationConfig, GenerativeModel
     from vertexai.generative_models import Image as VertexImage
+    from vertexai.generative_models import Part
 except ImportError:
     vertexai = None
     GenerativeModel = Part = GenerationConfig = VertexImage = None
@@ -31,6 +32,8 @@ try:
     from anthropic import AnthropicVertex
 except ImportError:
     AnthropicVertex = None
+
+logger = get_logger(__name__)
 
 
 def _encode_image_file_to_base64(image_path, target_size=-1, fmt=".jpg"):
@@ -112,7 +115,7 @@ class GCPVertexAPI(BaseAPI):
             self._gemini_model = GenerativeModel(model_id)
             self._client = None
 
-        self.logger.info(
+        logger.info(
             f"GCPVertexAPI: model={self.model}, project={self.project_id}, "
             f"location={self.location} ({'Claude' if self._is_claude else 'Gemini'})"
         )
@@ -204,5 +207,5 @@ class GCPVertexAPI(BaseAPI):
             return self._generate_gemini(inputs, temperature, max_tokens)
         except Exception as err:
             if self.verbose:
-                self.logger.error(f"{type(err).__name__}: {err}")
+                logger.error(f"{type(err).__name__}: {err}")
             return -1, self.fail_msg, str(err)

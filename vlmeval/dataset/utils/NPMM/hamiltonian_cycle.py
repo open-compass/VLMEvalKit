@@ -50,12 +50,12 @@ def validation(graph, answer):
         # 分割并转换为整数列表
         try:
             path = [int(x.strip()) for x in path_str.split(',')]
-        except:
+        except Exception:
             return True, -1, "path must be a list of integers"
 
         if not path:
             return True, -1, "path cannot be empty"
-    except:
+    except Exception:
         return True, -1, "invalid answer format"
 
     # 获取图的节点数和邻接表

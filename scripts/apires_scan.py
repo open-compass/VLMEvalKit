@@ -1,6 +1,9 @@
+import os.path as osp
 import sys
-from vlmeval import *
+
 from vlmeval.dataset import SUPPORTED_DATASETS
+from vlmeval.smp import listinstr, load, ls
+
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 root = sys.argv[1]

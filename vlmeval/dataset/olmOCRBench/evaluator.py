@@ -16,26 +16,22 @@ Statistical analysis including bootstrap confidence intervals are provided for t
 Pairwise permutation tests are conducted between specific candidate pairs.
 """
 
-import argparse
+import csv
 import glob
+import json
 import os
-import random
 import re
-import sys
+import shutil
+import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Tuple
 
+import pandas as pd
 # from pypdf import PdfReader
 from tqdm import tqdm
 
-from .tests import BaselineTest, BasePDFTest, load_tests, save_tests, load_single_test
+from .tests import BaselineTest, BasePDFTest, load_single_test
 from .utils import calculate_bootstrap_ci
-
-import pandas as pd
-import json
-import tempfile
-import shutil
-import csv
 
 
 def evaluate_candidate(

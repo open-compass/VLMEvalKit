@@ -1,30 +1,29 @@
-from typing import Any, Dict, List
-from datasets import load_dataset
-from ..text_base import TextBaseDataset
-import os
-import requests
-import shutil
 import ast
-from ..utils.judge_util import build_judge
-from ...utils.mp_util import track_progress_rich
-from ...smp.file import dump, load, get_intermediate_file_path, LMUDataRoot
-from json_repair import repair_json
-import pandas as pd
-import time
+import os
+import platform
+import shutil
 import subprocess
+import time
 from pathlib import Path
+from typing import Any, Dict, List
+
+import pandas as pd
+import requests
+from datasets import load_dataset
+from json_repair import repair_json
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import platform
+
+from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load
+from vlmeval.utils.mp_util import track_progress_rich
+from ..text_base import TextBaseDataset
+from ..utils.judge_util import build_judge
 
 save_dir = "./outputs/sgi_code_logs"
 tmp_data_dir = "./outputs/sgi_tmp_data"
 
 env = os.environ.copy()
 env["PYTHONIOENCODING"] = "utf-8"
-
-
-import os
 
 
 def run_script_in_folder(folder_path):
@@ -528,7 +527,7 @@ def minus(a, b):
                         main_code, answer,
                         incomplete_function
                     )
-                except:
+                except Exception:
                     pass
             for unit_test_idx in range(5):
                 save_path = os.path.join(

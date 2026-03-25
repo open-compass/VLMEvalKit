@@ -1,13 +1,9 @@
-from vlmeval.smp import *
-from vlmeval.utils import can_infer
-import re
-import json
-import os
-import copy
-import argparse
-from tqdm import tqdm
-from collections import defaultdict
 import ast
+import re
+
+import pandas as pd
+
+from vlmeval.smp import load
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -132,10 +128,10 @@ Please compare the these two answers, then ONLY output judegement 1/0 for matche
 def mapping_str(input):
     d = {r"\dfrac": r"\frac", r"\pi": "3.14"}
     output = input
-    for k,v in d.items():
+    for k, v in d.items():
         try:
             output = output.replace(k, v)
-        except:
+        except Exception:
             pass
     return output
 
@@ -144,7 +140,7 @@ def safe_literal_eval(s):
     s = s.strip()
     try:
         return ast.literal_eval(s)
-    except:
+    except Exception:
         pass
     if not s.startswith("{"):
         s = "{" + s
@@ -153,7 +149,7 @@ def safe_literal_eval(s):
     s = re.sub(r'([{,]\s*)([^"\{\}\:\,\s]+)\s*:', r'\1"\2":', s)
     try:
         return ast.literal_eval(s)
-    except:
+    except Exception:
         return None
 
 
@@ -273,7 +269,7 @@ def PhyX_acc(result_file):
 
     final_res = {}
     final_res["Overall Acc"] = hit / lt
-    for k,v in res.items():
+    for k, v in res.items():
         final_res[k] = sum(v) / len(v)
     df = pd.DataFrame(final_res, index=[0])
     return df
@@ -295,7 +291,7 @@ def PhyX_process_line(line):
         if isinstance(pred_dict, dict) and 'content' in pred_dict and pred_dict['content'] != "":
             ret['pred'] = pred_dict['content'].strip()
             with_reasoning = True
-    except:
+    except Exception:
         pass
 
     if not with_reasoning:

@@ -8,12 +8,14 @@
 #Description: File with useful functions to use by the evaluation scripts in the RRC website.
 
 import json
-import sys;
+import sys
+
 sys.path.append('./')
-import zipfile
-import re
-import os
 import importlib
+import os
+import re
+import zipfile
+
 
 def print_help():
     sys.stdout.write('Usage: python %s.py -g=<gtFile> -s=<submFile> [-o=<outputFolder> -p=<jsonParams>]' %sys.argv[0])

@@ -1,17 +1,16 @@
-from ...smp import *
-from .multiple_choice import extract_answer_from_item
-from PIL import Image, ImageOps
-import torchvision
-import random
-import numbers
-import math
-import torch
 import json
-import pandas as pd
-
+import math
+import numbers
+import random
 
 import numpy as np
-import re
+import pandas as pd
+import torch
+import torchvision
+from PIL import Image, ImageOps
+
+from vlmeval.dataset.utils.multiple_choice import extract_answer_from_item
+from vlmeval.smp.file import load
 
 
 def get_dimension_rating(data_path, category_type='task_type'):
@@ -36,16 +35,9 @@ def get_dimension_rating(data_path, category_type='task_type'):
     return result_board
 
 
-def process_results(score_file,model_name):
-    from sklearn.metrics import (
-        accuracy_score,
-        precision_score,
-        recall_score,
-        f1_score,
-        classification_report,
-        confusion_matrix,
-        roc_auc_score
-    )
+def process_results(score_file, model_name):
+    from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score, precision_score,
+                                 recall_score)
     data = pd.read_excel(score_file)
 
     # Create the prediction column based on the Score and Answer columns
@@ -121,15 +113,9 @@ def process_results(score_file,model_name):
 
 
 def aggregate_metrics_with_macro_average(score_file):
-    from sklearn.metrics import (
-        accuracy_score,
-        precision_score,
-        recall_score,
-        f1_score,
-        classification_report,
-        confusion_matrix,
-        roc_auc_score
-    )
+    from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score, precision_score,
+                                 recall_score)
+
     # Load data
     data = pd.read_excel(score_file)
 
@@ -321,7 +307,7 @@ def check_ans_advanced(pred, gt):
     try:
         gt_content = number_table[int(gt_content.strip('. \n'))]
         print(gt_content)
-    except:
+    except Exception:
         pass
 
     if pred_option.replace('.', '') in gt_option:

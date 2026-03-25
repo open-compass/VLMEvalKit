@@ -1,9 +1,9 @@
 import re
+
 import pandas as pd
 
+from vlmeval.smp import d2df, dump, get_intermediate_file_path, load, toliststr
 from .image_base import ImageBaseDataset
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
 
 
 def _extract_option(pred):

@@ -1,8 +1,10 @@
-from ...smp import *
 import json
-import sympy
 import re
+
 import pandas as pd
+import sympy
+
+from vlmeval.smp import load
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import re
 import json
-from typing import Dict, Any, Union, List
+import re
+from typing import Any, Dict, List, Union
+
 import nltk
 import nltk.data
 from nltk.corpus import words

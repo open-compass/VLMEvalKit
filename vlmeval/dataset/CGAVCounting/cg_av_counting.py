@@ -1,9 +1,19 @@
+import json
+import os
+import os.path as osp
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import portalocker
 from huggingface_hub import snapshot_download
-from ...smp import *
+from PIL import Image
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5, modelscope_flag_set)
+from ..utils.cgbench import post_process, unzip_hf_zip
 from ..video_base import VideoBaseDataset
-from ..utils import build_judge, DEBUG_MESSAGE, cgbench
-from .utils import *
-from ...utils import track_progress_rich
+from .utils import get_timestampes, rating_func
 
 
 class CGAVCounting(VideoBaseDataset):
@@ -32,20 +42,20 @@ class CGAVCounting(VideoBaseDataset):
     def supported_datasets(cls):
         return ["CGAVCounting"]
 
-    def frame_paths_clue(self, video,timestamp_list):
+    def frame_paths_clue(self, video, timestamp_list):
         frame_root = osp.join(self.frame_root, video)
         os.makedirs(frame_root, exist_ok=True)
         return [osp.join(frame_root, self.frame_tmpl_clue.format(i)) for i in timestamp_list]
 
-    def save_video_frames_clue(self, video,uid,timestamp_list):
+    def save_video_frames_clue(self, video, uid, timestamp_list):
         if type(uid) is not str:
             uid = str(uid)
         import decord
-        frame_paths = self.frame_paths_clue(uid,timestamp_list)
+        frame_paths = self.frame_paths_clue(uid, timestamp_list)
         flag = np.all([osp.exists(p) for p in frame_paths])
         if flag:
             frame = Image.open(frame_paths[0])
-            return frame_paths,frame.width,frame.height
+            return frame_paths, frame.width, frame.height
         vid_path = osp.join(self.data_root, video)
         vid = decord.VideoReader(vid_path)
         frames = []
@@ -66,12 +76,12 @@ class CGAVCounting(VideoBaseDataset):
             for im, pth in zip(frames, frame_paths):
                 if not osp.exists(pth):
                     im.save(pth)
-        return frame_paths,frames[0].width,frames[0].height
+        return frame_paths, frames[0].width, frames[0].height
 
-    def format_time(self,t):
+    def format_time(self, t):
         return f"{t:.2f}"
 
-    def get_output_filename(self,item):
+    def get_output_filename(self, item):
         video_id = Path(item["video"]).stem
         start_str = self.format_time(item["query_interval"][0])
         end_str = self.format_time(item["query_interval"][1])
@@ -110,7 +120,7 @@ class CGAVCounting(VideoBaseDataset):
                         data_file = pd.DataFrame(json.load(f))
 
                     data_file = data_file.assign(index=range(len(data_file)))
-                    data_file["video_uid"] = data_file["video"].replace(".mp4","")
+                    data_file["video_uid"] = data_file["video"].replace(".mp4", "")
                     data_file["video"] = data_file["video"].apply(lambda x: f"cg_videos_720p/{x}")
 
                     data_file["ref_video_path"] = ""
@@ -165,12 +175,12 @@ class CGAVCounting(VideoBaseDataset):
 
         return dict(data_file=tsv_file, root=dataset_path)
 
-    def build_prompt(self, line,video_llm):
+    def build_prompt(self, line, video_llm):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
         task_mode = line["task_mode"]
-        assert task_mode in ["long_acc","clue_acc","ref_acc"]
+        assert task_mode in ["long_acc", "clue_acc", "ref_acc"]
         if task_mode == "long_acc":
             user_prompt = ""
             message = []
@@ -245,7 +255,7 @@ class CGAVCounting(VideoBaseDataset):
                 )
                 message.append(
                     dict(type="text", value=f"There are {len(image_paths)} frames in the size of {width}x{height}"))
-                for idx,im in enumerate(image_paths):
+                for idx, im in enumerate(image_paths):
                     message.append(dict(type="text", value=f"Frame{idx + 1}:"))
                     message.append(dict(type="image", value=im))
                 user_prompt += (
@@ -271,13 +281,13 @@ class CGAVCounting(VideoBaseDataset):
                     for clue in clue_:
                         if clue["timestamp"] not in clue_timestamp_list:
                             clue_timestamp_list.append(clue["timestamp"])
-                image_paths,width,height = self.save_video_frames_clue(
-                    video_path, uid=line["video_uid"],timestamp_list=clue_timestamp_list
+                image_paths, width, height = self.save_video_frames_clue(
+                    video_path, uid=line["video_uid"], timestamp_list=clue_timestamp_list
                 )
                 message.append(dict(
                     type="text",
                     value=f"There are {len(image_paths)} frames in the size of {width}x{height}"))
-                for idx,im in enumerate(image_paths):
+                for idx, im in enumerate(image_paths):
                     message.append(dict(type="text", value=f"Frame{idx + 1}:"))
                     message.append(dict(type="image", value=im))
                 user_prompt += (

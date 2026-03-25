@@ -1,10 +1,14 @@
+import logging
+import string
+import warnings
+
+import pandas as pd
 import torch
 from PIL import Image
-from abc import abstractproperty
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-import warnings
 
 
 class Mantis(BaseModel):
@@ -21,9 +25,10 @@ class Mantis(BaseModel):
     def __init__(self, model_path='TIGER-Lab/Mantis-8B-siglip-llama3', **kwargs):
         assert model_path is not None
         try:
-            from mantis.models.mllava import LlavaForConditionalGeneration, MLlavaProcessor
+            from mantis.models.conversation import conv_mllava_v1 as default_conv
+            from mantis.models.conversation import conv_templates
             from mantis.models.mfuyu import MFuyuForCausalLM, MFuyuProcessor
-            from mantis.models.conversation import conv_mllava_v1 as default_conv, conv_templates
+            from mantis.models.mllava import LlavaForConditionalGeneration, MLlavaProcessor
         except Exception as e:
             logging.critical(
                 "Mantis is not installed. Please install Mantis to use this model.Please use 'pip install "
@@ -45,7 +50,7 @@ class Mantis(BaseModel):
         # flash_attn has a bug that says: ERROR Error query and key must have the same dtype in generating
 
         try:
-            import flash_attn
+            import flash_attn  # noqa: F401
             best_fit_attn_implementation = 'flash_attention_2'
         except ImportError:
             best_fit_attn_implementation = 'eager'

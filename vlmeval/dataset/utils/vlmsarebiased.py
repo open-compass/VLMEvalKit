@@ -1,8 +1,10 @@
 from collections import defaultdict
-from typing import Any, Dict, Optional
-from ...smp import load, dump
-from tqdm import tqdm
+from typing import Any
+
 import pandas as pd
+from tqdm import tqdm
+
+from vlmeval.smp import load
 
 
 def vlms_are_biased_process_results(org_file: str) -> list[dict[str, Any]]:

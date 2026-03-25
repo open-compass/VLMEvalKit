@@ -5,14 +5,16 @@ This module provides functions to evaluate puzzle solutions from language models
 including parsing model outputs, checking perception accuracy, and verifying solutions.
 """
 
-import json
 import argparse
+import json
 import os
 import re
 import sys
-from tqdm import tqdm
+
 import numpy as np
 from json_repair import repair_json
+from tqdm import tqdm
+
 from . import puzzles
 from .puzzles import common_get_game_factory as get_game_factory
 

@@ -1,16 +1,15 @@
-import os
 import ast
-import pandas as pd
-import numpy as np
-
-from PIL import Image
+import os
 from collections import defaultdict
-from huggingface_hub import snapshot_download
 
+import numpy as np
+import pandas as pd
+from huggingface_hub import snapshot_download
+from PIL import Image
+
+from ..smp import dump, get_cache_path, load, modelscope_flag_set, toliststr
 from .image_vqa import ImageVQADataset
 from .utils.spatial_bench.tools.utils import Point2DParser
-from ..smp.file import load, dump
-from ..smp.misc import toliststr, get_cache_path, modelscope_flag_set
 
 
 class RefSpatialBench(ImageVQADataset):

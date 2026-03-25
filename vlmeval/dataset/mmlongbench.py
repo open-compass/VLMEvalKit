@@ -1,13 +1,24 @@
-import re
+import base64
+import io
+import logging
 import math
+import os
+import os.path as osp
+import re
 from urllib.request import urlopen
-from PIL import Image, ImageDraw, ImageFont
+
+import pandas as pd
 import torchvision.transforms as transforms
+from PIL import Image, ImageDraw, ImageFont
+from tqdm import tqdm
 
 from vlmeval.dataset.utils import build_judge, levenshtein_distance
-from vlmeval.smp import *
+from vlmeval.smp import (decode_base64_to_image_file, dump, encode_image_to_base64,
+                         get_intermediate_file_path, get_logger, listinstr, load, read_ok,
+                         toliststr)
 from .image_base import ImageBaseDataset
-from ..smp.file import get_intermediate_file_path
+
+logger = get_logger(__name__)
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -120,7 +131,7 @@ def is_float_equal(reference, prediction, include_percentage: bool = False, is_c
     reference = float(str(reference).strip().rstrip('%').strip())
     try:
         prediction = float(str(prediction).strip().rstrip('%').strip())
-    except:
+    except Exception:
         return False
 
     if include_percentage:
@@ -299,14 +310,14 @@ def eval_score(gt, pred, answer_type):
     if answer_type == 'Int':
         try:
             gt, pred = int(gt), int(float(pred))
-        except:
+        except Exception:
             pred = ''
         score = (gt == pred)
     elif answer_type == 'Float':
         try:
             gt = float(get_clean_string(str(gt)))
             pred = float(get_clean_string(str(pred)))
-        except:
+        except Exception:
             pred = ''
         score = is_float_equal(gt, pred, include_percentage=True, is_close=True)
     elif answer_type == 'Str':
@@ -355,7 +366,7 @@ def MMLongBench_auxeval(model, line):
             log += 'Succeed'
             try:
                 pred = res.split('Answer format:')[0].split('Extracted answer:')[1].strip()
-            except:
+            except Exception:
                 pred = ''
             return dict(log=log, res=res, pred=pred)
     log += 'All 5 retries failed.\n'
@@ -378,7 +389,7 @@ def MMLongBench_acc(result_file):
         item = data.iloc[i]
         try:
             score = eval_score(item['answer'], item['pred'], item['answer_format'])
-        except:
+        except Exception:
             score = 0.0
         score_list.append(score)
         overall_score += score
@@ -536,7 +547,6 @@ class MMLongBench(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        logger = get_logger('Evaluation')
         model = judge_kwargs['model']
 
         storage = get_intermediate_file_path(eval_file, f'_{model}')
