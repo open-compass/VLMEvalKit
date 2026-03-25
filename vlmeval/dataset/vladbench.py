@@ -549,7 +549,7 @@ class VLADBench(ImageBaseDataset):
 
     def __init__(self, *args, **kwargs):
         if self.IMAGE_DIR is None:
-            self.IMAGE_DIR = get_vladbench_image_dir(self.IMAGE_DIR)
+            self.IMAGE_DIR = get_vladbench_image_dir(None)
         super().__init__(*args, **kwargs)
 
     def build_prompt(self, line: Union[int, pd.Series]) -> List[Dict[str, str]]:
