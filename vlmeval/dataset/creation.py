@@ -1,13 +1,14 @@
 # flake8: noqa
+import copy
+import os
+import os.path as osp
 import re
+from collections import defaultdict
 
-import numpy as np
 import pandas as pd
 
-from vlmeval.smp import dump, load
-from vlmeval.smp.file import get_intermediate_file_path
-from vlmeval.smp.misc import listinstr
-from vlmeval.smp.vlm import decode_base64_to_image_file, read_ok, toliststr
+from vlmeval.smp import (decode_base64_to_image_file, dump, get_intermediate_file_path, listinstr,
+                         load, read_ok, toliststr)
 from ..utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
@@ -15,7 +16,8 @@ from .utils import DEBUG_MESSAGE, build_judge
 prompt_dict = {}
 prompt_dict['LiveMMBench_Creation'] = {
     # Subjective Judge [GPT-4o reference]
-    'subjective':"""
+    'subjective':
+    """
 Please act as an impartial judge and evaluate the quality of two responses provided by AI assistants to the user prompt.
 
 Your task is to carefully assess two responses based on provided instructions and evaluation criteria. After evaluating both responses, determine which response features better quality and better meets the criteria. If both responses are similar or nearly identical in quality, you should indicate a tie. Avoid position bias toward the first or second response.
@@ -45,10 +47,11 @@ Your output should follow the following format (CONCLUSION should be one of the 
 
 Final Conclusion: [[CONCLUSION]]
 Reasoning Process: [REASONING]\n
-""",
+""",  # noqa: E501
 
     # Criteria Alignment w/o GT
-    'objective_without_gt':"""
+    'objective_without_gt':
+    """
 Please act as an impartial judge and evaluate the **Criteria Alignment** of the two responses provided by AI assistants to the user prompt. The responses were generated based on the provided instructions and visual input from images.
 
 Suggested Steps for Evaluation:
@@ -66,10 +69,11 @@ Your output should evaluate alignment scores of each response and end with a con
 
 Response A Alignment Score: X/10
 Response B Alignment Score: Y/10\n
-""",
+""",  # noqa: E501
 
     # Criteria Alignment w. GT
-    'objective_with_gt':"""
+    'objective_with_gt':
+    """
 Please act as an impartial judge and evaluate the **Criteria Alignment** of the two responses provided by AI assistants to the user prompt. The responses were generated based on the provided instructions and visual input from images. There is also a ground truth corresponding to the instructions provided for reference.
 Take this context into account when making your judgment.
 
@@ -89,12 +93,13 @@ Your output should evaluate alignment scores of each response and end with a con
 
 Response A Alignment Score: X/10
 Response B Alignment Score: Y/10\n
-""",
+""",  # noqa: E501
 }
 
 prompt_dict['Creation_MMBench'] = {
     # Subjective Judge [GPT-4o reference, with image]
-    'subjective':"""
+    'subjective':
+    """
 Please act as an impartial judge and evaluate the quality of the responses provided by two AI assistants to the user prompt below, considering both the provided criteria and the image.
 
 Your task is to carefully assess each response based on how well it meets the evaluation criteria, incorporating the visual context from the image. The criteria should be the primary basis for your judgment, with the image serving to complement and inform your analysis.
@@ -155,10 +160,11 @@ Your output format should end like this:
 Assistant A Evaluation: [qualitative comment]
 Assistant B Evaluation: [qualitative comment]
 Final Verdict is: [[VERDICT]]
-""",
+""",  # noqa: E501
 
-##### For Visual Factuality
-    'objective_without_gt':"""
+    ##### For Visual Factuality
+    'objective_without_gt':
+    """
 Please act as an impartial judge and evaluate the **Visual Factuality** of the responses provided by two AI assistants to the user prompt displayed below.
 
 The responses were generated based on the provided instructions and visual input from images. Take this context into account when making your judgment.
@@ -193,9 +199,9 @@ Your output should evaluate visual factuality scores for each assistant and end 
 
 Response A Visual Factuality Score: X/10
 Response B Visual Factuality Score: Y/10
-""",
-
-    'objective_with_gt':"""
+""",  # noqa: E501
+    'objective_with_gt':
+    """
 Please act as an impartial judge and evaluate the **Visual Factuality** of the responses provided by two AI assistants to the user prompt displayed below.
 
 The responses were generated based on the provided instructions and visual input from images.
@@ -237,7 +243,7 @@ Your output should evaluate visual factuality scores for each assistant and end 
 
 Response A Visual Factuality Score: X/10
 Response B Visual Factuality Score: Y/10
-""",
+""",  # noqa: E501
 }
 
 creation_mmbench_category_dict = {
@@ -303,12 +309,14 @@ creation_mmbench_category_dict = {
 
 }
 
+
 def is_criteria_valid(criteria):
     import re
     for value in criteria.values():
         if value == '\\' or value == '' or not re.search('[a-zA-Z]', value):
             return False
     return True
+
 
 key_mapping = {
     "sub_parse_ok": "preference_parse_ok",
@@ -319,6 +327,7 @@ key_mapping = {
     "obj_score": "visual_factuality_score",
     "obj_ref_score": "visual_factuality_ref_score"
 }
+
 
 def rename_keys(data, key_mapping):
     if isinstance(data, dict):
@@ -336,7 +345,7 @@ def rename_keys(data, key_mapping):
 def build_prompt(line, dataset_name):
     try:
         criteria = eval(line['criteria'])
-    except:
+    except Exception:
         criteria = line['criteria']
 
     if isinstance(criteria, dict):
@@ -359,10 +368,10 @@ def build_prompt(line, dataset_name):
         instructions=line['question'],
         criteria=criteria['subjective'],
         reference_answer_by_gpt4o=line['reference_answer_by_gpt4o'],
-        prediction=line['prediction']
-    )
+        prediction=line['prediction'])
     if 'objective' in criteria:
-        if 'ground_truth' in line and (not pd.isna(line['ground_truth'])) and line['ground_truth'] != '':
+        if 'ground_truth' in line and (not pd.isna(
+                line['ground_truth'])) and line['ground_truth'] != '':
             prompts['objective'] = prompt_dict[dataset_name]['objective_with_gt'].format(
                 instructions=line['question'],
                 criteria=criteria['objective'],
@@ -402,10 +411,7 @@ def extract_subjective(inp, dataset_name):
         'LiveMMBench_Creation': 'FINAL CONCLUSION:',
         'Creation_MMBench': 'FINAL VERDICT IS:'
     }
-    cands = {
-        'A>>B', 'A>B', 'A=B', 'B>A', 'B>>A',
-        'B<<A', 'B<A', 'B=A', 'A<B', 'A<<B'
-    }
+    cands = {'A>>B', 'A>B', 'A=B', 'B>A', 'B>>A', 'B<<A', 'B<A', 'B=A', 'A<B', 'A<<B'}
 
     lines = inp.split('\n')
     for line in lines:
@@ -444,32 +450,37 @@ def extract_objective(inp, dataset_name):
             rem = rem.split('/')[0].strip()
             try:
                 a_score = float(rem)
-            except:
+            except Exception:
                 continue
         elif line.startswith(mapping_dict[dataset_name]['B']):
             rem = line.split(mapping_dict[dataset_name]['B'])[1].strip()
             rem = rem.split('/')[0].strip()
             try:
                 b_score = float(rem)
-            except:
+            except Exception:
                 continue
-    if a_score is not None and b_score is not None and (0 <= a_score <= 10) and (0 <= b_score <= 10):
+    if (a_score is not None and b_score is not None and (0 <= a_score <= 10)
+            and (0 <= b_score <= 10)):
         return f'{a_score}|{b_score}'
     else:
         return None
 
 
 def Creation_MMBench_extract(judge_response_pkl, org_data, dataset_name):
-    import copy as cp
-    data = cp.deepcopy(org_data)
+    data = copy.deepcopy(org_data)
     data['subjective_judge'] = [judge_response_pkl[idx]['subjective'] for idx in data['index']]
-    data['objective_judge'] = [judge_response_pkl[idx].get('objective', None) for idx in data['index']]
-    data['subjective_score'] = [extract_subjective(x, dataset_name) for x in data['subjective_judge']]
+    data['objective_judge'] = [
+        judge_response_pkl[idx].get('objective', None) for idx in data['index']
+    ]
+    data['subjective_score'] = [
+        extract_subjective(x, dataset_name) for x in data['subjective_judge']
+    ]
     data['objective_score'] = [extract_objective(x, dataset_name) for x in data['objective_judge']]
     return data
 
 
 def get_dimension_rating(score_file_name, rev=False):
+
     def get_pw_score(text):
         if 'A<<B' in text or 'B>>A' in text:
             return 2
@@ -485,13 +496,21 @@ def get_dimension_rating(score_file_name, rev=False):
             return None
 
     score_file = load(score_file_name)
-    base_dict = {'sub_valid': 0, 'sub_missing': 0, 'sub_score': [], 'obj_valid': 0, 'obj_missing': 0, 'obj_ref_score': [], 'obj_score': []}
-    return_dict = {'overall': cp.deepcopy(base_dict)}
+    base_dict = {
+        'sub_valid': 0,
+        'sub_missing': 0,
+        'sub_score': [],
+        'obj_valid': 0,
+        'obj_missing': 0,
+        'obj_ref_score': [],
+        'obj_score': []
+    }
+    return_dict = {'overall': copy.deepcopy(base_dict)}
 
     for idx, item in score_file.iterrows():
         task_name = item['task_name']
         if task_name not in return_dict.keys():
-            return_dict[task_name] = cp.deepcopy(base_dict)
+            return_dict[task_name] = copy.deepcopy(base_dict)
 
         if not pd.isna(item['subjective_score']):
             for k in ['overall', task_name]:
@@ -526,7 +545,8 @@ def get_dimension_rating(score_file_name, rev=False):
         assert len(dist) <= 5 and sum(list(dist.values())) == v['sub_valid']
         if v['sub_valid']:
             res['sub_dist'] = {k: dist[k] / v['sub_valid'] for k in [-2, -1, 0, 1, 2]}
-            res['sub_reward'] = (-100 * dist[-2] - 50 * dist[-1] + 50 * dist[1] + 100 * dist[2]) / v['sub_valid']
+            res['sub_reward'] = (-100 * dist[-2] - 50 * dist[-1] + 50 * dist[1] +
+                                 100 * dist[2]) / v['sub_valid']
 
         if v['obj_valid'] + v['obj_missing']:
             res['obj_parse_ok'] = v['obj_valid'] / (v['obj_valid'] + v['obj_missing'])
@@ -562,7 +582,8 @@ def merge_dual(raw, raw_dual, dataset_name):
         assert len(dist) <= 5 and sum(list(dist.values())) == v['sub_valid']
         res['sub_dist'] = {k: dist[k] / v['sub_valid'] for k in [-2, -1, 0, 1, 2]}
         res['win_rate'] = (dist[2] + dist[1]) / v['sub_valid'] * 100
-        res['sub_reward'] = (-100 * dist[-2] - 50 * dist[-1] + 50 * dist[1] + 100 * dist[2]) / v['sub_valid']
+        res['sub_reward'] = (-100 * dist[-2] - 50 * dist[-1] + 50 * dist[1] +
+                             100 * dist[2]) / v['sub_valid']
 
         if v['obj_valid'] + v['obj_missing']:
             res['obj_parse_ok'] = v['obj_valid'] / (v['obj_valid'] + v['obj_missing'])
@@ -579,7 +600,15 @@ def merge_dual(raw, raw_dual, dataset_name):
                     break
                 if k in category_list:
                     if main_category_name not in category_raw.keys():
-                        category_raw[main_category_name] = {'sub_valid': 0, 'sub_missing': 0, 'sub_score': [], 'obj_valid': 0, 'obj_missing': 0, 'obj_ref_score': [], 'obj_score': []}
+                        category_raw[main_category_name] = {
+                            'sub_valid': 0,
+                            'sub_missing': 0,
+                            'sub_score': [],
+                            'obj_valid': 0,
+                            'obj_missing': 0,
+                            'obj_ref_score': [],
+                            'obj_score': []
+                        }
                     category_raw[main_category_name]['sub_valid'] += v['sub_valid']
                     category_raw[main_category_name]['sub_missing'] += v['sub_missing']
                     category_raw[main_category_name]['sub_score'].extend(v['sub_score'])
@@ -601,7 +630,8 @@ def merge_dual(raw, raw_dual, dataset_name):
         assert len(dist) <= 5 and sum(list(dist.values())) == v['sub_valid']
         res['sub_dist'] = {k: dist[k] / v['sub_valid'] for k in [-2, -1, 0, 1, 2]}
         res['win_rate'] = (dist[2] + dist[1]) / v['sub_valid'] * 100
-        res['sub_reward'] = (-100 * dist[-2] - 50 * dist[-1] + 50 * dist[1] + 100 * dist[2]) / v['sub_valid']
+        res['sub_reward'] = (-100 * dist[-2] - 50 * dist[-1] + 50 * dist[1] +
+                             100 * dist[2]) / v['sub_valid']
 
         if v['obj_valid'] + v['obj_missing']:
             res['obj_parse_ok'] = v['obj_valid'] / (v['obj_valid'] + v['obj_missing'])
@@ -624,9 +654,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
         'LiveMMBench_Creation': '',
         'Creation_MMBench': 'https://opencompass.openxlab.space/utils/VLMEval/Creation_MMBench.tsv'
     }
-    DATASET_MD5 = {
-        'Creation_MMBench':'870c0332a9c6a169d0ac9b8574c245fe'
-    }
+    DATASET_MD5 = {'Creation_MMBench': '870c0332a9c6a169d0ac9b8574c245fe'}
 
     # It returns a dictionary
     def dump_image(self, line):
@@ -643,7 +671,9 @@ class CreationMMBenchDataset(ImageBaseDataset):
                     tgt_path.append(path)
             else:
                 if 'image_path' in line:
-                    assert isinstance(line['image_path'], str) or (isinstance(line['image_path'], list) and len(line['image_path']) == 1)
+                    assert isinstance(line['image_path'],
+                                      str) or (isinstance(line['image_path'], list)
+                                               and len(line['image_path']) == 1)
                     if isinstance(line['image_path'], list):
                         line['image_path'] = line['image_path'][0]
                     tgt_path = osp.join(self.img_root, line['image_path'])
@@ -689,14 +719,17 @@ class CreationMMBenchDataset(ImageBaseDataset):
             judge_kwargs['max_tokens'] = 4096
 
             model = build_judge(model=model, **judge_kwargs)
-            assert model.working(), ('CreationMMBench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            assert model.working(), ('CreationMMBench evaluation requires a working OPENAI API\n' +
+                                     DEBUG_MESSAGE)
 
             prompts = [build_prompt(line, self.dataset_name) for line in lines]
 
             indices = [line['index'] for line in lines]
 
             if listinstr(['Creation_MMBench'], self.dataset_name):
-                no_relative_image_list = [self.dump_image(line) for idx, line in self.data.iterrows()]
+                no_relative_image_list = [
+                    self.dump_image(line) for idx, line in self.data.iterrows()
+                ]
                 assert len(no_relative_image_list) == len(lines)
                 image_list = []
                 for subimage_list in no_relative_image_list:

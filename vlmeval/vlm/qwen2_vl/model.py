@@ -10,7 +10,7 @@ from huggingface_hub import snapshot_download
 from transformers import StoppingCriteria
 
 from vlmeval.dataset import DATASET_MODALITY
-from vlmeval.smp.misc import get_cache_path, get_gpu_memory, listinstr
+from vlmeval.smp import get_cache_path, get_gpu_memory, listinstr
 from ..base import BaseModel
 from .prompt import Qwen2VLPromptMixin
 

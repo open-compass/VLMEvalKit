@@ -14,7 +14,7 @@ import pandas as pd
 import requests
 from huggingface_hub import snapshot_download
 
-from vlmeval.smp.file import dump, get_cache_path, load
+from vlmeval.smp import dump, get_cache_path, load
 from .image_base import ImageBaseDataset
 
 # Scoring prompt templates

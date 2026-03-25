@@ -4,8 +4,8 @@ import pandas as pd
 import torch
 from PIL import Image
 
-from ..dataset import DATASET_MODALITY, DATASET_TYPE
-from ..smp.misc import listinstr
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import listinstr
 from .base import BaseModel
 
 

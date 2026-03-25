@@ -1,4 +1,3 @@
-# flake8: noqa
 import json
 
 import numpy as np
@@ -15,7 +14,7 @@ Your task is to compare the predicted answer with the correct answer and determi
 - Focus on the meaningful match between the predicted answer and the correct answer.
 - Consider synonyms or paraphrases as valid matches.
 - Evaluate the correctness of the prediction compared to the answer.
-"""
+"""  # noqa: E501
 
 USER_CAL_SCORE_PROMPT = """Please evaluate the following video-based question-answer pair:
 
@@ -27,7 +26,7 @@ Provide your evaluation only as a yes/no and score where the score is an integer
 Please generate the response in the form of a Python dictionary string with keys 'pred' and 'score', where value of 'pred' is  a string of 'yes' or 'no' and value of 'score' is in INTEGER, not STRING.
 DO NOT PROVIDE ANY OTHER OUTPUT TEXT OR EXPLANATION. Only provide the Python dictionary string.
 For example, your response should look like this: \{'pred': 'yes', 'score': 4.8\}.
-"""
+"""  # noqa: W605, E501
 
 SYSTEM_GENER_PRED_PROMPT = """You are an intelligent chatbot designed for providing accurate answers to questions related to the content based on a detailed description of a video or image.
 Here's how you can accomplish the task:
@@ -36,15 +35,14 @@ Here's how you can accomplish the task:
 - Read the detailed description carefully.
 - Answer the question only based on the detailed description.
 - The answer should be a short sentence or phrase.
-"""
+"""  # noqa: E501
 
 USER_GENER_PRED_PROMPT = """Please provide accurate answers to questions related to the content based on a detailed description of a video or image:
 
 detailed description: {pred_cap}
 question: {q}
 
-DO NOT PROVIDE ANY OTHER OUTPUT TEXT OR EXPLANATION. Only provide short but accurate answer."""
-
+DO NOT PROVIDE ANY OTHER OUTPUT TEXT OR EXPLANATION. Only provide short but accurate answer."""  # noqa: E501
 
 VDC_DIMENSIONS = {
     'short': ['short'],
@@ -80,7 +78,7 @@ def get_dimension_rating(data_path):
                 try:
                     # If that fails, try eval (safer than literal_eval for this case)
                     return eval(score_dict)
-                except:
+                except Exception:
                     print(f"Failed to parse score_dict: {score_dict}")
                     return None
         return None
@@ -89,7 +87,8 @@ def get_dimension_rating(data_path):
         caption_type = data.iloc[i]['caption_type'].lower()  # Convert to lowercase
         score_dict = parse_score_dict(data.iloc[i]['score'])
 
-        if score_dict and isinstance(score_dict, dict) and 'pred' in score_dict and 'score' in score_dict:
+        if score_dict and isinstance(score_dict,
+                                     dict) and 'pred' in score_dict and 'score' in score_dict:
             score = score_dict['score']
             is_correct = 1 if score_dict['pred'].lower() == 'yes' else 0
         else:
@@ -105,13 +104,13 @@ def get_dimension_rating(data_path):
                 coarse_acc[caption_type].append(is_correct)
                 coarse_acc['overall'].append(is_correct)
 
-    coarse_valid = {k: f'{np.mean([x for x in v if x >= 0]):.2f}' for k, v in coarse_rating.items()}
+    coarse_valid = {
+        k: f'{np.mean([x for x in v if x >= 0]):.2f}'
+        for k, v in coarse_rating.items()
+    }
     coarse_accuracy = {k: f'{np.mean(v):.2f}' if v else '0.00' for k, v in coarse_acc.items()}
 
-    return dict(
-        coarse_valid=coarse_valid,
-        coarse_accuracy=coarse_accuracy
-    )
+    return dict(coarse_valid=coarse_valid, coarse_accuracy=coarse_accuracy)
 
 
 def prepare_response_prompt(item):
@@ -154,6 +153,6 @@ def prepare_score_prompt(item):
             Provide your evaluation only as a yes/no and score where the score is an integer value between 0 and 5, with 5 indicating the highest meaningful match.
             Please generate the response in the form of a Python dictionary string with keys 'pred' and 'score', where value of 'pred' is  a string of 'yes' or 'no' and value of 'score' is in INTEGER, not STRING.
             DO NOT PROVIDE ANY OTHER OUTPUT TEXT OR EXPLANATION. Only provide the Python dictionary string.
-                For example, your response should look like this: {{'pred': 'yes', 'score': 4.8}}."""
+                For example, your response should look like this: {{'pred': 'yes', 'score': 4.8}}."""  # noqa: E501
 
     return prompt

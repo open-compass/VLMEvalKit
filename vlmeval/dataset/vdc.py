@@ -1,7 +1,6 @@
 # flake8: noqa
 import ast
 import copy as cp
-import json
 import os
 import os.path as osp
 import random
@@ -12,11 +11,10 @@ import numpy as np
 import pandas as pd
 from huggingface_hub import snapshot_download
 
-from vlmeval.smp import dump, load, md5
-from vlmeval.smp.file import get_cache_path, get_file_extension, get_intermediate_file_path
-from vlmeval.smp.misc import extract_json_objects
+from vlmeval.smp import (dump, extract_json_objects, get_cache_path, get_file_extension,
+                         get_intermediate_file_path, load, md5)
 from vlmeval.utils import track_progress_rich
-from .utils import DEBUG_MESSAGE, build_judge
+from .utils import build_judge
 from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -304,7 +302,7 @@ class VDC(VideoBaseDataset):
             jsons = list(extract_json_objects(s))
             assert len(jsons) == 1
             return jsons[0]
-        except:
+        except Exception:
             if '{' in s and s.find('{') == s.rfind('{'):
                 sub_str = s[s.find('{') + 1:].strip()
                 lines = sub_str.split('\n')

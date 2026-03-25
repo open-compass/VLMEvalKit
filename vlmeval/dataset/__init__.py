@@ -5,10 +5,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp import dump, load
-from vlmeval.smp.file import LMUDataRoot, get_intermediate_file_path
-from vlmeval.smp.misc import localize_df
-from vlmeval.smp.vlm import toliststr
+from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, localize_df, toliststr
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
 from .CGAVCounting.cg_av_counting import CGAVCounting
@@ -137,7 +134,6 @@ from .vcr import VCRDataset
 from .vcrbench import VCRBench
 from .vdc import VDC
 from .video_concat_dataset import ConcatVideoDataset
-from .video_dataset_config import supported_video_datasets
 from .video_holmes import Video_Holmes
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
 from .videomme import VideoMME
@@ -155,6 +151,8 @@ from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
 from .xstest import XSTestDataset
+
+from .video_dataset_config import supported_video_datasets  # isort: skip
 
 
 class ConcatDataset(ImageBaseDataset):

@@ -1,5 +1,5 @@
 # flake8: noqa
-from vlmeval.smp.misc import cn_string
+from vlmeval.smp import cn_string
 
 EVAL_TMPL = """
 You are an AI assistant tasked with evaluating whether a model's response correctly answers a given visual-language question.

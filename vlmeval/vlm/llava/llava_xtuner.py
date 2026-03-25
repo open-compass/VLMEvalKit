@@ -9,7 +9,7 @@ from huggingface_hub import snapshot_download
 from PIL import Image
 
 from vlmeval.dataset import DATASET_TYPE
-from vlmeval.smp.misc import cn_string, get_cache_path
+from vlmeval.smp import cn_string, get_cache_path
 from ..base import BaseModel
 
 

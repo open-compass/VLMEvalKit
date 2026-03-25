@@ -1,16 +1,11 @@
-# flake8: noqa
+import json
 import os
 import os.path as osp
 import re
 
 import pandas as pd
 
-from vlmeval.dataset.utils.mmif.function_and_compare import (check_image_aspect_ratio,
-                                                             check_image_height, check_image_width,
-                                                             get_checkers, parse_constraint)
-from vlmeval.smp.file import dump, get_intermediate_file_path, load
-from vlmeval.smp.log import get_logger
-from vlmeval.smp.misc import d2df
+from vlmeval.smp import dump, get_intermediate_file_path, get_logger, load, toliststr
 from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
@@ -111,13 +106,13 @@ summary of your evaluation.
 Your output must strictly follow this format:
 Reasoning: ...
 Summary: "True" / "False".
-"""
+"""  # noqa: E501
     return pt
 
 
 # <<< re >>>
 # extract score from gpt_resp
-# format: Score of instruction: x/1, Score of constraint_1: y/1, Score of constraint_2: z/1, ..., Score of constraint_n: w/1.
+# format: Score of instruction: x/1, Score of constraint_1: y/1, ..., Score of constraint_n: w/1.
 # return: score_dict {'instruction': x/1, 'constraint_1': y/1,
 # 'constraint_2': z/1, ..., 'constraint_n': w/1}
 
@@ -187,7 +182,7 @@ def extract_score_from_cmp_gpt_resp(response_text):
         raise ValueError("No 'summary' found in response.")
 
     # Step 2: Slice the string after 'summary:' and extract value
-    after_summary = response_text[summary_idx + len("summary") :]
+    after_summary = response_text[summary_idx + len("summary"):]
 
     # Match true/false ignoring markdown and formatting
     match = re.search(r"\b(true|false)\b", after_summary, re.IGNORECASE)

@@ -10,7 +10,7 @@ from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
 
 from vlmeval.dataset import DATASET_TYPE
-from vlmeval.smp.misc import cn_string, listinstr
+from vlmeval.smp import cn_string, listinstr
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)

@@ -10,8 +10,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp.file import dump, get_intermediate_file_path, load
-from vlmeval.smp.misc import d2df
+from vlmeval.smp import d2df, dump, get_intermediate_file_path, load
 
 # should be the same as  FAIL_MSG definded in vlmeval/inference.py
 FAIL_MSG = 'Failed to obtain answer via API.'

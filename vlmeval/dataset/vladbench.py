@@ -8,9 +8,7 @@ import pandas as pd
 from huggingface_hub import snapshot_download
 
 from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp import misc
-from vlmeval.smp.file import dump, get_intermediate_file_path, load
-from vlmeval.smp.misc import toliststr
+from vlmeval.smp import dump, get_intermediate_file_path, load, misc, toliststr
 
 
 def weighted_row_sum(data, third_rows, weight_col=1, start_col=2):

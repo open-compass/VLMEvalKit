@@ -1,7 +1,6 @@
 import re
 
-from ..smp.file import dump, get_intermediate_file_path, load
-from ..smp.misc import d2df
+from vlmeval.smp import d2df, dump, get_intermediate_file_path, load
 from .image_base import ImageBaseDataset
 
 

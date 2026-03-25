@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.metrics import f1_score
 
 from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp.file import dump, get_intermediate_file_path, load
+from vlmeval.smp import dump, get_intermediate_file_path, load
 
 
 def format_model_answer_tolist(model_answer, task_gt):

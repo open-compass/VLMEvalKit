@@ -7,8 +7,8 @@ import pandas as pd
 import torch
 from PIL import Image
 
-from ..dataset import DATASET_TYPE
-from ..smp.misc import cn_string, listinstr
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string, listinstr
 from .base import BaseModel
 
 

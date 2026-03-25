@@ -13,8 +13,7 @@ from huggingface_hub import snapshot_download
 from PIL import Image
 from tqdm import tqdm
 
-from ..smp.file import LMUDataRoot, load
-from ..smp.misc import get_cache_path, modelscope_flag_set
+from vlmeval.smp import LMUDataRoot, get_cache_path, load, modelscope_flag_set
 from .video_base import VideoBaseDataset
 
 

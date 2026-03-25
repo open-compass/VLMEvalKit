@@ -5,8 +5,7 @@ import os
 import torch
 from huggingface_hub import snapshot_download
 
-from vlmeval.smp.file import download_file, dump, load
-from vlmeval.smp.misc import listinstr
+from vlmeval.smp import download_file, dump, listinstr, load
 from ..base import BaseModel
 
 

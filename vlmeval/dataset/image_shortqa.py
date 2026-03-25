@@ -4,8 +4,8 @@ import warnings
 
 import pandas as pd
 
-from ..smp.file import dump, get_intermediate_file_path, load
-from ..utils import track_progress_rich
+from vlmeval.smp import dump, get_intermediate_file_path, load
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
 from .utils.multiple_choice import eval_circular_group, eval_vanilla, report_acc

@@ -1,6 +1,7 @@
 import logging
 import re
 import string
+from urllib.request import urlopen
 
 import numpy as np
 import pandas as pd
@@ -10,8 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoModel, AutoTokenizer
 
 from vlmeval.dataset import DATASET_TYPE
-from vlmeval.smp.misc import listinstr
-from vlmeval.smp.vlm import urlopen
+from vlmeval.smp import listinstr
 from ..base import BaseModel
 
 pattern = re.compile(r'[A-Z]')

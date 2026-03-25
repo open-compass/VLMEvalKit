@@ -3,8 +3,7 @@ import os
 
 from huggingface_hub import snapshot_download
 
-from ..smp.file import get_cache_path
-from ..smp.vlm import encode_image_file_to_base64
+from vlmeval.smp import encode_image_file_to_base64, get_cache_path
 from .base import BaseModel
 
 

@@ -1,8 +1,8 @@
 import re
 
-from vlmeval.smp import dump, load
-from vlmeval.smp.file import get_intermediate_file_path
-from vlmeval.smp.misc import tqdm
+import tqdm
+
+from vlmeval.smp import dump, get_intermediate_file_path, load
 from .image_base import ImageBaseDataset
 from .utils import Spatial457_utils
 

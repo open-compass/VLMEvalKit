@@ -5,12 +5,8 @@ import re
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp import dump, load
-from vlmeval.smp.file import LMUDataRoot
-from vlmeval.smp.log import get_logger
-from vlmeval.smp.misc import d2df
-from vlmeval.smp.vlm import decode_base64_to_image_file
-from ..utils import track_progress_rich
+from vlmeval.smp import LMUDataRoot, d2df, decode_base64_to_image_file, dump, get_logger, load
+from vlmeval.utils import track_progress_rich
 from .image_vqa import ImageVQADataset
 
 logger = get_logger(__name__)

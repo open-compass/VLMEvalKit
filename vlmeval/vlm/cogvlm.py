@@ -8,9 +8,8 @@ import pandas as pd
 import torch
 from PIL import Image
 
-from ..dataset import DATASET_TYPE
-from ..smp.misc import cn_string
-from ..smp.vlm import encode_image_file_to_base64
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string, encode_image_file_to_base64
 from .base import BaseModel
 
 

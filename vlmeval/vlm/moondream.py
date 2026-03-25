@@ -9,8 +9,8 @@ import pandas as pd
 import torch
 from PIL import Image
 
-from ..dataset import DATASET_TYPE
-from ..smp.misc import listinstr, splitlen
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import listinstr, splitlen
 from .base import BaseModel
 
 

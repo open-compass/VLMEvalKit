@@ -3,7 +3,7 @@ import random as rd
 import time
 from abc import abstractmethod
 
-from ..smp import concat_images_vlmeval, get_logger, parse_file
+from vlmeval.smp import concat_images_vlmeval, get_logger, parse_file
 
 logger = get_logger(__name__)
 

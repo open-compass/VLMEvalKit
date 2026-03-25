@@ -9,8 +9,7 @@ import pandas as pd
 import torch
 from PIL import Image
 
-from ..smp.file import download_file
-from ..smp.misc import listinstr
+from vlmeval.smp import download_file, listinstr
 from .base import BaseModel
 
 '''

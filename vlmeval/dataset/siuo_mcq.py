@@ -2,8 +2,7 @@ import re
 
 import pandas as pd
 
-from ..smp import d2df, dump, load, toliststr
-from ..smp.file import get_intermediate_file_path
+from vlmeval.smp import d2df, dump, get_intermediate_file_path, load, toliststr
 from .image_base import ImageBaseDataset
 
 

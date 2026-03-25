@@ -6,7 +6,7 @@ from typing import Optional
 
 import numpy as np
 
-from vlmeval.smp.misc import istype, listinstr, process_punctuation
+from vlmeval.smp import istype, listinstr, process_punctuation
 
 
 def _process_digit_article(inText):

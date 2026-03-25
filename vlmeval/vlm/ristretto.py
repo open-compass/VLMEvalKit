@@ -12,8 +12,8 @@ from torchvision.transforms.functional import InterpolationMode
 from transformers import AutoConfig, AutoModel, AutoTokenizer
 from transformers.utils import logging
 
-from ..dataset import DATASET_MODALITY, DATASET_TYPE
-from ..smp.misc import cn_string, listinstr, version_cmp
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import cn_string, listinstr, version_cmp
 from .base import BaseModel
 
 logger = logging.get_logger(__name__)

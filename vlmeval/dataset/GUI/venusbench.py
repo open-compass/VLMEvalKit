@@ -10,9 +10,7 @@ from PIL import Image
 from tqdm import tqdm
 
 from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp.file import LMUDataRoot, dump, get_intermediate_file_path, load
-from vlmeval.smp.log import get_logger
-from vlmeval.smp.vlm import toliststr
+from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, get_logger, load, toliststr
 
 logger = get_logger(__name__)
 

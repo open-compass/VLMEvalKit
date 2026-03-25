@@ -13,9 +13,8 @@ from PIL import Image
 
 from vlmeval.dataset.utils.megabench.evaluator import MEGABenchEvaluator
 from vlmeval.dataset.video_base import VideoBaseDataset
-from vlmeval.smp import dump, load, md5
-from vlmeval.smp.file import (LMUDataRoot, get_cache_path, get_file_extension,
-                              get_intermediate_file_path)
+from vlmeval.smp import (LMUDataRoot, dump, get_cache_path, get_file_extension,
+                         get_intermediate_file_path, load, md5)
 
 
 class MEGABench(VideoBaseDataset):

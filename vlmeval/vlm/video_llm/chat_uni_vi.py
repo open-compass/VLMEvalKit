@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from vlmeval.smp.misc import listinstr
+from vlmeval.smp import listinstr
 from ..base import BaseModel
 
 

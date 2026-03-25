@@ -8,9 +8,8 @@ import numpy as np
 import pandas as pd
 from huggingface_hub import snapshot_download
 
-from vlmeval.smp import dump, load, md5
-from vlmeval.smp.file import get_cache_path, get_file_extension, get_intermediate_file_path
-from vlmeval.smp.misc import extract_json_objects
+from vlmeval.smp import (dump, extract_json_objects, get_cache_path, get_file_extension,
+                         get_intermediate_file_path, load, md5)
 from ..utils import track_progress_rich
 from .utils import build_judge
 from .video_base import VideoBaseDataset

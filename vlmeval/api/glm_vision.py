@@ -2,8 +2,7 @@ import copy as cp
 import os
 
 from vlmeval.api.base import BaseAPI
-from vlmeval.smp import get_logger
-from vlmeval.smp.vlm import encode_image_file_to_base64
+from vlmeval.smp import encode_image_file_to_base64, get_logger
 
 logger = get_logger(__name__)
 

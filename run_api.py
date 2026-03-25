@@ -12,8 +12,8 @@ from vlmeval.api.adapters import get_adapter_registry
 from vlmeval.config import supported_VLM
 from vlmeval.dataset import build_dataset
 from vlmeval.inference_api import APIEvalPipeline, DatasetConfig
-from vlmeval.smp import githash, listinstr, load_env, prepare_reuse_files, setup_logger, timestr
-from vlmeval.smp.file import get_pred_file_format
+from vlmeval.smp import (get_pred_file_format, githash, listinstr, load_env, prepare_reuse_files,
+                         setup_logger, timestr)
 
 group_dic = {
     'general-mini': ['MMMU_Pro_10c'],

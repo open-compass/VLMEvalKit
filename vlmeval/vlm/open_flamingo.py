@@ -6,7 +6,7 @@ import torch
 from huggingface_hub import snapshot_download
 from PIL import Image
 
-from ..smp.misc import get_cache_path, splitlen
+from vlmeval.smp import get_cache_path, splitlen
 from .base import BaseModel
 
 

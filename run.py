@@ -52,8 +52,8 @@ from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.inference_video import infer_data_job_video
-from vlmeval.smp import (MMBenchOfficialServer, get_logger, get_pred_file_format, githash,
-                         listinstr, load, load_env, ls, prepare_reuse_files, proxy_set, timestr)
+from vlmeval.smp import (MMBenchOfficialServer, get_pred_file_format, githash, listinstr, load,
+                         load_env, ls, prepare_reuse_files, proxy_set, setup_logger, timestr)
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
@@ -210,7 +210,6 @@ You can launch the evaluation by setting either --data and --model or --config.
 
 
 def main():
-    logger = get_logger('RUN')
     args = parse_args()
     use_config, cfg = False, None
     if args.config is not None:
@@ -221,14 +220,18 @@ def main():
     else:
         assert len(args.data), '--data should be a list of data files'
 
+    if 'MMEVAL_ROOT' in os.environ:
+        args.work_dir = os.environ['MMEVAL_ROOT']
+
+    date, commit_id = timestr('day'), githash(digits=8)
+    eval_id = f"T{date}_G{commit_id}"
+    logger = setup_logger(log_file=os.path.join(args.work_dir, 'logs', f'{eval_id}_{timestr()}.log'))
+
     if RANK == 0:
         if not args.reuse:
             logger.warning('--reuse is not set, will not reuse previous (before one day) temporary files')
         else:
             logger.warning('--reuse is set, will reuse the latest prediction & temporary pickle files')
-
-    if 'MMEVAL_ROOT' in os.environ:
-        args.work_dir = os.environ['MMEVAL_ROOT']
 
     if not use_config:
         for k, v in supported_VLM.items():
@@ -257,6 +260,7 @@ def main():
         )
 
     for _, model_name in enumerate(args.model):
+        logger.info(f'=========== {model_name} ===========')
         model = None
         date, commit_id = timestr('day'), githash(digits=8)
         eval_id = f"T{date}_G{commit_id}"
@@ -276,6 +280,7 @@ def main():
             model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
 
         for _, dataset_name in enumerate(args.data):
+            logger.info(f'----------- {dataset_name} -----------')
             if WORLD_SIZE > 1:
                 dist.barrier()
 

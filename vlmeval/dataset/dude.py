@@ -11,11 +11,9 @@ import pandas as pd
 from PIL import Image
 from tqdm import tqdm
 
-from vlmeval.smp import dump, load, md5
-from vlmeval.smp.file import LMUDataRoot, download_file, get_intermediate_file_path
-from vlmeval.smp.log import get_logger
-from vlmeval.smp.misc import listinstr
-from vlmeval.smp.vlm import decode_base64_to_image_file, encode_image_to_base64, read_ok, toliststr
+from vlmeval.smp import (LMUDataRoot, decode_base64_to_image_file, download_file, dump,
+                         encode_image_to_base64, get_intermediate_file_path, get_logger, listinstr,
+                         load, md5, read_ok, toliststr)
 from .image_base import ImageBaseDataset
 from .mmlongbench import MMLongBench_auxeval, anls_compute, concat_images
 from .utils.judge_util import build_judge

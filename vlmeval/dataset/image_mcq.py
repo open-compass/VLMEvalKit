@@ -13,11 +13,9 @@ import pandas as pd
 from tabulate import tabulate
 from tqdm import tqdm
 
-from vlmeval.smp import dump, load
-from vlmeval.smp.file import (LMUDataRoot, download_file, file_size, get_file_extension,
-                              get_intermediate_file_path, localize_df, md5)
-from vlmeval.smp.misc import get_cache_path, istype, listinstr
-from vlmeval.smp.vlm import toliststr
+from vlmeval.smp import (LMUDataRoot, download_file, dump, file_size, get_cache_path,
+                         get_file_extension, get_intermediate_file_path, istype, listinstr, load,
+                         localize_df, md5, toliststr)
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
 

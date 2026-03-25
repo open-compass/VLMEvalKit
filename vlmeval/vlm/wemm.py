@@ -4,8 +4,8 @@ import pandas as pd
 import torch
 from transformers import AutoModel, GenerationConfig
 
-from ..dataset import DATASET_TYPE
-from ..smp.misc import cn_string
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string
 from .base import BaseModel
 
 

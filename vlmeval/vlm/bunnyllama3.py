@@ -8,8 +8,8 @@ import transformers
 from PIL import Image
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from ..dataset import DATASET_TYPE
-from ..smp.misc import cn_string, listinstr  # noqa: F401
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import listinstr
 from .base import BaseModel
 
 

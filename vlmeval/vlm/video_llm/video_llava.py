@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import torch
 
-from vlmeval.smp.misc import listinstr
+from vlmeval.smp import listinstr
 from ..base import BaseModel
 
 

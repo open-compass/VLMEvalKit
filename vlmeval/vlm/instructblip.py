@@ -4,7 +4,7 @@ import os.path as osp
 import torch
 from PIL import Image
 
-from ..smp.misc import splitlen
+from vlmeval.smp import splitlen
 from .base import BaseModel
 
 

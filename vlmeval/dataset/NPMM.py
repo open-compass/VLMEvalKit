@@ -15,7 +15,7 @@ from vlmeval.dataset.utils.NPMM.mcp import validation as mcp_validation
 from vlmeval.dataset.utils.NPMM.minimum_cut import validation as minimum_cut_validation
 from vlmeval.dataset.utils.NPMM.tsp import validation as tsp_validation
 from vlmeval.dataset.utils.NPMM.vertex_cover import validation as vertex_cover_validation
-from vlmeval.smp.file import dump, get_intermediate_file_path, load
+from vlmeval.smp import dump, get_intermediate_file_path, load
 
 
 class NPMM(ImageBaseDataset):

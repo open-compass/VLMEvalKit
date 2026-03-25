@@ -5,8 +5,7 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
-from ..smp.file import dump, load
-from ..smp.misc import toliststr
+from vlmeval.smp import dump, load, toliststr
 from .image_vqa import ImageVQADataset
 from .utils.spatial_bench.tools.utils import Point2DParser
 

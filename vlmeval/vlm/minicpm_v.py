@@ -11,9 +11,8 @@ import torch
 from PIL import Image
 from transformers import AutoModel, AutoTokenizer
 
-from ..dataset import DATASET_MODALITY, DATASET_TYPE
-from ..smp.misc import listinstr
-from ..smp.vlm import encode_image_to_base64
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import encode_image_to_base64, listinstr
 from .base import BaseModel
 
 

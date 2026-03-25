@@ -9,7 +9,7 @@ from PIL import Image
 from transformers import AutoModel, AutoTokenizer
 
 from vlmeval.dataset import DATASET_TYPE
-from vlmeval.smp.misc import listinstr
+from vlmeval.smp import listinstr
 from ..base import BaseModel
 
 pattern = re.compile(r'[A-Z]')

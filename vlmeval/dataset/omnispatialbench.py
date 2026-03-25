@@ -7,8 +7,7 @@ import pandas as pd
 from huggingface_hub import snapshot_download
 from tqdm import tqdm
 
-from ..smp.file import load
-from ..smp.misc import get_cache_path, toliststr
+from vlmeval.smp import get_cache_path, load, toliststr
 from .image_mcq import ImageMCQDataset
 
 # Prompt template adapted from the official OmniSpatial codebase:

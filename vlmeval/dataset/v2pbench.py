@@ -6,8 +6,7 @@ import zipfile
 import numpy as np
 from huggingface_hub import snapshot_download
 
-from vlmeval.smp.file import dump, load
-from vlmeval.smp.misc import extract_json_objects, get_cache_path, modelscope_flag_set
+from vlmeval.smp import dump, extract_json_objects, get_cache_path, load, modelscope_flag_set
 from .video_base import VideoBaseDataset
 
 prompt_multi_choice = "\nGive only your option letter that accurately addresses the question, no other words."

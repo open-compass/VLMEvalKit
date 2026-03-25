@@ -8,10 +8,8 @@ from random import seed, shuffle
 import pandas as pd
 
 from vlmeval.dataset.utils import build_judge
-from vlmeval.smp.file import (LMUDataRoot, download_file, dump, get_intermediate_file_path, load,
-                              md5)
-from vlmeval.smp.log import get_logger
-from vlmeval.smp.vlm import toliststr
+from vlmeval.smp import (LMUDataRoot, download_file, dump, get_intermediate_file_path, get_logger,
+                         load, md5, toliststr)
 from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE

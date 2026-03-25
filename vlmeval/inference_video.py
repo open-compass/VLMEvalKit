@@ -9,8 +9,7 @@ import torch.distributed as dist
 from tqdm import tqdm
 
 from vlmeval.config import supported_VLM
-from vlmeval.smp.file import dump, load
-from vlmeval.smp.misc import get_rank_and_world_size
+from vlmeval.smp import dump, get_rank_and_world_size, load
 from vlmeval.utils import track_progress_rich
 
 FAIL_MSG = 'Failed to obtain answer via API.'

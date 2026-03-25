@@ -1,7 +1,6 @@
 import pandas as pd
 
-from vlmeval.smp import dump, load
-from vlmeval.smp.vlm import toliststr
+from vlmeval.smp import dump, load, toliststr
 from .image_base import ImageBaseDataset
 from .utils.gsm8k_v import evaluate_gsm8k_v
 

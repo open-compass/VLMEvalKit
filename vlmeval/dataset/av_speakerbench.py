@@ -9,8 +9,8 @@ import portalocker
 from huggingface_hub import snapshot_download
 from PIL import Image
 
-from vlmeval.smp import dump, load, md5
-from vlmeval.smp.file import get_cache_path, get_file_extension, get_intermediate_file_path
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5)
 from .video_base import VideoBaseDataset
 
 

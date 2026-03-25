@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 from PIL import Image
 
-from ..smp.misc import listinstr
+from vlmeval.smp import listinstr
 from .base import BaseModel
 
 

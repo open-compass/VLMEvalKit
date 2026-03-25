@@ -10,9 +10,8 @@ from accelerate import infer_auto_device_map, init_empty_weights, load_checkpoin
 from huggingface_hub import snapshot_download
 from PIL import Image
 
-from vlmeval.smp.log import get_logger
-from vlmeval.smp.misc import get_cache_path
-from ..dataset import DATASET_TYPE
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import get_cache_path, get_logger
 from .base import BaseModel
 
 logger = get_logger(__name__)

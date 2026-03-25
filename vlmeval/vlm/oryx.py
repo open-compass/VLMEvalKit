@@ -9,8 +9,8 @@ import torch
 from PIL import Image
 from transformers import CLIPImageProcessor
 
-from ..dataset import DATASET_TYPE
-from ..smp.misc import splitlen
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import splitlen
 from .base import BaseModel
 
 os.environ['LOWRES_RESIZE'] = "384x32"

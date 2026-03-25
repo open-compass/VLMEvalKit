@@ -10,10 +10,8 @@ import torch
 from torchvision import transforms
 from transformers import AutoModel, AutoTokenizer
 
-from ..dataset import DATASET_TYPE
-from ..smp.file import LMUDataRoot
-from ..smp.log import get_logger
-from ..smp.misc import listinstr
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import LMUDataRoot, get_logger, listinstr
 from .base import BaseModel
 
 logger = get_logger(__name__)

@@ -2,9 +2,7 @@ from functools import partial
 
 import numpy as np
 
-from vlmeval.smp import dump, load
-from vlmeval.smp.file import get_intermediate_file_path
-from vlmeval.smp.misc import d2df, mp
+from vlmeval.smp import d2df, dump, get_intermediate_file_path, load, mp
 from .image_base import ImageBaseDataset
 
 

@@ -12,9 +12,8 @@ import warnings
 
 from timeout_decorator import timeout
 
-from vlmeval.smp.file import (LMUDataRoot, download_file, dump, file_size,
-                              get_intermediate_file_path, load, md5)
-from vlmeval.smp.log import get_logger
+from vlmeval.smp import (LMUDataRoot, download_file, dump, file_size, get_intermediate_file_path,
+                         get_logger, load, md5)
 
 FAIL_MSG = "Failed to obtain answer via API."
 

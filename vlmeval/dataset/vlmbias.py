@@ -1,6 +1,6 @@
 import os.path as osp
 
-from vlmeval.smp.file import dump, get_intermediate_file_path, load
+from vlmeval.smp import dump, get_intermediate_file_path, load
 from vlmeval.utils import track_progress_rich
 from .image_vqa import ImageVQADataset
 from .utils.multiple_choice import report_acc

@@ -9,9 +9,8 @@ from huggingface_hub import snapshot_download
 from PIL import Image
 from tqdm import tqdm
 
-from vlmeval.smp.file import (LMUDataRoot, dump, get_cache_path, get_file_extension,
-                              get_intermediate_file_path, load)
-from vlmeval.smp.misc import md5, modelscope_flag_set
+from vlmeval.smp import (LMUDataRoot, dump, get_cache_path, get_file_extension,
+                         get_intermediate_file_path, load, md5, modelscope_flag_set)
 from vlmeval.utils import track_progress_rich
 from .utils import build_judge
 from .utils.cgbench import (eval_open_first, eval_open_second, get_dimention_rating_mcq_grouding,

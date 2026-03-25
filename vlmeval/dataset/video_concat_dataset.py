@@ -3,9 +3,7 @@ import copy as cp
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp import dump, load
-from vlmeval.smp.file import get_intermediate_file_path
-from vlmeval.smp.vlm import toliststr
+from vlmeval.smp import dump, get_intermediate_file_path, load, toliststr
 from .video_base import VideoBaseDataset
 
 

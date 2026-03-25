@@ -5,9 +5,7 @@ import re
 import pandas as pd
 from PIL import Image
 
-from vlmeval.smp.file import LMUDataRoot, load
-from vlmeval.smp.log import get_logger
-from vlmeval.smp.misc import toliststr
+from vlmeval.smp import LMUDataRoot, get_logger, load, toliststr
 from .screenspot import ScreenSpot
 
 logger = get_logger(__name__)

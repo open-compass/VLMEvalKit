@@ -10,8 +10,8 @@ from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
 from transformers import AutoModel, AutoTokenizer
 
-from ..dataset import DATASET_TYPE
-from ..smp.misc import cn_string, listinstr, version_cmp
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string, listinstr, version_cmp
 from .base import BaseModel
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)

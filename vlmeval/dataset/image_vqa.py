@@ -1,5 +1,6 @@
 import base64
 import json
+import multiprocessing as mp
 import os
 import os.path as osp
 import re
@@ -15,11 +16,9 @@ from PIL import Image
 from tabulate import tabulate
 from tqdm import tqdm
 
-from vlmeval.smp import dump, load
-from vlmeval.smp.file import (LMUDataRoot, download_file, file_size, get_file_extension,
-                              get_intermediate_file_path, md5)
-from vlmeval.smp.misc import d2df, listinstr, mp
-from vlmeval.smp.vlm import decode_base64_to_image_file, encode_image_to_base64, read_ok, toliststr
+from vlmeval.smp import (LMUDataRoot, d2df, decode_base64_to_image_file, download_file, dump,
+                         encode_image_to_base64, file_size, get_file_extension,
+                         get_intermediate_file_path, listinstr, load, md5, read_ok, toliststr)
 from ..utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge

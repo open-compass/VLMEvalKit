@@ -13,10 +13,9 @@ from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 
 from vlmeval.dataset.utils import build_judge, levenshtein_distance
-from vlmeval.smp.file import dump, get_intermediate_file_path, load
-from vlmeval.smp.log import get_logger
-from vlmeval.smp.misc import listinstr
-from vlmeval.smp.vlm import decode_base64_to_image_file, encode_image_to_base64, read_ok, toliststr
+from vlmeval.smp import (decode_base64_to_image_file, dump, encode_image_to_base64,
+                         get_intermediate_file_path, get_logger, listinstr, load, read_ok,
+                         toliststr)
 from .image_base import ImageBaseDataset
 
 logger = get_logger(__name__)

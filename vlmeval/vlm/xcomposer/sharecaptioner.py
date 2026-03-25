@@ -6,7 +6,7 @@ from PIL import Image
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from vlmeval.dataset import DATASET_TYPE
-from vlmeval.smp.misc import cn_string
+from vlmeval.smp import cn_string
 from ..base import BaseModel
 
 

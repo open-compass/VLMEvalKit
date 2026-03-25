@@ -7,9 +7,8 @@ import portalocker
 from huggingface_hub import snapshot_download
 from PIL import Image
 
-from vlmeval.smp import dump, load, md5
-from vlmeval.smp.file import get_cache_path, get_intermediate_file_path
-from vlmeval.smp.misc import modelscope_flag_set
+from vlmeval.smp import (dump, get_cache_path, get_intermediate_file_path, load, md5,
+                         modelscope_flag_set)
 from ..utils import track_progress_rich
 from .utils import build_judge
 from .utils.tempcompass import (evaluate_tempcompass_captioning, evaluate_tempcompass_mcq,

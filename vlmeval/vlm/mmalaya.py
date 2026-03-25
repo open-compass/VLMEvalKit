@@ -9,8 +9,8 @@ from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
 from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
 
+from vlmeval.smp import cn_string, listinstr, version_cmp
 from ..dataset import DATASET_TYPE
-from ..smp.misc import cn_string, listinstr, version_cmp
 from .base import BaseModel
 
 

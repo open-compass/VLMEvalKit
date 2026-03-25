@@ -17,10 +17,8 @@ from vlmeval.config import (api_models, cambrian_series, chameleon_series, deeps
                             supported_VLM, vila_series, wemm_series, xcomposer_series,
                             xtuner_series, yivl_series)
 from vlmeval.dataset import SUPPORTED_DATASETS
-from vlmeval.smp.file import (dump, get_pred_file_format, load, localize_df, ls, md5, mrlines,
-                              mwlines)
-from vlmeval.smp.log import get_logger
-from vlmeval.smp.misc import listinstr, load_env
+from vlmeval.smp import (dump, get_logger, get_pred_file_format, listinstr, load, load_env,
+                         localize_df, ls, md5, mrlines, mwlines)
 
 logger = get_logger(__name__)
 

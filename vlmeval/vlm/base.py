@@ -2,10 +2,8 @@ import logging
 import warnings
 from abc import abstractmethod
 
-from ..dataset import DATASET_TYPE
-from ..smp.file import parse_file
-from ..smp.misc import listinstr
-from ..smp.vlm import concat_images_vlmeval, encode_image_to_base64
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import concat_images_vlmeval, encode_image_to_base64, listinstr, parse_file
 
 
 class BaseModel:

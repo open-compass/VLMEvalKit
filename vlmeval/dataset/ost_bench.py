@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from vlmeval.smp.vlm import toliststr
+from vlmeval.smp import toliststr
 from .image_base import ImageBaseDataset
 
 OST_INSTRUCTION = """

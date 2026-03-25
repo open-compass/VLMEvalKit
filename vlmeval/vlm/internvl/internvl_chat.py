@@ -10,8 +10,7 @@ from PIL import Image
 from transformers import AutoModel, AutoTokenizer, CLIPImageProcessor
 
 from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE, build_dataset, infer_dataset_basename
-from vlmeval.smp.misc import listinstr, version_cmp
-from vlmeval.smp.vlm import encode_image_to_base64
+from vlmeval.smp import encode_image_to_base64, listinstr, version_cmp
 from ..base import BaseModel
 from .utils import (build_mcq_cot_prompt, build_mpo_prompt, build_multi_choice_prompt,
                     build_qa_cot_prompt, build_video_prompt, format_nav_prompt, load_image,

@@ -3,8 +3,7 @@ from collections import OrderedDict
 
 import pandas as pd
 
-from ..smp.file import load
-from ..smp.misc import toliststr
+from vlmeval.smp import load, toliststr
 from .image_mcq import ImageMCQDataset
 
 

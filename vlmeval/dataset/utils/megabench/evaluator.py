@@ -4,7 +4,7 @@ import json
 import os
 from typing import Any, Dict, List
 
-from vlmeval import dump, load
+from vlmeval.smp import dump, load
 from . import AggregationType, MetricType, ResponseParseType
 from .parsing.common.utils import evaluate_as_string
 

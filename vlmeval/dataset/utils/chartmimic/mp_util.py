@@ -5,8 +5,7 @@ from typing import Callable, Iterable
 
 from tqdm import tqdm
 
-from vlmeval.smp.file import dump, load
-from vlmeval.smp.log import get_logger
+from vlmeval.smp import dump, get_logger, load
 
 logger = get_logger(__name__)
 

@@ -6,10 +6,7 @@ from abc import abstractmethod
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp import load, md5
-from vlmeval.smp.file import LMUDataRoot, download_file, file_size
-from vlmeval.smp.misc import istype
-from vlmeval.smp.vlm import mmqa_display
+from vlmeval.smp import LMUDataRoot, download_file, file_size, istype, load, md5, mmqa_display
 
 
 class TextBaseDataset:

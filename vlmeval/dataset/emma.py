@@ -2,7 +2,7 @@ import string
 
 import pandas as pd
 
-from vlmeval.smp.misc import toliststr
+from vlmeval.smp import toliststr
 from .image_mcq import MMMUDataset
 from .image_shortqa import ImageShortQADataset
 

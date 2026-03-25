@@ -5,8 +5,7 @@ from collections import OrderedDict
 import numpy as np
 import pandas as pd
 
-from ..smp.file import load
-from ..smp.misc import toliststr
+from vlmeval.smp import load, toliststr
 from .image_base import ImageBaseDataset
 from .utils.spatial_bench.cal_scores import (attach_score_cache, build_mcq_score_fn,
                                              build_na_score_fn, mean_relative_accuracy)

@@ -8,8 +8,7 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp.file import (LMUDataRoot, download_file, dump, get_intermediate_file_path, load,
-                              md5)
+from vlmeval.smp import LMUDataRoot, download_file, dump, get_intermediate_file_path, load, md5
 from .image_base import ImageBaseDataset
 
 

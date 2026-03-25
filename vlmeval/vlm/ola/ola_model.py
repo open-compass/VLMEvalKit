@@ -11,7 +11,7 @@ from PIL import Image
 from transformers import CLIPImageProcessor
 
 from vlmeval.dataset import DATASET_TYPE
-from vlmeval.smp.misc import splitlen
+from vlmeval.smp import splitlen
 from ..base import BaseModel
 
 os.environ['LOWRES_RESIZE']="384x32"

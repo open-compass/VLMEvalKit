@@ -11,7 +11,7 @@ import time
 import pandas as pd
 from huggingface_hub import snapshot_download
 
-from vlmeval.smp.file import dump, get_cache_path, load
+from vlmeval.smp import dump, get_cache_path, load
 from .image_base import ImageBaseDataset
 from .medqbench_caption import PROMPT_TEMPLATES
 

@@ -1,4 +1,4 @@
-from vlmeval.smp.vlm import toliststr
+from vlmeval.smp import toliststr
 from .image_base import ImageBaseDataset
 
 

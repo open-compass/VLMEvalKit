@@ -7,7 +7,7 @@ from huggingface_hub import snapshot_download
 from PIL import Image
 
 from vlmeval.dataset import DATASET_TYPE
-from vlmeval.smp.misc import listinstr
+from vlmeval.smp import listinstr
 from ..base import BaseModel
 
 

@@ -7,8 +7,7 @@ import pandas as pd
 from huggingface_hub import snapshot_download
 from PIL import Image
 
-from ..smp.file import dump, load
-from ..smp.misc import get_cache_path, modelscope_flag_set, toliststr
+from ..smp import dump, get_cache_path, load, modelscope_flag_set, toliststr
 from .image_vqa import ImageVQADataset
 from .utils.spatial_bench.tools.utils import Point2DParser
 

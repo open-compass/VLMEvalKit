@@ -10,9 +10,8 @@ import portalocker
 from huggingface_hub import snapshot_download
 from PIL import Image
 
-from vlmeval.smp.file import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
-                              load)
-from vlmeval.smp.misc import md5, modelscope_flag_set
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5, modelscope_flag_set)
 from vlmeval.utils import track_progress_rich
 from .utils import DEBUG_MESSAGE, build_judge
 from .utils.mlvu import (MLVU_OpenEnded_extract, MLVU_OpenEnded_generate, check_ans_with_model,

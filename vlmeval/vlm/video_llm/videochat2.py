@@ -12,7 +12,7 @@ from huggingface_hub import snapshot_download
 from torchvision import transforms
 from transformers import StoppingCriteria, StoppingCriteriaList
 
-from vlmeval.smp.misc import listinstr
+from vlmeval.smp import listinstr
 from ..base import BaseModel
 
 

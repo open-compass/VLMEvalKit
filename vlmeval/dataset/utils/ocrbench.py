@@ -1,7 +1,6 @@
 from tqdm import tqdm
 
-from vlmeval.smp.file import dump, get_intermediate_file_path, load
-from vlmeval.smp.log import get_logger
+from vlmeval.smp import dump, get_intermediate_file_path, get_logger, load
 
 logger = get_logger(__name__)
 

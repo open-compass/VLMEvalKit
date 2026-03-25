@@ -4,8 +4,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp.file import dump, get_intermediate_file_path, load
-from vlmeval.smp.misc import toliststr
+from vlmeval.smp import dump, get_intermediate_file_path, load, toliststr
 from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils.judge_util import build_judge
