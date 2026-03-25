@@ -83,6 +83,8 @@ from .mmhelix import MMHELIX
 from .mmifeval import MMIFEval
 from .mmlongbench import MMLongBench
 from .mmmath import MMMath
+from .mmrarebench import (MMRarebenchCrossmodal, MMRarebenchDiagnosis, MMRarebenchExamination,
+                          MMRarebenchTreatment)
 from .mmsafetybench import MMSafetyBenchDataset
 from .mmsibench import MMSIBench, MMSIVideoBench
 from .moat import MOAT
@@ -284,6 +286,7 @@ IMAGE_DATASET = [
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
     ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
+    MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,
