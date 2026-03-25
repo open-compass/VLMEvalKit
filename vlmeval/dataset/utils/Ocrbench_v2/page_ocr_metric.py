@@ -1,10 +1,8 @@
-import json
-import argparse
-import nltk
-from nltk.metrics import precision, recall, f_measure
-import numpy as np
-import jieba
 import re
+
+import jieba
+import nltk
+from nltk.metrics import f_measure, precision, recall
 from nltk.translate import meteor_score
 
 

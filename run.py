@@ -1,7 +1,14 @@
+import argparse
+import copy as cp
+import datetime
 import json
 import os
+import os.path as osp
 import subprocess
 from functools import partial
+
+import pandas as pd
+from tabulate import tabulate
 
 
 # GET the number of GPUs on the node without importing libs like torch
@@ -14,14 +21,14 @@ def get_gpu_list():
         ps = subprocess.Popen(('nvidia-smi', '--list-gpus'), stdout=subprocess.PIPE)
         output = subprocess.check_output(('wc', '-l'), stdin=ps.stdout)
         return list(range(int(output)))
-    except:
+    except Exception:
         return []
 
 
 RANK = int(os.environ.get('RANK', 0))
 WORLD_SIZE = int(os.environ.get('WORLD_SIZE', 1))
-LOCAL_WORLD_SIZE = int(os.environ.get("LOCAL_WORLD_SIZE",1))
-LOCAL_RANK = int(os.environ.get("LOCAL_RANK",1))
+LOCAL_WORLD_SIZE = int(os.environ.get("LOCAL_WORLD_SIZE", 1))
+LOCAL_RANK = int(os.environ.get("LOCAL_RANK", 1))
 
 GPU_LIST = get_gpu_list()
 if LOCAL_WORLD_SIZE > 1 and len(GPU_LIST):
@@ -40,12 +47,13 @@ if LOCAL_WORLD_SIZE > 1 and len(GPU_LIST):
 
 
 from vlmeval.config import supported_VLM
-from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.dataset import build_dataset
+from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.inference import infer_data_job
-from vlmeval.inference_video import infer_data_job_video
 from vlmeval.inference_mt import infer_data_job_mt
-from vlmeval.smp import *
+from vlmeval.inference_video import infer_data_job_video
+from vlmeval.smp import (MMBenchOfficialServer, get_pred_file_format, githash, listinstr, load,
+                         load_env, ls, prepare_reuse_files, proxy_set, setup_logger, timestr)
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
@@ -74,8 +82,9 @@ def build_model_from_config(cfg, model_name, use_vllm=False):
 
 
 def build_dataset_from_config(cfg, dataset_name):
-    import vlmeval.dataset
     import inspect
+
+    import vlmeval.dataset
     config = cp.deepcopy(cfg[dataset_name])
     if config == {}:
         return supported_video_datasets[dataset_name]()
@@ -201,7 +210,6 @@ You can launch the evaluation by setting either --data and --model or --config.
 
 
 def main():
-    logger = get_logger('RUN')
     args = parse_args()
     use_config, cfg = False, None
     if args.config is not None:
@@ -212,14 +220,18 @@ def main():
     else:
         assert len(args.data), '--data should be a list of data files'
 
+    if 'MMEVAL_ROOT' in os.environ:
+        args.work_dir = os.environ['MMEVAL_ROOT']
+
+    date, commit_id = timestr('day'), githash(digits=8)
+    eval_id = f"T{date}_G{commit_id}"
+    logger = setup_logger(log_file=os.path.join(args.work_dir, 'logs', f'{eval_id}_{timestr()}.log'))
+
     if RANK == 0:
         if not args.reuse:
             logger.warning('--reuse is not set, will not reuse previous (before one day) temporary files')
         else:
             logger.warning('--reuse is set, will reuse the latest prediction & temporary pickle files')
-
-    if 'MMEVAL_ROOT' in os.environ:
-        args.work_dir = os.environ['MMEVAL_ROOT']
 
     if not use_config:
         for k, v in supported_VLM.items():
@@ -232,8 +244,8 @@ def main():
 
         # If FWD_API is set, will use class `GPT4V` for all API models in the config
         if os.environ.get('FWD_API', None) == '1':
-            from vlmeval.config import api_models as supported_APIs
             from vlmeval.api import GPT4V
+            from vlmeval.config import api_models as supported_APIs
             for m in args.model:
                 if m in supported_APIs:
                     kws = supported_VLM[m].keywords
@@ -248,6 +260,7 @@ def main():
         )
 
     for _, model_name in enumerate(args.model):
+        logger.info(f'=========== {model_name} ===========')
         model = None
         date, commit_id = timestr('day'), githash(digits=8)
         eval_id = f"T{date}_G{commit_id}"
@@ -267,6 +280,7 @@ def main():
             model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
 
         for _, dataset_name in enumerate(args.data):
+            logger.info(f'----------- {dataset_name} -----------')
             if WORLD_SIZE > 1:
                 dist.barrier()
 

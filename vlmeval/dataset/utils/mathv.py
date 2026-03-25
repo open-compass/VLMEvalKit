@@ -1,6 +1,12 @@
-from ...smp import *
-from ...utils import can_infer
+import logging
+from collections import defaultdict
+
+import pandas as pd
 import timeout_decorator
+
+from vlmeval.smp import load
+from vlmeval.utils import can_infer
+
 try:
     from latex2sympy2 import latex2sympy
 except Exception as e:
@@ -26,7 +32,7 @@ def is_equal(asw: str, gt_asw: str) -> bool:
         b = eval(asw)
         if abs(a - b) < 1e-6:
             return True
-    except:
+    except Exception:
         pass
     try:
         a = latex2sympy(gt_asw)
@@ -35,7 +41,7 @@ def is_equal(asw: str, gt_asw: str) -> bool:
             return True
         if abs(a - b) < 1e-6:
             return True
-    except:
+    except Exception:
         pass
     return False
 
@@ -176,5 +182,4 @@ def MATH_V_acc(result_file):
         res['hit'].append(hit[k])
         res['prefetch_rate'].append(fetch[k] / tot[k] * 100)
         res['acc'].append(hit[k] / tot[k] * 100)
-    res = pd.DataFrame(res).sort_values('Subject', ignore_index=True)
-    return res
+    return pd.DataFrame(res).sort_values('Subject', ignore_index=True)

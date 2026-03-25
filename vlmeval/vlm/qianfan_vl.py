@@ -1,10 +1,11 @@
-from PIL import Image
+import logging
+
 import torch
 import torchvision.transforms as T
+from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
 
 from .base import BaseModel
-from ..smp import *
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)

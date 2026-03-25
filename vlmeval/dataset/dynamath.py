@@ -1,18 +1,14 @@
-import re
 import json
-import numpy as np
-import pandas as pd
-import sys
-import math
 import os
 import os.path as osp
-import argparse
 
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp import d2df, dump, get_intermediate_file_path, load, toliststr
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import build_judge
-from ..utils import track_progress_rich
-from ..smp import load, dump, d2df, toliststr
-from ..smp.file import get_intermediate_file_path
 
 
 def preprocess(str1):
@@ -43,7 +39,7 @@ def parse_answer(answer, answer_type="multiple choice"):
             try:
                 answer = transfer(answer)
                 return True, answer
-            except:
+            except Exception:
                 return False, None
     elif answer_type == "multiple choice":
         if len(answer) == 1:
@@ -70,7 +66,7 @@ def DynaMath_auxeval(model, line):
         assert short_answer is not None
         succeed, short_answer = parse_answer(short_answer, answer_type=line['answer_type'])
         assert succeed
-    except:
+    except Exception:
         # Failed to parse the JSON, use an auxiliary LLM to get the short answer
         if line['answer_type'] == 'multiple choice':
             inst = "Output the corresponing choice option, such as 'A', 'B', 'C', 'D', in a single line."

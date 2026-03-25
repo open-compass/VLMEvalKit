@@ -1,8 +1,10 @@
-from ..smp import *
-from ..utils import track_progress_rich
+import os.path as osp
+
+from vlmeval.smp import dump, get_intermediate_file_path, load
+from vlmeval.utils import track_progress_rich
 from .image_vqa import ImageVQADataset
-from .utils.omni_verifier import OmniVerifier
 from .utils.multiple_choice import report_acc
+from .utils.omni_verifier import OmniVerifier
 
 
 def VLMBias_auxeval(verifier, pred, gt):

@@ -2,18 +2,18 @@
 Copy from https://huggingface.co/OpenGVLab/ViCLIP/blob/main/viclip_text.py
 """
 
-import os
+import functools
 import logging
+import os
 from collections import OrderedDict
-from pkg_resources import packaging
-from ..viclip.simple_tokenizer import SimpleTokenizer as _Tokenizer
 
-import numpy as np
 import torch
 import torch.nn.functional as F
-from torch import nn
 import torch.utils.checkpoint as checkpoint
-import functools
+from pkg_resources import packaging
+from torch import nn
+
+from ..viclip.simple_tokenizer import SimpleTokenizer as _Tokenizer
 
 logger = logging.getLogger(__name__)
 

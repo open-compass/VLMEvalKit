@@ -1,8 +1,6 @@
-from typing import Dict, Any, List, Tuple, Set
 import re
 from collections import deque
-import json
-import os
+from typing import Any, Dict, List, Tuple
 
 
 class BaseEvaluator:

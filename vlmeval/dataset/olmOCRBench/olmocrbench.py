@@ -1,14 +1,6 @@
-import json
-import os
-import copy
-import pandas as pd
-import tempfile
-import base64
-import numpy as np
-from tqdm import tqdm
-import torch.distributed as dist
+import logging
+
 from ..image_base import ImageBaseDataset
-from ...smp import *
 
 
 class olmOCRBench(ImageBaseDataset):
@@ -16,7 +8,7 @@ class olmOCRBench(ImageBaseDataset):
     MODALITY = 'IMAGE'
     TYPE = 'QA'
 
-    DATASET_URL = {'olmOCRBench':'https://opencompass.openxlab.space/utils/VLMEval/olmOCRBench.tsv'}
+    DATASET_URL = {'olmOCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/olmOCRBench.tsv'}
     DATASET_MD5 = {'olmOCRBench': '25fe250887fee675f887a2a2d24df185'}  # 完整版本的tsv文件
 
     # base prompt
@@ -28,8 +20,8 @@ class olmOCRBench(ImageBaseDataset):
         "Convert any tables into Markdown format."
     )
 
-    def __init__(self,dataset='olmOCRBench',**kwargs):
-        super().__init__(dataset,**kwargs)
+    def __init__(self, dataset='olmOCRBench', **kwargs):
+        super().__init__(dataset, **kwargs)
         print(f'self.img_root:{self.img_root}')
 
     def build_prompt(self, line):

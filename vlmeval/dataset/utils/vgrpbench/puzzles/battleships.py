@@ -1,10 +1,11 @@
-import random
 import argparse
 import os
-from typing import List, Dict, Any, Tuple
+import random
+from typing import Any, Dict, List, Tuple
 
-from .common_puzzle_factory import PuzzleFactory
 from .common_constriants import Constraint
+from .common_puzzle_factory import PuzzleFactory
+
 
 class ConstraintBattleships(Constraint):
     def check(self, game_state: Dict[str, Any]) -> bool:

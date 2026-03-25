@@ -1,13 +1,13 @@
-import nltk
 import re
-from tqdm import tqdm
 from collections import deque
-from apted.helpers import Tree
+
+import nltk
 from apted import APTED, Config
+from apted.helpers import Tree
+from tqdm import tqdm
 
 # local import
 from .common import BaseMetric
-
 
 # 移除指定的LaTeX命令
 patterns = [
@@ -188,7 +188,7 @@ class ParsingEvaluator(BaseMetric):
 
             try:
                 pred = pred.split('```')[1]
-            except:
+            except Exception:
                 pass
 
             pred = pred.replace('```latex', '')
@@ -217,7 +217,7 @@ class ParsingEvaluator(BaseMetric):
 
             try:
                 pred = pred.split('```html')[1]
-            except:
+            except Exception:
                 pass
 
             pred = pred.replace('```', '')

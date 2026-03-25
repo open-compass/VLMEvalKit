@@ -1,6 +1,10 @@
-from ...smp import *
-from ...utils import can_infer
-import timeout_decorator
+import logging
+from collections import defaultdict
+
+import pandas as pd
+
+from vlmeval.smp import load
+
 try:
     try:
         from latex2sympy2_extended import latex2sympy
@@ -30,7 +34,7 @@ def is_equal(asw: str, gt_asw: str) -> bool:
         b = eval(asw)
         if abs(a - b) < 1e-6:
             return True
-    except:
+    except Exception:
         pass
     try:
         a = latex2sympy(gt_asw)
@@ -39,7 +43,7 @@ def is_equal(asw: str, gt_asw: str) -> bool:
             return True
         if abs(a - b) < 1e-6:
             return True
-    except:
+    except Exception:
         pass
     return False
 

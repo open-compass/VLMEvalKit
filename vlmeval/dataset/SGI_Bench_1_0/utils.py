@@ -205,9 +205,9 @@ def extract_reason(result_text, dimension):
 # ############################ Idea Generation ##############################
 
 
-def mean(l: list):
-    assert len(l) > 0, "list length must > 0"
-    return sum(l) / len(l)
+def mean(lst: list):
+    assert len(lst) > 0, "list length must > 0"
+    return sum(lst) / len(lst)
 
 
 def show_results(results: list[dict], metric_name: str, category_name: str = None, precision: int = 2, scale=1):

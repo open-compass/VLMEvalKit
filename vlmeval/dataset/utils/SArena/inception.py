@@ -1,10 +1,11 @@
 import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
-
 from torch.hub import load_state_dict_from_url
+
 from vlmeval.smp.file import LMUDataRoot
 
 # Inception weights ported to Pytorch from

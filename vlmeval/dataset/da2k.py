@@ -12,7 +12,10 @@ Task: Given a single image and a question about relative depth,
 import json
 import os
 import os.path as osp
-from ..smp import *
+
+import numpy as np
+
+from vlmeval.smp import dump, load
 from .image_vqa import ImageVQADataset
 
 
@@ -52,8 +55,9 @@ class DA2K(ImageVQADataset):
         """
         Prepare DA-2K dataset from HuggingFace
         """
-        from huggingface_hub import hf_hub_download
         import zipfile
+
+        from huggingface_hub import hf_hub_download
 
         repo_id = 'depth-anything/DA-2K'
 
@@ -181,7 +185,7 @@ class DA2K(ImageVQADataset):
             # Try JSON lines format first (each line is a JSON object)
             try:
                 data = pd.read_json(data_file, lines=True)
-            except:
+            except Exception:
                 # Fall back to regular JSON
                 data = pd.read_json(data_file)
         else:
@@ -247,8 +251,8 @@ class DA2K(ImageVQADataset):
         - Exact matching for simple answers (A/B)
         - LLM-based evaluation for descriptive answers
         """
-        from .utils import build_judge
-        from ..smp import get_intermediate_file_path, get_file_extension
+        from ..smp import get_file_extension, get_intermediate_file_path
+        from .utils import build_judge  # noqa: F811
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv']
 

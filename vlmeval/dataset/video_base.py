@@ -1,5 +1,17 @@
+import os
+import os.path as osp
+import warnings
 from abc import abstractmethod
-from ..smp import *
+
+import numpy as np
+import portalocker
+from PIL import Image
+
+from vlmeval.smp import download_file, file_size, load, md5
+from vlmeval.smp.file import LMUDataRoot
+from vlmeval.smp.log import get_logger
+
+logger = get_logger(__name__)
 
 
 class VideoBaseDataset:
@@ -12,10 +24,10 @@ class VideoBaseDataset:
                  nframe=0,
                  fps=-1):
         try:
-            import decord
+            import decord  # noqa: F401
         except Exception as e:
-            logging.critical(f'{type(e)}: {e}')
-            logging.critical('Please install decord via `pip install decord`.')
+            logger.critical(f'{type(e)}: {e}')
+            logger.critical('Please install decord via `pip install decord`.')
 
         self.dataset_name = dataset
         ret = self.prepare_dataset(dataset)

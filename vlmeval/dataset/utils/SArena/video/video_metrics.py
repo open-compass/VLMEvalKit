@@ -1,15 +1,15 @@
 import math
 from dataclasses import dataclass
-from typing import Dict, Callable
+from typing import Callable, Dict
 
 from ..base_metric import BaseMetric
-from .FVD import FVDCalculator
-from .SSIM_video import SSIMVideoCalculator
-from .LPIPS_video import LPIPSVideoCalculator
+from ..token_length import TokenLengthCalculator
 from .CLIP_video import ViCLIPCalculator
 from .DINO_video import DINOVideoCalculator
+from .FVD import FVDCalculator
+from .LPIPS_video import LPIPSVideoCalculator
 from .PSNR_video import PSNRVideoCalculator
-from ..token_length import TokenLengthCalculator
+from .SSIM_video import SSIMVideoCalculator
 
 
 @dataclass

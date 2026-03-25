@@ -1,12 +1,15 @@
+import os
+import string
+import sys
+import warnings
+
+import pandas as pd
 import torch
 from PIL import Image
-from abc import abstractproperty
-import sys
-import os.path as osp
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string, listinstr
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-import copy
 
 
 class VITAQwen2(BaseModel):
@@ -22,10 +25,10 @@ class VITAQwen2(BaseModel):
         sys.path.append(root)
         assert model_path is not None
         try:
-            from vita.model.builder import load_pretrained_model
             from vita.conversation import conv_templates
+            from vita.model.builder import load_pretrained_model
             from vita.util.mm_utils import get_model_name_from_path, tokenizer_image_token
-        except:
+        except Exception:
             warnings.warn('Please install vita first.')
 
         model_name = get_model_name_from_path(model_path)
@@ -152,8 +155,8 @@ class VITAQwen2(BaseModel):
             self.max_num = 6
 
     def generate_inner(self, message, dataset=None):
-        from vita.util.mm_utils import KeywordsStoppingCriteria
         from vita.util.data_utils_video_audio_patch import dynamic_preprocess
+        from vita.util.mm_utils import KeywordsStoppingCriteria
         self.set_max_num(dataset)
         content, images = '', []
         for msg in message:
@@ -233,10 +236,10 @@ class VITA(BaseModel):
         sys.path.append(root)
         assert model_path is not None
         try:
-            from vita.model.builder import load_pretrained_model
             from vita.conversation import conv_templates
+            from vita.model.builder import load_pretrained_model
             from vita.util.mm_utils import get_model_name_from_path, tokenizer_image_token
-        except:
+        except Exception:
             warnings.warn('Please install vita first.')
 
         model_name = get_model_name_from_path(model_path)
@@ -354,8 +357,8 @@ class VITA(BaseModel):
             self.max_num = 6
 
     def generate_inner(self, message, dataset=None):
-        from vita.util.mm_utils import KeywordsStoppingCriteria
         from vita.util.data_utils_video_audio_patch import dynamic_preprocess
+        from vita.util.mm_utils import KeywordsStoppingCriteria
         self.set_max_num(dataset)
         content, images = '', []
         for msg in message:

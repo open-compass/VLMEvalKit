@@ -1,10 +1,12 @@
 import re
+import signal
+
+from sympy.core.sympify import SympifyError
 from sympy.parsing.latex import parse_latex
 from sympy.parsing.latex.errors import LaTeXParsingError
-from sympy.core.sympify import SympifyError
+
 from .common.transformations import normalize_latex
 from .simple_str_match import SimpleStrMatch
-import signal
 
 
 class TimeoutException(Exception):

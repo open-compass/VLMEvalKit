@@ -1,10 +1,14 @@
 import contextlib
+import json
+import os
 
 import joblib
+import numpy as np
 from joblib import Parallel, delayed
+from tqdm import tqdm
 
+from vlmeval.smp import load
 from .image_base import ImageBaseDataset
-from ..smp import *
 
 
 def get_direct_prompt():

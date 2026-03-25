@@ -1,16 +1,18 @@
-import os
-import re
 import ast
+import os
+import os.path as osp
+import re
+from collections import defaultdict
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+from PIL import Image
+from tqdm import tqdm
 
-from ..image_base import ImageBaseDataset
-from ..utils import build_judge
-from ...smp import *
-from ipdb import set_trace as st
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, get_logger, load, toliststr
 
-logger = get_logger("RUN")
+logger = get_logger(__name__)
 
 SYSTEM_PROMPT = "You are a GUI agent. You are given a task and a screenshot of the screen. " \
     "You need to perform pyautogui click/moveTo action to complete the task. " \

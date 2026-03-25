@@ -1,8 +1,8 @@
+import os.path as osp
 from pathlib import Path
 from typing import Callable, Iterable
 
-import os.path as osp
-from ..smp import load, dump
+from ..smp import dump, load
 
 
 def cpu_count():
@@ -12,7 +12,7 @@ def cpu_count():
     try:
         if period.exists() and quota.exists():
             return int(quota.read_text()) // int(period.read_text())
-    except:
+    except Exception:
         pass
 
     import os
@@ -37,7 +37,8 @@ def track_progress_rich(
         use_process: bool = False,
         **kwargs) -> list:
 
-    from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+    from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+
     from tqdm import tqdm
     if save is not None:
         assert osp.exists(osp.dirname(save)) or osp.dirname(save) == ''

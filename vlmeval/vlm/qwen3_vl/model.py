@@ -1,15 +1,13 @@
 from __future__ import annotations
-
 import logging
 import os
 import warnings
 
 import torch
 
+from vlmeval.smp import get_gpu_memory, listinstr
 from ..base import BaseModel
 from .prompt import Qwen3VLPromptMixin
-from ...smp import get_gpu_memory, listinstr
-
 
 VLLM_MAX_IMAGE_INPUT_NUM = 24
 
@@ -93,11 +91,13 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
 
         assert model_path is not None
         self.model_path = model_path
-        from transformers import AutoProcessor, AutoModelForImageTextToText
+        from transformers import AutoModelForImageTextToText, AutoProcessor
+
         # Use official Qwen3-Omni classes when model_path indicates omni
         if listinstr(['omni'], model_path.lower()):
             try:
-                from transformers import Qwen3OmniMoeForConditionalGeneration, Qwen3OmniMoeProcessor
+                from transformers import (Qwen3OmniMoeForConditionalGeneration,
+                                          Qwen3OmniMoeProcessor)
             except Exception as err:
                 logging.critical("pip install git+https://github.com/huggingface/transformers")
                 raise err

@@ -1,7 +1,4 @@
-from ...smp import *
-from .multiple_choice import extract_answer_from_item
-from PIL import Image, ImageOps
-import numpy as np
+from vlmeval.smp import load
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

@@ -1,15 +1,12 @@
-import os
-import json
-from typing import Dict, List, Tuple, Any, Union
-import pandas as pd
-import warnings
 import ast
-import math
+from typing import Any, Dict, List, Union
+
+import pandas as pd
 
 from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp import misc, file
+from vlmeval.dataset.utils.chartqapro import evaluate_predictions_chartqapro, prompt_context
+from vlmeval.smp import file, misc
 from vlmeval.smp.file import get_intermediate_file_path
-from vlmeval.dataset.utils.chartqapro import *
 
 
 class ChartQAPro(ImageBaseDataset):

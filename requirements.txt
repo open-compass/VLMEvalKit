@@ -52,6 +52,7 @@ setuptools
 sty
 sympy
 tabulate
+termcolor
 tiktoken
 timeout-decorator
 timm

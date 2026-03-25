@@ -14,11 +14,8 @@ The categories of each sub-task include:
   oc-grp, pc-grp                  --> grp (MCQ) type
 """  # noqa: E501
 
-import os
 import re
-import json
 from collections import defaultdict
-from PIL import Image
 
 ##########################################
 # 1. General Functions
@@ -177,7 +174,7 @@ def cnt_aggregate_metric(results):
     for item in results:
         try:
             gt = int(item.get("answer", None))
-        except:
+        except Exception:
             gt = None
         if gt is None:
             continue
@@ -187,7 +184,7 @@ def cnt_aggregate_metric(results):
         image_seq_len = item.get("image_seq_len", 2)
         try:
             image_seq_len = int(image_seq_len)
-        except:
+        except Exception:
             image_seq_len = 2
 
         parsed = parse_model_answer(model_ans_str)

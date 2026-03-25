@@ -1,14 +1,10 @@
-import torch
-import os
-import warnings
-import copy as cp
-import numpy as np
-import sys
 import logging
-from ..base import BaseModel
-from ...smp import isimg, listinstr
-from ...dataset import DATASET_TYPE
+import os
+import sys
+
 from huggingface_hub import snapshot_download
+
+from ..base import BaseModel
 
 
 class VideoChatGPT(BaseModel):

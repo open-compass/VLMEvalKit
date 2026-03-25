@@ -1,22 +1,21 @@
-import os
-import math
-import json
-import pandas as pd
-import numpy as np
-import hashlib
-import zipfile
-import shutil
-import requests
-import re
-import tempfile
-import multiprocessing
 import asyncio
-import nest_asyncio
-import glob
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+import hashlib
+import json
+import multiprocessing
+import os
+import re
+import shutil
+import tempfile
+import zipfile
 from collections import defaultdict
-from tqdm import tqdm
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
+import nest_asyncio
+import numpy as np
+import pandas as pd
+import requests
 from PIL import Image
+from tqdm import tqdm
 
 try:
     from ...utils.mp_util import cpu_count
@@ -25,8 +24,7 @@ except ImportError:
 
 # Import metrics
 try:
-    from .SArena.metrics import MetricsConfig, InternSVGMetrics
-
+    from .SArena.metrics import InternSVGMetrics, MetricsConfig
     # Try importing Video Metrics
     from .SArena.video.video_metrics import InternSVGVideoMetrics, VideoMetricsConfig
 except ImportError:
@@ -45,7 +43,7 @@ except ImportError:
 
 
 try:
-    from ...smp import load, dump, LMUDataRoot
+    from ...smp import LMUDataRoot, dump, load
 except ImportError:
     # Fallback to pandas if smp is not available
     def load(file_path):
@@ -280,9 +278,10 @@ def extract_svg_code(prediction_text):
 def _raster_worker_safe(args):
     """Worker function for Static Image Rendering (CairoSVG)"""
     svg_path, output_path, width, height = args
-    import cairosvg
-    import xml.etree.ElementTree as ET
     import signal
+    import xml.etree.ElementTree as ET
+
+    import cairosvg
 
     class TimeoutException(Exception):
         pass
@@ -330,8 +329,8 @@ async def svg_to_mp4(
     """
     Renders an SVG animation to MP4 using Pyppeteer and MoviePy.
     """
-    from pyppeteer import launch
     from moviepy import ImageSequenceClip
+    from pyppeteer import launch
 
     DURATION_SECONDS = 5
     FPS = 30

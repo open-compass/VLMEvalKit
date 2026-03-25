@@ -1,13 +1,18 @@
+import copy
+import logging
+import os.path as osp
+import string
+import warnings
+from argparse import Namespace
+
+import numpy as np
+import pandas as pd
 import torch
 from PIL import Image
-from abc import abstractproperty
-import sys
-import os.path as osp
+
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import cn_string, encode_image_to_base64, splitlen
 from ..base import BaseModel
-from ...smp import *
-from ...dataset import DATASET_TYPE, DATASET_MODALITY
-import copy
-import requests
 
 
 class LLaVA(BaseModel):
@@ -17,8 +22,8 @@ class LLaVA(BaseModel):
 
     def __init__(self, model_path="liuhaotian/llava_v1.5_7b", **kwargs):
         try:
-            from llava.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
+            from llava.model.builder import load_pretrained_model
         except Exception as err:
             logging.critical(
                 "Please install llava from https://github.com/haotian-liu/LLaVA"
@@ -131,12 +136,8 @@ class LLaVA(BaseModel):
         return text, images
 
     def chat_inner(self, message, dataset=None):
-        from llava.mm_utils import (
-            process_images,
-            tokenizer_image_token,
-            KeywordsStoppingCriteria,
-        )
         from llava.constants import IMAGE_TOKEN_INDEX
+        from llava.mm_utils import KeywordsStoppingCriteria, process_images, tokenizer_image_token
 
         prompt = self.system_prompt
         images = []
@@ -150,7 +151,7 @@ class LLaVA(BaseModel):
         prompt += "ASSISTANT: "
 
         images = [Image.open(s).convert("RGB") for s in images]
-        args = abstractproperty()
+        args = Namespace()
         args.image_aspect_ratio = "pad"
         image_tensor = process_images(images, self.image_processor, args).to(
             "cuda", dtype=torch.float16
@@ -180,18 +181,14 @@ class LLaVA(BaseModel):
         return output
 
     def generate_inner(self, message, dataset=None):
-        from llava.mm_utils import (
-            process_images,
-            tokenizer_image_token,
-            KeywordsStoppingCriteria,
-        )
         from llava.constants import IMAGE_TOKEN_INDEX
+        from llava.mm_utils import KeywordsStoppingCriteria, process_images, tokenizer_image_token
 
         # Support interleave text and image
         content, images = self.concat_tilist(message)
 
         images = [Image.open(s).convert("RGB") for s in images]
-        args = abstractproperty()
+        args = Namespace()
         args.image_aspect_ratio = "pad"
         if images:
             image_tensor = process_images(images, self.image_processor, args).to(
@@ -233,13 +230,8 @@ class LLaVA_Next(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path="llava-hf/llava-v1.6-vicuna-7b-hf", **kwargs):
-        import transformers
-        from transformers import (
-            LlavaNextProcessor,
-            LlavaNextForConditionalGeneration,
-            AutoProcessor,
-            LlavaForConditionalGeneration,
-        )
+        from transformers import (AutoProcessor, LlavaForConditionalGeneration,
+                                  LlavaNextForConditionalGeneration, LlavaNextProcessor)
 
         self.model_path = model_path
         if "34b" in model_path.lower():
@@ -252,7 +244,7 @@ class LLaVA_Next(BaseModel):
             self.processor = LlavaNextProcessor.from_pretrained(self.model_path)
         flash_attn_flag = False
         try:
-            import flash_attn
+            import flash_attn  # noqa: F401
 
             flash_attn_flag = True
         except ImportError:
@@ -415,13 +407,10 @@ class LLaVA_Next2(BaseModel):
     def __init__(self, model_path="lmms-lab/llama3-llava-next-8b", **kwargs):
         assert model_path is not None
         try:
+            from llava.conversation import SeparatorStyle, conv_templates
+            from llava.mm_utils import (KeywordsStoppingCriteria, get_model_name_from_path,
+                                        tokenizer_image_token)
             from llava.model.builder import load_pretrained_model
-            from llava.conversation import conv_templates, SeparatorStyle
-            from llava.mm_utils import (
-                get_model_name_from_path,
-                tokenizer_image_token,
-                KeywordsStoppingCriteria,
-            )
         except Exception as err:
             logging.critical(
                 "Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`"
@@ -503,14 +492,10 @@ class LLaVA_OneVision(BaseModel):
     def __init__(self, model_path="lmms-lab/llava-onevision-qwen2-7b-si", **kwargs):
         assert model_path is not None
         try:
+            from llava.conversation import SeparatorStyle, conv_templates
+            from llava.mm_utils import (KeywordsStoppingCriteria, get_model_name_from_path,
+                                        process_images, tokenizer_image_token)
             from llava.model.builder import load_pretrained_model
-            from llava.conversation import conv_templates, SeparatorStyle
-            from llava.mm_utils import (
-                get_model_name_from_path,
-                process_images,
-                tokenizer_image_token,
-                KeywordsStoppingCriteria,
-            )  # noqa: E501
         except Exception as err:
             logging.critical(
                 "Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`"
@@ -533,6 +518,7 @@ class LLaVA_OneVision(BaseModel):
 
         model_name = get_model_name_from_path(model_path)
         import warnings
+
         # filter warning align with official code
         warnings.filterwarnings("ignore")
         tokenizer, model, image_processor, _ = load_pretrained_model(
@@ -696,7 +682,6 @@ class LLaVA_OneVision(BaseModel):
 
     def load_video(self, video_path, max_frames_num, fps=1, force_sample=False):
         from decord import VideoReader, cpu
-        import numpy as np
 
         if max_frames_num == 0:
             return np.zeros((1, 336, 336, 3))
@@ -812,7 +797,6 @@ class LLaVA_OneVision_HF(BaseModel):
 
     def load_video(self, video_path, max_frames_num, fps=1, force_sample=False):
         from decord import VideoReader, cpu
-        import numpy as np
 
         vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
         total_frame_num = len(vr)
@@ -850,7 +834,7 @@ class LLaVA_OneVision_1_5(BaseModel):
     VIDEO_LLM = True
 
     def __init__(self, model_path="lmms-lab/LLaVA-OneVision-1.5-8B-Instruct", **kwargs):
-        from transformers import AutoProcessor, AutoModelForCausalLM
+        from transformers import AutoModelForCausalLM, AutoProcessor
 
         assert model_path is not None, "Model path must be provided."
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

@@ -1,8 +1,11 @@
-from ...smp import *
-from collections import OrderedDict, defaultdict
 import re
+from collections import defaultdict
+
+from sympy import Eq, latex, simplify
 from sympy.parsing.latex import parse_latex
-from sympy import latex, Eq, simplify
+
+from vlmeval.smp import load
+
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 prompt_scoring = r"""

@@ -1,6 +1,6 @@
 import math
 from dataclasses import dataclass
-from typing import Dict, Callable
+from typing import Callable, Dict
 
 from .base_metric import BaseMetric
 from .CLIP_Score import CLIPScoreCalculator

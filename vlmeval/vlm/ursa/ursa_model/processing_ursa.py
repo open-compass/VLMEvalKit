@@ -16,7 +16,8 @@ from typing import List, Optional, Union
 from transformers.feature_extraction_utils import BatchFeature
 from transformers.image_utils import ImageInput
 from transformers.processing_utils import ProcessorMixin
-from transformers.tokenization_utils_base import PaddingStrategy, PreTokenizedInput, TextInput, TruncationStrategy
+from transformers.tokenization_utils_base import (PaddingStrategy, PreTokenizedInput, TextInput,
+                                                  TruncationStrategy)
 from transformers.utils import TensorType
 
 

@@ -1,12 +1,13 @@
-import torch
-import sys
 import os.path as osp
+import sys
 import warnings
-from PIL import Image
-from vlmeval.smp import get_cache_path, load, dump, splitlen
-from huggingface_hub import snapshot_download
-from .base import BaseModel
 
+import torch
+from huggingface_hub import snapshot_download
+from PIL import Image
+
+from ..smp import dump, get_cache_path, load, splitlen
+from .base import BaseModel
 
 """
 You can perform inference of Yi-VL through the following steps:
@@ -101,8 +102,8 @@ class Yi_VL(BaseModel):
         prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
 
         from llava.conversation import conv_templates
-        from llava.model.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
         from llava.mm_utils import KeywordsStoppingCriteria, expand2square, tokenizer_image_token
+        from llava.model.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
 
         qs = DEFAULT_IMAGE_TOKEN + '\n' + prompt
         conv = conv_templates[self.conv_mode].copy()

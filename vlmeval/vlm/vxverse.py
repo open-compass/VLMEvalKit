@@ -1,13 +1,13 @@
-import torch
-import sys
 import os.path as osp
+import sys
 import warnings
-from .base import BaseModel
-from transformers import StoppingCriteriaList
 
-from PIL import Image
+import torch
 from huggingface_hub import snapshot_download
-from vlmeval.smp import *
+from PIL import Image
+
+from vlmeval.smp import get_cache_path
+from .base import BaseModel
 
 model_cfgs = {
     'XVERSE-V-13B': {

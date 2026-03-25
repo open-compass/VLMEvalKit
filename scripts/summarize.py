@@ -1,5 +1,14 @@
-from vlmeval.smp import *
+import argparse
+import logging
+import os.path as osp
+from collections import defaultdict
+
+import pandas as pd
+from tabulate import tabulate
+
 from vlmeval.dataset import SUPPORTED_DATASETS
+from vlmeval.smp import dump, listinstr, load
+
 
 def get_score(model, dataset):
 

@@ -1,14 +1,14 @@
-import re
 import copy
-import pandas as pd
+import os
+import re
 from typing import Optional
 
-import os
+import pandas as pd
+
+from ..smp import dump, get_intermediate_file_path, load
+from ..utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import build_judge
-from ..smp import load, dump, get_intermediate_file_path
-from ..utils import track_progress_rich
-
 
 metric_group = {
     'box': ['box_h', 'box_v', 'stock'],

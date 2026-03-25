@@ -1,8 +1,16 @@
+import argparse
+import os
+import os.path as osp
+import warnings
+
+import numpy as np
 import torch
 import torch.distributed as dist
+from tqdm import tqdm
+
 from vlmeval.config import supported_VLM
+from vlmeval.smp import dump, get_rank_and_world_size, load
 from vlmeval.utils import track_progress_rich
-from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -26,7 +34,7 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
     assert getattr(model, 'is_api', False)
 
     indices = list(samples_dict.keys())
-    if getattr(model,'backend', None) == 'genai':
+    if getattr(model, 'backend', None) == 'genai':
         if dataset.nframe > 0:
             print(
                 'Gemini model (with genai backend) does not support nframe, '
@@ -38,7 +46,7 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
                   'will reset fps setting in model to match the dataset.')
             setattr(model, 'fps', dataset.fps)
             print(f'The fps is set to {dataset.fps} for the model {model_name}.')
-    elif getattr(model,'backend', None) == 'vertex':
+    elif getattr(model, 'backend', None) == 'vertex':
         print('Gemini model (with vertex backend) does not support video input, '
               'will set its VIDEO_LLM to False to enable multi-image input for video.')
         setattr(model, 'VIDEO_LLM', False)

@@ -1,10 +1,12 @@
 import argparse
+import os
 import random
 from typing import Any, Dict, List, Tuple
-import os
 
+from .common_constriants import (Constraint, ConstraintColNoRepeat, ConstraintRowNoRepeat,
+                                 ConstraintSubGridNoRepeat)
 from .common_puzzle_factory import PuzzleFactory
-from .common_constriants import Constraint, ConstraintRowNoRepeat, ConstraintColNoRepeat, ConstraintSubGridNoRepeat
+
 
 class ConstraintLightUpBulb(Constraint):
     """Ensures that light bulbs don't illuminate each other.

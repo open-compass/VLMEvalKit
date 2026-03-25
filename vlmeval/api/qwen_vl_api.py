@@ -1,11 +1,14 @@
 from __future__ import annotations
-
 import os
 import warnings
 
-from vlmeval.smp import *
+import numpy as np
+
 from vlmeval.api.base import BaseAPI
+from vlmeval.smp import get_logger, proxy_set
 from vlmeval.vlm.qwen2_vl.prompt import Qwen2VLPromptMixin
+
+logger = get_logger(__name__)
 
 
 def ensure_image_url(image: str) -> str:
@@ -112,8 +115,8 @@ class Qwen2VLAPI(Qwen2VLPromptMixin, BaseAPI):
             return 0, answer, 'Succeeded! '
         except Exception as err:
             if self.verbose:
-                self.logger.error(f'{type(err)}: {err}')
-                self.logger.error(f'The input messages are {inputs}.')
+                logger.error(f'{type(err)}: {err}')
+                logger.error(f'The input messages are {inputs}.')
             return -1, '', ''
 
 
@@ -183,6 +186,7 @@ class QwenVLWrapper(BaseAPI):
 
     def generate_inner(self, inputs, **kwargs) -> str:
         from dashscope import MultiModalConversation
+
         assert isinstance(inputs, str) or isinstance(inputs, list)
 
         if 'type' in inputs[0]:
@@ -206,8 +210,8 @@ class QwenVLWrapper(BaseAPI):
             return 0, answer, 'Succeeded! '
         except Exception as err:
             if self.verbose:
-                self.logger.error(f'{type(err)}: {err}')
-                self.logger.error(f'The input messages are {inputs}.')
+                logger.error(f'{type(err)}: {err}')
+                logger.error(f'The input messages are {inputs}.')
 
             return -1, '', ''
 

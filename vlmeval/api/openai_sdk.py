@@ -1,8 +1,9 @@
 import json
+
 import requests
 
-from .base import BaseAPI
 from ..smp import get_logger
+from .base import BaseAPI
 
 logger = get_logger(__name__)
 

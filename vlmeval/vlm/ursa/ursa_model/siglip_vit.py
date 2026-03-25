@@ -22,32 +22,14 @@ import math
 import warnings
 from dataclasses import dataclass
 from functools import partial
-from typing import (
-    Callable,
-    Dict,
-    Final,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import (Callable, Dict, Final, List, Literal, Optional, Sequence, Set, Tuple, Type,
+                    Union)
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from timm.layers import (
-    AttentionPoolLatent,
-    DropPath,
-    LayerType,
-    Mlp,
-    PatchDropout,
-    PatchEmbed,
-    resample_abs_pos_embed,
-)
+from timm.layers import (AttentionPoolLatent, DropPath, LayerType, Mlp, PatchDropout, PatchEmbed,
+                         resample_abs_pos_embed)
 from timm.models._manipulate import checkpoint_seq, named_apply
 
 

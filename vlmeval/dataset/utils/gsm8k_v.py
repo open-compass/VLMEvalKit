@@ -1,9 +1,9 @@
 import re
-import pandas as pd
-import numpy as np
 from fractions import Fraction
-from ...smp import load, dump
-from ...smp.file import get_intermediate_file_path
+
+import pandas as pd
+
+from vlmeval.smp import dump, get_intermediate_file_path, load
 
 
 def _clean_extracted_number(number_str):
@@ -51,7 +51,7 @@ def extract_numerical_answer(text):
             if cleaned is not None:
                 try:
                     return _normalize_to_float(cleaned)
-                except:
+                except Exception:
                     pass
 
     lines = text.split('\n')
@@ -74,7 +74,7 @@ def extract_numerical_answer(text):
                 if cleaned is not None:
                     try:
                         return _normalize_to_float(cleaned)
-                    except:
+                    except Exception:
                         pass
 
     last_paragraph = _get_last_paragraph(text)
@@ -96,7 +96,7 @@ def extract_numerical_answer(text):
             if cleaned is not None:
                 try:
                     return _normalize_to_float(cleaned)
-                except:
+                except Exception:
                     pass
 
     for i in range(min(3, len(lines))):
@@ -108,7 +108,7 @@ def extract_numerical_answer(text):
             if cleaned is not None:
                 try:
                     return _normalize_to_float(cleaned)
-                except:
+                except Exception:
                     pass
 
         comma_numbers = re.findall(r'-?[0-9,]+(?:\.[0-9]+)?', line)
@@ -117,7 +117,7 @@ def extract_numerical_answer(text):
             if cleaned is not None:
                 try:
                     return _normalize_to_float(cleaned)
-                except:
+                except Exception:
                     pass
 
     return None
@@ -150,7 +150,7 @@ def is_correct(prediction, ground_truth, tolerance=1e-3):
             return True
 
         return False
-    except:
+    except Exception:
         try:
             pred_str = str(prediction).replace(',', '')
             gt_str = str(ground_truth).replace(',', '')

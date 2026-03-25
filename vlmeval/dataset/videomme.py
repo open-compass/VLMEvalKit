@@ -1,8 +1,18 @@
+import os
+import os.path as osp
+import pickle
+import warnings
+
+import numpy as np
+import pandas as pd
+import portalocker
 from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
+from PIL import Image
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5, modelscope_flag_set)
+from .utils import DEBUG_MESSAGE, build_judge
 from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -231,7 +241,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.videomme import get_dimension_rating, extract_characters_regex, extract_option
+        from .utils.videomme import extract_characters_regex, extract_option, get_dimension_rating
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 

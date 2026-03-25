@@ -1,12 +1,13 @@
 import os
 import shutil
-import torch
-import lpips
 
-from tqdm import tqdm
-from vlmeval.smp.file import LMUDataRoot
+import lpips
+import torch
 from torch.utils.data import DataLoader
-from torchvision.transforms import ToTensor, Normalize
+from torchvision.transforms import Normalize, ToTensor
+from tqdm import tqdm
+
+from vlmeval.smp.file import LMUDataRoot
 from .base_metric import BaseMetric
 
 
