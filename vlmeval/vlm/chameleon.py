@@ -1,9 +1,9 @@
-import os.path as osp
-import warnings
-from .base import BaseModel
-from ..smp import *
-from PIL import Image
+import logging
+
 import torch
+from PIL import Image
+
+from .base import BaseModel
 
 
 class Chameleon(BaseModel):
@@ -13,7 +13,7 @@ class Chameleon(BaseModel):
 
     def __init__(self, model_path='facebook/chameleon-7b', **kwargs):
         try:
-            from transformers import ChameleonProcessor, ChameleonForConditionalGeneration
+            from transformers import ChameleonForConditionalGeneration, ChameleonProcessor
         except Exception as e:
             logging.critical('Please install the latest transformers.')
             raise e

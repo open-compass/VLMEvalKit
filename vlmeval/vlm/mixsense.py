@@ -1,11 +1,11 @@
-import torch
-import transformers
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from PIL import Image
 import warnings
 
+import torch
+import transformers
+from PIL import Image
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
 from .base import BaseModel
-from ..smp import *
 
 
 class LLama3Mixsense(BaseModel):

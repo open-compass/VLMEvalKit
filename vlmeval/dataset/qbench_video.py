@@ -1,29 +1,28 @@
-# flake8: noqa
-import huggingface_hub
-from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
-from .video_concat_dataset import ConcatVideoDataset
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
-import torchvision.transforms as T
-from torchvision import transforms
-from torchvision.transforms.functional import InterpolationMode
-import pandas as pd
-import imageio
-import cv2
-import zipfile
 import os
-import glob
-from .utils.qbench_video import *
+import os.path as osp
+import zipfile
+
+import numpy as np
+import pandas as pd
+import portalocker
+from huggingface_hub import snapshot_download
+from PIL import Image
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5)
+from vlmeval.utils import track_progress_rich
+from .utils import build_judge
+from .utils.qbench_video import (VQA_JUDGE_SYS_PROMPT, check_ans_mcq, check_ans_vqa,
+                                 get_dimension_rating)
+from .video_base import VideoBaseDataset
+from .video_concat_dataset import ConcatVideoDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 class QBench_Video(ConcatVideoDataset):
     def __init__(self, dataset='QBench_Video', nframe=0, fps=-1):
-        self.DATASET_SETS[dataset] = ['QBench_Video_MCQ','QBench_Video_VQA']
+        self.DATASET_SETS[dataset] = ['QBench_Video_MCQ', 'QBench_Video_VQA']
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
@@ -45,12 +44,12 @@ class QBench_Video_MCQ(VideoBaseDataset):
     FRAMES_TMPL_SYS = """
 You will receive {} distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video.
 Please analyze these frames and answer the question based on your observations.
-"""
+"""  # noqa: E501
 
     FRAMES_TMPL_SYS_4VIDEO_LLM = """
 You will receive several distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video.
 Please analyze these frames and answer the question based on your observations.
-"""
+"""  # noqa: E501
 
     POST_PROMPT = """
 Please answer the question in the following format: the uppercase letter of the correct answer option itself.
@@ -159,13 +158,15 @@ Please do not add any other answers beyond this.
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'
+        assert get_file_extension(eval_file) in [
+            'xlsx', 'json', 'tsv'
+        ], 'data file should be an supported format (xlsx/json/tsv) file'
 
         tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
         score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.setdefault('model', 'exact_matching')
+            # model = judge_kwargs.setdefault('model', 'exact_matching')
 
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
@@ -207,12 +208,12 @@ class QBench_Video_VQA(VideoBaseDataset):
     FRAMES_TMPL_SYS = """
 You will receive {} distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video.
 Please analyze these frames and provide a detailed and accurate answer from the perspective of visual quality based on your observations.
-"""
+"""  # noqa: E501
 
     FRAMES_TMPL_SYS_4VIDEO_LLM = """
 You will receive several distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video.
 Please analyze these frames and provide a detailed and accurate answer from the perspective of visual quality based on your observations.
-"""
+"""  # noqa: E501
 
     TYPE = 'Video-VQA'
     DEFAULT_JUDGE = ['gpt-4o-0806', 'gpt-4o']

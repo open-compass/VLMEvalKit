@@ -44,6 +44,8 @@ pip install -e .
   HUNYUAN_SECRET_ID=
   # LMDeploy API
   LMDEPLOY_API_BASE=
+  # MiniMax API
+  MINIMAX_API_KEY=
   # 你可以设置一个评估时代理，评估阶段产生的 API 调用将通过这个代理进行
   EVAL_PROXY=
   ```

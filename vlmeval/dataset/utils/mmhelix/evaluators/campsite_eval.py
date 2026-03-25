@@ -1,7 +1,7 @@
-import json
 import ast
+import json
 import re
-from typing import Dict, Any, List, Union, Tuple, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 class CampsiteEvaluator:
@@ -90,7 +90,7 @@ class CampsiteEvaluator:
                     return None
 
             return result if result else []  # 允许空列表
-        except:
+        except Exception:
             return None
 
     def _try_direct_parsing(self, output: str) -> Optional[List[List[int]]]:
@@ -105,7 +105,7 @@ class CampsiteEvaluator:
                 try:
                     parsed = ast.literal_eval(cleaned)
                     return self._validate_coordinate_format(parsed)
-                except:
+                except Exception:
                     pass
 
                 # 如果失败，尝试清理后再解析
@@ -116,17 +116,17 @@ class CampsiteEvaluator:
                 try:
                     parsed = ast.literal_eval(cleaned)
                     return self._validate_coordinate_format(parsed)
-                except:
+                except Exception:
                     pass
 
             # 处理JSON格式
             try:
                 parsed = json.loads(cleaned)
                 return self._validate_coordinate_format(parsed)
-            except:
+            except Exception:
                 pass
 
-        except:
+        except Exception:
             pass
         return None
 
@@ -159,7 +159,7 @@ class CampsiteEvaluator:
 
                     if len(coords) >= 0:  # 允许空答案
                         return coords
-            except:
+            except Exception:
                 continue
 
         return None
@@ -185,7 +185,7 @@ class CampsiteEvaluator:
             elif len(numbers) == 0:
                 # 没有数字，可能是空答案
                 return []
-        except:
+        except Exception:
             pass
 
         return None
@@ -252,7 +252,7 @@ class CampsiteEvaluator:
                             row, col = int(numbers[i]), int(numbers[i + 1])
                             if 1 <= row <= 30 and 1 <= col <= 30:  # 合理的范围
                                 coords.append([row, col])
-                        except:
+                        except Exception:
                             continue
                     if coords:
                         return coords
@@ -267,7 +267,7 @@ class CampsiteEvaluator:
                         row, col = int(match[0]), int(match[1])
                         if row > 0 and col > 0:
                             coords.append([row, col])
-                    except:
+                    except Exception:
                         continue
                 if coords:
                     return coords
@@ -282,7 +282,7 @@ class CampsiteEvaluator:
                         row, col = int(match[0]), int(match[1])
                         if row > 0 and col > 0:
                             coords.append([row, col])
-                    except:
+                    except Exception:
                         continue
                 if coords:
                     return coords
@@ -297,12 +297,12 @@ class CampsiteEvaluator:
                         row, col = int(match[0]), int(match[1])
                         if row > 0 and col > 0:
                             coords.append([row, col])
-                    except:
+                    except Exception:
                         continue
                 if coords:
                     return coords
 
-        except:
+        except Exception:
             pass
 
         return None
@@ -327,7 +327,7 @@ class CampsiteEvaluator:
                                 row, col = int(numbers[0]), int(numbers[1])
                                 if row > 0 and col > 0:
                                     coords.append([row, col])
-                            except:
+                            except Exception:
                                 continue
                     if coords:
                         return coords
@@ -347,7 +347,7 @@ class CampsiteEvaluator:
                             row, col = int(numbers[0]), int(numbers[1])
                             if row > 0 and col > 0:
                                 coords.append([row, col])
-                        except:
+                        except Exception:
                             continue
                 if coords:
                     return coords
@@ -362,13 +362,13 @@ class CampsiteEvaluator:
                         row, col = int(numbers_only[i]), int(numbers_only[i + 1])
                         if 1 <= row <= 30 and 1 <= col <= 30:
                             coords.append([row, col])
-                    except:
+                    except Exception:
                         continue
                 # 只有当所有数字都能成功转换为合理坐标时才返回
                 if len(coords) == len(numbers_only) // 2:
                     return coords
 
-        except:
+        except Exception:
             pass
 
         return None

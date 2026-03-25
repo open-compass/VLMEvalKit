@@ -1,10 +1,17 @@
+import os.path as osp
+import string
 import sys
-import torch
+import warnings
 from abc import abstractproperty
-from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
+
+import pandas as pd
+import torch
+from PIL import Image
 from transformers import AutoTokenizer, BitsAndBytesConfig
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string, splitlen
+from .base import BaseModel
 
 
 class TransCoreM(BaseModel):
@@ -13,9 +20,10 @@ class TransCoreM(BaseModel):
     INTERLEAVE = False
 
     def load_pretrained_model(self, model_path, load_8bit=False, load_4bit=False, revision='main'):
-        from transcorem.model import TransCoreMQWenForCausalLM
-        from transcorem.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
         import transcorem.config_param as config_param
+        from transcorem.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                          DEFAULT_IMAGE_PATCH_TOKEN)
+        from transcorem.model import TransCoreMQWenForCausalLM
         kwargs = {'revision': revision}
         if load_8bit:
             kwargs['load_in_8bit'] = True
@@ -117,10 +125,11 @@ class TransCoreM(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        from transcorem.mm_utils import highres_process_images, tokenizer_image_token, KeywordsStoppingCriteria
-        from transcorem.constants import (
-            IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
-        from transcorem.conversation import conv_templates, SeparatorStyle
+        from transcorem.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                          DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX)
+        from transcorem.conversation import SeparatorStyle, conv_templates
+        from transcorem.mm_utils import (KeywordsStoppingCriteria, highres_process_images,
+                                         tokenizer_image_token)
 
         prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image_path).convert('RGB')

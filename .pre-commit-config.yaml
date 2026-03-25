@@ -15,15 +15,19 @@ exclude: |
   )
 repos:
   - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
+    rev: 7.1.2
     hooks:
       - id: flake8
         args:
           [
             "--max-line-length=120",
-            "--ignore=F401,F403,F405,E402,E722,E741,W503,E231,E702",
+            "--ignore=W503",
           ]
         exclude: ^configs/
+  - repo: https://github.com/PyCQA/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
   - repo: https://github.com/google/yapf
     rev: v0.43.0
     hooks:

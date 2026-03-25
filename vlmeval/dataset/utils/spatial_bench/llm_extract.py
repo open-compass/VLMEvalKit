@@ -1,13 +1,15 @@
-import re
 import os
+import re
+from typing import Any, Dict, List
+
 import pandas as pd
 
-from typing import Dict, Any, List
-
+from vlmeval.smp.file import load
+from vlmeval.smp.log import get_logger
+from vlmeval.utils.mp_util import track_progress_rich
 from .tools.utils import build_choices
-from ....smp.log import get_logger
-from ....smp.file import load
-from ....utils.mp_util import track_progress_rich
+
+logger = get_logger(__name__)
 
 
 GENERIC_EXTRACT_JUDGE_PROMPT = (
@@ -106,8 +108,6 @@ def call_llm_extract(
           - extracted_answer: the final answer extracted by the LLM as a string,
             or 'N/A' if none can be extracted.
     """
-    logger = get_logger('LLM Extract')
-
     prompt = GENERIC_EXTRACT_JUDGE_PROMPT.format(
         question=question,
         gold_answer=gold_answer,

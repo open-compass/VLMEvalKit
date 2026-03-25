@@ -1,10 +1,12 @@
-import torch
 import os.path as osp
 import warnings
-from .base import BaseModel
-from ..smp import splitlen, listinstr
+
+import torch
 from PIL import Image
 from transformers.image_utils import load_image
+
+from ..smp import listinstr, splitlen
+from .base import BaseModel
 
 
 class IDEFICS(BaseModel):
@@ -13,7 +15,7 @@ class IDEFICS(BaseModel):
 
     def __init__(self, model_path='HuggingFaceM4/idefics-9b-instruct', **kwargs):
         assert osp.exists(model_path) or splitlen(model_path) == 2
-        from transformers import IdeficsForVisionText2Text, AutoProcessor
+        from transformers import AutoProcessor, IdeficsForVisionText2Text
 
         self.model = IdeficsForVisionText2Text.from_pretrained(
             model_path, torch_dtype=torch.bfloat16, device_map="auto"
@@ -61,7 +63,7 @@ class IDEFICS2(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path='HuggingFaceM4/idefics2-8b', **kwargs):
-        from transformers import AutoProcessor, AutoModelForVision2Seq
+        from transformers import AutoModelForVision2Seq, AutoProcessor
         assert model_path is not None
         self.model_path = model_path
         if 'Idefics3' in self.model_path.lower():
@@ -293,7 +295,7 @@ class IDEFICS2(BaseModel):
             'ScienceQA_TEST',
         ]:
             formatted_messages, formatted_images = self.build_prompt_puremcq(message)
-        elif dataset is not None and listinstr(['MLVU','TempCompass','MVBench'], dataset):
+        elif dataset is not None and listinstr(['MLVU', 'TempCompass', 'MVBench'], dataset):
             formatted_messages, formatted_images = self.build_prompt_default(message, change_the_img_place=True)
         else:
             formatted_messages, formatted_images = self.build_prompt_default(message)

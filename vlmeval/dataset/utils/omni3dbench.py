@@ -1,4 +1,5 @@
 from collections import defaultdict
+
 import pandas as pd
 
 OMNI3DBENCH_PROMPT = """
@@ -36,7 +37,7 @@ def Omni3DBench_acc(data):
             num_ct_n += 1
             try:
                 pred = int(pred)
-            except:
+            except Exception:
                 continue
             gt = int(gt)
             if gt == pred:
@@ -52,7 +53,7 @@ def Omni3DBench_acc(data):
                         yn_correct += 1
                     elif gt == "no" and "false" in pred.lower():
                         yn_correct += 1
-                except:
+                except Exception:
                     continue
             # Multi-choice
             else:
@@ -60,7 +61,7 @@ def Omni3DBench_acc(data):
                 try:
                     if gt == pred.lower():
                         multi_correct += 1
-                except:
+                except Exception:
                     continue
         elif ans_type == "float":
             # Numeric (other)
@@ -69,7 +70,7 @@ def Omni3DBench_acc(data):
             for threshold in mra_thresholds:
                 try:
                     pred = float(pred)
-                except:
+                except Exception:
                     continue
                 gt = float(gt)
                 if abs(gt - pred) / gt < threshold:

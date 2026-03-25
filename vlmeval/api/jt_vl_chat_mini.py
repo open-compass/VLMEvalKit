@@ -1,18 +1,24 @@
 # flake8: noqa
-import pandas as pd
-import requests
+import base64
 import json
 import os
-import base64
-from vlmeval.smp import *
+import os.path as osp
+import string
+
+import pandas as pd
+import requests
+
 from vlmeval.api.base import BaseAPI
-from vlmeval.dataset import DATASET_TYPE
-from vlmeval.dataset import img_root_map
+from vlmeval.dataset import DATASET_TYPE, img_root_map
+from vlmeval.smp import (LMUDataRoot, cn_string, concat_images_vlmeval,
+                         decode_base64_to_image_file, get_logger, listinstr, read_ok, toliststr)
 
 API_ENDPOINT = "https://hl.jiutian.10086.cn/kunlun/ingress/api/hl-4a9c15/7b11a3451e1a4612a6661c3e22235df6/ai-e7d64e71b61e421b8a41c0d43424d73a/service-cd5a067331e34cfea25f5a9d7960ffe8//v1/chat/completions"
 API_ENDPOINT_2B = 'https://hl.jiutian.10086.cn/kunlun/ingress/api/hl-4a9c15/7b11a3451e1a4612a6661c3e22235df6/ai-3101961c75eb47ad8cc8d8ebb62fb8b0/service-c0bf9bac00824ace8639c0e8e0a4a5da/v1/chat/completions'
 APP_CODE = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI1YjYyODY0ZjZmMWI0Yzg4YWE2ZDk1NzBhNDY1MWI3OSIsImlzcyI6ImFwaS1hdXRoLWtleSIsImV4cCI6NDg5ODU1NzAwN30.jLUbctPdJ74VC3Vwlr0nB4x9N2QxWtSGYE0vWsceZN-agDecVnH8pH8Q5SoCQ3-SBYx5jDx-UOg3kkoMqY9CdxiALauKU_UZ56CV2NKCcHUVeJIgNvfQJMb0z6yCCbSe80e1T8FxrxQXDvubyWtl4pTAhixYaEUqNG8rjUrDuA-vRgZ1e7HilBmU487OI76D9LUnU-zEdMWhzsCkh_Yy3M1Ur4PsKgMFi5QSmMuGSUGJjkpJHiGNx1QcevBLQSOCL2jvg15ifB2n2dD6zb8iPXFkfQTtmvbZofxWACSvkri-x9V3gFWg7DODwKUZsyyogPzRJVbmxDGruMsgiiCsPg"
 
+
+logger = get_logger(__name__)
 
 class JTVLChatWrapper(BaseAPI):
     is_api: bool = True
@@ -264,9 +270,9 @@ class JTVLChatWrapper(BaseAPI):
                     error_msg = f'Error! code {r.status_code} content: {r.content}'
                     error_con = r.content.decode('utf-8')
                     if self.verbose:
-                        self.logger.error(error_msg)
-                        self.logger.error(error_con)
-                        self.logger.error(f'The input messages are {inputs}.')
+                        logger.error(error_msg)
+                        logger.error(error_con)
+                        logger.error(f'The input messages are {inputs}.')
                     return -1, error_msg, ''
         except Exception as e:
             return -1, f'Error: {str(e)}', ''

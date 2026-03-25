@@ -1,7 +1,6 @@
 import warnings
-import pandas as pd
 from abc import abstractmethod
-from ..smp import *
+
 from .image_base import ImageBaseDataset
 
 

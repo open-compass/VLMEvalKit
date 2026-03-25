@@ -1,18 +1,18 @@
-import ast
+from vlmeval.smp import toliststr
 from .image_base import ImageBaseDataset
-from ..smp import *
-from .utils.sarena_mini import evaluate_sarena_mini
 
 
-class SArena_MINI(ImageBaseDataset):
+class SArena(ImageBaseDataset):
 
     TYPE = "VQA"
 
     DATASET_URL = {
+        "SArena": "https://huggingface.co/datasets/JoeLeelyf/SArena-VLMEvalKit/resolve/main/SArena.tsv",
         "SArena_MINI": "https://huggingface.co/datasets/JoeLeelyf/SArena-VLMEvalKit/resolve/main/SArena_MINI.tsv"
     }
 
     DATASET_MD5 = {
+        "SArena": "2a747c13c063a6c9839c66611b61526c",
         "SArena_MINI": "c87fa82819a5fce652df40f6332266ff"
     }
 
@@ -44,4 +44,5 @@ class SArena_MINI(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        return evaluate_sarena_mini(eval_file)
+        from .utils.sarena import evaluate_sarena
+        return evaluate_sarena(eval_file, dataset=self.dataset)

@@ -8,19 +8,20 @@
 # --------------------------------------------------------
 
 
+import logging
+from typing import Optional
+
 import torch
 import torch.nn as nn
 from torch.nn import LayerNorm
-# import torchaudio.compliance.kaldi as ta_kaldi
 
+from .backbone import TransformerEncoder
 from .kaldi import fbank as kaldi_fbank
 
-from .backbone import (
-    TransformerEncoder,
-)
+# import torchaudio.compliance.kaldi as ta_kaldi
 
-import logging
-from typing import Optional
+
+
 
 logger = logging.getLogger(__name__)
 

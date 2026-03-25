@@ -1,18 +1,19 @@
 # flake8: noqa
 import inspect
-from matplotlib.patches import Ellipse
-from matplotlib.image import NonUniformImage
-from matplotlib.projections.polar import PolarAxes
-import networkx.drawing.nx_pylab as nx_pylab
+import warnings
+
+import matplotlib
 import matplotlib.colors as mcolors
-from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import networkx.drawing.nx_pylab as nx_pylab
+import squarify
 from matplotlib.axes._axes import Axes
 from matplotlib.axes._base import _process_plot_var_args
-import matplotlib.pyplot as plt
-import matplotlib
-import squarify
+from matplotlib.image import NonUniformImage
+from matplotlib.patches import Ellipse
+from matplotlib.projections.polar import PolarAxes
+from mpl_toolkits.mplot3d import Axes3D
 
-import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # sys.path.insert(0, f'{os.environ["PROJECT_PATH"]}')

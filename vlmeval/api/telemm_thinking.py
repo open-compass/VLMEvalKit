@@ -1,13 +1,17 @@
+import json
 import os
 import re
-import requests
-from ..dataset import DATASET_TYPE, DATASET_MODALITY
-from vlmeval.api.base import BaseAPI
-from vlmeval.smp import *
 
+import numpy as np
+import requests
+
+from vlmeval.api.base import BaseAPI
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import encode_image_to_base64, get_logger, listinstr
+
+logger = get_logger(__name__)
 
 API_BASE = "https://openapi.teleagi.cn:443/aipaas/aiproxy-stream/chat/completions/8005400012"
-
 
 PREDEFINED_SYSTEM_PROMPT = """
 You are an AI assistant that rigorously follows this response protocol:
@@ -40,10 +44,8 @@ class TeleMM2Thinking_PromptUtil:
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
-        from ..vlm.internvl.utils import (build_multi_choice_prompt,
-                                          build_mcq_cot_prompt,
-                                          build_qa_cot_prompt,
-                                          reorganize_prompt)
+        from ..vlm.internvl.utils import (build_mcq_cot_prompt, build_multi_choice_prompt,
+                                          build_qa_cot_prompt, reorganize_prompt)
 
         tgt_path = self.dump_image(line, dataset)
         if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
@@ -118,14 +120,14 @@ class TeleMM2Thinking_Wrapper(BaseAPI):
 
         self.model = model
 
-        self.logger.info(f'evaluate model: {self.model}')
+        logger.info(f'evaluate model: {self.model}')
 
         self.max_tokens = 20480
         self.temperature = 0.0
         self.custom_prompt = 'telemm2thinking'
 
-        self.logger.info(f'using custom prompt {self.custom_prompt}')
-        self.logger.info(f'Init temperature: {self.temperature}')
+        logger.info(f'using custom prompt {self.custom_prompt}')
+        logger.info(f'Init temperature: {self.temperature}')
         self.system_prompt = None
 
     def set_dump_image(self, dump_image_func):
@@ -154,6 +156,7 @@ class TeleMM2Thinking_Wrapper(BaseAPI):
                     print('text msg:', msg['value'])
                 elif msg['type'] == 'image':
                     from PIL import Image
+
                     img = Image.open(msg['value'])
                     b64 = encode_image_to_base64(img)
                     extra_args = msg.copy()
@@ -254,7 +257,7 @@ class TeleMM2Thinking_Wrapper(BaseAPI):
             do_sample = False
             temperature = 0.0
 
-        self.logger.info(f'Generate temperature: {temperature}')
+        logger.info(f'Generate temperature: {temperature}')
 
         headers = {
             'Content-Type': 'application/json',
@@ -280,7 +283,7 @@ class TeleMM2Thinking_Wrapper(BaseAPI):
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
             answer = self.extract_answer(answer, dataset)
-        except:
+        except Exception:
             pass
         return ret_code, answer, response
 

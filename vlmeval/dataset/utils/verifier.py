@@ -1,3 +1,10 @@
+import os
+from abc import ABC, abstractmethod
+
+from vlmeval.smp.log import get_logger
+
+logger = get_logger(__name__)
+
 QUESTION_QUALITY_PROMPT_EN_NO_COT = (
     "Please as a grading expert, judge whether the final answers given by the candidates below are consistent with "
     "the standard answers, that is, whether the candidates answered correctly. "
@@ -39,8 +46,7 @@ QUESTION_QUALITY_PROMPT_EN_NO_COT = (
     "<Candidate's Answer Begin>: "
     "{llm_response} "
     "<Candidate's Answer End> "
-    "Judging the correctness of the candidate's answer:"
-)
+    "Judging the correctness of the candidate's answer:")
 
 QUESTION_QUALITY_PROMPT_EN_COT = (
     "As a grading expert, your task is to determine whether the candidate's final answer matches the provided "
@@ -108,9 +114,6 @@ QUESTION_QUALITY_PROMPT_EN_COT = (
     "Analysis step by step and Final Judgment:"
 )
 
-import os
-from abc import ABC, abstractmethod
-
 
 class BaseVerifierModel(ABC):
 
@@ -128,7 +131,7 @@ class Verifier:
 
     def __init__(self, model_path, use_vllm=False, use_cot=False, **kwargs):
         if 'VERIFIER_PATH' in os.environ and os.environ['VERIFIER_PATH'] != '':
-            self.logger.info('Environment variable VERIFIER_PATH is set. Will use it as model_path. ')
+            logger.info('Environment variable VERIFIER_PATH is set. Will use it as model_path. ')
             model_path = os.environ['VERIFIER_PATH']
         else:
             raise ValueError('VERIFIER_PATH is not set. Please set it in the .env file.')
@@ -198,11 +201,12 @@ class Verifier_Model(BaseVerifierModel):
             self.model = Verifier_Model._model_cache[cache_key]
             self.tokenizer = Verifier_Model._tokenizer_cache[cache_key]
         else:
-            from vllm import LLM
             from transformers import AutoTokenizer
+            from vllm import LLM
 
             print("Loading verifier model with vLLM...")
             import os
+
             import torch
 
             os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"

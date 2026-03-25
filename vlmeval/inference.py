@@ -1,8 +1,16 @@
+import argparse
+import os
+import os.path as osp
+import warnings
+
 import torch
 import torch.distributed as dist
+from tqdm import tqdm
+
 from vlmeval.config import supported_VLM
+from vlmeval.smp import (dump, get_pred_file_format, get_pred_file_path, get_rank_and_world_size,
+                         load)
 from vlmeval.utils import track_progress_rich
-from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

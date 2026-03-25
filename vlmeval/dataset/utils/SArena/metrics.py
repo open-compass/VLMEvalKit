@@ -1,5 +1,6 @@
+import math
 from dataclasses import dataclass
-from typing import Dict, Callable
+from typing import Callable, Dict
 
 from .base_metric import BaseMetric
 from .CLIP_Score import CLIPScoreCalculator
@@ -57,11 +58,11 @@ class InternSVGMetrics:
             print(f"Calculating {metric_name}...")
             if metric_name in ['FID', 'FID-C']:
                 avg_result = metric.calculate_score(batch)
-                if avg_result is not float("nan"):
+                if not math.isnan(avg_result):
                     avg_results_dict[metric_name] = avg_result
             else:
                 avg_result, values = metric.calculate_score(batch)
-                if avg_result is not float("nan"):
+                if not math.isnan(avg_result):
                     avg_results_dict[metric_name] = avg_result
 
         return avg_results_dict

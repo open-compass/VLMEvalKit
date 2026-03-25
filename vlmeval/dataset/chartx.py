@@ -1,9 +1,14 @@
+import os.path as osp
+from collections import defaultdict
 
+import numpy as np
+
+from vlmeval.smp import d2df, dump, load
+from vlmeval.smp.file import get_intermediate_file_path
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
-from .utils.chartx_eval import chartx_scrm_eval, ChartX_auxeval
-from ..utils import track_progress_rich
+from .utils import DEBUG_MESSAGE, build_judge
+from .utils.chartx_eval import ChartX_auxeval, chartx_scrm_eval
 
 
 class ChartX(ImageBaseDataset):
@@ -23,8 +28,6 @@ class ChartX(ImageBaseDataset):
 
     @classmethod
     def evaluate(cls, eval_file, **judge_kwargs):
-        from .utils.vqa_eval import process_line
-
         print("Evaluating ChartX results...")
         data = load(eval_file)
 

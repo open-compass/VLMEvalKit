@@ -1,14 +1,10 @@
-import os
 import re
-import tempfile
-from functools import partial
 
-import pandas as pd
+import tqdm
 
+from vlmeval.smp import dump, get_intermediate_file_path, load
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE, Spatial457_utils
-from ..smp import *
-from ..utils import track_progress_rich
+from .utils import Spatial457_utils
 
 
 class Spatial457(ImageBaseDataset):

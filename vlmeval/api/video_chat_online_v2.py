@@ -1,16 +1,19 @@
 # flake8: noqa
-import pandas as pd
-import requests
+import base64
 import json
 import os
-import base64
-from vlmeval.smp import *
+import os.path as osp
+import string
+
+import pandas as pd
+import requests
+
 from vlmeval.api.base import BaseAPI
-from vlmeval.dataset import DATASET_TYPE
-from vlmeval.dataset import img_root_map
+from vlmeval.dataset import DATASET_TYPE, img_root_map
+from vlmeval.smp import (LMUDataRoot, cn_string, concat_images_vlmeval,
+                         decode_base64_to_image_file, get_logger, listinstr, read_ok, toliststr)
 
-
-
+logger = get_logger(__name__)
 
 class VideoChatOnlineV2Wrapper(BaseAPI):
     is_api: bool = True
@@ -266,9 +269,9 @@ class VideoChatOnlineV2Wrapper(BaseAPI):
                     error_msg = f'Error! code {r.status_code} content: {r.content}'
                     error_con = r.content.decode('utf-8')
                     if self.verbose:
-                        self.logger.error(error_msg)
-                        self.logger.error(error_con)
-                        self.logger.error(f'The input messages are {inputs}.')
+                        logger.error(error_msg)
+                        logger.error(error_con)
+                        logger.error(f'The input messages are {inputs}.')
                     return -1,error_msg,''
         except Exception as e:
             return -1,f'Error: {str(e)}',''

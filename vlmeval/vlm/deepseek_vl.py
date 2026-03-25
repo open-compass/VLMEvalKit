@@ -1,9 +1,10 @@
-import sys
+import logging
+import warnings
+
 import torch
 from transformers import AutoModelForCausalLM
-import warnings
+
 from .base import BaseModel
-from ..smp import *
 
 
 class DeepSeekVL(BaseModel):
@@ -13,7 +14,7 @@ class DeepSeekVL(BaseModel):
 
     def check_install(self):
         try:
-            import deepseek_vl
+            import deepseek_vl  # noqa: F401
         except Exception as e:
             logging.critical(
                 'Please first install deepseek_vl from source codes in: https://github.com/deepseek-ai/DeepSeek-VL')

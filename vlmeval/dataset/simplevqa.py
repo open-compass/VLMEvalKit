@@ -1,20 +1,17 @@
-import os
 import json
-from typing import Dict, List, Tuple, Any, Union
-import pandas as pd
-import warnings
-import ast
-import math
-from openai import OpenAI
-from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp import misc, file
-from vlmeval.smp.file import get_intermediate_file_path
-from vlmeval.dataset.utils.simplevqa import *
-from tqdm import tqdm
-import pdb
-from pathlib import Path
-import traceback
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+from typing import Any, Dict, List, Union
+
+import pandas as pd
+from openai import OpenAI
+from tqdm import tqdm
+
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.dataset.utils.simplevqa import SimpleVQAEval
+from vlmeval.smp import file, misc
+from vlmeval.smp.file import get_intermediate_file_path
 
 NUM_WORKERS = 16
 
@@ -166,7 +163,7 @@ class SimpleVQA(ImageBaseDataset):
                     temperature=1
                 )
                 res = response.choices[0].message.content
-                res = res.replace("```json","").replace("```python","").replace("```","").strip()
+                res = res.replace("```json", "").replace("```python", "").replace("```", "").strip()
                 if res[-1] != "}":
                     res += "}"
                 res = json.loads(res)

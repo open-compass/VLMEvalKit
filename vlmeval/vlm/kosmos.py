@@ -1,13 +1,16 @@
-import torch
-import re
-from PIL import Image
-from abc import abstractproperty
-import sys
+import logging
 import os.path as osp
+import re
+import string
+import warnings
+
+import pandas as pd
+import torch
+from PIL import Image
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import listinstr, splitlen
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-import copy
 
 
 class Kosmos2(BaseModel):

@@ -1,15 +1,13 @@
 # flake8: noqa
 import os
+
 import pandas as pd
+
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import get_intermediate_file_path
 from .image_base import ImageBaseDataset
-from .utils.vlm2bench import (
-    common_process_results,
-    tf_pair_aggregate_accuracy,
-    cnt_aggregate_metric,
-    grp_aggregate_accuracy,
-)
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
+from .utils.vlm2bench import (cnt_aggregate_metric, common_process_results, grp_aggregate_accuracy,
+                              tf_pair_aggregate_accuracy)
 
 
 class VLM2Bench(ImageBaseDataset):

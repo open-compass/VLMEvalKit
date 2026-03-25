@@ -1,11 +1,13 @@
-from typing import List, Tuple, Union, Dict, Any
-import random
 import copy
-import os
 import json
+import os
+import random
+from typing import Any, Dict, List, Tuple, Union
 
+from .common_constriants import (Constraint, ConstraintColNoRepeat, ConstraintRowNoRepeat,
+                                 ConstraintSubGridNoRepeat)
 from .common_puzzle_factory import PuzzleFactory
-from .common_constriants import Constraint, ConstraintRowNoRepeat, ConstraintColNoRepeat, ConstraintSubGridNoRepeat
+
 
 class ConstraintColorNoRepeat(Constraint):
     def __init__(self) -> None:

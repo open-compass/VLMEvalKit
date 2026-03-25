@@ -1,13 +1,10 @@
-import os
-import io
-import pandas as pd
-import numpy as np
-import string
-from uuid import uuid4
-import os.path as osp
 import base64
+import io
+import os
+import os.path as osp
+
+import pandas as pd
 from PIL import Image
-import sys
 
 Image.MAX_IMAGE_PIXELS = 1e9
 
@@ -181,7 +178,7 @@ def read_ok(img_path):
         im = Image.open(img_path)
         assert im.size[0] > 0 and im.size[1] > 0
         return True
-    except:
+    except Exception:
         return False
 
 

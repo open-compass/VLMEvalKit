@@ -1,5 +1,6 @@
-from .common.conversions import str_to_list
 from numbers import Number
+
+from .common.conversions import str_to_list
 
 
 class SequenceEquality:

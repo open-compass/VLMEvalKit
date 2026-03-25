@@ -1,4 +1,5 @@
 import os
+
 try:
     from playwright.sync_api import sync_playwright
 except ImportError:
@@ -11,6 +12,7 @@ playwright install --no-shell chromium-headless-shell
     print(error_msg)
     exit(1)
 import argparse
+
 from PIL import Image
 
 

@@ -1,7 +1,9 @@
-from ...smp import *
-from .multiple_choice import extract_answer_from_item
-import numpy as np
 import re
+
+import numpy as np
+
+from vlmeval.smp import load
+from .multiple_choice import extract_answer_from_item
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

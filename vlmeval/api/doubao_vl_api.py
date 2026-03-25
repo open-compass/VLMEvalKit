@@ -1,17 +1,15 @@
-from vlmeval.smp import *
 import os
-import sys
-from vlmeval.api.base import BaseAPI
-import math
-from vlmeval.dataset import DATASET_TYPE
-from vlmeval.dataset import img_root_map
-from io import BytesIO
-import pandas as pd
-import requests
-import json
-import base64
-import time
+import os.path as osp
+
+import numpy as np
 from openai import OpenAI
+
+from vlmeval.api.base import BaseAPI
+from vlmeval.dataset import img_root_map
+from vlmeval.smp import (LMUDataRoot, decode_base64_to_image_file, encode_image_to_base64,
+                         get_logger, read_ok, toliststr)
+
+logger = get_logger(__name__)
 
 
 class DoubaoVLWrapper(BaseAPI):
@@ -55,7 +53,7 @@ class DoubaoVLWrapper(BaseAPI):
         if endpoint is not None:
             self.endpoint = endpoint
         else:
-            self.logger.warning(
+            logger.warning(
                 f'Endpoint for model {model} is not set (can be set w. environment var {EP_KEY}. '
                 f'By default, we will use the model name {model} as the EP if not set. '
             )
@@ -67,7 +65,7 @@ class DoubaoVLWrapper(BaseAPI):
             timeout=self.timeout
         )
 
-        self.logger.info(f'Using API Base: {self.api_base}; End Point: {self.endpoint}; API Key: {self.key}')
+        logger.info(f'Using API Base: {self.api_base}; End Point: {self.endpoint}; API Key: {self.key}')
 
     def dump_image(self, line, dataset):
         """Dump the image(s) of the input line to the corresponding dataset folder.
@@ -125,7 +123,7 @@ class DoubaoVLWrapper(BaseAPI):
         question = line['question']
 
         # remove 'directly' from the prompt, so the model will answer the question in Chain-of-Thought (CoT) manner
-        prompt = question.replace('directly','',1)
+        prompt = question.replace('directly', '', 1)
 
         msgs = []
         if isinstance(tgt_path, list):
@@ -147,6 +145,7 @@ class DoubaoVLWrapper(BaseAPI):
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
                     from PIL import Image
+
                     img = Image.open(msg['value'])
                     b64 = encode_image_to_base64(img)
                     img_struct = dict(url=f'data:image/jpeg;base64,{b64}')
@@ -186,8 +185,8 @@ class DoubaoVLWrapper(BaseAPI):
             answer = response.choices[0].message.content.strip()
             ret_code = 0
         except Exception as err:
-            self.logger.error(f'{type(err)}: {err}')
-            self.logger.error(response.text if hasattr(response, 'text') else response)
+            logger.error(f'{type(err)}: {err}')
+            logger.error(response.text if hasattr(response, 'text') else response)
 
         return ret_code, answer, response
 

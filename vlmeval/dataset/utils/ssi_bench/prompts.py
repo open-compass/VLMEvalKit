@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 GROUND_HEIGHT_PROMPT_TEMPLATE = """\
 You are a capable vision-based reasoning agent designed to analyze structural
 components and infer spatial relationships from images. All geometric judgments

@@ -1,12 +1,23 @@
-from datetime import date
+import copy as cp
+import json
+import os
+import os.path as osp
 import re
+import shutil
+import string
 import warnings
+from collections import defaultdict
 
-from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
+import numpy as np
 import pandas as pd
+from tabulate import tabulate
 from tqdm import tqdm
+
+from vlmeval.smp import (LMUDataRoot, download_file, dump, file_size, get_cache_path,
+                         get_file_extension, get_intermediate_file_path, istype, listinstr, load,
+                         localize_df, md5, toliststr)
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
 
 MMMB_URLS = {
     'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
@@ -240,9 +251,9 @@ class ImageMCQDataset(ImageBaseDataset):
             return self.evaluate_heuristic(eval_file, **judge_kwargs)
 
     def evaluate_heuristic(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import (
-            report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval, report_acc_MMVP
-        )
+        from .utils.multiple_choice import (mcq_circular_eval, mcq_vanilla_eval, report_acc,
+                                            report_acc_MMSci, report_acc_MMT, report_acc_MMVP)
+
         # assert dataset is not None
         dataset_map = {
             'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
@@ -800,7 +811,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
         return pd.DataFrame(res)
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import report_acc, mcq_vanilla_eval
+        from .utils.multiple_choice import mcq_vanilla_eval, report_acc
         nproc = judge_kwargs.pop('nproc', 4)
 
         suffix = eval_file.split('.')[-1]
@@ -1274,8 +1285,8 @@ class HRBenchDataset(ImageMCQDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         assert os.path.exists(eval_file), '{} does not exist!'.format(eval_file)
-        from .utils.multiple_choice import mcq_vanilla_eval
         from .utils.hrbench import report_acc_hrbench
+        from .utils.multiple_choice import mcq_vanilla_eval
         nproc = judge_kwargs.pop('nproc', 4)
 
         model = judge_kwargs.get('model', 'extract_matching')
@@ -1347,7 +1358,7 @@ class NaturalBenchDataset(ImageMCQDataset):
         ),
     }
     DATASET_MD5 = {
-        'NaturalBenchDataset':'e5f724932972eaeb8a9099e6979606ec',
+        'NaturalBenchDataset': 'e5f724932972eaeb8a9099e6979606ec',
     }
 
     def build_prompt(self, line):
@@ -1455,8 +1466,8 @@ class WeMath(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.wemath import wemath_evaluate_models, wemath_accuracy
         from .utils.multiple_choice import mcq_vanilla_eval
+        from .utils.wemath import wemath_accuracy, wemath_evaluate_models
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
@@ -1706,7 +1717,6 @@ class VisualPuzzles(ImageMCQDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.visualpuzzles import VisulPuzzles_acc
-        from .utils.multiple_choice import mcq_vanilla_eval
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
@@ -1792,7 +1802,6 @@ class PuzzleVQA(ImageMCQDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.puzzlevqa import PuzzleVQA_acc
-        from .utils.multiple_choice import mcq_vanilla_eval
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
@@ -1858,7 +1867,6 @@ class VisuLogic(ImageMCQDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.visulogic import VisuLogic_acc
-        from .utils.multiple_choice import mcq_vanilla_eval
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
@@ -1880,7 +1888,7 @@ class VisuLogic(ImageMCQDataset):
             accuracy_scores = VisuLogic_acc(storage)
         else:
             accuracy_scores = VisuLogic_acc(eval_file)
-        combine_score = {**accuracy_scores,}
+        combine_score = {**accuracy_scores, }
         combine_score = pd.DataFrame(combine_score)
         score_pth = get_intermediate_file_path(storage, '_acc', 'csv')
         dump(combine_score, score_pth)
@@ -1931,7 +1939,7 @@ class TDBench(ImageMCQDataset):
         return acc
 
     def do_evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import report_acc, mcq_vanilla_eval
+        from .utils.multiple_choice import mcq_vanilla_eval, report_acc
         nproc = judge_kwargs.pop('nproc', 4)
 
         model = judge_kwargs.get('model', 'exact_matching')
@@ -2132,17 +2140,75 @@ class XLRSBench(ImageMCQDataset):
             return "".join(matches)
 
     def evaluate(self, eval_file, **judge_kwargs):
+        from vlmeval.utils import track_progress_rich
+
         data = load(eval_file)
         data['prediction'] = [str(x) for x in data['prediction']]
         task_stats = {}
         micro_metric = {'correct': 0, 'total': 0}
+
+        model = judge_kwargs.get('model', 'exact_matching')
+        if model == 'exact_matching':
+            model = None
+        else:
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+
+        result_file = get_intermediate_file_path(eval_file, '_{model}_result', 'pkl')
+        ans = {}
+        if osp.exists(result_file):
+            ans = load(result_file)
+
+        tups = []
+        indices = []
+        for index, it in data.iterrows():
+            if index in ans:
+                continue
+            indices.append(index)
+            tups.append(
+                dict(
+                    question=it['question'],
+                    pred=it['prediction'],
+                    options=it['multi-choice options'],
+                    model=model,
+                ))
+
+        def extract_aux(question: str, pred: str, options: str, model) -> str:
+            if model is None:
+                return dict(pred=pred, processed_pred=self.extract_characters_regex(pred))
+
+            options = options.partition('Select the best answer')[0]
+            prompt = (
+                'You are an AI assistant who will help me to match '
+                'an answer with several options of a single-choice question. '
+                'You are provided with a question, several options, and an answer, '
+                'and you need to find the options most similar to the answer. '
+                'If the meaning of all options are significantly different from the answer, output Z. '  # noqa: E501
+                f'------\nQuestion: {question}\n{options}\nAnswer: {pred}\n------\n'
+                'Please find the matched options and output uppercase character in A, B, C, ... and Z. \n'  # noqa: E501
+                'If the matched number is more than one, output all options like ABC, BD, etc. '
+                'Do not reply any other content.'
+            )
+            res = model.generate(prompt, temperature=0)
+            res = ''.join(re.findall(r'[a-zA-Z]', res))
+            return dict(pred=pred, processed_pred=res)
+
+        if len(indices) > 0:
+            track_progress_rich(
+                func=extract_aux, tasks=tups,
+                nproc=judge_kwargs.get('nproc', 32), save=result_file, keys=indices)
+            ans = load(result_file)
+
         for index, it in data.iterrows():
             task = f"{it['category']}/{it['l2-category']}"
             if task not in task_stats:
                 task_stats[task] = {'correct': 0, 'total': 0}
             task_stats[task]['total'] += 1
             micro_metric['total'] += 1
-            pred = self.extract_characters_regex(it['prediction'])
+            pred = ans[index]['processed_pred']
             if set(pred) == set(it['answer']):
                 task_stats[task]['correct'] += 1
                 micro_metric['correct'] += 1
@@ -2519,8 +2585,9 @@ class SCAM(ImageMCQDataset):
     def load_data(self, dataset):
         import base64
         import io
-        import datasets
         import random
+
+        import datasets
         random.seed(42)
 
         # Function to convert dataset to VLMEvalKit format
@@ -2563,6 +2630,8 @@ class _3DSRBench(ImageMCQDataset):
 
         nproc = judge_kwargs.pop('nproc', 4)
         model = judge_kwargs.get('model', 'exact_matching')
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        name_str = name_str_map[model] if model in name_str_map else model
 
         if model == 'exact_matching':
             model = None
@@ -2731,10 +2800,6 @@ class AffordanceDataset(ImageMCQDataset):
         return sorted(answer) == sorted(prediction)
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import (
-            report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
-        )
-
         suffix = eval_file.split('.')[-1]
         model = judge_kwargs.get('model', 'exact_matching')
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
@@ -2825,6 +2890,7 @@ class TreeBench(ImageMCQDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         import ast
+
         from .utils.multiple_choice import extract_characters_regex
         from .utils.treebench import get_dimension_rating
         assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
@@ -3029,15 +3095,13 @@ class TopViewRS(ImageMCQDataset):
     DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import eval_vanilla, report_topviewrs_acc
-        from ..utils import track_progress_rich
-        from ..smp import load, dump
-        from collections import defaultdict
-        import numpy as np
-        import pandas as pd
+        import os.path as osp
         import string
         import warnings
-        import os.path as osp
+
+        from ..smp import dump, load
+        from ..utils import track_progress_rich
+        from .utils.multiple_choice import eval_vanilla, report_topviewrs_acc
 
         def mcq_topviewrs_eval(model, data, meta, nproc, result_file, dataset_name=None):
             result = {}

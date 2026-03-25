@@ -1,15 +1,28 @@
+import base64
+import json
+import multiprocessing as mp
 import os
+import os.path as osp
 import re
+import string
 import tempfile
+import warnings
+from collections import defaultdict
 from functools import partial
 
+import numpy as np
 import pandas as pd
+from PIL import Image
+from tabulate import tabulate
 from tqdm import tqdm
 
-from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
+from vlmeval.smp import (LMUDataRoot, d2df, decode_base64_to_image_file, download_file, dump,
+                         encode_image_to_base64, file_size, get_file_extension,
+                         get_intermediate_file_path, listinstr, load, md5, read_ok, toliststr)
 from ..utils import track_progress_rich
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
+from .utils.vqa_eval import istype
 
 
 class ImageVQADataset(ImageBaseDataset):
@@ -97,11 +110,11 @@ class ImageVQADataset(ImageBaseDataset):
         if 'split' in data:
             splits = set(data['split'])
             for sp in splits:
-                sub = [r for l, r in zip(lines, res) if l['split'] == sp]
+                sub = [r for line, r in zip(lines, res) if line['split'] == sp]
                 # [np.mean(x['match']) >= full_score_weight for x in sub]
                 hit = hit_calculate(sub, dataset)
                 ret[sp] = np.mean(hit) * 100
-            sub = [r for l, r in zip(lines, res)]
+            sub = [r for line, r in zip(lines, res)]
             hit = hit_calculate(sub, dataset)
             ret['Overall'] = np.mean(hit) * 100
         else:
@@ -110,7 +123,7 @@ class ImageVQADataset(ImageBaseDataset):
                 cates = list(set(data['category']))
                 cates.sort()
                 for c in cates:
-                    sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                    sub = [r for line, r in zip(lines, res) if line['category'] == c]
                     # [np.mean(x['match']) >= full_score_weight for x in sub]
                     hit = hit_calculate(sub, dataset)
                     ret[c] = np.mean(hit) * 100
@@ -155,11 +168,11 @@ class ImageVQADataset(ImageBaseDataset):
         if 'split' in data:
             splits = set(data['split'])
             for sp in splits:
-                sub = [r for l, r in zip(lines, res) if l['split'] == sp]
+                sub = [r for line, r in zip(lines, res) if line['split'] == sp]
                 # [np.mean(x['match']) >= full_score_weight for x in sub]
                 hit = hit_calculate(sub)
                 ret[sp] = np.mean(hit) * 100
-            sub = [r for l, r in zip(lines, res)]
+            sub = [r for line, r in zip(lines, res)]
             hit = hit_calculate(sub)
             ret['Overall'] = np.mean(hit) * 100
         else:
@@ -168,7 +181,7 @@ class ImageVQADataset(ImageBaseDataset):
                 cates = list(set(data['category']))
                 cates.sort()
                 for c in cates:
-                    sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                    sub = [r for line, r in zip(lines, res) if line['category'] == c]
                     hit = hit_calculate(sub)
                     ret[c] = np.mean(hit) * 100
         ret = d2df(ret)
@@ -328,7 +341,7 @@ class VTCBench(ImageBaseDataset):
             judge_model = build_judge(max_tokens=1024, **judge_kwargs)
             assert judge_model.working(), ('VTCBench evaluation requires a working OPENAI API\n')
             return self.get_scores_gpt(eval_file, **judge_kwargs)
-        except:
+        except Exception:
             print('No GPT model specified, using heuristic evaluation.')
             return self.get_scores(eval_file, **judge_kwargs)
 
@@ -563,7 +576,7 @@ class MathVista(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate_heuristic(self, eval_file, **judge_kwargs):
-        from .utils.mathvista import MathVista_auxeval, MathVista_acc
+        from .utils.mathvista import MathVista_acc, MathVista_auxeval
 
         model = judge_kwargs['model']
         storage = get_intermediate_file_path(eval_file, f'_{model}')
@@ -728,7 +741,8 @@ class MathVerse(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mathverse import MathVerse_auxeval_extract, MathVerse_auxeval_score, MathVerse_acc
+        from .utils.mathverse import (MathVerse_acc, MathVerse_auxeval_extract,
+                                      MathVerse_auxeval_score)
 
         model = judge_kwargs['model']
         storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract')
@@ -836,7 +850,7 @@ class MathVision(ImageBaseDataset):
             return self.evaluate_heuristic(eval_file, **judge_kwargs)
 
     def evaluate_heuristic(self, eval_file, **judge_kwargs):
-        from .utils.mathv import MATH_V_auxeval, MATH_V_acc
+        from .utils.mathv import MATH_V_acc, MATH_V_auxeval
 
         if 'model' in judge_kwargs:
             model = judge_kwargs['model']
@@ -958,7 +972,7 @@ class LENS(ImageBaseDataset):
     }
     DATASET_MD5 = {
         'LENS-CN-QA': 'D382365A2C977543BEB890BAC240E731',
-        'LENS-CN-QA_MINI':'4CEA1BDE46537DE2428C1D05A0B36094'
+        'LENS-CN-QA_MINI': '4CEA1BDE46537DE2428C1D05A0B36094'
     }
 
     def evaluate(self, eval_file, **judge_kwargs):
@@ -968,7 +982,7 @@ class LENS(ImageBaseDataset):
             return self.evaluate_heuristic(eval_file, **judge_kwargs)
 
     def evaluate_heuristic(self, eval_file, **judge_kwargs):
-        from .utils.lens import LENS_auxeval, LENS_acc
+        from .utils.lens import LENS_acc, LENS_auxeval
 
         if 'model' in judge_kwargs:
             model = judge_kwargs['model']
@@ -1116,10 +1130,30 @@ class Physics_yale(ImageBaseDataset):
 
         data = self.load_data(dataset)
         self.skip_noimg = skip_noimg
+        if skip_noimg and 'image' in data:
+            data = data[~pd.isna(data['image'])]
+
         data['index'] = [str(x) for x in data['index']]
-        self.meta_only = False
+
+        self.meta_only = True
+
+        # The image field can store the base64 encoded image or another question index (for saving space)
+        if 'image' in data:
+            images = [toliststr(x) for x in data['image']]
+            data['image'] = [x[0] if len(x) == 1 else x for x in images]
+            self.meta_only = False
+
+        if 'image_path' in data:
+            paths = [toliststr(x) for x in data['image_path']]
+            data['image_path'] = [x[0] if len(x) == 1 else x for x in paths]
+
+        if 'answer' in data:
+            answers = [toliststr(x) for x in data['answer']]
+            data['answer'] = answers
+
         if np.all([istype(x, int) for x in data['index']]):
             data['index'] = [int(x) for x in data['index']]
+
         self.data = data
         self.post_build(dataset)
 
@@ -1127,13 +1161,10 @@ class Physics_yale(ImageBaseDataset):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        if pd.isna(line['image']):
-            tgt_path = None
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
         else:
-            if self.meta_only:
-                tgt_path = toliststr(line['image'])
-            else:
-                tgt_path = self.dump_image(line)
+            tgt_path = self.dump_image(line)
 
         instruction = (
             "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
@@ -1165,7 +1196,6 @@ class Physics_yale(ImageBaseDataset):
 
         return msgs
 
-    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.physic import PHYSIC_acc, PHYSIC_auxeval
 
@@ -1186,7 +1216,7 @@ class Physics_yale(ImageBaseDataset):
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
-            tups = [(model, line) for line in lines]
+            tups = [(model, line, self.data.iloc[i]['answer']) for i, line in enumerate(lines)]
             indices = [line['index'] for line in lines]
 
             ans = {}
@@ -1255,8 +1285,10 @@ class OlympiadBench(ImageBaseDataset):
         return tgt_path_z
 
     def build_prompt(self, line):
-
         from .utils.olympiadbench import get_answer_type_text, make_input
+
+        if isinstance(line, int):
+            line = self.data.iloc[line]
 
         self.is_chinese = 'zh' in line['source']
         self.is_math = 'maths' in line['source']
@@ -1601,7 +1633,7 @@ class SeePhys(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.seephys import extract, eval_acc
+        from .utils.seephys import eval_acc, extract
 
         model = judge_kwargs.pop('model', 'deepseek')
         storage = get_intermediate_file_path(eval_file, f'_{model}')
@@ -1847,11 +1879,7 @@ class LLaVABench(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.llavabench import (
-            build_prompt,
-            LLaVABench_atomeval,
-            LLaVABench_score,
-        )
+        from .utils.llavabench import LLaVABench_atomeval, LLaVABench_score, build_prompt
 
         record_file = get_intermediate_file_path(eval_file, '_openai_result')
         score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
@@ -1893,11 +1921,7 @@ class LLaVABench_KO(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.llavabench import (
-            build_prompt_ko,
-            LLaVABench_atomeval,
-            LLaVABench_score,
-        )
+        from .utils.llavabench import LLaVABench_atomeval, LLaVABench_score, build_prompt_ko
 
         record_file = get_intermediate_file_path(eval_file, '_openai_result')
         score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
@@ -1940,12 +1964,8 @@ class VGRPBench(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         print("VGRPBench evaluation")
 
-        from .utils.vgrpbench.evaluation import (
-            build_prompt,
-            VGRPBench_atomeval,
-            VGRPBench_score,
-            VGRPBench_get_system_prompt,
-        )
+        from .utils.vgrpbench.evaluation import (VGRPBench_atomeval, VGRPBench_get_system_prompt,
+                                                 VGRPBench_score, build_prompt)
 
         record_file = get_intermediate_file_path(eval_file, '_openai_result')
         score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
@@ -2010,7 +2030,7 @@ class MMVet(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mmvet import MMVet_auxeval, MMVet_acc
+        from .utils.mmvet import MMVet_acc, MMVet_auxeval
 
         model = judge_kwargs['model']
         storage = get_intermediate_file_path(eval_file, f'_{model}')
@@ -2139,7 +2159,9 @@ class WildDocBenchmark(ImageBaseDataset):
                 raise ValueError(f"Unknown benchmark name {benchmark_name}")
 
         # calculate three subset separately
-        from .utils.vqa_eval import hit_calculate, process_line_WildDoc, calculate_consistency_WildDoc, calculate_overall_accuracy_WildDoc  # noqa: E501
+        from .utils.vqa_eval import calculate_overall_accuracy_WildDoc  # noqa: F401
+        from .utils.vqa_eval import (calculate_consistency_WildDoc, hit_calculate,
+                                     process_line_WildDoc)
 
         # 1. DocVQA
         data = DocVQA_df
@@ -2173,7 +2195,9 @@ class WildDocBenchmark(ImageBaseDataset):
         data = TableVQA_df
         assert 'answer' in data and 'prediction' in data
         import pandas as pd
-        from .utils.tablevqabench import evaluate_fintabnet, evaluate_tabfact, evaluate_wtq
+
+        from .utils.tablevqabench import (evaluate_fintabnet, evaluate_tabfact,  # noqa: F401
+                                          evaluate_wtq)
 
         data['prediction'] = data['prediction'].str.replace('^Answer: ',
                                                             '',
@@ -2191,7 +2215,8 @@ class WildDocBenchmark(ImageBaseDataset):
             ret = {'index': line["index"]}
             ans = line['answer']
             pred = line["prediction"]
-            from .utils.tablevqabench import fintabnet_normalize, tsv_unescape_list, to_value_list, check_denotation
+            from .utils.tablevqabench import (check_denotation, fintabnet_normalize, to_value_list,
+                                              tsv_unescape_list)
 
             subset = line["index"].split("-")[1]
             if subset == "fintabnetqa":
@@ -2320,7 +2345,9 @@ class TableVQABench(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         import pandas as pd
-        from .utils.tablevqabench import evaluate_fintabnet, evaluate_tabfact, evaluate_wtq
+
+        from .utils.tablevqabench import (evaluate_fintabnet, evaluate_tabfact,  # noqa: F401
+                                          evaluate_wtq)
 
         data = load(eval_file)
         assert 'answer' in data and 'prediction' in data
@@ -2402,6 +2429,7 @@ class CRPE(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.crpe import is_correct
+
         # find-image, count-text, find-text,
         # infer-choose, count-image, visual-reasoning
         score = {
@@ -2525,7 +2553,7 @@ class QSpatial(ImageBaseDataset):
     # Given the dataset name, return the dataset as a pandas dataframe, can override
     def load_data(self, dataset):
         import io
-        import pandas as pd
+
         from datasets import load_dataset
 
         hf_dataset = load_dataset("andrewliao11/Q-Spatial-Bench",
@@ -2783,6 +2811,7 @@ class MMNIAH(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mmniah import is_correct
+
         # find-image, count-text, find-text,
         # infer-choose, count-image, visual-reasoning
         MMNIAH_score = {
@@ -2921,9 +2950,9 @@ class MMSci_Captioning(ImageBaseDataset):
     DEFAULT_JUDGE = ['gpt-4o-0806', 'gemini-1.5-pro-exp-0801']
 
     def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mmsci import fact_score_generate  # noqa: F401
         from .utils.mmsci import (get_all_metrics_for_g_eval_score,
-                                  get_all_metrics_for_reference_based_metrics,
-                                  merge_rating, fact_score_generate)
+                                  get_all_metrics_for_reference_based_metrics, merge_rating)
         refer_based_metrics_output_file = get_intermediate_file_path(eval_file, '_reference_based_metrics')
         g_eval_metrics_output_file = get_intermediate_file_path(eval_file, '_g_eval_metrics')
         fact_score_metrics_output_file = get_intermediate_file_path(eval_file, '_fact_score')
@@ -3275,7 +3304,7 @@ class OCR_Reasoning(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.ocr_reasoning import OcrR_auxeval, OcrR_acc
+        from .utils.ocr_reasoning import OcrR_acc, OcrR_auxeval
 
         model = judge_kwargs['model']
         storage = get_intermediate_file_path(eval_file, f'_{model}')
@@ -3426,7 +3455,7 @@ class PhyX(ImageBaseDataset):
                 cates = list(set(data['category']))
                 cates.sort()
                 for c in cates:
-                    sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                    sub = [r for line, r in zip(lines, res) if line['category'] == c]
                     hit = [x['match'] for x in sub]
                     ret[c] = np.mean(hit)
             ret = d2df(ret)
@@ -3437,7 +3466,7 @@ class PhyX(ImageBaseDataset):
             return ret
 
         elif valid_type == "LLM":
-            from .utils.phyx import PhyX_auxeval, PhyX_acc, PhyX_auxeval_MC
+            from .utils.phyx import PhyX_acc, PhyX_auxeval, PhyX_auxeval_MC
 
             model = judge_kwargs['model']
             storage = get_intermediate_file_path(eval_file, f'_{model}')
@@ -3508,6 +3537,7 @@ class TallyQA(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         import pandas as pd
+
         from .utils.tallyqa import extract_count_from_prediction
 
         data = load(eval_file)
@@ -3582,7 +3612,8 @@ class MMEReasoning(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mme_reasoning import MMEReasoning_extract, MMEReasoning_openeval, MMEReasoning_acc, FAIL_MSG, mme_reasoning_eval_functions  # noqa
+        from .utils.mme_reasoning import (FAIL_MSG, MMEReasoning_acc, MMEReasoning_extract,  # noqa
+                                          MMEReasoning_openeval, mme_reasoning_eval_functions)
 
         model = judge_kwargs.get('model', 'gpt-4o-mini')
         storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract')
@@ -3783,7 +3814,7 @@ class MMVMBench(ImageBaseDataset):
         for match_type_i, score_i in zip(match_types_int, scores):
             try:
                 match_type_i_list = eval(match_type_i)
-            except:
+            except Exception:
                 match_type_i_list = [1, 5]
             hit_i = 0
             for tag in ['[YES]', '[Yes]', '[yes]', 'YES', 'Yes', 'yes']:
@@ -3872,15 +3903,21 @@ class OCRBench_v2(ImageBaseDataset):
     DATASET_URL = {
         'OCRBench_v2':
         'https://huggingface.co/datasets/QYWH/ocrbench_v2/resolve/main/OCRBench_v2.tsv?download=true',
+        'OCRBench_v2_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench_v2_MINI.tsv',
     }
-    DATASET_MD5 = {'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0'}
+    DATASET_MD5 = {
+        'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0',
+        'OCRBench_v2_MINI': '11f79b8e1e0b0fe150964de4cb2feb02',
+    }
 
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         import ast
-        from .utils.ocrbrnch_v2_eval import process_predictions, ocrbench_v2_aggregate_accuracy
+
         import pandas as pd
+
+        from .utils.ocrbrnch_v2_eval import ocrbench_v2_aggregate_accuracy, process_predictions
 
         data = load(eval_file)
         lt = len(data)
@@ -4095,9 +4132,7 @@ class MathCanvas(ImageBaseDataset):
 
         summary_dict = summarize_mathcanvas_results(eval_results_list)
 
-        os.environ['EVAL_FORMAT'] = 'json'
-
-        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
         with open(score_file, 'w', encoding='utf-8') as f:
             json.dump(summary_dict, f, ensure_ascii=False, indent=4)
 
@@ -4115,7 +4150,7 @@ class MMReason(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mmreason import MMReason_auxeval_extract, MMReason_auxeval_score, MMReason_acc
+        from .utils.mmreason import MMReason_acc, MMReason_auxeval_extract, MMReason_auxeval_score
 
         model = judge_kwargs['model']
         suffix = eval_file.split('.')[-1]
@@ -4231,7 +4266,7 @@ class CoreCognition(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         assert os.path.exists(eval_file), '{} does not exist!'.format(eval_file)
-        from .utils.corecognition import CoreCognition_eval, CoreCognition_acc
+        from .utils.corecognition import CoreCognition_acc, CoreCognition_eval
 
         nproc = judge_kwargs.pop('nproc', 4)
         model = judge_kwargs.get('model', 'exact_matching')
@@ -4287,7 +4322,8 @@ class VLMsAreBiased(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.vlmsarebiased import vlms_are_biased_process_results, vlms_are_biased_aggregate_by_topic
+        from .utils.vlmsarebiased import (vlms_are_biased_aggregate_by_topic,
+                                          vlms_are_biased_process_results)
 
         detailed_results_file = get_intermediate_file_path(eval_file, '_eval_meta')
 
@@ -4300,9 +4336,7 @@ class VLMsAreBiased(ImageBaseDataset):
 
         summary_dict = vlms_are_biased_aggregate_by_topic(detail_result)
 
-        os.environ['EVAL_FORMAT'] = 'json'
-
-        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
         dump(summary_dict, score_file)
 
         return summary_dict

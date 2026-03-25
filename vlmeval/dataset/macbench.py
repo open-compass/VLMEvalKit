@@ -1,12 +1,14 @@
-from collections import defaultdict
-import pandas as pd
-import os.path as osp
 import os
+import os.path as osp
 import string
-from .image_base import ImageBaseDataset
+from collections import defaultdict
+
+import pandas as pd
+
+from vlmeval.smp import dump, get_intermediate_file_path, load
 from vlmeval.utils import track_progress_rich
-from vlmeval.smp.file import get_intermediate_file_path, load, dump
-from .utils import build_judge, DEBUG_MESSAGE
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
 
 PROMPT_MCQ_MULTIMODAL = {
     "instruct": [
@@ -141,7 +143,7 @@ class MaCBench(ImageBaseDataset):
     DATASET_URL = {'MaCBench': ''}
     DATASET_MD5 = {'MaCBench': '0e163396dd28886fd828e101f24afdf6'}
 
-    def __init__(self, dataset='MMBench', skip_noimg=True, interleave=False):
+    def __init__(self, dataset='MMBench', skip_noimg=True, interleave=True):
         super().__init__(dataset=dataset, skip_noimg=skip_noimg)
         self.interleave = interleave
 
@@ -191,6 +193,8 @@ class MaCBench(ImageBaseDataset):
 
         if not self.interleave:
             new_msgs = []
+            for img_path in tgt_path:
+                join_append(new_msgs, dict(type='image', value=img_path))
             for msg in msgs:
                 if msg['type'] == 'text':
                     join_append(new_msgs, dict(type='text',
@@ -198,8 +202,6 @@ class MaCBench(ImageBaseDataset):
                 elif msg['type'] == 'image':
                     join_append(new_msgs, dict(type='text', value='<IMAGE>'),
                                 ' ')
-            for img_path in tgt_path:
-                join_append(new_msgs, dict(type='image', value=img_path))
             msgs = new_msgs
         return msgs
 
@@ -272,7 +274,7 @@ class MaCBench(ImageBaseDataset):
                 try:
                     pred = float(pred)
                     answer = float(line['answer'])
-                except:
+                except Exception:
                     continue
 
                 tolarnce = line.get('relative_tolerance', None)

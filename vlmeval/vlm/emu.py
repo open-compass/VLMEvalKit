@@ -1,11 +1,14 @@
 import os
-import sys
-import torch
-from PIL import Image, ImageOps
 import os.path as osp
-from .base import BaseModel
-from ..smp import *
+import sys
+import warnings
+
+import torch
 from huggingface_hub import snapshot_download
+from PIL import Image, ImageOps
+
+from vlmeval.smp import get_cache_path, splitlen
+from .base import BaseModel
 
 
 def get_local_root(repo_id):
@@ -67,8 +70,8 @@ class Emu(BaseModel):
         self.model_path = model_path
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
+        from accelerate import dispatch_model, infer_auto_device_map, init_empty_weights
         from transformers import AutoModelForCausalLM, AutoTokenizer
-        from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
 
         local_rank = os.environ.get('LOCAL_RANK', 0)
 
@@ -145,7 +148,8 @@ class Emu3_chat(BaseModel):
         assert model_path is not None
         assert tokenizer_path is not None
         try:
-            from transformers import AutoTokenizer, AutoModel, AutoImageProcessor, AutoModelForCausalLM
+            from transformers import (AutoImageProcessor, AutoModel, AutoModelForCausalLM,
+                                      AutoTokenizer)
             local_root = get_local_root(model_path)
             sys.path.append(local_root)
             from processing_emu3 import Emu3Processor
@@ -181,6 +185,7 @@ class Emu3_chat(BaseModel):
             padding="longest",
         )
         from transformers.generation.configuration_utils import GenerationConfig
+
         # prepare hyper parameters
         GENERATION_CONFIG = GenerationConfig(
             pad_token_id=self.tokenizer.pad_token_id,
@@ -213,7 +218,8 @@ class Emu3_gen(BaseModel):
         assert model_path is not None
         assert tokenizer_path is not None
         try:
-            from transformers import AutoTokenizer, AutoModel, AutoImageProcessor, AutoModelForCausalLM
+            from transformers import (AutoImageProcessor, AutoModel, AutoModelForCausalLM,
+                                      AutoTokenizer)
             local_root = get_local_root(model_path)
             sys.path.append(local_root)
             from processing_emu3 import Emu3Processor
@@ -266,6 +272,7 @@ class Emu3_gen(BaseModel):
         pos_inputs = self.processor(text=prompt, **kwargs)
         neg_inputs = self.processor(text=NEGATIVE_PROMPT, **kwargs)
         from transformers.generation.configuration_utils import GenerationConfig
+
         # prepare hyper parameters
         GENERATION_CONFIG = GenerationConfig(
             use_cache=True,
@@ -279,7 +286,8 @@ class Emu3_gen(BaseModel):
         h = pos_inputs.image_size[:, 0]
         w = pos_inputs.image_size[:, 1]
         constrained_fn = self.processor.build_prefix_constrained_fn(h, w)
-        from transformers.generation import LogitsProcessorList, PrefixConstrainedLogitsProcessor, UnbatchedClassifierFreeGuidanceLogitsProcessor  # noqa: E501
+        from transformers.generation import (LogitsProcessorList, PrefixConstrainedLogitsProcessor,
+                                             UnbatchedClassifierFreeGuidanceLogitsProcessor)
         logits_processor = LogitsProcessorList([
             UnbatchedClassifierFreeGuidanceLogitsProcessor(
                 classifier_free_guidance,

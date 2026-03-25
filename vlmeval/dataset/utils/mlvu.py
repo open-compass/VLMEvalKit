@@ -1,7 +1,7 @@
-from ...smp import *
-from .multiple_choice import extract_answer_from_item
-from PIL import Image, ImageOps
 import numpy as np
+
+from vlmeval.smp import load
+from .multiple_choice import extract_answer_from_item
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -183,7 +183,7 @@ def get_dimension_rating(data_path):
     result_dict = {}
     for idx, item in data.iterrows():
         if item['task_type'] not in result_dict:
-            result_dict[item['task_type']] = [0,0]
+            result_dict[item['task_type']] = [0, 0]
         result_dict[item['task_type']][0] += int(item['score'])
         result_dict[item['task_type']][1] += 1
     return result_dict

@@ -1,15 +1,17 @@
-import torch
-import re
-from PIL import Image
-from abc import abstractproperty
-import sys
-import os.path as osp
-import logging
-import warnings
-from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
 import copy
+import logging
+import os.path as osp
+import re
+import string
+import warnings
+
+import pandas as pd
+import torch
+from PIL import Image
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import listinstr, splitlen
+from .base import BaseModel
 
 
 class _MoondreamPromptMixin:
@@ -96,10 +98,8 @@ class Moondream1(BaseModel):
 
     def __init__(self, model_path="vikhyatk/moondream1", **kwargs):
         try:
-            from transformers import (
-                AutoModelForCausalLM,
-                CodeGenTokenizerFast as Tokenizer,
-            )
+            from transformers import AutoModelForCausalLM
+            from transformers import CodeGenTokenizerFast as Tokenizer
         except Exception as e:
             logging.critical(
                 "Please install Transformers version 4.36.2 by running: 'pip install transformers==4.36.2', "

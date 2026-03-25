@@ -1,5 +1,17 @@
+import os
+import os.path as osp
+import warnings
 from abc import abstractmethod
-from ..smp import *
+
+import numpy as np
+import portalocker
+from PIL import Image
+
+from vlmeval.smp import download_file, file_size, load, md5
+from vlmeval.smp.file import LMUDataRoot
+from vlmeval.smp.log import get_logger
+
+logger = get_logger(__name__)
 
 
 class VideoBaseDataset:
@@ -12,10 +24,10 @@ class VideoBaseDataset:
                  nframe=0,
                  fps=-1):
         try:
-            import decord
+            import decord  # noqa: F401
         except Exception as e:
-            logging.critical(f'{type(e)}: {e}')
-            logging.critical('Please install decord via `pip install decord`.')
+            logger.critical(f'{type(e)}: {e}')
+            logger.critical('Please install decord via `pip install decord`.')
 
         self.dataset_name = dataset
         ret = self.prepare_dataset(dataset)
@@ -128,7 +140,7 @@ class VideoBaseDataset:
     @classmethod
     def supported_datasets(cls):
         return ['MMBench-Video', 'Video-MME', 'MVBench', 'MVBench_MP4',
-                'LongVideoBench', 'WorldSense', 'VDC', 'MovieChat1k']
+                'LongVideoBench', 'WorldSense', 'VDC', 'MovieChat1k', 'AV-SpeakerBench']
 
     # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe
     @abstractmethod

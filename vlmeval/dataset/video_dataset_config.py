@@ -1,5 +1,6 @@
-from vlmeval.dataset import *
 from functools import partial
+
+from vlmeval.dataset import *
 
 vcrbench_dataset = {
     'VCRBench_8frame_nopack': partial(VCRBench, dataset='VCR-Bench', nframe=8, pack=False),
@@ -209,6 +210,48 @@ dream_1k_dataset = {
     'DREAM-1K_0.5fps': partial(DREAM, dataset='DREAM-1K', fps=0.5),
 }
 
+av_speakerbench_dataset = {
+    # frame-sampled variants
+    'AV-SpeakerBench_audiovisual_8frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True
+    ),
+    'AV-SpeakerBench_audiovisual_16frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True
+    ),
+    'AV-SpeakerBench_visual_8frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=False
+    ),
+    'AV-SpeakerBench_visual_16frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=False
+    ),
+    'AV-SpeakerBench_audio_only_8frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True, audio_only=True
+    ),
+    'AV-SpeakerBench_audio_only_16frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True, audio_only=True
+    ),
+    # fps-based variants
+    'AV-SpeakerBench_audiovisual_1fps': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True
+    ),
+    'AV-SpeakerBench_visual_1fps': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=False
+    ),
+    'AV-SpeakerBench_audio_only_1fps': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True, audio_only=True
+    ),
+    # shorthand aliases mapping to audiovisual
+    'AV-SpeakerBench_8frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True
+    ),
+    'AV-SpeakerBench_16frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True
+    ),
+    'AV-SpeakerBench_1fps': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True
+    ),
+}
+
 omtg_dataset = {
     "OMTGBench_1fps": partial(OMTGBench, dataset="OMTGBench", fps=1.0),
     "OMTGBench_2fps": partial(OMTGBench, dataset="OMTGBench", fps=2.0),
@@ -290,12 +333,12 @@ dataset_groups = [
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
-    video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset
+    video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset
 ]
 
 # add by EASI team
 dataset_groups += [
-    video_vsi_dataset, sitebenchvideo_dataset, mmsi_video_dataset, vsisuper_recall_dataset, vsisuper_count_dataset,
+    sitebenchvideo_dataset, mmsi_video_dataset, vsisuper_recall_dataset, vsisuper_count_dataset,
     sti_dataset, dsr_dataset
 ]
 

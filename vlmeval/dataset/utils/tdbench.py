@@ -1,8 +1,9 @@
 import os
 import re
 import warnings
-import pandas as pd
 from functools import reduce
+
+import pandas as pd
 
 rotations_all = ['rot0', 'rot90', 'rot180', 'rot270']
 

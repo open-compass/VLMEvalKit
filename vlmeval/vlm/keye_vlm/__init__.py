@@ -1,1 +1,1 @@
-from .model import KeyeChat
+from .model import KeyeChat  # noqa: F401

@@ -1,13 +1,20 @@
-from vlmeval.smp import *
-from vlmeval.api.base import BaseAPI
+import base64
+import copy
+import json
 import os
 import re
-import json
-
-from PIL import Image
-import base64
+import string
 from io import BytesIO
-import copy
+
+import pandas as pd
+import requests
+from PIL import Image
+
+from vlmeval.api.base import BaseAPI
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import get_logger, listinstr
+
+logger = get_logger(__name__)
 
 
 class ChatResponse(dict):
@@ -24,9 +31,6 @@ class ChatResponse(dict):
 
     def __delattr__(self, name):
         del self[name]
-
-
-from ..dataset import DATASET_TYPE
 
 
 class TaichuVLWrapper(BaseAPI):
@@ -195,13 +199,13 @@ class TaichuVLWrapper(BaseAPI):
             if self.use_openai_evaluate is False and is_mcq is True:
                 try:
                     result = result[0]
-                except:
+                except Exception:
                     result = 'A'
             return 0, result, 'Succeeded! '
         except Exception as err:
             if self.verbose:
-                self.logger.error(f'{type(err)}: {err}')
-                self.logger.error(f'The input messages are {inputs}.')
+                logger.error(f'{type(err)}: {err}')
+                logger.error(f'The input messages are {inputs}.')
             return -1, '', ''
 
 
@@ -344,8 +348,8 @@ class TaichuVLRWrapper(BaseAPI):
             return 0, result, 'Succeeded! '
         except Exception as err:
             if self.verbose:
-                self.logger.error(f'{type(err)}: {err}')
-                self.logger.error(f'The input messages are {inputs}.')
+                logger.error(f'{type(err)}: {err}')
+                logger.error(f'The input messages are {inputs}.')
             return -1, '', ''
 
 
