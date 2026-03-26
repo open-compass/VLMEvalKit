@@ -83,6 +83,7 @@ from .mmhelix import MMHELIX
 from .mmifeval import MMIFEval
 from .mmlongbench import MMLongBench
 from .mmmath import MMMath
+from .mmoral_opg_open import MMOral_OPG_OPEN
 from .mmsafetybench import MMSafetyBenchDataset
 from .mmsibench import MMSIBench, MMSIVideoBench
 from .moat import MOAT
@@ -153,8 +154,6 @@ from .worldvqa import WorldVQA
 from .xstest import XSTestDataset
 
 from .video_dataset_config import supported_video_datasets  # isort: skip
-
-from .mmoral_opg_open import MMOral_OPG_OPEN
 
 
 class ConcatDataset(ImageBaseDataset):

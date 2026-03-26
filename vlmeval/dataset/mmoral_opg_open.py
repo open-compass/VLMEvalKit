@@ -1,10 +1,10 @@
 import os
 import os.path as osp
 
-from .utils import build_judge, DEBUG_MESSAGE
-from .image_base import ImageBaseDataset
+from ..smp import decode_base64_to_image_file, dump, load, read_ok
 from ..utils import track_progress_rich
-from ..smp import *
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
 
 
 class MMOralBase(ImageBaseDataset):
@@ -64,7 +64,7 @@ class MMOral_OPG_OPEN(MMOralBase):
     @classmethod
     def evaluate(cls, eval_file, **judge_kwargs):
         """Evaluation with LLM-as-a-judge for open-ended answers."""
-        from .utils.mmoral_opg import MMOral_opg_auxeval, MMOral_opg_acc
+        from .utils.mmoral_opg import MMOral_opg_acc, MMOral_opg_auxeval
 
         suffix = eval_file.split('.')[-1]
         # Some call sites may not explicitly set `judge_kwargs['model']`,
