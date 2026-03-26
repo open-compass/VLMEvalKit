@@ -1,8 +1,26 @@
+import argparse
+import json
+import os
+import os.path as osp
+import string
 import sys
-from collections import deque
+import warnings
+from collections import defaultdict, deque
+
+import pandas as pd
+from tabulate import tabulate
+from termcolor import colored
+
+from vlmeval.config import (api_models, cambrian_series, chameleon_series, deepseekvl_series,
+                            idefics_series, instructblip_series, internvl_series, janus_series,
+                            llava_series, mantis_series, minigpt4_series, ovis_series, qwen_series,
+                            supported_VLM, vila_series, wemm_series, xcomposer_series,
+                            xtuner_series, yivl_series)
 from vlmeval.dataset import SUPPORTED_DATASETS
-from vlmeval.config import *
-from vlmeval.smp import *
+from vlmeval.smp import (dump, get_logger, get_pred_file_format, listinstr, load, load_env,
+                         localize_df, ls, md5, mrlines, mwlines)
+
+logger = get_logger(__name__)
 
 # Define valid modes
 MODES = ('dlist', 'mlist', 'missing', 'circular', 'localize', 'check', 'run', 'eval', 'merge_pkl', 'scan')
@@ -55,6 +73,7 @@ dataset_levels = {
         ('SEEDBench_IMG', 'acc.csv'), ('COCO_VAL', 'score.json'), ('POPE', 'score.csv'),
         ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'), ('MMT-Bench_VAL', 'acc.csv'),
         ('SEEDBench2_Plus', 'acc.csv'), ('BLINK', 'acc.csv'), ('MTVQA_TEST', 'acc.json'),
+        ('MMSafetyBench', 'score.csv'),
         ('Q-Bench1_VAL', 'acc.csv'), ('A-Bench_VAL', 'acc.csv'), ('R-Bench-Dis', 'acc.csv'),
     ],
     'l3': [
@@ -74,7 +93,7 @@ dataset_levels = {
     ],
     'spatial': [
         ('LEGO_circular', 'acc_all.csv'), ('BLINK_circular', 'acc_all.csv'), ('MMSIBench_circular', 'acc_all.csv'),
-        ('Spatial457', 'score.json'), ('3DSRBench', 'acc_all.csv')
+        ('Spatial457', 'score.json'), ('SSI_Bench', 'acc.csv'), ('3DSRBench', 'acc_all.csv')
     ],
     'ESOV_GA': [
         ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv'), ('MEGABench_core_64frame', 'score.json'),
@@ -96,6 +115,18 @@ dataset_levels = {
         ('Physics', 'score.csv'), ('MicroVQA', 'acc.csv'), ('MSEarthMCQ', 'acc.csv'),
         ('SFE', 'score.csv'), ('SFE-zh', 'score.csv'), ('MMSci_DEV_MCQ', 'acc.csv'),
         ('XLRS-Bench-lite', 'acc.csv'), ('OmniEarth-Bench', 'acc.csv')
+    ],
+    'safety': [
+        ('MMSafetyBench', 'score.csv'),
+        ('MSSBench', 'score.csv'),
+        ('SIUO', 'score.csv'),
+        ('SIUO_GEN', 'score.csv'),
+        ('SIUO_MCQ', 'score.csv'),
+        ('XSTest', 'score.csv')
+    ],
+    'value': [
+        ('Flames', 'score.csv'),
+        ('M3oralBench', 'score.csv')
     ]
 }
 
@@ -117,6 +148,7 @@ models = {
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'Phi-3-Vision',
     ] + list(wemm_series),
     '4.44.0': ['Moondream2'],
+    '4.48.0': ['Moondream3'],
     '4.45.0': ['Aria'],
     'latest': ['paligemma-3b-mix-448', 'MiniCPM-V-2_6', 'glm-4v-9b'] + [x for x in llava_series if 'next' in x]
     + list(chameleon_series) + list(ovis_series) + list(mantis_series),
@@ -283,7 +315,7 @@ def CIRCULAR(inp):
                         for s, t in c_map.items():
                             data[t] = groups[k][s]
                         cir_data.append(data)
-                    except:
+                    except Exception:
                         print(set(data['answer']))
                         raise NotImplementedError
             data_all.append(pd.concat(cir_data))
@@ -354,7 +386,6 @@ def RUN(lvl, model):
     import torch
     NGPU = torch.cuda.device_count()
     SCRIPT = osp.join(osp.dirname(__file__), '../run.py')
-    logger = get_logger('Run Missing')
 
     def get_env(name):
         assert name in ['433', '437', '440', 'latest']
@@ -411,7 +442,6 @@ def RUN(lvl, model):
 
 def EVAL(dataset_name, data_file, **kwargs):
     from vlmeval.dataset import build_dataset
-    logger = get_logger('VLMEvalKit Tool-Eval')
     dataset = build_dataset(dataset_name)
     # Set the judge kwargs first before evaluation or dumping
     judge_kwargs = {'nproc': 4, 'verbose': True}
@@ -563,7 +593,6 @@ def SCAN(root, models, datasets):
 
 
 def cli():
-    logger = get_logger('VLMEvalKit Tools')
     args = sys.argv[1:]
     if not args:  # no arguments passed
         logger.info(CLI_HELP_MSG)
@@ -586,7 +615,6 @@ def cli():
     elif args[0].lower() == 'missing':
         assert len(args) >= 2
         missing_list = MISSING(args[1])
-        logger = get_logger('Find Missing')
         logger.info(colored(f'Level {args[1]} Missing Results: ', 'red'))
         lines = []
         for m, D in missing_list:

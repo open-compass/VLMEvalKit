@@ -1,9 +1,11 @@
-import sys
-import torch
+import logging
 import os.path as osp
+import sys
 import warnings
+
+import torch
+
 from .base import BaseModel
-from ..smp import *
 
 
 class PandaGPT(BaseModel):

@@ -1,19 +1,18 @@
-import torch
-from transformers import AutoTokenizer, AutoConfig, AutoModel, CLIPImageProcessor
-import warnings
-from PIL import Image
-from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-import pandas as pd
+import re
 import string
-import torch.distributed as dist
+import warnings
+
+import pandas as pd
+import torch
 import torchvision.transforms as T
 import transformers
-
+from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
-import re
+from transformers import AutoModel, AutoTokenizer
 
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string, listinstr, version_cmp
+from .base import BaseModel
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)

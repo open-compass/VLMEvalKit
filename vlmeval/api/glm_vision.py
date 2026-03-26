@@ -1,11 +1,10 @@
-import re
-import requests
-requests.packages.urllib3.disable_warnings()
+import copy as cp
+import os
 
-from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
-from vlmeval.dataset import DATASET_TYPE
-from vlmeval.smp.vlm import encode_image_file_to_base64
+from vlmeval.smp import encode_image_file_to_base64, get_logger
+
+logger = get_logger(__name__)
 
 
 class GLMVisionWrapper(BaseAPI):
@@ -62,12 +61,12 @@ class GLMVisionWrapper(BaseAPI):
             )
             answer = response.choices[0].message.content.strip()
             if self.verbose:
-                self.logger.info(f'inputs: {inputs}\nanswer: {answer}')
+                logger.info(f'inputs: {inputs}\nanswer: {answer}')
             return 0, answer, 'Succeeded!'
         except Exception as err:
             if self.verbose:
-                self.logger.error(f'{type(err)}: {err}')
-                self.logger.error(f'The input messages are {inputs}.')
+                logger.error(f'{type(err)}: {err}')
+                logger.error(f'The input messages are {inputs}.')
             return -1, self.fail_msg, ''
 
 

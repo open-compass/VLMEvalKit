@@ -1,16 +1,28 @@
+import base64
+import json
+import multiprocessing as mp
 import os
+import os.path as osp
 import re
+import string
 import tempfile
+import warnings
+from collections import defaultdict
 from functools import partial
 
+import numpy as np
 import pandas as pd
+from PIL import Image
+from tabulate import tabulate
 from tqdm import tqdm
 
-from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
+from vlmeval.smp import (LMUDataRoot, d2df, decode_base64_to_image_file, download_file, dump,
+                         encode_image_to_base64, file_size, get_file_extension,
+                         get_intermediate_file_path, listinstr, load, md5, read_ok, toliststr)
 from ..utils import track_progress_rich
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
+from .utils.vqa_eval import istype
 
 
 class ImageVQADataset(ImageBaseDataset):
@@ -98,11 +110,11 @@ class ImageVQADataset(ImageBaseDataset):
         if 'split' in data:
             splits = set(data['split'])
             for sp in splits:
-                sub = [r for l, r in zip(lines, res) if l['split'] == sp]
+                sub = [r for line, r in zip(lines, res) if line['split'] == sp]
                 # [np.mean(x['match']) >= full_score_weight for x in sub]
                 hit = hit_calculate(sub, dataset)
                 ret[sp] = np.mean(hit) * 100
-            sub = [r for l, r in zip(lines, res)]
+            sub = [r for line, r in zip(lines, res)]
             hit = hit_calculate(sub, dataset)
             ret['Overall'] = np.mean(hit) * 100
         else:
@@ -111,7 +123,7 @@ class ImageVQADataset(ImageBaseDataset):
                 cates = list(set(data['category']))
                 cates.sort()
                 for c in cates:
-                    sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                    sub = [r for line, r in zip(lines, res) if line['category'] == c]
                     # [np.mean(x['match']) >= full_score_weight for x in sub]
                     hit = hit_calculate(sub, dataset)
                     ret[c] = np.mean(hit) * 100
@@ -156,11 +168,11 @@ class ImageVQADataset(ImageBaseDataset):
         if 'split' in data:
             splits = set(data['split'])
             for sp in splits:
-                sub = [r for l, r in zip(lines, res) if l['split'] == sp]
+                sub = [r for line, r in zip(lines, res) if line['split'] == sp]
                 # [np.mean(x['match']) >= full_score_weight for x in sub]
                 hit = hit_calculate(sub)
                 ret[sp] = np.mean(hit) * 100
-            sub = [r for l, r in zip(lines, res)]
+            sub = [r for line, r in zip(lines, res)]
             hit = hit_calculate(sub)
             ret['Overall'] = np.mean(hit) * 100
         else:
@@ -169,7 +181,7 @@ class ImageVQADataset(ImageBaseDataset):
                 cates = list(set(data['category']))
                 cates.sort()
                 for c in cates:
-                    sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                    sub = [r for line, r in zip(lines, res) if line['category'] == c]
                     hit = hit_calculate(sub)
                     ret[c] = np.mean(hit) * 100
         ret = d2df(ret)
@@ -210,6 +222,260 @@ class VizWiz(ImageBaseDataset):
             ret['Overall'] = np.mean(hit) * 100
             ret = d2df(ret)
             ret.round(2)
+
+            dump(ret, result_file)
+
+        retz = load(result_file)
+        return retz
+
+
+class VTCBench(ImageBaseDataset):
+    TYPE = 'VQA'
+    _DATASET_PATH = "https://huggingface.co/datasets/MLLM-CL/VTCBench"
+    # Dataset URL mapping - points to different splits of HuggingFace dataset
+    DATASET_URL = {
+        "Retrieval": f"https://huggingface.co/datasets/{_DATASET_PATH}",
+        "Reasoning": f"https://huggingface.co/datasets/{_DATASET_PATH}",
+        "Memory": f"https://huggingface.co/datasets/{_DATASET_PATH}",
+    }
+
+    # MD5 values are empty as HuggingFace datasets are dynamically loaded
+    DATASET_MD5 = {
+        "Retrieval": "",
+        "Reasoning": "",
+        "Memory": "",
+    }
+
+    @classmethod
+    def supported_datasets(cls):
+        return 'VTCBench'
+
+    def load_data(self, dataset: str):
+        """Load dataset from HuggingFace"""
+
+        from datasets import load_dataset
+
+        COLUMNS_ORGINIAL = ["problem", "answers", "images"]
+        all_dataframes = []
+        current_index = 0
+
+        for task in ["Retrieval", "Reasoning", "Memory"]:
+
+            def _gen_fields(example: dict, idx: int) -> dict:
+                # example schema:
+                # problem: str
+                # answers: list[str]
+                # images: list[dict[str, bytes]] # bytes obj <=> jpeg image
+                def encode_image_bytes_to_base64(image_bytes) -> str:
+                    """Encode image bytes to base64 string."""
+                    return base64.b64encode(image_bytes).decode()
+
+                b64_imgs: list[str] = [
+                    encode_image_bytes_to_base64(img["bytes"]) for img in example["images"]
+                ]
+                return {
+                    "index": int(idx) + current_index,
+                    "question": example["problem"],
+                    "answer": json.dumps(example["answers"], ensure_ascii=False),
+                    "image": json.dumps(b64_imgs),
+                    "category": task,
+                }
+
+            hf_dataset = load_dataset(
+                self._DATASET_PATH, split=task, columns=COLUMNS_ORGINIAL,
+            )
+            # apply transformation to VLMEval format
+            hf_dataset = hf_dataset.map(
+                _gen_fields,
+                remove_columns=COLUMNS_ORGINIAL,
+                with_indices=True,
+                num_proc=16,
+            )
+            data = hf_dataset.to_pandas()
+            all_dataframes.append(data)
+            current_index += len(data)
+
+        # Concatenate all dataframes
+        merged_data = pd.concat(all_dataframes, ignore_index=False)
+
+        '''
+        # now data has schema:
+        # index <class 'int'> 0
+        # question <class 'str'> What are all the special magic numbers for 019cc30e-2da8-4162-b145-df514e17 and demonic-heaven mentioned in the provided text?
+        # answer <class 'str'> ["9199619", "1202641"]
+        # image <class 'list'> [/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAx...XMBiHGRwbbBzgefJ8knJJ9ydXdTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQf/2Q==, ...]
+        # category <class 'str'> Retrieval
+        '''  # noqa: E501
+
+        return merged_data
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        base64_list = line['image']
+
+        quesiton = line['question']
+        category = line['category']
+
+        if category == 'Reasoning':
+            prompt = 'Answer a question based on the above book snippet. Your answer should be short and based on either explicitly stated facts or strong, logical inferences. Return only the final answer with no additional explanation or reasoning. Question: ' + quesiton  # noqa: E501
+        elif category == 'Retrieval':
+            prompt = 'Answer a question based on the above book snippet. Some special magic numbers are hidden within the following text. Make sure to memorizeit. I will quiz you about the numbers afterwards. Question: ' + quesiton  # noqa: E501
+        elif category == 'Memory':
+            prompt = 'Based on the above context, write an answer in the form of a short phrase for the following question. Answer with exact words from the context whenever possible. Question: ' + quesiton  # noqa: E501
+        else:
+            raise ValueError(f"Unknown category: {category}")
+
+        msgs = []
+        if isinstance(base64_list, list):
+            msgs.extend([dict(type='image', value='data:image/jpeg;base64,' + p) for p in base64_list])
+        else:
+            msgs = [dict(type='image', value='data:image/jpeg;base64,' + base64_list)]
+        msgs.append(dict(type='text', value=prompt))
+        return msgs
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        try:
+            judge_model = build_judge(max_tokens=1024, **judge_kwargs)
+            assert judge_model.working(), ('VTCBench evaluation requires a working OPENAI API\n')
+            return self.get_scores_gpt(eval_file, **judge_kwargs)
+        except Exception:
+            print('No GPT model specified, using heuristic evaluation.')
+            return self.get_scores(eval_file, **judge_kwargs)
+
+    @classmethod
+    def get_scores_gpt(self, eval_file, **judge_kwargs):
+        from .utils.vtcbench import gpt_eval_vtcbemch
+        model = build_judge(max_tokens=128, **judge_kwargs)
+        score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
+        tmp_file_score = get_intermediate_file_path(eval_file, f'_{model}_score', 'pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(score_file):
+            data = load(eval_file)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            scores = {}
+            if osp.exists(tmp_file_score):
+                scores = load(tmp_file_score)
+            tups = [x for x, i in zip(tups, indices) if i not in scores]
+            indices = [i for i in indices if i not in scores]
+
+            if len(indices):
+                new_result = track_progress_rich(
+                    gpt_eval_vtcbemch,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_score,
+                )
+                scores = load(tmp_file_score)
+                for k, v in zip(indices, new_result):
+                    assert k in scores
+                    assert scores[k]['score'] == v['score'] and scores[k]['category'] == v['category'] and scores[k]['calc_metric'] == v['calc_metric']  # noqa: E501
+
+            data['score'] = [scores[idx]['score'] for idx in data['index']]
+            data['category'] = [scores[idx]['category'] for idx in data['index']]
+            data['calc_metric'] = [
+                scores[idx]['calc_metric'] for idx in data['index']
+            ]
+
+            dump(data, score_file)
+
+        # 加载评分后的数据并按calc_metric聚合
+        data = load(score_file)
+
+        # 按照calc_metric聚合结果
+        category_scores = {}
+        category_counts = {}
+
+        # 遍历data中的每个结果
+        for _, row in data.iterrows():
+            category = row['calc_metric']
+            score = row['score']
+
+            # 累加分数和计数
+            if category not in category_scores:
+                category_scores[category] = 0
+                category_counts[category] = 0
+
+            category_scores[category] += score
+            category_counts[category] += 1
+
+        # 计算每个category的平均分数
+        ret = dict()
+        for category in category_scores:
+            ret[category] = category_scores[category] / category_counts[category]
+
+        # 添加Overall平均分
+        if category_scores:  # 确保有数据才计算
+            total_score = sum(category_scores.values())
+            total_count = sum(category_counts.values())
+            ret['Overall'] = total_score / total_count
+        else:
+            ret['Overall'] = 0.0
+
+        result_file = get_intermediate_file_path(eval_file, '_result', 'json')
+        dump(ret, result_file)
+        return ret
+
+    @classmethod
+    def get_scores(self, eval_file, **judge_kwargs):
+        from .utils.vtcbench import process_vtc_line
+
+        result_file = get_intermediate_file_path(eval_file, '_tmp')
+
+        if not osp.exists(result_file):
+            data = load(eval_file)
+
+            assert 'answer' in data and 'prediction' in data
+            data['prediction'] = [str(x) for x in data['prediction']]
+            data['answer'] = [str(x) for x in data['answer']]
+            data['category'] = [str(x) for x in data['category']]
+
+            lt = len(data)
+            pool = mp.Pool(1)
+            lines = [data.iloc[i] for i in range(lt)]
+
+            res = pool.map(process_vtc_line, lines)
+
+            # 按照category聚合结果
+            category_scores = {}
+            category_counts = {}
+
+            # 遍历res中的每个结果
+            for item in res:
+                category = item['category']
+                score = item['score']
+
+                # 累加分数和计数
+                if category not in category_scores:
+                    category_scores[category] = 0
+                    category_counts[category] = 0
+
+                category_scores[category] += score
+                category_counts[category] += 1
+
+            ret = dict()
+
+            # 计算每个category的平均分数
+            for category in category_scores:
+                ret[category] = category_scores[category] / category_counts[category]
+
+            # 添加Overall平均分
+            if category_scores:  # 确保有数据才计算
+                total_score = sum(category_scores.values())
+                total_count = sum(category_counts.values())
+                ret['Overall'] = total_score / total_count
+            else:
+                ret['Overall'] = 0.0
 
             dump(ret, result_file)
 
@@ -310,7 +576,7 @@ class MathVista(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate_heuristic(self, eval_file, **judge_kwargs):
-        from .utils.mathvista import MathVista_auxeval, MathVista_acc
+        from .utils.mathvista import MathVista_acc, MathVista_auxeval
 
         model = judge_kwargs['model']
         storage = get_intermediate_file_path(eval_file, f'_{model}')
@@ -426,19 +692,19 @@ class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'MathVerse_MINI':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
         'MathVerse_MINI_Vision_Only':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
         'MathVerse_MINI_Vision_Only_cot':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
         'MathVerse_MINI_Vision_Dominant':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv',  # noqa
         'MathVerse_MINI_Vision_Intensive':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv',  # noqa
         'MathVerse_MINI_Text_Lite':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
         'MathVerse_MINI_Text_Dominant':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
     }
     DATASET_MD5 = {
         'MathVerse_MINI': '5017caca32b7fa110c350a1bea861b65',
@@ -475,7 +741,8 @@ class MathVerse(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mathverse import MathVerse_auxeval_extract, MathVerse_auxeval_score, MathVerse_acc
+        from .utils.mathverse import (MathVerse_acc, MathVerse_auxeval_extract,
+                                      MathVerse_auxeval_score)
 
         model = judge_kwargs['model']
         storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract')
@@ -583,7 +850,7 @@ class MathVision(ImageBaseDataset):
             return self.evaluate_heuristic(eval_file, **judge_kwargs)
 
     def evaluate_heuristic(self, eval_file, **judge_kwargs):
-        from .utils.mathv import MATH_V_auxeval, MATH_V_acc
+        from .utils.mathv import MATH_V_acc, MATH_V_auxeval
 
         if 'model' in judge_kwargs:
             model = judge_kwargs['model']
@@ -695,23 +962,154 @@ class MathVision(ImageBaseDataset):
         return score
 
 
+class LENS(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'LENS-CN-QA':
+        'https://huggingface.co/datasets/songlier/LENS/resolve/main/LENS-CN-QA.tsv',
+        'LENS-CN-QA_MINI':
+        'https://huggingface.co/datasets/songlier/LENS/resolve/main/LENS-CN-QA_MINI.tsv'
+    }
+    DATASET_MD5 = {
+        'LENS-CN-QA': 'D382365A2C977543BEB890BAC240E731',
+        'LENS-CN-QA_MINI': '4CEA1BDE46537DE2428C1D05A0B36094'
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
+        from .utils.lens import LENS_acc, LENS_auxeval
+
+        if 'model' in judge_kwargs:
+            model = judge_kwargs['model']
+        else:
+            model = os.path.basename(os.environ.get('LOCAL_LLM'))
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(storage):
+            data = load(eval_file)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), 'LENS evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    LENS_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            data['res'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            dump(data, storage)
+
+        score = LENS_acc(storage)
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+        dump(score, score_pth)
+        return score
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        # Add verifier evaluation for LENS
+        data = load(eval_file)
+        if 'verifier_score' not in data.columns:
+            from .utils.verifier import Verifier
+            verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+
+            verifier_scores = []
+            verifier_matches = []
+            for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+                question_text = row['question'] if 'question' in row else ""
+                prediction_text = row['prediction'] if 'prediction' in row else ""
+                answer_text = row['answer'] if 'answer' in row else ""
+
+                score = verifier.evaluate(question_text, prediction_text, answer_text)
+                verifier_scores.append(score)
+                verifier_matches.append(1.0 if score else 0.0)
+
+            data['verifier_score'] = verifier_scores
+            data['verifier_match'] = verifier_matches
+
+            detailed_result_file = get_intermediate_file_path(eval_file, '_detailed_results')
+            dump(data, detailed_result_file)
+
+        else:
+            detailed_result_file = get_intermediate_file_path(eval_file, '_detailed_results')
+            if not osp.exists(detailed_result_file):
+                dump(data, detailed_result_file)
+
+        def LENS_acc_verifier(result_file):
+            from collections import defaultdict
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+
+            for i in range(lt):
+                item = data.iloc[i]
+                cate = item['category'] if 'category' in item else 'Overall'
+                tot['Overall'] += 1
+                tot[cate] += 1
+
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[cate] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                res['Subject'].append(k)
+                res['tot'].append(tot[k])
+                res['hit'].append(hit[k])
+                res['acc'].append(hit[k] / tot[k] * 100)
+            res = pd.DataFrame(res).sort_values('Subject', ignore_index=True)
+            return res
+
+        score = LENS_acc_verifier(detailed_result_file)
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'csv')
+        dump(score, score_pth)
+        return score
+
+
 class Physics_yale(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'atomic_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
         'electro_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
         'mechanics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
         'optics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
         'quantum_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
-        'Physics_blankim': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
-        'Physics': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+        'Physics_blankim': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
+        'Physics': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
     }
     DATASET_MD5 = {
         'atomic_dataset': 'b927fae6bcc6163b0bd89041e4421c70',
@@ -732,10 +1130,30 @@ class Physics_yale(ImageBaseDataset):
 
         data = self.load_data(dataset)
         self.skip_noimg = skip_noimg
+        if skip_noimg and 'image' in data:
+            data = data[~pd.isna(data['image'])]
+
         data['index'] = [str(x) for x in data['index']]
-        self.meta_only = False
+
+        self.meta_only = True
+
+        # The image field can store the base64 encoded image or another question index (for saving space)
+        if 'image' in data:
+            images = [toliststr(x) for x in data['image']]
+            data['image'] = [x[0] if len(x) == 1 else x for x in images]
+            self.meta_only = False
+
+        if 'image_path' in data:
+            paths = [toliststr(x) for x in data['image_path']]
+            data['image_path'] = [x[0] if len(x) == 1 else x for x in paths]
+
+        if 'answer' in data:
+            answers = [toliststr(x) for x in data['answer']]
+            data['answer'] = answers
+
         if np.all([istype(x, int) for x in data['index']]):
             data['index'] = [int(x) for x in data['index']]
+
         self.data = data
         self.post_build(dataset)
 
@@ -743,13 +1161,10 @@ class Physics_yale(ImageBaseDataset):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        if pd.isna(line['image']):
-            tgt_path = None
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
         else:
-            if self.meta_only:
-                tgt_path = toliststr(line['image'])
-            else:
-                tgt_path = self.dump_image(line)
+            tgt_path = self.dump_image(line)
 
         instruction = (
             "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
@@ -781,7 +1196,6 @@ class Physics_yale(ImageBaseDataset):
 
         return msgs
 
-    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.physic import PHYSIC_acc, PHYSIC_auxeval
 
@@ -802,7 +1216,7 @@ class Physics_yale(ImageBaseDataset):
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
-            tups = [(model, line) for line in lines]
+            tups = [(model, line, self.data.iloc[i]['answer']) for i, line in enumerate(lines)]
             indices = [line['index'] for line in lines]
 
             ans = {}
@@ -871,8 +1285,10 @@ class OlympiadBench(ImageBaseDataset):
         return tgt_path_z
 
     def build_prompt(self, line):
-
         from .utils.olympiadbench import get_answer_type_text, make_input
+
+        if isinstance(line, int):
+            line = self.data.iloc[line]
 
         self.is_chinese = 'zh' in line['source']
         self.is_math = 'maths' in line['source']
@@ -1217,7 +1633,7 @@ class SeePhys(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.seephys import extract, eval_acc
+        from .utils.seephys import eval_acc, extract
 
         model = judge_kwargs.pop('model', 'deepseek')
         storage = get_intermediate_file_path(eval_file, f'_{model}')
@@ -1271,15 +1687,13 @@ class LogicVista(ImageBaseDataset):
         'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
     }
     DATASET_MD5 = {'LogicVista': '41c5d33adf33765c399e0e6ae588c061'}
+    DEFAULT_JUDGE = ['gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini']
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.logicvista import LogicVista_auxeval, evaluate_logicvista
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in [
-            'exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'
-        ], model
         name_str_map = {
             'gpt-4-0125': 'gpt4',
             'gpt-4-turbo': 'gpt4-turbo',
@@ -1289,7 +1703,7 @@ class LogicVista(ImageBaseDataset):
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn(
@@ -1297,11 +1711,6 @@ class LogicVista(ImageBaseDataset):
                 )
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn(
-                'OPENAI_API_KEY is not set properly, will use exact matching for evaluation'
-            )
-            model = None
 
         storage = get_intermediate_file_path(eval_file, f'_{name_str}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{name_str}', 'pkl')
@@ -1470,11 +1879,7 @@ class LLaVABench(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.llavabench import (
-            build_prompt,
-            LLaVABench_atomeval,
-            LLaVABench_score,
-        )
+        from .utils.llavabench import LLaVABench_atomeval, LLaVABench_score, build_prompt
 
         record_file = get_intermediate_file_path(eval_file, '_openai_result')
         score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
@@ -1516,11 +1921,7 @@ class LLaVABench_KO(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.llavabench import (
-            build_prompt_ko,
-            LLaVABench_atomeval,
-            LLaVABench_score,
-        )
+        from .utils.llavabench import LLaVABench_atomeval, LLaVABench_score, build_prompt_ko
 
         record_file = get_intermediate_file_path(eval_file, '_openai_result')
         score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
@@ -1563,12 +1964,8 @@ class VGRPBench(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         print("VGRPBench evaluation")
 
-        from .utils.vgrpbench.evaluation import (
-            build_prompt,
-            VGRPBench_atomeval,
-            VGRPBench_score,
-            VGRPBench_get_system_prompt,
-        )
+        from .utils.vgrpbench.evaluation import (VGRPBench_atomeval, VGRPBench_get_system_prompt,
+                                                 VGRPBench_score, build_prompt)
 
         record_file = get_intermediate_file_path(eval_file, '_openai_result')
         score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
@@ -1623,7 +2020,7 @@ class MMVet(ImageBaseDataset):
         'MMVet':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
         'MMVet_Hard':
-        'http://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
+        'https://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
     }
     DATASET_MD5 = {
         'MMVet': '748aa6d4aa9d4de798306a63718455e3',
@@ -1633,7 +2030,7 @@ class MMVet(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mmvet import MMVet_auxeval, MMVet_acc
+        from .utils.mmvet import MMVet_acc, MMVet_auxeval
 
         model = judge_kwargs['model']
         storage = get_intermediate_file_path(eval_file, f'_{model}')
@@ -1762,7 +2159,9 @@ class WildDocBenchmark(ImageBaseDataset):
                 raise ValueError(f"Unknown benchmark name {benchmark_name}")
 
         # calculate three subset separately
-        from .utils.vqa_eval import hit_calculate, process_line_WildDoc, calculate_consistency_WildDoc, calculate_overall_accuracy_WildDoc  # noqa: E501
+        from .utils.vqa_eval import calculate_overall_accuracy_WildDoc  # noqa: F401
+        from .utils.vqa_eval import (calculate_consistency_WildDoc, hit_calculate,
+                                     process_line_WildDoc)
 
         # 1. DocVQA
         data = DocVQA_df
@@ -1796,7 +2195,9 @@ class WildDocBenchmark(ImageBaseDataset):
         data = TableVQA_df
         assert 'answer' in data and 'prediction' in data
         import pandas as pd
-        from .utils.tablevqabench import evaluate_fintabnet, evaluate_tabfact, evaluate_wtq
+
+        from .utils.tablevqabench import (evaluate_fintabnet, evaluate_tabfact,  # noqa: F401
+                                          evaluate_wtq)
 
         data['prediction'] = data['prediction'].str.replace('^Answer: ',
                                                             '',
@@ -1814,7 +2215,8 @@ class WildDocBenchmark(ImageBaseDataset):
             ret = {'index': line["index"]}
             ans = line['answer']
             pred = line["prediction"]
-            from .utils.tablevqabench import fintabnet_normalize, tsv_unescape_list, to_value_list, check_denotation
+            from .utils.tablevqabench import (check_denotation, fintabnet_normalize, to_value_list,
+                                              tsv_unescape_list)
 
             subset = line["index"].split("-")[1]
             if subset == "fintabnetqa":
@@ -1943,7 +2345,9 @@ class TableVQABench(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         import pandas as pd
-        from .utils.tablevqabench import evaluate_fintabnet, evaluate_tabfact, evaluate_wtq
+
+        from .utils.tablevqabench import (evaluate_fintabnet, evaluate_tabfact,  # noqa: F401
+                                          evaluate_wtq)
 
         data = load(eval_file)
         assert 'answer' in data and 'prediction' in data
@@ -2025,6 +2429,7 @@ class CRPE(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.crpe import is_correct
+
         # find-image, count-text, find-text,
         # infer-choose, count-image, visual-reasoning
         score = {
@@ -2148,7 +2553,7 @@ class QSpatial(ImageBaseDataset):
     # Given the dataset name, return the dataset as a pandas dataframe, can override
     def load_data(self, dataset):
         import io
-        import pandas as pd
+
         from datasets import load_dataset
 
         hf_dataset = load_dataset("andrewliao11/Q-Spatial-Bench",
@@ -2406,6 +2811,7 @@ class MMNIAH(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mmniah import is_correct
+
         # find-image, count-text, find-text,
         # infer-choose, count-image, visual-reasoning
         MMNIAH_score = {
@@ -2541,11 +2947,12 @@ class MMSci_Captioning(ImageBaseDataset):
         'MMSci_DEV_Captioning_image_only': '0f5f0fd7ff383699fbd2203a4659d3e8',
         'MMSci_DEV_Captioning_with_abs': 'ae4a9b88166153efd74e28c989e4a484'
     }
+    DEFAULT_JUDGE = ['gpt-4o-0806', 'gemini-1.5-pro-exp-0801']
 
     def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mmsci import fact_score_generate  # noqa: F401
         from .utils.mmsci import (get_all_metrics_for_g_eval_score,
-                                  get_all_metrics_for_reference_based_metrics,
-                                  merge_rating, fact_score_generate)
+                                  get_all_metrics_for_reference_based_metrics, merge_rating)
         refer_based_metrics_output_file = get_intermediate_file_path(eval_file, '_reference_based_metrics')
         g_eval_metrics_output_file = get_intermediate_file_path(eval_file, '_g_eval_metrics')
         fact_score_metrics_output_file = get_intermediate_file_path(eval_file, '_fact_score')
@@ -2618,7 +3025,6 @@ class MMSci_Captioning(ImageBaseDataset):
             model = judge_kwargs.pop('model', 'gpt-4o-0806')
             nproc = judge_kwargs.pop('nproc', 4)
             # not supported gemini-1.5-pro-exp-0801 as judge model yet、
-            assert model in ['gpt-4o-0806', 'gemini-1.5-pro-exp-0801']
             judge_model = build_judge(model=model, **judge_kwargs)
 
             assert judge_model.working(), (
@@ -2898,16 +3304,15 @@ class OCR_Reasoning(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.ocr_reasoning import OcrR_auxeval, OcrR_acc
+        from .utils.ocr_reasoning import OcrR_acc, OcrR_auxeval
 
         model = judge_kwargs['model']
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
-        nproc = 1
         if not osp.exists(storage):
             data = load(eval_file)
-            model = build_judge(max_tokens=1024, **judge_kwargs)
+            model = build_judge(max_tokens=16384, **judge_kwargs)
             assert model.working(), 'OCRReasoning evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
@@ -3050,7 +3455,7 @@ class PhyX(ImageBaseDataset):
                 cates = list(set(data['category']))
                 cates.sort()
                 for c in cates:
-                    sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                    sub = [r for line, r in zip(lines, res) if line['category'] == c]
                     hit = [x['match'] for x in sub]
                     ret[c] = np.mean(hit)
             ret = d2df(ret)
@@ -3061,7 +3466,7 @@ class PhyX(ImageBaseDataset):
             return ret
 
         elif valid_type == "LLM":
-            from .utils.phyx import PhyX_auxeval, PhyX_acc, PhyX_auxeval_MC
+            from .utils.phyx import PhyX_acc, PhyX_auxeval, PhyX_auxeval_MC
 
             model = judge_kwargs['model']
             storage = get_intermediate_file_path(eval_file, f'_{model}')
@@ -3132,6 +3537,7 @@ class TallyQA(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         import pandas as pd
+
         from .utils.tallyqa import extract_count_from_prediction
 
         data = load(eval_file)
@@ -3206,7 +3612,8 @@ class MMEReasoning(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mme_reasoning import MMEReasoning_extract, MMEReasoning_openeval, MMEReasoning_acc, FAIL_MSG, mme_reasoning_eval_functions  # noqa
+        from .utils.mme_reasoning import (FAIL_MSG, MMEReasoning_acc, MMEReasoning_extract,  # noqa
+                                          MMEReasoning_openeval, mme_reasoning_eval_functions)
 
         model = judge_kwargs.get('model', 'gpt-4o-mini')
         storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract')
@@ -3407,7 +3814,7 @@ class MMVMBench(ImageBaseDataset):
         for match_type_i, score_i in zip(match_types_int, scores):
             try:
                 match_type_i_list = eval(match_type_i)
-            except:
+            except Exception:
                 match_type_i_list = [1, 5]
             hit_i = 0
             for tag in ['[YES]', '[Yes]', '[yes]', 'YES', 'Yes', 'yes']:
@@ -3496,15 +3903,21 @@ class OCRBench_v2(ImageBaseDataset):
     DATASET_URL = {
         'OCRBench_v2':
         'https://huggingface.co/datasets/QYWH/ocrbench_v2/resolve/main/OCRBench_v2.tsv?download=true',
+        'OCRBench_v2_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench_v2_MINI.tsv',
     }
-    DATASET_MD5 = {'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0'}
+    DATASET_MD5 = {
+        'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0',
+        'OCRBench_v2_MINI': '11f79b8e1e0b0fe150964de4cb2feb02',
+    }
 
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         import ast
-        from .utils.ocrbrnch_v2_eval import process_predictions, ocrbench_v2_aggregate_accuracy
+
         import pandas as pd
+
+        from .utils.ocrbrnch_v2_eval import ocrbench_v2_aggregate_accuracy, process_predictions
 
         data = load(eval_file)
         lt = len(data)
@@ -3719,9 +4132,7 @@ class MathCanvas(ImageBaseDataset):
 
         summary_dict = summarize_mathcanvas_results(eval_results_list)
 
-        os.environ['EVAL_FORMAT'] = 'json'
-
-        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
         with open(score_file, 'w', encoding='utf-8') as f:
             json.dump(summary_dict, f, ensure_ascii=False, indent=4)
 
@@ -3739,7 +4150,7 @@ class MMReason(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mmreason import MMReason_auxeval_extract, MMReason_auxeval_score, MMReason_acc
+        from .utils.mmreason import MMReason_acc, MMReason_auxeval_extract, MMReason_auxeval_score
 
         model = judge_kwargs['model']
         suffix = eval_file.split('.')[-1]
@@ -3820,3 +4231,112 @@ class MMReason(ImageBaseDataset):
         score_pth = storage_score.replace('.xlsx', '_score.csv')
         dump(score, score_pth)
         return score
+
+
+class CoreCognition(ImageBaseDataset):
+    TYPE = 'VQA'
+
+    DATASET_URL = {
+        'CoreCognition': 'https://huggingface.co/datasets/ZTWHHH/CoreCognition/resolve/main/CoreCognition.tsv'
+    }
+
+    DATASET_MD5 = {
+        'CoreCognition': 'edb4569677adfb6d01e8056a610dddbb'
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        assert os.path.exists(eval_file), '{} does not exist!'.format(eval_file)
+        from .utils.corecognition import CoreCognition_acc, CoreCognition_eval
+
+        nproc = judge_kwargs.pop('nproc', 4)
+        model = judge_kwargs.get('model', 'exact_matching')
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4o-mini': 'gpt4omini', 'gpt-4.1': 'gpt41'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
+        if osp.exists(score_file):
+            acc = load(score_file)
+            return acc
+
+        model = build_judge(**judge_kwargs)
+        if not model.working():
+            warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+            warnings.warn(DEBUG_MESSAGE)
+            model = None
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+        for k in data_map:
+            assert k in meta_q_map, f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+
+        # Merge meta fields into data - drop existing columns to avoid conflicts
+        data = data.drop(columns=['answer', 'category', 'l2-category', 'question_type'], errors='ignore')
+        meta_merge = meta[['index', 'answer', 'category', 'l2-category', 'question_type']]
+        data = data.merge(meta_merge, on='index', how='left')
+
+        # Evaluate predictions using hybrid matching with parallel processing
+        data['correct'] = CoreCognition_eval(model, data, nproc=nproc)
+
+        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result')
+        dump(data, result_file)
+
+        # Calculate accuracy
+        acc = CoreCognition_acc(data)
+        dump(acc, score_file)
+
+        return acc
+
+
+class VLMsAreBiased(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'vlms_are_biased_main': 'https://opencompass.openxlab.space/utils/VLMEval/vlms_are_biased_main.tsv',
+    }
+    DATASET_MD5 = {'vlms_are_biased_main': '96b929361f6417b32df95b5287f992f1'}
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.vlmsarebiased import (vlms_are_biased_aggregate_by_topic,
+                                          vlms_are_biased_process_results)
+
+        detailed_results_file = get_intermediate_file_path(eval_file, '_eval_meta')
+
+        if not os.path.exists(detailed_results_file):
+            detail_result = vlms_are_biased_process_results(eval_file)
+            dump(detail_result, detailed_results_file)
+        else:
+            print(f"Loading existing evaluation results from {detailed_results_file}")
+            detail_result = load(detailed_results_file)
+
+        summary_dict = vlms_are_biased_aggregate_by_topic(detail_result)
+
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
+        dump(summary_dict, score_file)
+
+        return summary_dict

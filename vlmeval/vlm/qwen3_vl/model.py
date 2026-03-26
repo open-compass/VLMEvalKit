@@ -1,27 +1,23 @@
 from __future__ import annotations
-
 import logging
 import os
 import warnings
 
 import torch
 
+from vlmeval.smp import get_gpu_memory, listinstr
 from ..base import BaseModel
 from .prompt import Qwen3VLPromptMixin
-from ...smp import get_gpu_memory, listinstr
-
 
 VLLM_MAX_IMAGE_INPUT_NUM = 24
 
 
 def is_moe_model(model_path: str) -> bool:
-    """Check if the model is a Mixture of Experts model."""
-    path_parts = model_path.split('/')
-    non_moe_patterns = ['2B','4B','8B','32B']
-    for part in path_parts:
-        if any(pattern in part for pattern in non_moe_patterns):
-            return False
-    return True
+    """Check if the model is a Mixture of Experts model by looking for active-param suffixes like A3B, A17B."""
+    import re
+    if re.search(r'-A\d+B', model_path):
+        return True
+    return False
 
 
 def ensure_image_url(image: str) -> str:
@@ -95,11 +91,13 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
 
         assert model_path is not None
         self.model_path = model_path
-        from transformers import AutoProcessor, AutoModelForImageTextToText
+        from transformers import AutoModelForImageTextToText, AutoProcessor
+
         # Use official Qwen3-Omni classes when model_path indicates omni
         if listinstr(['omni'], model_path.lower()):
             try:
-                from transformers import Qwen3OmniMoeForConditionalGeneration, Qwen3OmniMoeProcessor
+                from transformers import (Qwen3OmniMoeForConditionalGeneration,
+                                          Qwen3OmniMoeProcessor)
             except Exception as err:
                 logging.critical("pip install git+https://github.com/huggingface/transformers")
                 raise err

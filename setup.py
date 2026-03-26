@@ -1,6 +1,7 @@
 import re
 import sys
 from os.path import exists
+
 from setuptools import find_packages, setup
 
 
@@ -45,7 +46,7 @@ def parse_requirements(fname='requirements.txt', with_version=True):
                     op, rest = parts[1:]
                     if ';' in rest:
                         # Handle platform specific dependencies
-                        # http://setuptools.readthedocs.io/en/latest/setuptools.html#declaring-platform-specific-dependencies
+                        # https://setuptools.readthedocs.io/en/latest/setuptools.html#declaring-platform-specific-dependencies
                         version, platform_deps = map(str.strip,
                                                      rest.split(';'))
                         info['platform_deps'] = platform_deps

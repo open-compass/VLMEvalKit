@@ -1,10 +1,11 @@
 # flake8: noqa
-import ast
-import re
-from typing import List, Optional, Any, Tuple, Dict
-import pandas as pd
-import json
 import argparse
+import ast
+import json
+import re
+from typing import Any, Dict, List, Optional, Tuple
+
+import pandas as pd
 
 
 def prompt_context(question, answer, q_type, vqa_type):
@@ -309,7 +310,7 @@ def relaxed_correctness_chartqapro(
 
 def evaluate_predictions_chartqapro(predictions, pred_key='prediction'):
     gts = [x['Answer'][-1].strip(".").strip("\n") for x in predictions]
-    preds = [x[pred_key].strip(".").strip("\n") for x in predictions]
+    preds = [str(x[pred_key]).strip(".").strip("\n") for x in predictions]
     splits = [x['Question Type'] for x in predictions]
     year_flags = [x['Year'] for x in predictions]
     # Calculate accuracy by splits

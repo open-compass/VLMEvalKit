@@ -1,15 +1,16 @@
 # flake8: noqa
 
+import json
 import os
 import re
 import tempfile
-import json
 from functools import partial
-import pandas as pd
 
-from .image_base import ImageBaseDataset
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
+import pandas as pd
+from tqdm import tqdm
+
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.smp import d2df, dump, get_intermediate_file_path, load
 
 # should be the same as  FAIL_MSG definded in vlmeval/inference.py
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -57,7 +58,7 @@ class CCOCRDataset(ImageBaseDataset):
         "CCOCR_MultiSceneOcr_UgcLaion": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/ugc_laion_400.tsv",
         "CCOCR_MultiSceneOcr_ZhDense": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/zh_dense_50.tsv",
         "CCOCR_MultiSceneOcr_ZhVertical": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/zh_vertical_100.tsv",
-        "CCOCR": "http://opencompass.openxlab.space/utils/VLMEval/CCOCR.tsv"
+        "CCOCR": "https://opencompass.openxlab.space/utils/VLMEval/CCOCR.tsv"
     }
 
     DATASET_URL_HUGGINGFACE = {
@@ -100,7 +101,7 @@ class CCOCRDataset(ImageBaseDataset):
         "CCOCR_MultiSceneOcr_UgcLaion": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/ugc_laion_400.tsv",
         "CCOCR_MultiSceneOcr_ZhDense": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/zh_dense_50.tsv",
         "CCOCR_MultiSceneOcr_ZhVertical": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/zh_vertical_100.tsv",
-        "CCOCR": "http://opencompass.openxlab.space/utils/VLMEval/CCOCR.tsv"
+        "CCOCR": "https://opencompass.openxlab.space/utils/VLMEval/CCOCR.tsv"
     }
 
     # define data path

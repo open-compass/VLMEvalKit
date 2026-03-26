@@ -1,6 +1,13 @@
-import pandas as pd
+import os
+import os.path as osp
+import warnings
 from abc import abstractmethod
-from ..smp import *
+
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp import (LMUDataRoot, decode_base64_to_image_file, download_file, file_size,
+                         istype, load, md5, mmqa_display, read_ok, toliststr)
 
 
 def img_root_map(dataset):
@@ -141,7 +148,7 @@ class ImageBaseDataset:
                     decode_base64_to_image_file(line['image'], tgt_path)
                 tgt_path = [tgt_path]
             else:
-                tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
+                tgt_path = osp.join(self.img_root, f"{line['index']}.png")
                 if not read_ok(tgt_path):
                     decode_base64_to_image_file(line['image'], tgt_path)
                 tgt_path = [tgt_path]

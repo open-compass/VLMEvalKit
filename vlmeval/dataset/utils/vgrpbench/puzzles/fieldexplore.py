@@ -1,12 +1,14 @@
-import numpy as np
-from typing import List, Dict, Any, Tuple
-import random
+import argparse
 import copy
 import os
-import argparse
+import random
+from typing import Any, Dict, List, Tuple
 
-from .common_puzzle_factory import PuzzleFactory
+import numpy as np
+
 from .common_constriants import Constraint
+from .common_puzzle_factory import PuzzleFactory
+
 
 class ConstraintAdjacentNumbers(Constraint):
     """Ensures revealed numbers match adjacent mine counts"""

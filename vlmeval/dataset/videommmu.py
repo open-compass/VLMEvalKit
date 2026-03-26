@@ -1,14 +1,21 @@
 import io
-import re
 import json
-from huggingface_hub import snapshot_download
+import os
+import os.path as osp
+import re
+from collections import defaultdict
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+import portalocker
+from huggingface_hub import snapshot_download
+from PIL import Image
+
+from vlmeval.smp import (dump, get_cache_path, get_intermediate_file_path, load, md5,
+                         modelscope_flag_set)
 from vlmeval.utils import track_progress_rich
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

@@ -1,19 +1,20 @@
-import os
-import re
-import tempfile
-import itertools
-from functools import partial
-
-import pandas as pd
 import ast
+import itertools
+import json
+import os
+import os.path as osp
+import re
+from collections import defaultdict
 
-from ..image_base import ImageBaseDataset, img_root_map
-from ..utils import build_judge, DEBUG_MESSAGE
-from ...smp import *
-from ...utils import track_progress_rich
-from ipdb import set_trace as st
+import numpy as np
+import pandas as pd
+from PIL import Image
+from tqdm import tqdm
 
-logger = get_logger("RUN")
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, get_logger, load, toliststr
+
+logger = get_logger(__name__)
 
 """
 {
@@ -141,12 +142,12 @@ class ScreenSpot_Pro(ImageBaseDataset):
     MODALITY = "IMAGE"
     TYPE = "GUI"
     DATASET_URL = {
-        "ScreenSpot_Pro_Development": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Development.tsv",  # noqa
-        "ScreenSpot_Pro_Creative": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Creative.tsv",  # noqa
-        "ScreenSpot_Pro_CAD": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_CAD.tsv",  # noqa
-        "ScreenSpot_Pro_Scientific": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Scientific.tsv",  # noqa
-        "ScreenSpot_Pro_Office": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Office.tsv",  # noqa
-        "ScreenSpot_Pro_OS": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_OS.tsv",  # noqa
+        "ScreenSpot_Pro_Development": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Development.tsv",  # noqa
+        "ScreenSpot_Pro_Creative": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Creative.tsv",  # noqa
+        "ScreenSpot_Pro_CAD": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_CAD.tsv",  # noqa
+        "ScreenSpot_Pro_Scientific": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Scientific.tsv",  # noqa
+        "ScreenSpot_Pro_Office": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Office.tsv",  # noqa
+        "ScreenSpot_Pro_OS": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_OS.tsv",  # noqa
     }  # path
     DATASET_MD5 = {
         'ScreenSpot_Pro_Development': '45b93df1d5814885011d682fe1b0f959',
@@ -291,7 +292,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
                         results_dict[score_key + "_text"].append(score)
                     else:
                         results_dict[score_key + "_icon"].append(score)
-            except:
+            except Exception:
                 click_point = None
                 match = {score_key: False for score_key in scorers.keys() if score_key != "IoU"}
             result.append(

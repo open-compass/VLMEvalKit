@@ -1,25 +1,24 @@
-import re
-import unicodedata
-import subprocess
-import shutil
-import uuid
-import html
-import os
-import sys
-import pdb
-import json
 import copy
+import html
+import json
+import os
+import pdb
+import re
+import shutil
+import subprocess
+import sys
 import unicodedata
+import uuid
+from collections import defaultdict
 
 import Levenshtein
 import numpy as np
 from bs4 import BeautifulSoup
 from pylatexenc.latex2text import LatexNodes2Text
-from scipy.optimize import linear_sum_assignment
 from pylatexenc.latexencode import unicode_to_latex
-from pylatexenc.latex2text import LatexNodes2Text
-from pylatexenc.latexwalker import LatexWalker, LatexEnvironmentNode, LatexCharsNode, LatexGroupNode, LatexMacroNode, LatexSpecialsNode
-from collections import defaultdict
+from pylatexenc.latexwalker import (LatexCharsNode, LatexEnvironmentNode, LatexGroupNode,
+                                    LatexMacroNode, LatexSpecialsNode, LatexWalker)
+from scipy.optimize import linear_sum_assignment
 
 
 def read_md_file(filepath):
@@ -1033,16 +1032,16 @@ def match_gt2pred_no_split(gt_items, pred_items, line_type, img_name):
         return []
 
 
-from scipy.optimize import linear_sum_assignment
-# from rapidfuzz.distance import Levenshtein
-import Levenshtein
-from collections import defaultdict
 import copy
 import pdb
-import numpy as np
+from collections import Counter, defaultdict
+
 import evaluate
-from collections import Counter
+# from rapidfuzz.distance import Levenshtein
+import Levenshtein
+import numpy as np
 from Levenshtein import distance as Levenshtein_distance
+from scipy.optimize import linear_sum_assignment
 
 
 def match_gt2pred_quick(gt_items, pred_items, line_type, img_name):
@@ -1654,6 +1653,7 @@ def convert_final_matches(final_matches, norm_gt_lines, norm_pred_lines):
 
 import json
 
+
 def read_md_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as file:
         content = file.read()
@@ -1674,11 +1674,13 @@ def save_paired_result(preds, gts, save_path):
         json.dump(save_result, f, indent=4, ensure_ascii=False)
 
 
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 import re
+
 import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
+import numpy as np
+
 font = fm.FontProperties(fname=r'font/SimHei.ttf')
 
 

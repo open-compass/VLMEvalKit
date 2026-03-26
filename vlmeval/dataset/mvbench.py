@@ -1,18 +1,28 @@
-import huggingface_hub
-from huggingface_hub import snapshot_download
-from ..smp import *
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
-import torchvision.transforms as T
-from torchvision import transforms
-from torchvision.transforms.functional import InterpolationMode
-import imageio
-import cv2
-import zipfile
-import os
 import glob
-from .utils.mvbench import *
+import json
+import os
+import os.path as osp
+import shutil
+import warnings
+import zipfile
+
+import cv2
+import huggingface_hub
+import imageio
+import numpy as np
+import pandas as pd
+import portalocker
+import torch
+import torchvision.transforms as T
+from huggingface_hub import snapshot_download
+from PIL import Image
+from torchvision import transforms
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5, modelscope_flag_set)
+from .utils import DEBUG_MESSAGE, build_judge
+from .utils.mvbench import Stack, ToTorchFormatTensor, check_ans_with_model, get_dimension_rating
+from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -26,6 +36,7 @@ Based on your observations, select the best option that accurately addresses the
 """
 
     TYPE = 'Video-MCQ'
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='MVBench', nframe=0, fps=-1):
         self.type_data_list = {
@@ -285,8 +296,8 @@ Based on your observations, select the best option that accurately addresses the
 
     def load_into_video_and_process(self, line):
         try:
-            from moviepy.editor import VideoFileClip, ImageSequenceClip
-        except:
+            from moviepy.editor import ImageSequenceClip, VideoFileClip
+        except Exception:
             raise ImportError(
                 'MoviePy is not installed, please install it by running "pip install moviepy==1.0.3"'
             )
@@ -370,19 +381,15 @@ Based on your observations, select the best option that accurately addresses the
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'chatgpt-0125')
-            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None
-            elif gpt_key_set():
+            else:
                 model = build_judge(**judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                     warnings.warn(DEBUG_MESSAGE)
                     model = None
-            else:
-                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-                model = None
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
@@ -429,6 +436,7 @@ Based on your observations, select the best option that accurately addresses the
 
 
 class MVBench_MP4(VideoBaseDataset):
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     MP4_MD5 = '5c8c6f8b7972c2de65a629590f7c42f5'
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
@@ -617,19 +625,15 @@ Based on your observations, select the best option that accurately addresses the
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'chatgpt-0125')
-            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None
-            elif gpt_key_set():
+            else:
                 model = build_judge(**judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                     warnings.warn(DEBUG_MESSAGE)
                     model = None
-            else:
-                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-                model = None
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 

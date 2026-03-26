@@ -1,10 +1,12 @@
+import warnings
+
 import torch
 from PIL import Image
-import warnings
+from torchvision.transforms import Compose, Lambda, Normalize, Resize, ToTensor
+from transformers import AutoConfig, AutoTokenizer
+
 from .base import BaseModel
-from ..smp import splitlen, get_cache_path
-from transformers import AutoTokenizer, AutoConfig
-from torchvision.transforms import Compose, Resize, Lambda, ToTensor, Normalize
+
 try:
     from torchvision.transforms import InterpolationMode
     BICUBIC = InterpolationMode.BICUBIC
@@ -24,12 +26,12 @@ class AKI(BaseModel):
         self.name = name
         try:
             from open_flamingo.src.modeling_aki import AKI
-        except:
+        except Exception:
             raise ImportError('Please first install AKIVLM from https://github.com/sony/aki')
 
         # replace GenerationMixin to modify attention mask handling
-        from transformers.generation.utils import GenerationMixin
         from open_flamingo import _aki_update_model_kwargs_for_generation
+        from transformers.generation.utils import GenerationMixin
         GenerationMixin._update_model_kwargs_for_generation = _aki_update_model_kwargs_for_generation
 
         config = AutoConfig.from_pretrained(ckpt_pth)

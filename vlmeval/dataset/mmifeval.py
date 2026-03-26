@@ -1,14 +1,16 @@
-# flake8: noqa
+import json
+import os
+import os.path as osp
 import re
 
-from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
-from ..dataset.utils.mmif.function_and_compare import *
+import pandas as pd
 
-logger = get_logger("MMIFEval")
+from vlmeval.smp import dump, get_intermediate_file_path, get_logger, load, toliststr
+from vlmeval.utils import track_progress_rich
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
+
+logger = get_logger(__name__)
 
 aux_data_dict = {}
 judge_model = None
@@ -104,13 +106,13 @@ summary of your evaluation.
 Your output must strictly follow this format:
 Reasoning: ...
 Summary: "True" / "False".
-"""
+"""  # noqa: E501
     return pt
 
 
 # <<< re >>>
 # extract score from gpt_resp
-# format: Score of instruction: x/1, Score of constraint_1: y/1, Score of constraint_2: z/1, ..., Score of constraint_n: w/1.
+# format: Score of instruction: x/1, Score of constraint_1: y/1, ..., Score of constraint_n: w/1.
 # return: score_dict {'instruction': x/1, 'constraint_1': y/1,
 # 'constraint_2': z/1, ..., 'constraint_n': w/1}
 
@@ -180,7 +182,7 @@ def extract_score_from_cmp_gpt_resp(response_text):
         raise ValueError("No 'summary' found in response.")
 
     # Step 2: Slice the string after 'summary:' and extract value
-    after_summary = response_text[summary_idx + len("summary") :]
+    after_summary = response_text[summary_idx + len("summary"):]
 
     # Match true/false ignoring markdown and formatting
     match = re.search(r"\b(true|false)\b", after_summary, re.IGNORECASE)
@@ -293,7 +295,7 @@ def judge_one_item(item, retry=3):
                     for func_dict in constraint["judge"]["verify_funcs"]:
                         func = globals()[func_dict["func"]]
                         # use * to unpack the list, ** is used for dict
-                        judge_result = func(item["prediction"], *func_dict["params"])
+                        judge_result = func(str(item["prediction"]), *func_dict["params"])
                         # breakpoint()
                         if not judge_result:  # False -> score = 0
                             score = 0.0
@@ -323,7 +325,7 @@ def judge_one_item(item, retry=3):
                 total_score += value
                 cnt += 1
             score_dict["total_score"] = total_score / cnt
-            logger.info(f"score_dict:\n{score_dict}")
+            logger.debug(f"score_dict:\n{score_dict}")
             return 0, "success", score_dict
     return 1, "C-Level, fail in judge", {}
 
@@ -463,7 +465,7 @@ class MMIFEval(ImageBaseDataset):
                 p_level_score_sum += line["eval_score_dict"]["total_score"]
                 p_level_cnt += 1
             elif line["tag"] == "C-Level":
-                c_level_score_sum += line["eval_score_dict"]["total_score"]
+                c_level_score_sum += line["eval_score_dict"].get("total_score", 0.)
                 c_level_cnt += 1
         p_level_accuracy = p_level_score_sum / p_level_cnt
         c_level_accuracy = c_level_score_sum / c_level_cnt

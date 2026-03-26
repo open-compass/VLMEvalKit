@@ -6,7 +6,7 @@ def puzzle_15_check(initial_state, model_input):
         try:
             import ast
             initial_state = ast.literal_eval(initial_state)
-        except:
+        except Exception:
             return False
 
     if isinstance(model_input, str):

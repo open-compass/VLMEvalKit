@@ -10,14 +10,15 @@
 # If any problem occurs, please open an issue on GitHub
 # (https://github.com/fscdc/RewardMap or https://github.com/fscdc/ReasonMap).
 
-import os
 import re
-import pandas as pd
-import numpy as np
 from pathlib import Path
 from typing import Any
+
+import numpy as np
+import pandas as pd
+
 from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp import load, d2df
+from vlmeval.smp import load
 
 _BOXED_PAT = re.compile(r'(?:\\boxed|boxed)\{([^}]*)\}', re.IGNORECASE)
 _TEXT_PAT = re.compile(r'\\text\{([^}]*)\}', re.IGNORECASE)

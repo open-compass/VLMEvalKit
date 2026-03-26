@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 import torch
 from torch import nn
-from transformers import AutoProcessor, AutoModel
+from transformers import AutoModel, AutoProcessor
 
 
 @contextmanager

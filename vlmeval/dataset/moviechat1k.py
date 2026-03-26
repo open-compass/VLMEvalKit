@@ -1,13 +1,18 @@
-from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
-import random
-import json
-import ast
+import copy as cp
+import os
+import os.path as osp
+from collections import defaultdict
 from glob import glob
+
+import numpy as np
+import pandas as pd
+from huggingface_hub import snapshot_download
+
+from vlmeval.smp import (dump, extract_json_objects, get_cache_path, get_file_extension,
+                         get_intermediate_file_path, load, md5)
+from ..utils import track_progress_rich
+from .utils import build_judge
+from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -164,16 +169,16 @@ class MovieChat1k(VideoBaseDataset):
             jsons = list(extract_json_objects(s))
             assert len(jsons) == 1
             return jsons[0]
-        except:
+        except Exception:
             if '{' in s and s.find('{') == s.rfind('{'):
                 sub_str = s[s.find('{') + 1:].strip()
                 lines = sub_str.split('\n')
                 res = {}
-                for l in lines:
-                    l = l.strip()
-                    if ': ' in l:
-                        key = l.split(': ')[0].strip()
-                        val = l.split(': ')[1].strip()
+                for line in lines:
+                    line = line.strip()
+                    if ': ' in line:
+                        key = line.split(': ')[0].strip()
+                        val = line.split(': ')[1].strip()
                         key = MovieChat1k.remove_side_quote(key)
                         val = MovieChat1k.remove_side_quote(val)
                         if len(key) and len(val):

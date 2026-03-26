@@ -1,14 +1,17 @@
+import base64
+import copy
 import json
 import os
-import copy
-import pandas as pd
 import tempfile
-import base64
+
 import numpy as np
-from tqdm import tqdm
+import pandas as pd
 import torch.distributed as dist
+from tqdm import tqdm
+
+from vlmeval.smp import dump, get_intermediate_file_path, load
 from ..image_base import ImageBaseDataset
-from ...smp import *
+
 # from ..utils import get_intermediate_file_path, load, dump
 
 
@@ -262,8 +265,10 @@ class end2end_evaluator():
         return matched_samples_all
 
     def process_get_matched_elements(self, sample, pred_content, img_name):
-        from .utils import match_gt2pred_simple, match_gt2pred_no_split, match_gt2pred_quick, md_tex_filter
         from func_timeout import FunctionTimedOut, func_timeout
+
+        from .utils import (match_gt2pred_no_split, match_gt2pred_quick, match_gt2pred_simple,
+                            md_tex_filter)
 
         if self.match_method == 'simple_match':   # add match choice
             match_gt2pred = match_gt2pred_simple
@@ -334,7 +339,7 @@ class end2end_evaluator():
         return [plain_text_match_clean, display_formula_match_s, latex_table_match_s, html_table_match_s, order_match_single]
 
     def process_generated_metric_results(self,samples,save_name:str='end2end_quick_match'):
-        from .metrics import show_result, get_full_labels_results, get_page_split, METRIC_REGISTRY
+        from .metrics import METRIC_REGISTRY, get_full_labels_results, get_page_split, show_result
 
         result_all={}
         page_info={}
@@ -431,7 +436,8 @@ class table_evalutor():
         self.gt_samples,self.table_samples=self.load_data(eval_file,tsv_path,pred_key,gt_key)
 
     def load_data(self,eval_file,gt_file,pred_key,gt_key):
-        from .data_preprocess import clean_string, normalized_formula, textblock2unicode, normalized_table
+        from .data_preprocess import (clean_string, normalized_formula, normalized_table,
+                                      textblock2unicode)
         samples=[]
         preds=[]
         predictions=load(eval_file)['prediction'].tolist()
@@ -500,7 +506,7 @@ class table_evalutor():
         return metrics
 
     def process_generated_metric_results(self,save_name:str='OmniDocBench_table'):
-        from .metrics import show_result, get_full_labels_results, get_page_split, METRIC_REGISTRY
+        from .metrics import METRIC_REGISTRY, get_full_labels_results, get_page_split, show_result
 
         p_scores={}
         page_info={}

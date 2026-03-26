@@ -1,12 +1,14 @@
 # flake8: noqa
+import os
 from typing import List, Tuple
+
+from ..eval_configs.global_config import run_script_safe
+
 # from dotenv import load_dotenv
 # load_dotenv()
 
-import os
 # sys.path.insert(0, os.environ["PROJECT_PATH"])
 
-from ..eval_configs.global_config import run_script_safe
 
 
 

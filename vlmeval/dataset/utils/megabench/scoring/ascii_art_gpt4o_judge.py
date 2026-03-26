@@ -1,11 +1,14 @@
 """Return if two ASCII art images depict the same thing."""
 
 import logging
-from numbers import Number
 import os
+from numbers import Number
+
 import requests
+
 from .common.conversions import ascii_text_to_image
 from .vlm_as_judge import OpenAIVLMJudger
+
 """Return if two ASCII art images depict the same thing."""
 
 

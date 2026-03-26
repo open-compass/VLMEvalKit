@@ -1,8 +1,18 @@
+import os
+import os.path as osp
+import pickle
+import warnings
+
+import numpy as np
+import pandas as pd
+import portalocker
 from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
+from PIL import Image
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5, modelscope_flag_set)
+from .utils import DEBUG_MESSAGE, build_judge
 from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -48,6 +58,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 """
 
     TYPE = 'Video-MCQ'
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='Video-MME', use_subtitle=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
@@ -222,15 +233,15 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
         text_prompt = self.FRAMES_TMPL_NOSUB if not self.use_subtitle else self.FRAMES_TMPL_SUB.format(subtitles)
         message.append(dict(type='text', value=text_prompt))
-        line['question'] += '\n' + '\n'.join(eval(line['candidates']))
-        prompt = 'Question: {}\nAnswer: '.format(line['question'])
+        question = line['question'] + '\n' + '\n'.join(eval(line['candidates']))
+        prompt = 'Question: {}\nAnswer: '.format(question)
         message.append(dict(type='text', value=prompt))
         return message
 
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.videomme import get_dimension_rating, extract_characters_regex, extract_option
+        from .utils.videomme import extract_characters_regex, extract_option, get_dimension_rating
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 
@@ -240,19 +251,15 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')
-            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None
-            elif gpt_key_set():
+            else:
                 model = build_judge(**judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                     warnings.warn(DEBUG_MESSAGE)
                     model = None
-            else:
-                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-                model = None
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 

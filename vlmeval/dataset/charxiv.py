@@ -1,14 +1,15 @@
-import os
 import json
-from typing import Dict, List, Tuple, Any, Union
-import pandas as pd
+import os
 import warnings
+from typing import Any, Dict, List, Tuple, Union
 
-from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp import misc, file
-from vlmeval.smp.file import get_intermediate_file_path
+import pandas as pd
+
 from vlmeval import utils
+from vlmeval.dataset.image_base import ImageBaseDataset
 from vlmeval.dataset.utils import build_judge
+from vlmeval.smp import file, misc
+from vlmeval.smp.file import get_intermediate_file_path
 
 
 def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
@@ -104,8 +105,8 @@ def qid2category(mode: str) -> Tuple[Dict[int, str], str]:
 class CharXiv(ImageBaseDataset):
     TYPE = "VQA"
     DATASET_URL = {
-        "CharXiv_descriptive_val": "http://opencompass.openxlab.space/utils/VLMEval/CharXiv_descriptive_val.tsv",
-        "CharXiv_reasoning_val": "http://opencompass.openxlab.space/utils/VLMEval/CharXiv_reasoning_val.tsv",
+        "CharXiv_descriptive_val": "https://opencompass.openxlab.space/utils/VLMEval/CharXiv_descriptive_val.tsv",
+        "CharXiv_reasoning_val": "https://opencompass.openxlab.space/utils/VLMEval/CharXiv_reasoning_val.tsv",
     }
     DATASET_MD5 = {
         "CharXiv_descriptive_val": "e165037032f169a59dd09ea5d7ad3073",

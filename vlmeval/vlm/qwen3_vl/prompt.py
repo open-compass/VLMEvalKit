@@ -29,6 +29,8 @@ class Qwen3VLPromptMixin:
 
         if not self._use_custom_prompt:
             return False
+        if dataset in {"SSI_Bench"}:
+            return False
         # Follow Qwen3-VL convention: apply concise, task-specified prompts for MCQ/YN/VQA
         if dataset in {'MMMU_DEV_VAL', 'MMMU_TEST'}:
             return True
@@ -60,6 +62,7 @@ class Qwen3VLPromptMixin:
         Matches Qwen3-VL multi-image style shown in README examples.
         """
         import string
+
         import pandas as pd
 
         tgt_path = self.dump_image(line, dataset)
@@ -95,6 +98,7 @@ class Qwen3VLPromptMixin:
         Keep images before the text per Qwen3-VL convention.
         """
         import string
+
         import pandas as pd
 
         tgt_path = self.dump_image(line, dataset)

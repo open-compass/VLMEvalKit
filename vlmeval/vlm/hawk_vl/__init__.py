@@ -1,2 +1,2 @@
-from .model import HawkVL
-from .prompt import HawkVLPromptMixin
+from .model import HawkVL  # noqa: F401
+from .prompt import HawkVLPromptMixin  # noqa: F401

@@ -1,14 +1,10 @@
-import os
 import re
-import tempfile
-from functools import partial
 
-import pandas as pd
+import tqdm
 
+from vlmeval.smp import dump, get_intermediate_file_path, load
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE, Spatial457_utils
-from ..smp import *
-from ..utils import track_progress_rich
+from .utils import Spatial457_utils
 
 
 class Spatial457(ImageBaseDataset):
@@ -17,7 +13,7 @@ class Spatial457(ImageBaseDataset):
     ROBUST = True
 
     DATASET_URL = {
-        "Spatial457": "http://opencompass.openxlab.space/utils/VLMEval/Spatial457.tsv",
+        "Spatial457": "https://opencompass.openxlab.space/utils/VLMEval/Spatial457.tsv",
     }
 
     DATASET_MD5 = {

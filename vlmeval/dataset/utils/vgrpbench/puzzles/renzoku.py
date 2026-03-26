@@ -1,10 +1,11 @@
-from typing import List, Dict, Any, Tuple
-import random
 import copy
 import os
+import random
+from typing import Any, Dict, List, Tuple
 
-from .common_puzzle_factory import PuzzleFactory
 from .common_constriants import Constraint
+from .common_puzzle_factory import PuzzleFactory
+
 
 class ConstraintRowNoRepeat(Constraint):
     def __init__(self) -> None:

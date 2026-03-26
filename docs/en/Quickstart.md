@@ -45,6 +45,8 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
   HUNYUAN_SECRET_ID=
   # LMDeploy API
   LMDEPLOY_API_BASE=
+  # MiniMax API
+  MINIMAX_API_KEY=
   # You can also set a proxy for calling api models during the evaluation stage
   EVAL_PROXY=
   ```
@@ -53,6 +55,19 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
 ## Step 1. Configuration
 
 **VLM Configuration**: All VLMs are configured in `vlmeval/config.py`. Few legacy VLMs (like MiniGPT-4, LLaVA-v1-7B) requires additional configuration (configuring the code / model_weight root in the config file). During evaluation, you should use the model name specified in `supported_VLM` in `vlmeval/config.py` to select the VLM. Make sure you can successfully infer with the VLM before starting the evaluation with the following command `vlmutil check {MODEL_NAME}`.
+
+Note: For the Qwen-VL series models (Qwen-VL, Qwen2-VL, Qwen2.5-VL), the upper and lower bounds of the number of pixels specified in vlmeval/config.py are as follows:
+
+```
+min_pixels=1280 * 28 * 28,
+max_pixels=16384 * 28 * 28,
+```
+Where 1280 is the maximum value recommended by Qwen for balancing performance, computational resources, and memory, and 16384 is the theoretical maximum value for model input. This setting has a positive effect on some vision tasks that require high resolution (such as document understanding). However, there is no practical basis for considering this setting. If you need to align with the official settings, you can remove these two values, or set them to the following values from the official Qwen demo:
+
+```
+min_pixels=256 * 28 * 28,
+max_pixels=1280 * 28 * 28,
+```
 
 ## Step 2. Evaluation
 

@@ -1,16 +1,14 @@
 from __future__ import annotations
-
-import os
-import torch
-import re
-import math
 import logging
+import re
 import warnings
 
+import torch
+
+from ..smp import get_gpu_memory
 from .base import BaseModel
-from .qwen2_vl.prompt import Qwen2VLPromptMixin
 from .qwen2_vl.model import ensure_image_url, ensure_video_url
-from ..smp import get_gpu_memory, listinstr
+from .qwen2_vl.prompt import Qwen2VLPromptMixin
 
 
 def extract_answer_tag(s: str, verbose=False) -> str:
@@ -82,7 +80,7 @@ class WeThinkVL(Qwen2VLPromptMixin, BaseModel):
         assert model_path is not None
         self.model_path = model_path
         MODEL_CLS = None
-        from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+        from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
         MODEL_CLS = Qwen2_5_VLForConditionalGeneration
         self.processor = AutoProcessor.from_pretrained(model_path)
         gpu_mems = get_gpu_memory()

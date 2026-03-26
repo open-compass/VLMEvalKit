@@ -1,14 +1,5 @@
-from typing import Dict, Any, List, Union, Optional
 import re
-import os
-import json
-import argparse
-from tqdm import tqdm
-from collections import deque
-import signal
-import time
-import ast
-import numpy as np
+from typing import Any, Dict, List
 
 
 class BaseEvaluator:
@@ -43,7 +34,7 @@ class SlidingPuzzleEvaluator(BaseEvaluator):
             numbers = re.findall(r'\d+', answer)
             moves = [int(num) for num in numbers if num.strip()]
             return moves
-        except:
+        except Exception:
             return []
 
     def evaluate(self, predicted_answer: List[int], ground_truth: Any, initial_state: Any) -> bool:

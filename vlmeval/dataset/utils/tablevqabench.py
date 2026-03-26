@@ -4,12 +4,10 @@ Modified from https://github.com/naver-ai/tablevqabench
 """
 
 import re
-import unicodedata
 import time
-
+import unicodedata
 from abc import ABCMeta, abstractmethod
 from math import isinf, isnan
-
 
 # Vision Prompts
 VWTQ_PROMPT = (
@@ -398,7 +396,7 @@ class DateValue(Value):
             assert month == -1 or 1 <= month <= 12
             assert day == -1 or 1 <= day <= 31
             return (year, month, day)
-        except:
+        except Exception:
             return None
 
 

@@ -1,9 +1,19 @@
-from huggingface_hub import snapshot_download
-from ..smp import *
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from glob import glob
+import json
 import os
+import os.path as osp
+import warnings
+from glob import glob
+
+import numpy as np
+import pandas as pd
+import portalocker
+from huggingface_hub import snapshot_download
+from PIL import Image
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5, modelscope_flag_set)
+from .utils import DEBUG_MESSAGE, build_judge
+from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -94,6 +104,7 @@ class LongVideoBench(VideoBaseDataset):
     SYS = ''
 
     TYPE = 'Video-MCQ'
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='LongVideoBench', use_subtitle=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
@@ -276,7 +287,8 @@ class LongVideoBench(VideoBaseDataset):
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.longvideobench import get_dimension_rating, extract_characters_regex, extract_option
+        from .utils.longvideobench import (extract_characters_regex, extract_option,
+                                           get_dimension_rating)
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 
@@ -286,19 +298,15 @@ class LongVideoBench(VideoBaseDataset):
 
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')
-            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None
-            elif gpt_key_set():
+            else:
                 model = build_judge(**judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                     warnings.warn(DEBUG_MESSAGE)
                     model = None
-            else:
-                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-                model = None
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 

@@ -44,6 +44,8 @@ pip install -e .
   HUNYUAN_SECRET_ID=
   # LMDeploy API
   LMDEPLOY_API_BASE=
+  # MiniMax API
+  MINIMAX_API_KEY=
   # 你可以设置一个评估时代理，评估阶段产生的 API 调用将通过这个代理进行
   EVAL_PROXY=
   ```
@@ -52,6 +54,19 @@ pip install -e .
 ## 第1步 配置
 
 **VLM 配置**：所有 VLMs 都在 `vlmeval/config.py` 中配置。对于某些 VLMs（如 MiniGPT-4、LLaVA-v1-7B），需要额外的配置（在配置文件中配置代码 / 模型权重根目录）。在评估时，你应该使用 `vlmeval/config.py` 中 `supported_VLM` 指定的模型名称来选择 VLM。确保在开始评估之前，你可以成功使用 VLM 进行推理，使用以下命令 `vlmutil check {MODEL_NAME}`。
+
+注：对于Qwen-VL系列模型（Qwen-VL, Qwen2-VL, Qwen2.5-VL），vlmeval/config.py 中所指定的像素数量上下界如下：
+
+```
+min_pixels=1280 * 28 * 28,
+max_pixels=16384 * 28 * 28,
+```
+其中，1280为Qwen官方为平衡性能、计算资源与内存的推荐最大值，而16384为模型输入的理论最大值。这种设定对于部分需要高分辨率的视觉任务（如文档理解）有着积极的作用。但考虑这一设定并没有实际的依据，如果需要与官方的设定对齐，可以去掉这两个数值，或是设置为以下来自Qwen官方demo的数值：
+
+```
+min_pixels=256 * 28 * 28,
+max_pixels=1280 * 28 * 28,
+```
 
 ## 第2步 评测
 

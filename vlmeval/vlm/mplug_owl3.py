@@ -1,14 +1,20 @@
-import torch
-from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-from torchvision import transforms
-from transformers import AutoTokenizer, AutoModel
-
-import io
-import random
-import numpy as np
 import math
+import os
+import os.path as osp
+import random
+import string
+
+import numpy as np
+import pandas as pd
+import torch
+from torchvision import transforms
+from transformers import AutoModel, AutoTokenizer
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import LMUDataRoot, get_logger, listinstr
+from .base import BaseModel
+
+logger = get_logger(__name__)
 
 
 def get_frame_indices(num_frames, vlen, sample='rand', fix_start=None, input_fps=1, max_num_frames=-1):
@@ -22,7 +28,7 @@ def get_frame_indices(num_frames, vlen, sample='rand', fix_start=None, input_fps
         if sample == 'rand':
             try:
                 frame_indices = [random.choice(range(x[0], x[1])) for x in ranges]
-            except:
+            except Exception:
                 frame_indices = np.random.permutation(vlen)[:acc_samples]
                 frame_indices.sort()
                 frame_indices = list(frame_indices)
@@ -80,7 +86,7 @@ def get_frame_indices_start_end(num_frames, vlen, fps, start_time, end_time):
 
     try:
         frame_indices = [random.choice(range(x[0], x[1])) for x in ranges]
-    except:
+    except Exception:
         frame_indices = np.random.permutation(list(range(start_idx, end_idx)))[:acc_samples]
         frame_indices.sort()
         frame_indices = list(frame_indices)
@@ -155,9 +161,8 @@ class mPLUG_Owl3(BaseModel):
         )
         self.model.eval().cuda()
         self.processor = self.model.init_processor(self.tokenizer)
-        self.logger = get_logger('mPLUG_Owl3')
         if self.INSTALL_REQ:
-            self.logger.info(
+            logger.info(
                 f'Please remember to meet the requirements first\n'
                 f'Here: {self.INSTALL_REQ_TXT}'
             )
@@ -279,6 +284,7 @@ class mPLUG_Owl3(BaseModel):
 
     def preproc_image(self, fname, dataset=None):
         from PIL import Image
+
         image = Image.open(fname).convert('RGB')
         # resize to max_size
         max_size = 448 * 16

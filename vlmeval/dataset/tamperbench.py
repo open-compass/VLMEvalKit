@@ -1,18 +1,29 @@
-import huggingface_hub
-from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-import torchvision.transforms as T
-from torchvision import transforms
-import imageio
-import cv2
-import zipfile
-import os
 import glob
-from .utils.tamperbench import *
+import json
+import os
+import os.path as osp
+import shutil
 import warnings
+import zipfile
+
+import cv2
+import huggingface_hub
+import imageio
+import numpy as np
+import pandas as pd
+import portalocker
+import torch
+import torchvision.transforms as T
+from huggingface_hub import snapshot_download
+from PIL import Image
+from torchvision import transforms
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5)
+from .utils import DEBUG_MESSAGE, build_judge
+from .utils.tamperbench import (Stack, ToTorchFormatTensor, aggregate_metrics_with_macro_average,
+                                check_ans_with_model, get_dimension_rating, process_results)
+from .video_base import VideoBaseDataset
 
 # constants
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -30,6 +41,7 @@ class MVTamperBench(VideoBaseDataset):
 """
 
     TYPE = 'Video-MCQ'
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='MVTamperBench', nframe=0, fps=-1):
         self.dataset_name = dataset
@@ -330,8 +342,8 @@ class MVTamperBench(VideoBaseDataset):
             ImportError: If MoviePy is not installed.
         """
         try:
-            from moviepy.editor import VideoFileClip, ImageSequenceClip
-        except:
+            from moviepy.editor import ImageSequenceClip, VideoFileClip
+        except Exception:
             raise ImportError(
                 'MoviePy is not installed, please install it by running "pip install moviepy==1.0.3"'
             )
@@ -466,19 +478,15 @@ class MVTamperBench(VideoBaseDataset):
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'chatgpt-0125')
-            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None
-            elif gpt_key_set():
+            else:
                 model = build_judge(**judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                     warnings.warn(DEBUG_MESSAGE)
                     model = None
-            else:
-                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-                model = None
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 

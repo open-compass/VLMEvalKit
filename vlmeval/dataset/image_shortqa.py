@@ -1,10 +1,15 @@
-from vlmeval import *
+import os.path as osp
+import string
+import warnings
+
+import pandas as pd
+
+from vlmeval.smp import dump, get_intermediate_file_path, load
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
-from .utils import build_judge
-from .utils.multiple_choice import report_acc, eval_vanilla, eval_circular_group
+from .utils import DEBUG_MESSAGE, build_judge
+from .utils.multiple_choice import eval_circular_group, eval_vanilla, report_acc
 from .utils.shortqa import ShortQA_prompt
-from ..utils import track_progress_rich
-from ..smp.file import get_intermediate_file_path
 
 
 def ShortQA_auxeval(model, line):
@@ -69,7 +74,8 @@ class ImageShortQADataset(ImageBaseDataset):
         'LiveMMBench_Perception': '',
         'LiveMMBench_Reasoning': '',
         'LiveMMBench_Reasoning_circular': '',
-        'hle':'https://opencompass.openxlab.space/utils/VLMEval/hle.tsv',
+        'LiveMMBench_Spatial': '',
+        'hle': 'https://opencompass.openxlab.space/utils/VLMEval/hle.tsv',
     }
 
     DATASET_MD5 = {
@@ -97,18 +103,15 @@ class ImageShortQADataset(ImageBaseDataset):
         if not osp.exists(storage):
             ans_map = {} if not osp.exists(tmp_file) else load(tmp_file)
 
-            model = judge_kwargs.get('model', 'gpt-4o-mini')
+            model = judge_kwargs.pop('model', 'gpt-4o-mini')
             if model == 'exact_matching':
                 model = None
-            elif gpt_key_set():
+            else:
                 model = build_judge(model=model, **judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                     warnings.warn(DEBUG_MESSAGE)
                     model = None
-            else:
-                model = None
-                warnings.warn('OPENAI_API_KEY is not working properly, will use exact matching for evaluation')
 
             if model is not None:
                 if 'g_index' not in data:

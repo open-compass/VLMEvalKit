@@ -1,10 +1,12 @@
+import string
+
+import pandas as pd
 import torch
-from PIL import Image
-import sys
-from ..smp import *
-from .base import BaseModel
-from ..dataset import DATASET_TYPE
 from transformers import AutoModel, GenerationConfig
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string
+from .base import BaseModel
 
 
 class WeMM(BaseModel):

@@ -1,18 +1,18 @@
 from __future__ import annotations
-
-import os
-import sys
-import warnings
-import math
+import json
 import logging
+import math
+import os
+import warnings
 
 import torch
+from huggingface_hub import snapshot_download
 from transformers import StoppingCriteria
 
+from vlmeval.dataset import DATASET_MODALITY
+from vlmeval.smp import get_cache_path, get_gpu_memory, listinstr
 from ..base import BaseModel
 from .prompt import Qwen2VLPromptMixin
-from ...smp import get_gpu_memory, listinstr
-from ...dataset import DATASET_MODALITY
 
 VLLM_MAX_IMAGE_INPUT_NUM = 24
 
@@ -90,6 +90,7 @@ def _resize_image(image, max_side):
 
 def process_video(video_path, num_frames, min_pixels, max_pixels):
     import cv2
+
     # Open the video file
     cap = cv2.VideoCapture(video_path)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -187,6 +188,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         top_k=1,
         temperature=0.01,
         repetition_penalty=1.0,
+        do_sample: bool = True,
         use_custom_prompt: bool = True,
         system_prompt: str | None = None,
         post_process: bool = False,  # if True, will try to only extract stuff in the last \boxed{}.
@@ -207,6 +209,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             top_k=top_k,
             temperature=temperature,
             repetition_penalty=repetition_penalty,
+            do_sample=do_sample,
         )
         self.system_prompt = system_prompt
         self.verbose = verbose
@@ -219,26 +222,45 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                   the fps/nframe setting in video dataset is omitted")
         self.use_audio_in_video = use_audio_in_video
         self.FRAME_FACTOR = 2
+
         assert model_path is not None
+
+        if not os.path.exists(model_path):
+            cache_path = get_cache_path(model_path, repo_type='models')
+            if cache_path is None:
+                snapshot_download(repo_id=model_path)
+                cache_path = get_cache_path(model_path, repo_type='models')
+            model_path = cache_path
+
         self.model_path = model_path
+
         MODEL_CLS = None
 
-        if listinstr(['omni'], model_path.lower()):
+        cfg_json_path = os.path.join(self.model_path, 'config.json')
+        assert cfg_json_path is not None, 'Qwen series models require a config.json file to specify the architecture.'
+
+        with open(cfg_json_path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+            architectures = str(cfg.get("architectures", None)).lower()
+
+        if listinstr(['omni'], architectures):
             try:
                 from transformers import Qwen2_5OmniForConditionalGeneration, Qwen2_5OmniProcessor
             except Exception as err:
                 logging.critical("pip install git+https://github.com/huggingface/transformers@3a1ead0aabed473eafe527915eea8c197d424356")  # noqa: E501
                 raise err
             MODEL_CLS = Qwen2_5OmniForConditionalGeneration
-            self.processor = Qwen2_5OmniProcessor.from_pretrained(model_path)
-        elif listinstr(['2.5', '2_5', 'qwen25', 'mimo'], model_path.lower()):
-            from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+            self.processor = Qwen2_5OmniProcessor.from_pretrained(self.model_path)
+
+        elif listinstr(['qwen2_5'], architectures):
+            from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
             MODEL_CLS = Qwen2_5_VLForConditionalGeneration
-            self.processor = AutoProcessor.from_pretrained(model_path)
+            self.processor = AutoProcessor.from_pretrained(self.model_path)
+
         else:
             from transformers import Qwen2VLForConditionalGeneration, Qwen2VLProcessor
             MODEL_CLS = Qwen2VLForConditionalGeneration
-            self.processor = Qwen2VLProcessor.from_pretrained(model_path)
+            self.processor = Qwen2VLProcessor.from_pretrained(self.model_path)
 
         gpu_mems = get_gpu_memory()
         max_gpu_mem = max(gpu_mems) if gpu_mems != [] else -1
@@ -262,7 +284,6 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             logging.info(
                 f'Using vLLM for {self.model_path} inference with {tp_size} GPUs (available: {gpu_count})'
             )
-            import os
             if os.environ.get('VLLM_WORKER_MULTIPROC_METHOD') != 'spawn':
                 logging.warning(
                     'VLLM_WORKER_MULTIPROC_METHOD is not set to spawn.'
@@ -278,7 +299,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             )
 
         elif self.use_lmdeploy:
-            from lmdeploy import TurbomindEngineConfig, pipeline, ChatTemplateConfig
+            from lmdeploy import ChatTemplateConfig, TurbomindEngineConfig, pipeline
             num_gpus = torch.cuda.device_count()
             self.model = pipeline(
                 model_path,
@@ -341,7 +362,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             elif s['type'] == 'text':
                 item = {'type': 'text', 'text': s['value']}
             elif s['type'] == 'audio':
-                item = {'type':'audio','audio':s['value']}
+                item = {'type': 'audio', 'audio': s['value']}
             else:
                 raise ValueError(f"Invalid message type: {s['type']}, {s}")
             content.append(item)
@@ -459,7 +480,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         text = self.processor.apply_chat_template([messages], tokenize=False, add_generation_prompt=True)
         if listinstr(['omni'], self.model_path.lower()):
             audios, images, videos = process_mm_info([messages], use_audio_in_video=self.use_audio_in_video)
-            inputs = self.processor(text=text, images=images,audio=audios, videos=videos, padding=True, return_tensors='pt',use_audio_in_video=self.use_audio_in_video)  # noqa: E501
+            inputs = self.processor(text=text, images=images, audio=audios, videos=videos, padding=True, return_tensors='pt', use_audio_in_video=self.use_audio_in_video)  # noqa: E501
         else:
             images, videos = process_vision_info([messages])
             inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors='pt')  # noqa: E501
@@ -554,7 +575,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             video_inputs = {
                 "prompt": text[0],
                 "multi_modal_data": {"video": videos_nd[0]},
-                "mm_processor_kwargs":{}
+                "mm_processor_kwargs": {}
             }
             if self.use_audio_in_video:
                 import vllm

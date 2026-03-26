@@ -1,13 +1,5 @@
-from typing import Dict, Any, List, Union, Optional
-import re
-import os
-import json
-import argparse
-from tqdm import tqdm
-from collections import deque
-import signal
-import time
-import ast
+from typing import Any, Dict
+
 import numpy as np
 
 
@@ -54,8 +46,8 @@ class NumbrixEvaluator(BaseEvaluator):
                 rows, cols = initial_grid.shape
                 for i in range(rows):
                     for j in range(cols):
-                        if i < predicted_grid.shape[0] and j < predicted_grid.shape[1] and initial_grid[i,j] != 0:
-                            if predicted_grid[i,j] != initial_grid[i,j]:
+                        if i < predicted_grid.shape[0] and j < predicted_grid.shape[1] and initial_grid[i, j] != 0:
+                            if predicted_grid[i, j] != initial_grid[i, j]:
                                 return False
 
             if ground_truth:

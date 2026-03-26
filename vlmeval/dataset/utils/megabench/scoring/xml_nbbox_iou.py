@@ -1,7 +1,8 @@
 import logging
-from .common.metrics import calculate_iou
-from .common.conversions import parse_bboxes_from_xml
 from numbers import Number
+
+from .common.conversions import parse_bboxes_from_xml
+from .common.metrics import calculate_iou
 
 
 class XmlNbboxIouSingle:

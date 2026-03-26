@@ -13,9 +13,8 @@ from fuzzysearch import find_near_matches
 from rapidfuzz import fuzz
 from tqdm import tqdm
 
-from .repeatdetect import RepeatDetector
-
 from .katex.render import compare_rendered_equations, render_equation
+from .repeatdetect import RepeatDetector
 
 
 @dataclass

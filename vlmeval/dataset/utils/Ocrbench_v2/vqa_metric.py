@@ -1,9 +1,7 @@
-import re
-import os
-import json
-import ipdb
 import math
-import numpy as np
+import re
+
+import ipdb
 
 
 def levenshtein_distance(s1, s2):
@@ -29,12 +27,12 @@ def vqa_evaluation(predict, answers):
             if isinstance(answers[j], (int, float)):
                 answers[j] = str(answers[j])
             try:
-                answer = answers[j].lower().strip().replace("\n"," ")
-            except:
+                answer = answers[j].lower().strip().replace("\n", " ")
+            except Exception:
                 ipdb.set_trace()
             if isinstance(predict, (int, float)):
                 predict = str(predict)
-            predict = predict.lower().strip().replace("\n"," ")
+            predict = predict.lower().strip().replace("\n", " ")
             if len(answer.split()) < 5:
                 if answer in predict:
                     score = 1
@@ -48,8 +46,8 @@ def vqa_evaluation(predict, answers):
                     score = ANLS_value
 
     else:
-        answers = answers.lower().strip().replace("\n"," ")
-        predict = predict.lower().strip().replace("\n"," ")
+        answers = answers.lower().strip().replace("\n", " ")
+        predict = predict.lower().strip().replace("\n", " ")
         if len(answers.split()) < 5:
             if answers in predict:
                 score = 1
@@ -72,12 +70,12 @@ def cn_vqa_evaluation(predict, answers):
             if isinstance(answers[j], (int, float)):
                 answers[j] = str(answers[j])
             try:
-                answer = answers[j].lower().strip().replace("\n"," ").replace(" ", "")
-            except:
+                answer = answers[j].lower().strip().replace("\n", " ").replace(" ", "")
+            except Exception:
                 ipdb.set_trace()
             if isinstance(predict, (int, float)):
                 predict = str(predict)
-            predict = predict.lower().strip().replace("\n"," ").replace(" ", "")
+            predict = predict.lower().strip().replace("\n", " ").replace(" ", "")
             if len(answer.split(",")) < 4:
                 if answer in predict:
                     score = 1
@@ -91,8 +89,8 @@ def cn_vqa_evaluation(predict, answers):
                     score = ANLS_value
 
     else:
-        answers = answers.lower().strip().replace("\n"," ").replace(" ", "")
-        predict = predict.lower().strip().replace("\n"," ").replace(" ", "")
+        answers = answers.lower().strip().replace("\n", " ").replace(" ", "")
+        predict = predict.lower().strip().replace("\n", " ").replace(" ", "")
         if len(answer.split(",")) < 4:
             if answers in predict:
                 score = 1
@@ -115,10 +113,10 @@ def vqa_evaluation_case_sensitive(predict, answers):
             if isinstance(answers[j], (int, float)):
                 answers[j] = str(answers[j])
             try:
-                answer = answers[j].strip().replace("\n"," ")
-            except:
+                answer = answers[j].strip().replace("\n", " ")
+            except Exception:
                 ipdb.set_trace()
-            predict = predict.strip().replace("\n"," ")
+            predict = predict.strip().replace("\n", " ")
             if len(answer.split()) < 5:
                 if answer in predict:
                     score = 1
@@ -132,8 +130,8 @@ def vqa_evaluation_case_sensitive(predict, answers):
                     score = ANLS_value
 
     else:
-        answers = answers.strip().replace("\n"," ")
-        predict = predict.strip().replace("\n"," ")
+        answers = answers.strip().replace("\n", " ")
+        predict = predict.strip().replace("\n", " ")
         if len(answers.split()) < 5:
             if answers in predict:
                 score = 1
@@ -170,7 +168,7 @@ def counting_evaluation(predict, answers, eval_method):
         for j in range(len(answers)):
             if isinstance(answers[j], (int, float)):
                 answers[j] = str(answers[j])
-            answer = answers[j].lower().strip().replace("\n"," ")
+            answer = answers[j].lower().strip().replace("\n", " ")
             if eval_method == "exact match":
                 if answer in predict:
                     score = 1
@@ -197,8 +195,8 @@ def counting_evaluation(predict, answers, eval_method):
         score = temp_score
 
     else:
-        answers = answers.lower().strip().replace("\n"," ")
-        predict = predict.lower().strip().replace("\n"," ")
+        answers = answers.lower().strip().replace("\n", " ")
+        predict = predict.lower().strip().replace("\n", " ")
         if eval_method == "exact match":
             if answer in predict:
                 score = 1
@@ -226,13 +224,13 @@ def math_expression_evaluation(predict, answers):
     score = 0
     if isinstance(answers, list):
         for j in range(len(answers)):
-            answer = answers[j].strip().replace("\n"," ").replace(" ","")
-            predict = predict.strip().replace("\n"," ").replace(" ","")
+            answer = answers[j].strip().replace("\n", " ").replace(" ", "")
+            predict = predict.strip().replace("\n", " ").replace(" ", "")
             if answer in predict:
                 score = 1
     else:
-        answers = answers.strip().replace("\n"," ").replace(" ","")
-        predict = predict.strip().replace("\n"," ").replace(" ","")
+        answers = answers.strip().replace("\n", " ").replace(" ", "")
+        predict = predict.strip().replace("\n", " ").replace(" ", "")
         if answers in predict:
             score = 1
     return score
@@ -262,13 +260,13 @@ def cn_math_expression_evaluation(predict, answers):
 
     if isinstance(answers, list):
         for j in range(len(answers)):
-            answer = answers[j].strip().replace("\n"," ").replace(" ","")
-            predict = predict.strip().replace("\n"," ").replace(" ","")
+            answer = answers[j].strip().replace("\n", " ").replace(" ", "")
+            predict = predict.strip().replace("\n", " ").replace(" ", "")
             if answer in predict:
                 score = 1
     else:
-        answers = answers.strip().replace("\n"," ").replace(" ","")
-        predict = predict.strip().replace("\n"," ").replace(" ","")
+        answers = answers.strip().replace("\n", " ").replace(" ", "")
+        predict = predict.strip().replace("\n", " ").replace(" ", "")
         if answers in predict:
             score = 1
     return score

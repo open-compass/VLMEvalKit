@@ -1,8 +1,9 @@
-import os
 import json
-import time
+import os
 import sys
+import time
 from abc import abstractmethod
+
 from tabulate import tabulate
 
 

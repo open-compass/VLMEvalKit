@@ -1,31 +1,36 @@
+import logging
+import string
+
+import pandas as pd
 import torch
 from PIL import Image
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import listinstr
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
 
 TYPE_PROMPTS = {
-    'Y/N':'vqa2:',
-    'VQA':'vqa2:',
-    'MCQ':'a_okvqa_mc:',
+    'Y/N': 'vqa2:',
+    'VQA': 'vqa2:',
+    'MCQ': 'a_okvqa_mc:',
 }
 
 DATASET_PROMPTS = {
-    'AI2D_TEST':'ai2_diagram:',
-    'AI2D_TEST_NO_MASK':'ai2_diagram:',
-    'COCO_VAL':'coco_captioning:',
-    'ChartQA_TEST':'chart_qa:',
-    'ChartQA_VAL':'chart_qa:',
-    'DocVQA_VAL':'doc_qa:',
-    'DocVQA_TEST':'doc_qa:',
-    'InfoVQA_TEST':'info_qa:',
-    'InfoVQA_VAL':'info_qa:',
-    'OCRVQA_TEST':'ocr_vqa:',
-    'OCRVQA_TESTCORE':'ocr_vqa:',
-    'ScienceQA_VAL':'science_qa:',
-    'ScienceQA_TEST':'science_qa:',
-    'TableVQABench':'tabwmp_da:',
-    'TextVQA_VAL':'text_vqa:'
+    'AI2D_TEST': 'ai2_diagram:',
+    'AI2D_TEST_NO_MASK': 'ai2_diagram:',
+    'COCO_VAL': 'coco_captioning:',
+    'ChartQA_TEST': 'chart_qa:',
+    'ChartQA_VAL': 'chart_qa:',
+    'DocVQA_VAL': 'doc_qa:',
+    'DocVQA_TEST': 'doc_qa:',
+    'InfoVQA_TEST': 'info_qa:',
+    'InfoVQA_VAL': 'info_qa:',
+    'OCRVQA_TEST': 'ocr_vqa:',
+    'OCRVQA_TESTCORE': 'ocr_vqa:',
+    'ScienceQA_VAL': 'science_qa:',
+    'ScienceQA_TEST': 'science_qa:',
+    'TableVQABench': 'tabwmp_da:',
+    'TextVQA_VAL': 'text_vqa:'
 }
 
 
@@ -36,8 +41,9 @@ class molmo(BaseModel):
 
     def __init__(self, model_path='allenai/Molmo-7B-D-0924', **kwargs):
         try:
-            from transformers import AutoModelForCausalLM, AutoProcessor, GenerationConfig
-            import einops
+            import einops  # noqa: F401
+            from transformers import (AutoModelForCausalLM, AutoProcessor,  # noqa: F401
+                                      GenerationConfig)
         except Exception as e:
             logging.critical('Please install transformer and einops before using molmo.')
             raise e
@@ -185,7 +191,8 @@ class molmo(BaseModel):
             output = self.model.generate_from_batch(
                 inputs,
                 GenerationConfig(max_new_tokens=200, stop_strings="<|endoftext|>"),
-                tokenizer=self.processor.tokenizer
+                tokenizer=self.processor.tokenizer,
+                use_cache=False
             )
 
         # only get generated tokens; decode them to text

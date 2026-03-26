@@ -1,11 +1,13 @@
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from tqdm import tqdm
-import traceback
 import os
+import traceback
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Callable, Iterable
-from ....smp import *
 
-logger = get_logger("ChartMimic/mp_util")
+from tqdm import tqdm
+
+from vlmeval.smp import dump, get_logger, load
+
+logger = get_logger(__name__)
 
 
 def track_progress_rich_new(

@@ -1,12 +1,13 @@
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import get_intermediate_file_path
 from .image_base import ImageBaseDataset
-from ..smp import *
 
 
 class COCO_Caption_Scorer():
     def __init__(self, ref, gt):
         from pycocoevalcap.bleu.bleu import Bleu
-        from pycocoevalcap.rouge.rouge import Rouge
         from pycocoevalcap.cider.cider import Cider
+        from pycocoevalcap.rouge.rouge import Rouge
 
         self.ref = ref
         self.gt = gt

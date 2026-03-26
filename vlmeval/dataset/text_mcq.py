@@ -1,7 +1,14 @@
+import os
+import os.path as osp
+import string
+import warnings
+
+import pandas as pd
+
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import LMUDataRoot, file_size, get_intermediate_file_path
 from .text_base import TextBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
+from .utils import DEBUG_MESSAGE, build_judge
 
 
 class TextMCQDataset(TextBaseDataset):
@@ -10,6 +17,8 @@ class TextMCQDataset(TextBaseDataset):
     DATASET_URL = {}
 
     DATASET_MD5 = {}
+
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def build_prompt(self, line):
 
@@ -41,7 +50,9 @@ class TextMCQDataset(TextBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import report_acc, report_acc_MMT, mcq_circular_eval, mcq_vanilla_eval
+        from .utils.multiple_choice import (mcq_circular_eval, mcq_vanilla_eval, report_acc,
+                                            report_acc_MMT)
+
         # assert dataset is not None
         dataset_map = {
             'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
@@ -54,21 +65,17 @@ class TextMCQDataset(TextBaseDataset):
 
         circular = False
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
         name_str = name_str_map[model] if model in name_str_map else model
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 

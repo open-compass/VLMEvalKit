@@ -1,12 +1,12 @@
-from PIL import Image
+import base64
+import logging
+from io import BytesIO
+from mimetypes import guess_type
+
 import torch
+from PIL import Image
 
 from .base import BaseModel
-from ..smp import *
-
-from io import BytesIO
-import base64
-from mimetypes import guess_type
 
 
 class PaliGemma(BaseModel):
@@ -58,8 +58,8 @@ class Gemma3(BaseModel):
             "pip install git+https://github.com/huggingface/transformers@v4.49.0-Gemma-3"
         )
         try:
-            from transformers import AutoProcessor, Gemma3ForConditionalGeneration
             import torch
+            from transformers import AutoProcessor, Gemma3ForConditionalGeneration
         except Exception as e:
             logging.critical('Please install torch and transformers')
             raise e
@@ -67,7 +67,8 @@ class Gemma3(BaseModel):
         self.use_vllm = kwargs.get('use_vllm', False)
         self.limit_mm_per_prompt = 24
         if self.use_vllm:
-            from vllm import LLM, SamplingParams
+            from vllm import LLM
+
             # Set tensor_parallel_size [8, 4, 2, 1] based on the number of available GPUs
             gpu_count = torch.cuda.device_count()
             if gpu_count >= 8:
@@ -197,7 +198,7 @@ class Gemma3(BaseModel):
         return decoded
 
     def generate_inner_vllm(self, message, dataset=None):
-        from vllm import LLM, SamplingParams
+        from vllm import SamplingParams
         prompt, images = self.message_to_promptimg_vllm(message, dataset=dataset)
         messages = [
             {'role': 'user', 'content': prompt}

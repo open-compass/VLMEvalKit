@@ -1,12 +1,20 @@
-import math
-import re
-import tempfile
-import cv2
-from vlmeval.smp import *
-from vlmeval.dataset.video_base import VideoBaseDataset
-from vlmeval.dataset.utils.megabench.evaluator import MEGABenchEvaluator
 import json
-import glob
+import math
+import os
+import os.path as osp
+import re
+import shutil
+import time
+
+import cv2
+import pandas as pd
+import portalocker
+from PIL import Image
+
+from vlmeval.dataset.utils.megabench.evaluator import MEGABenchEvaluator
+from vlmeval.dataset.video_base import VideoBaseDataset
+from vlmeval.smp import (LMUDataRoot, dump, get_cache_path, get_file_extension,
+                         get_intermediate_file_path, load, md5)
 
 
 class MEGABench(VideoBaseDataset):
@@ -31,7 +39,7 @@ class MEGABench(VideoBaseDataset):
                 media_list = eval(str(media_str))
                 num_videos = sum(1 for m in media_list if self.is_video_file(m))
                 return num_videos
-            except:
+            except Exception:
                 return 0
 
         num_query_videos = 0
@@ -114,7 +122,7 @@ class MEGABench(VideoBaseDataset):
                     media_list = eval(media_str)
                     media_list = [osp.join(base_path, path.lstrip('./')) for path in media_list]
                     return str(media_list)
-                except:
+                except Exception:
                     return media_str
 
             def check_field(field):
@@ -131,7 +139,7 @@ class MEGABench(VideoBaseDataset):
                 headers = [
                     'index', 'task_name', 'task_description', 'global_media',
                     'example_text', 'example_media', 'question', 'query_media',
-                    'answer', 'metric_info', 'eval_context','video'
+                    'answer', 'metric_info', 'eval_context', 'video'
                 ]
                 writer.writerow(headers)
 
@@ -340,7 +348,7 @@ class MEGABench(VideoBaseDataset):
                 if isinstance(media_list, list):
                     return media_list
                 return None
-            except:
+            except Exception:
                 return None
 
         def process_text_and_media(text, media_list, is_demo=False):
@@ -405,7 +413,7 @@ class MEGABench(VideoBaseDataset):
                     return s
                 import ast
                 return ast.literal_eval(str(s))
-            except:
+            except Exception:
                 print(f"Warning: Could not parse dictionary string: {s}")
                 return {}
 
@@ -417,7 +425,7 @@ class MEGABench(VideoBaseDataset):
                 if isinstance(media_list, list):
                     return media_list
                 return []
-            except:
+            except Exception:
                 return []
 
         # group by task_name

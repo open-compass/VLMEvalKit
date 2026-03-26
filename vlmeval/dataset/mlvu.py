@@ -1,21 +1,23 @@
-import huggingface_hub
-from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from .video_concat_dataset import ConcatVideoDataset
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
-import torchvision.transforms as T
-from torchvision import transforms
-from torchvision.transforms.functional import InterpolationMode
-import pandas as pd
-import imageio
-import cv2
-import zipfile
+import json
 import os
-import glob
-from .utils.mlvu import *
+import os.path as osp
+import warnings
+
+import huggingface_hub
+import numpy as np
+import pandas as pd
+import portalocker
+from huggingface_hub import snapshot_download
+from PIL import Image
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5, modelscope_flag_set)
+from vlmeval.utils import track_progress_rich
+from .utils import DEBUG_MESSAGE, build_judge
+from .utils.mlvu import (MLVU_OpenEnded_extract, MLVU_OpenEnded_generate, check_ans_with_model,
+                         get_dimension_rating, system_prompt_sub_scene, system_prompt_summary)
+from .video_base import VideoBaseDataset
+from .video_concat_dataset import ConcatVideoDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -24,8 +26,8 @@ class MLVU(ConcatVideoDataset):
     def __init__(self, dataset='MLVU', nframe=0, fps=-1):
         self.DATASET_SETS[dataset] = ['MLVU_MCQ', 'MLVU_OpenEnded']
         self.type_data_dict = {
-            'M-Avg':['plotQA', 'needle', 'ego', 'count', 'anomaly_reco', 'topic_reasoning', 'order'],
-            'G-Avg':['sub_scene', 'summary']
+            'M-Avg': ['plotQA', 'needle', 'ego', 'count', 'anomaly_reco', 'topic_reasoning', 'order'],
+            'G-Avg': ['sub_scene', 'summary']
         }
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
@@ -61,6 +63,7 @@ class MLVU_MCQ(VideoBaseDataset):
     BASE_SYS = 'Carefully watch this video and pay attention to every detail. '
     SYS = BASE_SYS + 'Based on your observations, select the best option that accurately addresses the question.'
     TYPE = 'Video-MCQ'
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='MLVU_MCQ', nframe=0, fps=-1):
         self.type_data_list = {
@@ -153,7 +156,7 @@ class MLVU_MCQ(VideoBaseDataset):
 
     def save_video_frames(self, line):
         suffix = line['video'].split('.')[-1]
-        video = line['video'].replace(f'.{suffix}','')
+        video = line['video'].replace(f'.{suffix}', '')
         vid_path = osp.join(self.data_root, line['prefix'], line['video'])
         import decord
         vid = decord.VideoReader(vid_path)
@@ -218,19 +221,15 @@ class MLVU_MCQ(VideoBaseDataset):
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'chatgpt-0125')
-            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None
-            elif gpt_key_set():
+            else:
                 model = build_judge(**judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                     warnings.warn(DEBUG_MESSAGE)
                     model = None
-            else:
-                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-                model = None
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
@@ -360,7 +359,7 @@ class MLVU_OpenEnded(VideoBaseDataset):
 
     def save_video_frames(self, line):
         suffix = line['video'].split('.')[-1]
-        video = line['video'].replace(f'.{suffix}','')
+        video = line['video'].replace(f'.{suffix}', '')
         vid_path = osp.join(self.data_root, line['prefix'], line['video'])
         import decord
         vid = decord.VideoReader(vid_path)

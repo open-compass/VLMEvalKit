@@ -1,4 +1,5 @@
 from numbers import Number
+
 from .common.conversions import str_to_iterable
 from .simple_str_match import SimpleStrMatch
 
