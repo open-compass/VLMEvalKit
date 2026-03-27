@@ -122,6 +122,7 @@ def MMOral_opg_acc(result_file):
     res2 = pd.DataFrame(res2)
     return res, res2
 
+
 def get_single_choice_prediction(response, all_choices, index2ans):
     for char in [',', '.', '!', '?', ';', ':', "'"]:
         response = response.strip(char)

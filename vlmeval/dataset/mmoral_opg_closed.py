@@ -6,7 +6,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from .image_base import ImageBaseDataset
-from ..smp import *
+from ..smp import decode_base64_to_image_file, dump, load, read_ok
 
 
 class MMOralBase(ImageBaseDataset):
@@ -161,4 +161,3 @@ class MMOral_OPG_CLOSED(MMOralBase):
 
         result = pd.read_csv(result_file)
         return result
-
