@@ -150,6 +150,7 @@ class APIEvalPipeline:
         run_infer: bool = True,
         run_eval: bool = True,
         debug: bool = False,
+        retry_failed: bool = True,
     ):
         """
         Args:
@@ -159,6 +160,7 @@ class APIEvalPipeline:
             run_infer: Whether to inference.
             run_eval: Whether to eval.
             debug: Debug mode (Evaluate in the main process).
+            retry_failed: Whether to retry previously failed samples.
         """
         self.dataset_configs = dataset_configs
         self.concurrency = concurrency
@@ -166,6 +168,7 @@ class APIEvalPipeline:
         self.run_infer = run_infer
         self.run_eval = run_eval
         self.debug = debug
+        self.retry_failed = retry_failed
         self.all_infer_done = False
 
         self.infer_executor = ThreadPoolExecutor(max_workers=concurrency)
@@ -206,21 +209,42 @@ class APIEvalPipeline:
                 logger.warning(f"   [{dataset_name}] Failed to release dataset memory: {e}")
 
     def _shutdown_executors(self):
-        """Shutdown all Executor."""
+        """Shutdown all executors and terminate child processes."""
         try:
-            self.infer_executor.shutdown(wait=False)
+            self.infer_executor.shutdown(wait=False, cancel_futures=True)
             logger.debug("Shutdown infer_executor")
 
-            self.eval_executor.shutdown(wait=False)
-            logger.debug("Shutdown eval_executor")
+            for name, executor in [
+                ("eval_executor", self.eval_executor),
+                ("producer_executor", self.producer_executor),
+            ]:
+                # 必须在 shutdown() 前获取进程引用。shutdown() 会唤醒管理线程
+                # 执行清理，可能将 _processes 置为 None，之后就无法访问了。
+                processes = getattr(executor, '_processes', None) or {}
+                alive = [p for p in processes.values() if p.is_alive()]
+                executor.shutdown(wait=False, cancel_futures=True)
+                self._terminate_workers(name, alive)
 
-            self.producer_executor.shutdown(wait=False)
-            logger.debug("Shutdown producer_executor")
-
-            logger.info("🧹 All executors shutdown")
+            logger.info("All executors shutdown")
 
         except Exception as e:
             logger.warning(f"Failed to shutdown executors: {e}")
+
+    @staticmethod
+    def _terminate_workers(name, alive, timeout=5):
+        """Terminate worker processes.
+
+        Sends SIGTERM first, waits up to *timeout* seconds, then SIGKILL
+        for any process that is still alive.
+        """
+        for p in alive:
+            logger.debug(f"Terminating {name} worker (pid={p.pid})")
+            p.terminate()
+        for p in alive:
+            p.join(timeout=timeout)
+            if p.is_alive():
+                logger.debug(f"Force killing {name} worker (pid={p.pid})")
+                p.kill()
 
     def _get_checkpoint_file(self, dataset_name: str) -> Path:
         cfg = self.states[dataset_name]
@@ -236,6 +260,8 @@ class APIEvalPipeline:
         if checkpoint_file.exists():
             try:
                 results = load(str(checkpoint_file))
+                if self.retry_failed:
+                    results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
                 logger.info(f"   [{dataset_name}] Loaded {len(results)} results from checkpoint")
             except Exception as e:
                 logger.warning(f"   [{dataset_name}] Failed to load checkpoint: {e}")
@@ -246,11 +272,17 @@ class APIEvalPipeline:
             try:
                 data = load(str(result_path))
                 if isinstance(data, pd.DataFrame):
-                    existing_results = {
-                        str(idx): pred
-                        for idx, pred in zip(data['index'], data['prediction'])
-                        if FAIL_MSG not in str(pred)
-                    }
+                    if self.retry_failed:
+                        existing_results = {
+                            str(idx): pred
+                            for idx, pred in zip(data['index'], data['prediction'])
+                            if FAIL_MSG not in str(pred)
+                        }
+                    else:
+                        existing_results = {
+                            str(idx): pred
+                            for idx, pred in zip(data['index'], data['prediction'])
+                        }
                     results.update(existing_results)
                     logger.info(f"   [{dataset_name}] Loaded {len(existing_results)} "
                                 "results from result file")
@@ -309,8 +341,37 @@ class APIEvalPipeline:
 
             return True
 
+    def _create_symlinks(self, dataset_name: str):
+        """Create symbolic links for dataset results in the model base directory.
+
+        Links are created as relative paths so that moving the output root
+        directory does not break them.
+        """
+        cfg = self.states[dataset_name]
+        pred_root = Path(cfg.work_dir)
+        model_base_dir = pred_root.parent
+
+        try:
+            if not pred_root.exists():
+                return
+            for f in pred_root.iterdir():
+                if not f.is_file():
+                    continue
+                if f'{cfg.model_name}_{dataset_name}' not in f.name:
+                    continue
+                # Skip temporary intermediate files
+                if f.name.endswith(('_checkpoint.pkl', '_PREV.pkl', '_structs.pkl')):
+                    continue
+                link_addr = model_base_dir / f.name
+                rel_target = f.relative_to(model_base_dir)
+                if link_addr.exists() or link_addr.is_symlink():
+                    link_addr.unlink()
+                link_addr.symlink_to(rel_target)
+        except Exception as e:
+            logger.warning(f"   [{dataset_name}] Failed to create symlinks: {e}")
+
     async def _producer(self):
-        """Genearte all sampels to inference."""
+        """Generate all samples to inference."""
         logger.info("📦 Initializing tasks and checking checkpoints...")
 
         for cfg in self.dataset_configs:
@@ -339,6 +400,7 @@ class APIEvalPipeline:
                 # Save result file if not exists.
                 if not Path(cfg.result_file).exists():
                     self._save_final_result(dataset_name)
+                self._create_symlinks(dataset_name)
                 # Trigger evaluation.
                 asyncio.create_task(self._trigger_eval(dataset_name))
                 continue
@@ -566,9 +628,11 @@ class APIEvalPipeline:
                         f"[{task.dataset_name}] Sample {task.sample_index}: "
                         f"{output_preview} (took {inference_time:.2f}s)")
 
-                # Trigger evaluation if all tasks of the dataset is done.
-                if cfg.processed == cfg.total_samples and cfg.eval_status == EvalStatus.Pending:
-                    if self._save_final_result(task.dataset_name):
+                # Save final result and create symlinks when all samples are done.
+                if cfg.processed == cfg.total_samples:
+                    self._save_final_result(task.dataset_name)
+                    self._create_symlinks(task.dataset_name)
+                    if cfg.eval_status == EvalStatus.Pending:
                         asyncio.create_task(self._trigger_eval(task.dataset_name))
 
             except Exception as e:
@@ -677,6 +741,8 @@ class APIEvalPipeline:
                 f"   Check log file: {eval_log_path}"
             )
 
+        # Update symlinks to capture evaluation output files.
+        self._create_symlinks(dataset_name)
         # Release dataset data after evaluation.
         self._release_dataset_memory(cfg)
 

@@ -1,4 +1,8 @@
 import ssl
+import warnings
+
+# Ignore pkg_resources warning due to jieba depends on it.
+warnings.filterwarnings("ignore", category=UserWarning, message="pkg_resources is deprecated")
 
 # Temporarily bypass SSL certificate verification to download files from oss.
 ssl._create_default_https_context = ssl._create_unverified_context
