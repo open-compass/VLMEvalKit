@@ -539,7 +539,6 @@ class VLADBench(ImageBaseDataset):
     }
     DATASET_MD5 = {"VLADBench": "53c01aa8f9afe2d084728fc8eb21caea"}
 
-    IMAGE_DIR = None  # e.g., your_localdir/VLADBench/
     """
     Resolve VLADBench image directory.
     Priority:
@@ -548,8 +547,12 @@ class VLADBench(ImageBaseDataset):
     """
 
     def __init__(self, *args, **kwargs):
-        if self.IMAGE_DIR is None:
-            self.IMAGE_DIR = get_vladbench_image_dir(self.IMAGE_DIR)
+        local_dir = None #  your_localdir/VLADBench/
+        if local_dir is None:
+            self.IMAGE_DIR = get_vladbench_image_dir(None)
+        else:
+            self.IMAGE_DIR = local_dir
+            
         super().__init__(*args, **kwargs)
 
     def build_prompt(self, line: Union[int, pd.Series]) -> List[Dict[str, str]]:
