@@ -5,6 +5,20 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from .image_ccocr import CCOCRDataset
+from .image_shortqa import ImageShortQADataset, PathVQA_VAL, PathVQA_TEST
+from .text_mcq import CustomTextMCQDataset, TextMCQDataset
+from .SIBench import SIBench
+
+from .vcr import VCRDataset
+from .mmlongbench import MMLongBench
+from .dude import DUDE
+from .slidevqa import SlideVQA
+from .vl_rewardbench import VLRewardBench
+from .vlm2bench import VLM2Bench
+from .vlmbias import VLMBias
+from .spatial457 import Spatial457
+from .charxiv import CharXiv
 from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, localize_df, toliststr
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
@@ -319,13 +333,15 @@ TEXT_DATASET = [
     SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation, XSTestDataset, FlamesDataset
 ]
 
+MIXED_DATASET = [SIBench]
+
 CUSTOM_DATASET = [
     CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset
 ]
 
 DATASET_COLLECTION = [ConcatDataset, ConcatVideoDataset]
 
-DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + CUSTOM_DATASET + DATASET_COLLECTION  # noqa: E501
+DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + MIXED_DATASET + CUSTOM_DATASET + DATASET_COLLECTION  # noqa: E501
 SUPPORTED_DATASETS = []
 for DATASET_CLS in DATASET_CLASSES:
     SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
