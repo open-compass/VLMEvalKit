@@ -1,5 +1,5 @@
-from collections import defaultdict
 import random
+from collections import defaultdict
 
 import pandas as pd
 

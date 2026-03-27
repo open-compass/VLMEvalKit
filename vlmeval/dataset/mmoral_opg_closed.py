@@ -5,8 +5,8 @@ from collections import defaultdict
 import pandas as pd
 from tqdm import tqdm
 
-from .image_base import ImageBaseDataset
 from ..smp import decode_base64_to_image_file, dump, load, read_ok
+from .image_base import ImageBaseDataset
 
 
 class MMOralBase(ImageBaseDataset):
