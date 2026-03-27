@@ -1083,7 +1083,7 @@ internvl = {
     "InternVL-Chat-V1-5": partial(
         vlm.InternVLChat,
         model_path="OpenGVLab/InternVL-Chat-V1-5",
-        version="V1.5"u
+        version="V1.5",
     )
 }
 
