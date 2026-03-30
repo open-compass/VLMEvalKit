@@ -645,6 +645,9 @@ api_models = {
     "BailingMM-Pro-0120": partial(
         api.bailingMMAPI, model="BailingMM-Pro-0120", temperature=0, retry=10
     ),
+    "Ming-flash-omni-2.0": partial(
+        api.bailingMMAPI, model="Ming-flash-omni-2.0", temperature=0, retry=10
+    ),
     # BlueLM-2.5
     "BlueLM-2.5-3B": partial(api.BlueLM_API, model="BlueLM-2.5-3B", temperature=0, retry=3),
     # JiuTian-VL
