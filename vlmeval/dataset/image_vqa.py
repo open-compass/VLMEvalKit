@@ -4048,7 +4048,7 @@ class MathCanvas(ImageBaseDataset):
         "https://huggingface.co/datasets/shiwk24/MathCanvas-Bench/resolve/main/MathCanvas_Bench_VLMEvalKit.tsv"
     }
     DATASET_MD5 = {
-        "MathCanvas-Bench": "9fd0b783ca416dbb20ecfb04d2711411"
+        "MathCanvas-Bench": "827dd1b1ce9c17d2b8338af6a13b6791"
     }
 
     HINT = (
