@@ -248,7 +248,7 @@ class VTCBench(ImageBaseDataset):
 
     @classmethod
     def supported_datasets(cls):
-        return 'VTCBench'
+        return ['VTCBench']
 
     def load_data(self, dataset: str):
         """Load dataset from HuggingFace"""
