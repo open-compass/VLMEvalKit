@@ -634,6 +634,9 @@ class APIEvalPipeline:
                     self._create_symlinks(task.dataset_name)
                     if cfg.eval_status == EvalStatus.Pending:
                         asyncio.create_task(self._trigger_eval(task.dataset_name))
+                    else:
+                        # Release dataset resources if the evaluation is skipped.
+                        self._release_dataset_memory(cfg)
 
             except Exception as e:
                 logger.error(
