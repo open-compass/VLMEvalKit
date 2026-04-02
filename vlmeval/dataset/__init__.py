@@ -68,6 +68,7 @@ from .m3oralbench import M3oralBenchDataset
 from .m4bench import M4Bench
 from .macbench import MaCBench
 from .matbench import MATBench
+from .maxm import MaXM, MaXM_en, MaXM_fr, MaXM_hi, MaXM_iw, MaXM_ro, MaXM_th, MaXM_zh
 from .medqbench_caption import MedqbenchCaptionDataset
 from .medqbench_mcq import MedqbenchMCQDataset
 from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
@@ -282,6 +283,7 @@ IMAGE_DATASET = [
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
+    MaXM, MaXM_en, MaXM_fr, MaXM_hi, MaXM_iw, MaXM_ro, MaXM_th, MaXM_zh,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,  # noqa: E501
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
