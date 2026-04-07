@@ -1,5 +1,7 @@
 import copy as cp
+import json
 import random as rd
+import re
 import time
 from abc import abstractmethod
 
@@ -299,3 +301,20 @@ class BaseAPI:
 
     def set_dump_image(self, dump_image_func):
         self.dump_image_func = dump_image_func
+
+    @staticmethod
+    def _inspect_payload(payload) -> str:
+        payload = cp.deepcopy(payload)
+
+        def recurive_hide_base64(value):
+            if isinstance(value, str) and (item := re.match(r'^data:[\w/]+;base64,', value)):
+                head = item.group(0)
+                return f'{head}<base64:{len(value) - len(head)}>'
+            elif isinstance(value, dict):
+                return {k: recurive_hide_base64(v) for k, v in value.items()}
+            elif isinstance(value, list):
+                return [recurive_hide_base64(v) for v in value]
+            else:
+                return value
+
+        return json.dumps(recurive_hide_base64(payload), ensure_ascii=False, indent=2)

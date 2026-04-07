@@ -4,10 +4,11 @@ import copy as cp
 import datetime
 import json
 import os
-import os.path as osp
+import shutil
 import subprocess
 import sys
 from functools import partial
+from numbers import Real
 from pathlib import Path
 from typing import List
 
@@ -57,13 +58,84 @@ from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.inference_video import infer_data_job_video
-from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, get_eval_file_format, get_logger,
-                         get_pred_file_format, get_pred_file_path, githash, is_prediction_complete,
-                         listinstr, load, load_env, prepare_reuse_files, proxy_set, setup_logger,
-                         timestr, update_dataset_status, write_run_status)
+from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, collect_run_benchmark_report,
+                         get_eval_file_format, get_logger, get_pred_file_format,
+                         get_pred_file_path, githash, is_prediction_complete, listinstr, load,
+                         load_env, prepare_reuse_files, proxy_set, setup_logger, timestr,
+                         upsert_dataset_status, upsert_run_status)
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 logger = get_logger(__name__)
+
+
+def _format_fail_rate(failed, total):
+    if failed is None or total is None or total <= 0:
+        return '-'
+    return f'{failed / total * 100:.2f}% ({failed}/{total})'
+
+
+def _format_sigfig(value):
+    if value is None or isinstance(value, bool):
+        return '-'
+    if isinstance(value, Real):
+        try:
+            if pd.isna(value):
+                return '-'
+        except Exception:
+            pass
+        return f'{float(value):.4g}'
+    return str(value)
+
+
+def _format_metric_field(value):
+    if value is None:
+        return '-'
+    if isinstance(value, Real) and not isinstance(value, bool):
+        return _format_sigfig(value)
+    if isinstance(value, (list, tuple, dict)):
+        return json.dumps(value, ensure_ascii=False)
+    return str(value)
+
+
+def _iter_primary_metric_rows(row):
+    primary_metric = row.get('primary_metric')
+    primary_metric_value = row.get('primary_metric_value')
+
+    if isinstance(primary_metric, (list, tuple)):
+        if not primary_metric:
+            return [(None, None)]
+        value_map = primary_metric_value if isinstance(primary_metric_value, dict) else {}
+        return [(metric_name, value_map.get(metric_name)) for metric_name in primary_metric]
+
+    return [(primary_metric, primary_metric_value)]
+
+
+def log_run_benchmark_report(run_dir):
+    rows = collect_run_benchmark_report(run_dir)
+    if not rows:
+        logger.info(f'No benchmark summary rows found in {Path(run_dir) / "status.json"}')
+        return
+
+    report_rows = []
+    for row in rows:
+        metric_rows = _iter_primary_metric_rows(row)
+        eval_error = row['eval_error'] or '-'
+        if eval_error != '-' and len(str(eval_error)) > 120:
+            eval_error = f'{str(eval_error)[:120]}...'
+
+        for idx, (primary_metric, primary_metric_value) in enumerate(metric_rows):
+            report_rows.append({
+                'benchmark': row['benchmark'] if idx == 0 else '',
+                'infer_fail_rate': _format_fail_rate(row['infer_failed'], row['infer_total']) if idx == 0 else '',
+                'judge_fail_rate': _format_fail_rate(row['judge_failed'], row['judge_total']) if idx == 0 else '',
+                'primary_metric': _format_metric_field(primary_metric),
+                'primary_metric_value': _format_metric_field(primary_metric_value),
+                'skip_reason': (row['skip_reason'] or '-') if idx == 0 else '',
+                'eval_error': eval_error if idx == 0 else '',
+            })
+
+    logger.info('Run Summary Report:')
+    logger.info('\n' + tabulate(report_rows, headers='keys'))
 
 
 # Make WORLD_SIZE invisible when build models
@@ -482,27 +554,27 @@ def run_local_mode(args):
         logger.info(f'=========== {model_name} ===========')
         model = None
 
-        pred_root = osp.join(args.work_dir, model_name, eval_id)
-        pred_root_meta = osp.join(args.work_dir, model_name)
-        os.makedirs(pred_root_meta, exist_ok=True)
-        os.makedirs(pred_root, exist_ok=True)
+        pred_root_meta = Path(args.work_dir) / model_name
+        pred_root = pred_root_meta / eval_id
+        pred_root_meta.mkdir(parents=True, exist_ok=True)
+        pred_root.mkdir(parents=True, exist_ok=True)
 
         if RANK == 0:
-            write_run_status(
+            upsert_run_status(
                 pred_root,
-                dict(
-                    eval_id=eval_id,
-                    created_at=datetime.datetime.now().astimezone().isoformat(),
-                    commit=commit_id,
-                    argv=sys.argv,
-                    api_mode=False,
-                    world_size=WORLD_SIZE,
-                    pred_format=get_pred_file_format(),
-                    eval_format=get_eval_file_format(),
-                    mode=args.mode,
-                    reuse=bool(args.reuse),
-                    reuse_aux=args.reuse_aux,
-                ))
+                eval_id=eval_id,
+                created_at=datetime.datetime.now().astimezone().isoformat(),
+                commit=commit_id,
+                argv=sys.argv,
+                api_mode=False,
+                world_size=WORLD_SIZE,
+                pred_format=get_pred_file_format(),
+                eval_format=get_eval_file_format(),
+                mode=args.mode,
+                reuse=bool(args.reuse),
+                reuse_aux=args.reuse_aux,
+                model_name=model_name,
+            )
 
         if use_config:
             model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
@@ -516,9 +588,21 @@ def run_local_mode(args):
             if WORLD_SIZE > 1:
                 dist.barrier()
 
+            dataset = None
+            result_file = None
+            judge_model = None
+
             try:
                 result_file = get_pred_file_path(
-                    pred_root, model_name, dataset_name, use_env_format=True)
+                    str(pred_root), model_name, dataset_name, use_env_format=True)
+                if RANK == 0:
+                    upsert_dataset_status(
+                        run_dir=pred_root,
+                        model_name=model_name,
+                        dataset_name=dataset_name,
+                        prediction_file=result_file,
+                        status='pending',
+                    )
 
                 if use_config:
                     if WORLD_SIZE > 1:
@@ -528,6 +612,14 @@ def run_local_mode(args):
                     dataset = build_dataset_from_config(cfg['data'], dataset_name)
                     if dataset is None:
                         logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
+                        if RANK == 0:
+                            upsert_dataset_status(
+                                run_dir=pred_root,
+                                model_name=model_name,
+                                dataset_name=dataset_name,
+                                status='done',
+                                skip_reason='invalid_dataset',
+                            )
                         continue
                 else:
                     dataset_kwargs = {}
@@ -543,10 +635,18 @@ def run_local_mode(args):
                     dataset = build_dataset(dataset_name, **dataset_kwargs)
                     if dataset is None:
                         logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
+                        if RANK == 0:
+                            upsert_dataset_status(
+                                run_dir=pred_root,
+                                model_name=model_name,
+                                dataset_name=dataset_name,
+                                status='done',
+                                skip_reason='invalid_dataset',
+                            )
                         continue
 
                 judge_kwargs = get_judge_kwargs(dataset_name, dataset.TYPE, args)
-                judge_signature = judge_kwargs.get('model', '')
+                judge_model = judge_kwargs.get('model', '')
 
                 if RANK == 0:
                     reuse_ctx = prepare_reuse_files(
@@ -558,14 +658,15 @@ def run_local_mode(args):
                         reuse=args.reuse,
                         reuse_aux=args.reuse_aux,
                         retry_failed=not args.keep_failed,
-                        judge_signature=judge_signature if args.mode != 'infer' else None,
+                        judge_model=judge_model if args.mode != 'infer' else None,
                         world_size=WORLD_SIZE,
                     )
-                    update_dataset_status(
-                        pred_root,
-                        dataset_name,
+                    upsert_dataset_status(
+                        run_dir=pred_root,
+                        model_name=model_name,
+                        dataset_name=dataset_name,
                         source_run=reuse_ctx['source_eval_id'],
-                        judge_signature=judge_signature,
+                        judge_model=judge_model,
                         reuse_aux=args.reuse_aux,
                     )
                     logger.info(judge_kwargs)
@@ -584,12 +685,30 @@ def run_local_mode(args):
                             f'No reusable completed prediction found for {model_name} x {dataset_name}, '
                             'skipping this combination in eval mode.'
                         )
+                        if Path(result_file).exists():
+                            skip_reason = 'Incomplete infer result'
+                        else:
+                            skip_reason = 'No infer result found'
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='done',
+                            skip_reason=skip_reason,
+                        )
                     continue
 
                 if model is None:
                     model = model_name  # which is only a name
 
                 if args.mode != "eval":
+                    if RANK == 0:
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='infer',
+                        )
                     # Perform the Inference
                     if dataset.MODALITY == 'VIDEO':
                         model = infer_data_job_video(
@@ -627,34 +746,83 @@ def run_local_mode(args):
 
                 # Only RANK 0 handles the evaluation part
                 if RANK == 0:
+                    if args.mode != 'infer':
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='eval',
+                        )
                     # Prepare Submission Files for MMMU_TEST AND MMT-Bench_ALL
                     if dataset_name in ['MMMU_TEST']:
                         result_json = MMMU_result_transfer(result_file)
                         logger.info(f'Transfer MMMU_TEST result to json for official evaluation, '
                                     f'json file saved in {result_json}')
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='done',
+                            skip_reason='official_submission_only_mmmu_test',
+                        )
                         continue
                     elif 'MMT-Bench_ALL' in dataset_name:
                         submission_file = MMTBench_result_transfer(result_file, **judge_kwargs)
                         logger.info(f'Extract options from prediction of MMT-Bench FULL split for official evaluation '
                                     f'(https://eval.ai/web/challenges/challenge-page/2328/overview), '
                                     f'submission file saved in {submission_file}')
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='done',
+                            skip_reason='official_submission_only_mmt_bench',
+                        )
                         continue
 
                     # Skip the evaluation part if only infer
                     if args.mode == 'infer':
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='done',
+                            skip_reason='mode_infer',
+                        )
                         continue
 
                     # Skip the evaluation part if the dataset evaluation is not supported or annotations are missing
                     if 'MLLMGuard_DS' in dataset_name:
                         logger.info('The evaluation of MLLMGuard_DS is not supported yet. ')
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='done',
+                            skip_reason='evaluation_not_supported_for_dataset',
+                        )
                         continue
                     elif 'AesBench_TEST' == dataset_name:
                         logger.info(f'The results are saved in {result_file}. '
                                     f'Please send it to the AesBench Team via huangyipo@hotmail.com.')
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='done',
+                            skip_reason='external_submission_required',
+                        )
                         continue
                     elif dataset_name in ['DocVQA_TEST', 'InfoVQA_TEST', 'Q-Bench1_TEST', 'A-Bench_TEST']:
                         logger.info(f'{dataset_name} is a test split without ground-truth. '
                                     'Thus only the inference part is supported for those datasets. ')
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='done',
+                            skip_reason='test_split_without_ground_truth',
+                        )
                         continue
                     elif dataset_name in [
                         'MMBench_TEST_CN', 'MMBench_TEST_EN', 'MMBench', 'MMBench_CN',
@@ -662,6 +830,13 @@ def run_local_mode(args):
                     ] and not MMBenchOfficialServer(dataset_name):
                         logger.error(
                             f'Can not evaluate {dataset_name} on non-official servers, will skip the evaluation.')
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='done',
+                            skip_reason='mmbench_evaluation_requires_official_server',
+                        )
                         continue
 
                     # Setup the proxy for the evaluation
@@ -674,6 +849,7 @@ def run_local_mode(args):
                     eval_results = dataset.evaluate(result_file, **judge_kwargs)
                     # Display Evaluation Results in Terminal
                     if eval_results is not None:
+                        summary_eval_results = eval_results
                         assert isinstance(eval_results, dict) or isinstance(eval_results, pd.DataFrame)
                         logger.info(f'The evaluation of model {model_name} x dataset {dataset_name} has finished! ')
                         logger.info('Evaluation Results:')
@@ -683,28 +859,63 @@ def run_local_mode(args):
                             if len(eval_results) < len(eval_results.columns):
                                 eval_results = eval_results.T
                             logger.info('\n' + tabulate(eval_results))
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='done',
+                            metrics_source=summary_eval_results,
+                            dataset_obj=dataset,
+                        )
+                    else:
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_name,
+                            status='done',
+                            skip_reason='evaluate_returned_none',
+                        )
 
                     # Restore the proxy
                     if eval_proxy is not None:
                         proxy_set(old_proxy)
 
                     # Create the symbolic links for the prediction files
-                    files = os.listdir(pred_root)
-                    files = [x for x in files if (f'{model_name}_{dataset_name}' in x or "status.json" in x)]
+                    files = [
+                        path for path in pred_root.iterdir()
+                        if path.is_file() and (
+                            f'{model_name}_{dataset_name}' in path.name or path.name == 'status.json'
+                        )
+                    ]
                     # Exclude temporary intermediate files
-                    files = [x for x in files
-                             if not x.endswith(('_checkpoint.pkl', '_PREV.pkl', '_structs.pkl'))]
-                    for f in files:
-                        file_addr = osp.join(pred_root, f)
-                        link_addr = osp.join(pred_root_meta, f)
-                        if osp.exists(link_addr) or osp.islink(link_addr):
-                            os.remove(link_addr)
-                        os.symlink(osp.relpath(file_addr, pred_root_meta), link_addr)
+                    files = [
+                        path for path in files
+                        if not path.name.endswith(('_checkpoint.pkl', '_PREV.pkl', '_structs.pkl'))
+                    ]
+                    for file_addr in files:
+                        link_addr = pred_root_meta / file_addr.name
+                        if link_addr.is_dir() and not link_addr.is_symlink():
+                            shutil.rmtree(link_addr)
+                        elif link_addr.exists() or link_addr.is_symlink():
+                            link_addr.unlink()
+                        rel_target = file_addr.relative_to(pred_root_meta)
+                        link_addr.symlink_to(rel_target)
 
             except Exception as e:
                 logger.exception(f'Model {model_name} x Dataset {dataset_name} combination failed: {e}, '
                                  'skipping this combination.')
+                if RANK == 0:
+                    upsert_dataset_status(
+                        run_dir=pred_root,
+                        model_name=model_name,
+                        dataset_name=dataset_name,
+                        status='done',
+                        error_message=str(e),
+                    )
                 continue
+
+        if RANK == 0:
+            log_run_benchmark_report(pred_root)
 
     if WORLD_SIZE > 1:
         dist.destroy_process_group()
@@ -771,21 +982,21 @@ def run_api_mode(args):
             f'Model "{model_name}" not found in supported_VLM. Consider using --base-url to specify an API endpoint.'
         model_builder = supported_VLM[model_name]
 
-    write_run_status(
+    upsert_run_status(
         pred_root,
-        dict(
-            eval_id=eval_id,
-            created_at=datetime.datetime.now().astimezone().isoformat(),
-            commit=commit_id,
-            argv=sys.argv,
-            api_mode=True,
-            world_size=1,
-            pred_format=get_pred_file_format(),
-            eval_format=get_eval_file_format(),
-            mode=args.mode,
-            reuse=bool(args.reuse),
-            reuse_aux=args.reuse_aux,
-        ))
+        eval_id=eval_id,
+        created_at=datetime.datetime.now().astimezone().isoformat(),
+        commit=commit_id,
+        argv=sys.argv,
+        api_mode=True,
+        world_size=1,
+        pred_format=get_pred_file_format(),
+        eval_format=get_eval_file_format(),
+        mode=args.mode,
+        reuse=bool(args.reuse),
+        reuse_aux=args.reuse_aux,
+        model_name=model_name,
+    )
 
     # Prepare all datasets
     dataset_configs: List[DatasetConfig] = []
@@ -819,7 +1030,7 @@ def run_api_mode(args):
                 continue
 
             judge_kwargs = get_judge_kwargs(ds_name, dataset.TYPE, args)
-            judge_signature = judge_kwargs.get('model', '')
+            judge_model = judge_kwargs.get('model', '')
             logger.info(f'Judge kwargs: {judge_kwargs}')
 
             reuse_ctx = prepare_reuse_files(
@@ -831,14 +1042,16 @@ def run_api_mode(args):
                 reuse=args.reuse,
                 reuse_aux=args.reuse_aux,
                 retry_failed=not args.keep_failed,
-                judge_signature=judge_signature if args.mode != 'infer' else None,
+                judge_model=judge_model if args.mode != 'infer' else None,
                 world_size=1,
             )
-            update_dataset_status(
-                str(pred_root),
-                ds_name,
+            upsert_dataset_status(
+                run_dir=pred_root,
+                model_name=model_name,
+                dataset_name=ds_name,
+                prediction_file=result_file,
                 source_run=reuse_ctx['source_eval_id'],
-                judge_signature=judge_signature,
+                judge_model=judge_model,
                 reuse_aux=args.reuse_aux,
             )
             if args.mode == 'eval' and not reuse_ctx['prediction_complete']:
@@ -846,6 +1059,22 @@ def run_api_mode(args):
                     f'No reusable completed prediction found for {model_name} x {ds_name}, '
                     'skipping this dataset in eval mode.'
                 )
+                try:
+                    if Path(result_file).exists():
+                        skip_reason = 'Incomplete infer result'
+                    else:
+                        skip_reason = 'No infer result found'
+                    upsert_dataset_status(
+                        run_dir=pred_root,
+                        model_name=model_name,
+                        dataset_name=ds_name,
+                        status='done',
+                        skip_reason=skip_reason,
+                    )
+                except Exception as summary_err:
+                    logger.warning(
+                        f'Failed to update status.json for {model_name} x {ds_name}: {summary_err}'
+                    )
                 continue
 
             # Complete the dataset config
@@ -896,6 +1125,8 @@ def run_api_mode(args):
         logger.warning("Pipeline interrupted by user.")
     except Exception as e:
         logger.exception(f"Pipeline failed with error: {e}")
+    finally:
+        log_run_benchmark_report(pred_root)
 
 
 def main():

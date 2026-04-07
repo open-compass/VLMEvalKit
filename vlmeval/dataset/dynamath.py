@@ -239,3 +239,13 @@ You are a helpful assistant that helps me to format free-form answers into a sho
 
         dump(score, score_file)
         return score
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        if 'Setting=Average|Overall' in metrics:
+            return {'Overall Avg Score': metrics['Setting=Average|Overall'] * 100}
+        else:
+            return super().report_primary_metric(metrics)

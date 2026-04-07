@@ -453,41 +453,6 @@ def is_eval_run_id(eval_id):
     return bool(NEW_EVAL_ID_PATTERN.match(eval_id) or LEGACY_EVAL_ID_PATTERN.match(eval_id))
 
 
-def get_run_status_path(run_dir):
-    return osp.join(run_dir, RUN_STATUS_NAME)
-
-
-def load_run_status(run_dir):
-    status_file = Path(run_dir) / RUN_STATUS_NAME
-    if not status_file.exists():
-        return {}
-    try:
-        data = load(str(status_file))
-    except Exception as err:
-        logger.warning(f'Failed to load run status from {status_file}: {err}')
-        return {}
-    return data if isinstance(data, dict) else {}
-
-
-def write_run_status(run_dir, status):
-    run_dir = Path(run_dir)
-    run_dir.mkdir(exist_ok=True)
-    status_file = run_dir / RUN_STATUS_NAME
-    tmp_file = status_file.with_suffix('.tmp')
-    with open(tmp_file, 'w', encoding='utf-8') as fout:
-        json.dump(status, fout, indent=2, ensure_ascii=False, cls=NumpyEncoder)
-    os.replace(tmp_file, status_file)
-
-
-def update_dataset_status(run_dir, dataset_name, **kwargs):
-    status = load_run_status(run_dir)
-    datasets = status.setdefault('datasets', {})
-    dataset_status = datasets.setdefault(dataset_name, {})
-    dataset_status.update(kwargs)
-    write_run_status(run_dir, status)
-    return status
-
-
 def _dataset_shadow_names(dataset_name):
     from vlmeval.dataset import SUPPORTED_DATASETS
 
@@ -648,7 +613,7 @@ def select_reuse_run(
 
     candidates = []
     for run_dir in run_dirs:
-        status = load_run_status(run_dir)
+        status = _load_run_status_for_reuse(run_dir)
         prediction_files = find_prediction_files(run_dir, model_name, dataset_name)
         prediction_file = None
         if prediction_files:
@@ -678,6 +643,18 @@ def select_reuse_run(
         candidates.append(item)
 
     return candidates[0] if len(candidates) else None
+
+
+def _load_run_status_for_reuse(run_dir):
+    status_file = Path(run_dir) / RUN_STATUS_NAME
+    if not status_file.exists():
+        return {}
+    try:
+        data = load(str(status_file))
+    except Exception as err:
+        logger.warning(f'Failed to load run status from {status_file}: {err}')
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def fetch_aux_files(eval_file):
@@ -730,7 +707,7 @@ def prepare_reuse_files(
     reuse,
     reuse_aux,
     retry_failed=True,
-    judge_signature=None,
+    judge_model=None,
     world_size=1,
 ):
     work_dir = osp.join(pred_root_meta, eval_id)
@@ -779,13 +756,13 @@ def prepare_reuse_files(
     )
 
     source_dataset_status = source['status'].get('datasets', {}).get(dataset_name, {})
-    source_judge_signature = source_dataset_status.get('judge_signature')
+    source_judge_model = source_dataset_status.get('judge_model')
     if (
         reuse_aux == 'all'
-        and judge_signature is not None
+        and judge_model is not None
         and context['prediction_complete']
         and src_prediction_file is not None
-        and source_judge_signature == judge_signature
+        and source_judge_model == judge_model
     ):
         infer_model_aux = {
             file_name

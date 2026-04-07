@@ -45,4 +45,47 @@ class SArena(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.sarena import evaluate_sarena
-        return evaluate_sarena(eval_file, dataset=self.dataset)
+        return evaluate_sarena(eval_file, dataset=self.dataset_name)
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        primary = {}
+
+        # SArena-Icon
+        try:
+            t2s_clip = metrics['SArena-Icon|T2SVG|CLIP-Score-I2I']
+            i2s_dino = metrics['SArena-Icon|I2SVG|DINO-Score']
+            i2s_ssim = metrics['SArena-Icon|I2SVG|LPIPS']
+            i2s_lpips = metrics['SArena-Icon|I2SVG|SSIM']
+
+            icon_score = sum((
+                0.3 * float(t2s_clip),
+                0.3 * float(i2s_dino) * 100,
+                0.2 * float(i2s_ssim) * 100,
+                0.2 * (1 - float(i2s_lpips)) * 100,
+            ))
+            primary['Icon'] = icon_score
+        except Exception:
+            pass
+
+        # SArena-Illustration
+        try:
+            t2s_clip = metrics['SArena-Illustration|T2SVG|CLIP-Score-I2I']
+            i2s_dino = metrics['SArena-Illustration|I2SVG|DINO-Score']
+            i2s_ssim = metrics['SArena-Illustration|I2SVG|LPIPS']
+            i2s_lpips = metrics['SArena-Illustration|I2SVG|SSIM']
+
+            illu_score = sum((
+                0.3 * float(t2s_clip),
+                0.3 * float(i2s_dino) * 100,
+                0.2 * float(i2s_ssim) * 100,
+                0.2 * (1 - float(i2s_lpips)) * 100,
+            ))
+            primary['Illustration'] = illu_score
+        except Exception:
+            pass
+
+        return primary

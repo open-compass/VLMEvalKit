@@ -475,6 +475,16 @@ class ImageMCQDataset(ImageBaseDataset):
         dump(acc, score_file)
         return acc
 
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        if 'split=none|Overall' in metrics:
+            return {'Overall Acc': metrics['split=none|Overall'] * 100}
+        else:
+            return super().report_primary_metric(metrics)
+
 
 class MedXpertQA_MM_test(ImageMCQDataset):
 
@@ -2220,6 +2230,16 @@ class XLRSBench(ImageMCQDataset):
         score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         dump(result_df, score_file)
         return result_df
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        if 'Overall macro' in metrics:
+            return {'Overall macro': metrics['Overall macro'] * 100}
+        else:
+            return super().report_primary_metric(metrics)
 
 
 class OmniEarthMCQBench(ImageMCQDataset):
