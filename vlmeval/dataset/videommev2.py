@@ -373,8 +373,7 @@ class VideoMMEv2(VideoBaseDataset):
             new_w = max(divisor, round(w * scale / divisor) * divisor)
             new_h = max(divisor, round(h * scale / divisor) * divisor)
 
-            video_msg = dict(type='video', value=vid_path,
-                            resized_height=new_h, resized_width=new_w)
+            video_msg = dict(type='video', value=vid_path, resized_height=new_h, resized_width=new_w)
             # Pass frame sampling parameters so the model follows dataset settings
             if self.nframe > 0:
                 video_msg['nframes'] = self.nframe
