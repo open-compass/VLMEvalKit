@@ -150,3 +150,30 @@ def extract_characters_regex(s):
     if matches is None:
         return ''
     return matches[0]
+
+
+def extract_characters_regex_v2(s):
+    """Extract answer letter from A-H for Video-MME-v2 (supports up to 8 options)."""
+    s = s.strip()
+    answer_prefixes = [
+        'Final Answer:',
+        'The best answer is',
+        'The correct answer is',
+        'The answer is',
+        'The answer',
+        'The best option is',
+        'The correct option is',
+        'Best answer:',
+        'Best option:',
+        'Answer:',
+        'Option:',
+    ]
+    for answer_prefix in answer_prefixes:
+        s = s.replace(answer_prefix, '')
+
+    if len(s.split()) > 10 and not re.search('[A-H]', s):
+        return ''
+    matches = re.search(r'[A-H]', s)
+    if matches is None:
+        return ''
+    return matches[0]
