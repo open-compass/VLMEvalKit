@@ -204,6 +204,8 @@ def build_model_from_base_url(args):
         top_p=args.top_p,
         repetition_penalty=args.repetition_penalty,
         verbose=args.verbose,
+        video_llm=args.video_llm,
+        local_media=args.local_media,
     )
     model_args = {k: v for k, v in model_args.items() if v is not None}
     if args.thinker:
@@ -480,6 +482,10 @@ You can launch the evaluation by setting either --data and --model or --config.
                         help='Manually select a model adapter by name.')
     parser.add_argument('--extra-body', type=str, default=None,
                         help='Extra inference parameters as json dict string')
+    parser.add_argument('--video-llm', action='store_true',
+                        help='Whether the API model supports native video inputs.')
+    parser.add_argument('--local-media', action='store_true',
+                        help='Whether to send local media file path to the API model.')
 
     # API Pipeline Args (only for --api-mode)
     parser.add_argument('--api-mode', action='store_true',
