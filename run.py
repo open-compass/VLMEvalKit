@@ -268,7 +268,7 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
             elif listinstr(['VisuLogic'], dataset_name):
                 judge_kwargs['model'] = 'exact_matching'
             else:
-                judge_kwargs['model'] = 'chatgpt-0125'
+                judge_kwargs['model'] = 'gpt-4o-mini'
         elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
             if listinstr(['LLaVABench_KO'], dataset_name):
                 judge_kwargs['model'] = 'gpt-4o-0806'
@@ -314,7 +314,9 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
         elif listinstr(['WorldVQA'], dataset_name):
             judge_kwargs['model'] = 'gpt-4o-1120'
         elif listinstr(['Video-MME'], dataset_name):
-            judge_kwargs['model'] = 'chatgpt-0125'
+            judge_kwargs['model'] = 'gpt-4o-mini'
+        elif listinstr(['MaCBench'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o-mini'
 
     if args.use_verifier:
         judge_kwargs['use_verifier'] = True

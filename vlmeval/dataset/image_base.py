@@ -156,7 +156,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
     MODALITY = 'IMAGE'
     DATASET_URL = {}
     DATASET_MD5 = {}
-    JUDGER_FAMILY = ('chatgpt-0125', )
+    DEFAULT_JUDGE: str | list = 'gpt-4o-mini'
 
     INFER_FAIL_MARKERS = (INFER_FAIL_MSG, )
     JUDGE_FAIL_MARKERS = (INFER_FAIL_MSG, )
