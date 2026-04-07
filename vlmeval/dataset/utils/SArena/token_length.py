@@ -63,6 +63,7 @@ class TokenLengthCalculator(BaseMetric):
         return avg_score, values
 
     def reset(self):
+        super().reset()
         self.meter_gt_tokens.reset()
         self.meter_pred_tokens.reset()
         self.meter_diff.reset()
@@ -75,3 +76,10 @@ class TokenLengthCalculator(BaseMetric):
 
     def get_avg_diff(self):
         return self.meter_diff.avg
+
+    def get_average_score(self):
+        return {
+            "gt_tokens": self.get_avg_gt_tokens(),
+            "pred_tokens": self.get_avg_pred_tokens(),
+            "diff": self.get_avg_diff(),
+        }

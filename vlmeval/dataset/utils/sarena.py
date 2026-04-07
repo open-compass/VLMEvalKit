@@ -17,14 +17,13 @@ import requests
 from PIL import Image
 from tqdm import tqdm
 
-try:
-    from ...utils.mp_util import cpu_count
-except ImportError:
-    from os import cpu_count
+from vlmeval.smp import LMUDataRoot, get_intermediate_file_path, get_logger, load
+from vlmeval.utils.mp_util import cpu_count
 
 # Import metrics
 try:
     from .SArena.metrics import InternSVGMetrics, MetricsConfig
+    from .SArena.runtime import maybe_configure_torch_cpu_threads
     # Try importing Video Metrics
     from .SArena.video.video_metrics import InternSVGVideoMetrics, VideoMetricsConfig
 except ImportError:
@@ -41,24 +40,11 @@ except ImportError:
     class VideoMetricsConfig:
         pass
 
+    def maybe_configure_torch_cpu_threads():
+        return None
 
-try:
-    from ...smp import LMUDataRoot, dump, load
-except ImportError:
-    # Fallback to pandas if smp is not available
-    def load(file_path):
-        if file_path.endswith(".xlsx"):
-            return pd.read_excel(file_path)
-        if file_path.endswith(".pkl"):
-            return pd.read_pickle(file_path)
-        return pd.read_csv(file_path)
 
-    def dump(data, file_path):
-        pass
-
-    def LMUDataRoot():
-        return os.path.expanduser("~/LMUData")
-
+logger = get_logger(__name__)
 
 # ================= Configuration =================
 
@@ -205,18 +191,18 @@ def download_and_extract_sarena(dataset="SArena"):
             need_download = True
 
     if need_download:
-        print(f"Downloading SArena data from {config['url']}...")
+        logger.info(f"Downloading SArena data from {config['url']}...")
         try:
             response = requests.get(config["url"], stream=True)
             with open(zip_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
         except Exception as e:
-            print(f"Download failed: {e}")
+            logger.error(f"Download failed: {e}")
             return
 
     if not os.path.exists(os.path.join(sarena_root, "Icon")):
-        print(f"Extracting {config['zip_name']}...")
+        logger.info(f"Extracting {config['zip_name']}...")
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(sarena_root)
 
@@ -226,7 +212,7 @@ def load_gt_captions(caption_path):
     if not os.path.exists(caption_path):
         return caption_map
 
-    print(f"  Loading captions from {caption_path}...")
+    logger.info(f"  Loading captions from {caption_path}...")
     try:
         with open(caption_path, "r", encoding="utf-8") as f:
             for line in f:
@@ -246,7 +232,7 @@ def load_gt_captions(caption_path):
                 except Exception:
                     continue
     except Exception as e:
-        print(f"  Error reading caption file: {e}")
+        logger.error(f"  Error reading caption file: {e}")
 
     return caption_map
 
@@ -426,7 +412,7 @@ html, body {{ margin: 0; padding: 0; width: 100%; height: 100%; background: #fff
                 )
                 clip.close()
     except Exception as e:
-        print(f"Error rendering video {svg_file_path}: {e}")
+        logger.warning(f"Error rendering video {svg_file_path}: {e}")
         # Create a dummy video on failure to prevent crash in metrics
         pass
     finally:
@@ -442,7 +428,7 @@ def _video_render_wrapper(args):
     try:
         loop.run_until_complete(svg_to_mp4(svg_path, out_path, w, h))
     except Exception as e:
-        print(f"Failed to render {svg_path}: {e}")
+        logger.warning(f"Failed to render {svg_path}: {e}")
     finally:
         loop.close()
 
@@ -691,7 +677,7 @@ def process_editing_batch(gt_root, task_temp_dir, task_name, calculator):
 
 
 def load_all_predictions_df(eval_file):
-    print(f"Loading predictions from {eval_file}...")
+    logger.info(f"Loading predictions from {eval_file}...")
     if eval_file.endswith(".xlsx"):
         df = pd.read_excel(eval_file)
     elif eval_file.endswith(".pkl"):
@@ -738,7 +724,7 @@ def get_task_predictions_map(df, l1_category, l2_prefix):
         )
 
     subset = df[mask_l2 & mask_l1].copy()
-    print(
+    logger.info(
         f"  Filtering for L1='{l1_category}' & L2='{l2_prefix}' -> Found {len(subset)} rows."
     )
 
@@ -771,10 +757,36 @@ def convert_np_to_native(obj):
     return obj
 
 
+def load_completed_sarena_results(eval_file):
+    result_path = get_intermediate_file_path(eval_file, "_results", "json")
+    if not os.path.exists(eval_file) or not os.path.exists(result_path):
+        return None
+
+    try:
+        with open(result_path, "r", encoding="utf-8") as f:
+            result = json.load(f)
+    except Exception as e:
+        logger.warning(f"Warning: Failed to load cached SArena results from {result_path}: {e}")
+        return None
+
+    if not isinstance(result, dict):
+        logger.warning(f"Warning: Cached SArena results at {result_path} are not a dict, ignoring.")
+        return None
+
+    print(f"Reusing completed SArena evaluation from {result_path}")
+    return result
+
+
 # ================= Main Function =================
 
 
 def evaluate_sarena(eval_file, tokenizer_path=TOKENIZER_PATH, dataset="SArena"):
+    json_output_path = get_intermediate_file_path(eval_file, "_results", "json")
+    if os.path.exists(json_output_path):
+        reuse_results = load(json_output_path)
+        logger.info(f"Reuse evaluation results: {reuse_results}")
+        return reuse_results
+
     config = SARENA_CONFIGS[dataset]
     sarena_root = config["root"]
 
@@ -784,7 +796,14 @@ def evaluate_sarena(eval_file, tokenizer_path=TOKENIZER_PATH, dataset="SArena"):
     temp_root = os.path.join(eval_dir, f"{dataset.lower()}_svg_temp")
     if not os.path.exists(temp_root):
         os.makedirs(temp_root)
-    print(f"Render output directory: {temp_root}")
+    logger.info(f"Render output directory: {temp_root}")
+
+    thread_config = maybe_configure_torch_cpu_threads()
+    if thread_config:
+        thread_msg = [f"intra_op={thread_config['threads']}"]
+        if "interop_threads" in thread_config:
+            thread_msg.append(f"inter_op={thread_config['interop_threads']}")
+        logger.info(f"Configured PyTorch CPU threads: {', '.join(thread_msg)}")
 
     final_json_results = defaultdict(lambda: defaultdict(dict))
 
@@ -968,7 +987,7 @@ def evaluate_sarena(eval_file, tokenizer_path=TOKENIZER_PATH, dataset="SArena"):
                         try:
                             f.result()
                         except Exception as e:
-                            print(f"  Video rendering error: {e}")
+                            logger.warning(f"  Video rendering error: {e}")
 
         # --- 3. Evaluation: Generation & Editing ---
         try:
@@ -979,7 +998,7 @@ def evaluate_sarena(eval_file, tokenizer_path=TOKENIZER_PATH, dataset="SArena"):
                     l2_prefix, gt_root, task_dir, tokenizer_path
                 )
                 final_json_results[category][l2_prefix] = metrics_res
-                print(f"  Video Scores: {metrics_res}")
+                logger.info(f"  Video Scores: {metrics_res}")
 
             elif "Icon" in category and "Edit" in l2_prefix and edit_calculator:
                 # Icon Editing Accumulation
@@ -987,7 +1006,7 @@ def evaluate_sarena(eval_file, tokenizer_path=TOKENIZER_PATH, dataset="SArena"):
                 gt_root = os.path.join(sarena_root, "Icon/edit")
                 process_editing_batch(gt_root, task_dir, task_name, edit_calculator)
                 has_processed_edit = True
-                print(f"  [Accumulated] Editing metrics for {task_name}")
+                logger.info(f"  [Accumulated] Editing metrics for {task_name}")
 
             elif "Generation" in l2_prefix:
                 # Image Generation
@@ -1006,10 +1025,10 @@ def evaluate_sarena(eval_file, tokenizer_path=TOKENIZER_PATH, dataset="SArena"):
                 )
                 clean_task_name = "T2SVG" if "T2SVG" in l2_prefix else "I2SVG"
                 final_json_results[category][clean_task_name] = metrics_res
-                print(f"  Scores: {metrics_res}")
+                logger.info(f"  Scores: {metrics_res}")
 
         except Exception as e:
-            print(f"  Error calculating metrics for {task_key}: {e}")
+            logger.error(f"  Error calculating metrics for {task_key}: {e}")
             import traceback
 
             traceback.print_exc()
@@ -1017,10 +1036,10 @@ def evaluate_sarena(eval_file, tokenizer_path=TOKENIZER_PATH, dataset="SArena"):
 
     # 4. Finalize Editing Metrics
     if has_processed_edit and edit_calculator:
-        print("\nCalculating Overall Editing Metrics...")
+        logger.info("\nCalculating Overall Editing Metrics...")
         overall_edit_score = edit_calculator.summarize_metrics()
         final_json_results["SArena-Icon"]["Editing"] = overall_edit_score
-        print(f"Editing Overall Scores: {overall_edit_score}")
+        logger.info(f"Editing Overall Scores: {overall_edit_score}")
 
     # --- Save Results ---
     def recursive_convert(d):
@@ -1029,13 +1048,10 @@ def evaluate_sarena(eval_file, tokenizer_path=TOKENIZER_PATH, dataset="SArena"):
         return convert_np_to_native(d)
 
     final_output_dict = recursive_convert(final_json_results)
-    json_output_path = eval_file.replace(".xlsx", "_results.json").replace(
-        ".pkl", "_results.json"
-    )
     with open(json_output_path, "w", encoding="utf-8") as f:
         json.dump(final_output_dict, f, indent=4, ensure_ascii=False)
 
-    print(
+    logger.info(
         f"\n{'=' * 50}\nSArena Evaluation Complete\nResults saved to: {json_output_path}\n{'=' * 50}"
     )
     return final_output_dict
