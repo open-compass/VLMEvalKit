@@ -413,6 +413,7 @@ class APIEvalPipeline:
 
             # 1. Try to load checkpoint
             existing_results = self._load_checkpoint(dataset_name)
+            skipped = len(existing_results)
             cfg.results_dict = existing_results
             cfg.processed = len(existing_results)
             cfg.total_samples = len(cfg.dataset_obj.data)
@@ -462,7 +463,7 @@ class APIEvalPipeline:
             self.total_tasks_generated += tasks_generated
             logger.info(
                 f"   [{dataset_name}] Generated {tasks_generated} tasks "
-                f"(Skipped {cfg.processed}) [type={dataset_type}]"
+                f"(Skipped {skipped}) [type={dataset_type}]"
             )
 
         # Stop sign
