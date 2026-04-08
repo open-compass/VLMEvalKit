@@ -547,7 +547,7 @@ class CampsiteEvaluator:
             # 检查边界
             for row, col in tent_positions_0based:
                 if row < 0 or row >= rows or col < 0 or col >= cols:
-                    feedback["rule_violations"].append(f"帐篷位置 ({row+1}, {col+1}) 超出网格边界")
+                    feedback["rule_violations"].append(f"帐篷位置 ({row + 1}, {col + 1}) 超出网格边界")
 
             # 检查树邻接
             directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -559,7 +559,7 @@ class CampsiteEvaluator:
                         adjacent_to_tree = True
                         break
                 if not adjacent_to_tree:
-                    feedback["rule_violations"].append(f"帐篷 ({row+1}, {col+1}) 没有与树相邻")
+                    feedback["rule_violations"].append(f"帐篷 ({row + 1}, {col + 1}) 没有与树相邻")
 
             # 检查帐篷相邻
             all_directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
@@ -567,7 +567,8 @@ class CampsiteEvaluator:
                 for dr, dc in all_directions:
                     nr, nc = row + dr, col + dc
                     if (nr, nc) in tent_positions_0based:
-                        feedback["rule_violations"].append(f"帐篷 ({row+1}, {col+1}) 与帐篷 ({nr+1}, {nc+1}) 相邻")
+                        feedback["rule_violations"].append(
+                            f"帐篷 ({row + 1}, {col + 1}) 与帐篷 ({nr + 1}, {nc + 1}) 相邻")
 
             # 检查行约束
             actual_row_counts = [0] * rows
@@ -576,7 +577,7 @@ class CampsiteEvaluator:
 
             for i, (actual, expected) in enumerate(zip(actual_row_counts, row_constraints)):
                 if actual != expected:
-                    feedback["rule_violations"].append(f"第{i+1}行帐篷数量错误: 实际{actual}, 期望{expected}")
+                    feedback["rule_violations"].append(f"第{i + 1}行帐篷数量错误: 实际{actual}, 期望{expected}")
 
             # 检查列约束
             actual_col_counts = [0] * cols
@@ -585,7 +586,7 @@ class CampsiteEvaluator:
 
             for i, (actual, expected) in enumerate(zip(actual_col_counts, col_constraints)):
                 if actual != expected:
-                    feedback["rule_violations"].append(f"第{i+1}列帐篷数量错误: 实际{actual}, 期望{expected}")
+                    feedback["rule_violations"].append(f"第{i + 1}列帐篷数量错误: 实际{actual}, 期望{expected}")
 
             feedback["is_correct"] = len(feedback["rule_violations"]) == 0
 

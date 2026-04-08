@@ -6,8 +6,8 @@ import warnings
 
 from PIL import Image
 
-from ..smp import d2df, dump, load
-from ..smp.file import get_intermediate_file_path
+from ..smp.file import dump, get_intermediate_file_path, load
+from ..smp.misc import d2df
 from ..smp.vlm import decode_base64_to_image
 from ..utils import track_progress_rich
 from .image_base import ImageBaseDataset
@@ -139,7 +139,7 @@ class MSSBenchDataset(ImageBaseDataset):
         data = load(eval_file)
         assert 'prediction' in data and 'answer' in data
 
-        model_name = judge_kwargs.pop('model', 'exact_matching')
+        model_name = judge_kwargs.pop('model', 'gpt-4o-2024-11-20')
         nproc = judge_kwargs.pop('nproc', 4)
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}_judge', 'pkl')
 
@@ -147,6 +147,9 @@ class MSSBenchDataset(ImageBaseDataset):
             data['pred_behavior'] = [_mss_behavior_rule(x) for x in data['prediction']]
             data['judge_log'] = ['rule'] * len(data)
         else:
+            # Align with SafeWork-R1 MSSBench judge defaults.
+            judge_kwargs.setdefault('temperature', 0)
+            judge_kwargs.setdefault('timeout', 30)
             judge = build_judge(model=model_name, **judge_kwargs)
             if hasattr(judge, 'working') and not judge.working():
                 warnings.warn('Judge is not working. Fallback to rule parser.\n' + DEBUG_MESSAGE)

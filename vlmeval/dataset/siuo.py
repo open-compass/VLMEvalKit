@@ -2,8 +2,8 @@ import copy as cp
 
 import pandas as pd
 
-from ..smp import d2df, dump, load
-from ..smp.file import get_intermediate_file_path
+from ..smp.file import dump, get_intermediate_file_path, load
+from ..smp.misc import d2df
 from .image_base import ImageBaseDataset
 from .siuo_gen import SIUOGenDataset
 from .siuo_mcq import SIUOMCQDataset
