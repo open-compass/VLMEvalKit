@@ -11,25 +11,7 @@ import pandas as pd
 from vlmeval.smp import (LMUDataRoot, decode_base64_to_image_file, download_file, file_size,
                          istype, load, md5, mmqa_display, read_ok, toliststr)
 from vlmeval.smp.file import INFER_FAIL_MSG, RUN_STATUS_NAME, _prediction_table, fetch_aux_files
-
-
-def _is_number(value: Any) -> bool:
-    if isinstance(value, (bool, np.bool_)):
-        return False
-    if isinstance(value, (int, float, np.integer, np.floating)):
-        try:
-            return not pd.isna(value)
-        except Exception:
-            return True
-    return False
-
-
-def _to_number(value: Any) -> int | float | Any:
-    if isinstance(value, (np.integer, int)) and not isinstance(value, (bool, np.bool_)):
-        return int(value)
-    if isinstance(value, (np.floating, float)):
-        return float(value)
-    return value
+from vlmeval.smp.status_report import is_number, to_number
 
 
 def _choose_primary_metric_key(metrics: dict[str, Any]) -> str | None:
@@ -420,6 +402,6 @@ class ImageBaseDataset(metaclass=ABCMeta):
         primary_metrics = {}
         for key in matched_keys:
             value = metrics.get(key)
-            if _is_number(value):
-                primary_metrics[str(key)] = _to_number(value)
+            if is_number(value):
+                primary_metrics[str(key)] = to_number(value)
         return primary_metrics

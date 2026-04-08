@@ -578,8 +578,11 @@ def is_prediction_complete(pred_file, dataset_indices, retry_failed=True):
     return all(str(idx) in finished for idx in dataset_indices)
 
 
-def get_infer_aux_file_names(model_name, dataset, result_file_base, world_size=1) -> set:
-    dataset_name = dataset.dataset_name
+def get_infer_aux_file_names(model_name,
+                             dataset_name,
+                             dataset,
+                             result_file_base,
+                             world_size=1) -> set:
     infer_aux = {f'{model_name}_{dataset_name}_checkpoint.pkl'}
 
     if dataset.MODALITY == 'VIDEO':
@@ -702,6 +705,7 @@ def prepare_reuse_files(
     pred_root_meta,
     eval_id,
     model_name,
+    dataset_name,
     dataset,
     result_file,
     reuse,
@@ -712,7 +716,6 @@ def prepare_reuse_files(
 ):
     work_dir = osp.join(pred_root_meta, eval_id)
     os.makedirs(work_dir, exist_ok=True)
-    dataset_name = dataset.dataset_name
     context = dict(
         source_eval_id=None,
         prediction_complete=False,
@@ -722,6 +725,7 @@ def prepare_reuse_files(
 
     infer_aux_file_names = get_infer_aux_file_names(
         model_name=model_name,
+        dataset_name=dataset_name,
         dataset=dataset,
         result_file_base=osp.basename(result_file),
         world_size=world_size,

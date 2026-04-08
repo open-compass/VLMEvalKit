@@ -1,22 +1,32 @@
 import os
 import os.path as osp
 import warnings
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import portalocker
 from PIL import Image
 
 from vlmeval.smp import download_file, file_size, load, md5
-from vlmeval.smp.file import LMUDataRoot
+from vlmeval.smp.file import (INFER_FAIL_MSG, RUN_STATUS_NAME, LMUDataRoot, _prediction_table,
+                              fetch_aux_files)
 from vlmeval.smp.log import get_logger
+from vlmeval.smp.status_report import is_number, to_number
+from .image_base import (_choose_primary_metric_key, _count_markers_in_obj,
+                         _score_judge_file_candidate)
 
 logger = get_logger(__name__)
 
 
-class VideoBaseDataset:
+class VideoBaseDataset(metaclass=ABCMeta):
 
     MODALITY = 'VIDEO'
+    DEFAULT_JUDGE: str | list = 'gpt-4o-mini'
+
+    INFER_FAIL_MARKERS = (INFER_FAIL_MSG, )
+    JUDGE_FAIL_MARKERS = (INFER_FAIL_MSG, )
 
     def __init__(self,
                  dataset='MMBench-Video',
@@ -54,7 +64,10 @@ class VideoBaseDataset:
         if self.fps > 0 and self.nframe > 0:
             raise ValueError('fps and nframe should not be set at the same time')
         if self.fps <= 0 and self.nframe <= 0:
-            raise ValueError('fps and nframe should be set at least one valid value')
+            self.split_frame = False
+            logger.info('fps and nframe is not set, disable frame split (Use video file directly.)')
+        else:
+            self.split_frame = True
 
     def __len__(self):
         return len(self.videos) if self.pack else len(self.data)
@@ -194,3 +207,95 @@ class VideoBaseDataset:
                 LOCALIZE(data_path, local_path)
             data_path = local_path
         return load(data_path)
+
+    @classmethod
+    def get_judge_file(cls, eval_file: str | Path, judge_model: str | None = None) -> Path | None:
+        eval_path = Path(eval_file)
+        aux_files = fetch_aux_files(str(eval_path))
+        if not aux_files:
+            return None
+
+        prediction_path = eval_path.resolve() if eval_path.exists() else None
+        candidates = []
+        for aux_file in aux_files:
+            aux_path = Path(aux_file)
+            if not aux_path.exists():
+                continue
+            if prediction_path is not None and aux_path.resolve() == prediction_path:
+                continue
+            if aux_path.name == RUN_STATUS_NAME or aux_path.suffix == '.lock':
+                continue
+            if aux_path.name.endswith(('_checkpoint.pkl', '_PREV.pkl', '_structs.pkl')):
+                continue
+            candidates.append(aux_path)
+
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda path: _score_judge_file_candidate(path, judge_model), reverse=True)
+        return candidates[0]
+
+    @classmethod
+    def report_infer_err(cls, prediction_file: str | Path | None) -> dict[str, int]:
+        if prediction_file is None or not Path(prediction_file).exists():
+            return dict(failed=0, total=0)
+
+        frame = _prediction_table(str(prediction_file))
+        if frame is None:
+            return dict(failed=0, total=0)
+
+        predictions = frame['prediction'] if 'prediction' in frame else []
+        total = len(predictions)
+        failed = sum(
+            any(marker in str(prediction) for marker in cls.INFER_FAIL_MARKERS)
+            for prediction in predictions
+        )
+        return dict(failed=failed, total=total)
+
+    @classmethod
+    def report_judge_err(
+        cls,
+        prediction_file: str | Path | None,
+        *,
+        total_samples: int | None,
+        judge_model: str | None = None,
+        error_message: str | None = None,
+    ) -> dict[str, int | None]:
+        if total_samples is None or total_samples <= 0:
+            return dict(failed=0, total=total_samples)
+
+        if prediction_file is None or not Path(prediction_file).exists():
+            failed = total_samples if error_message else 0
+            return dict(failed=failed, total=total_samples)
+
+        judge_file = cls.get_judge_file(prediction_file, judge_model=judge_model)
+        if judge_file is None:
+            failed = total_samples if error_message else 0
+            return dict(failed=failed, total=total_samples)
+
+        try:
+            data = load(str(judge_file))
+        except Exception:
+            data = None
+
+        failed = min(_count_markers_in_obj(data, cls.JUDGE_FAIL_MARKERS), total_samples)
+        if error_message and failed == 0:
+            failed = total_samples
+        return dict(failed=failed, total=total_samples)
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict[str, Any] | None) -> dict[str, float | int]:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        matched_keys = []
+        fallback = _choose_primary_metric_key(metrics)
+        if fallback is not None:
+            matched_keys = [fallback]
+
+        primary_metrics = {}
+        for key in matched_keys:
+            value = metrics.get(key)
+            if is_number(value):
+                primary_metrics[str(key)] = to_number(value)
+        return primary_metrics

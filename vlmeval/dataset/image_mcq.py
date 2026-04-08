@@ -2167,7 +2167,7 @@ class XLRSBench(ImageMCQDataset):
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
 
-        result_file = get_intermediate_file_path(eval_file, '_{model}_result', 'pkl')
+        result_file = get_intermediate_file_path(eval_file, f'_{model}_result', 'pkl')
         ans = {}
         if osp.exists(result_file):
             ans = load(result_file)

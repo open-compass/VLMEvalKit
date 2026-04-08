@@ -227,19 +227,21 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
 
 
 # A wrapper for infer_data, do the pre & post processing
-def infer_data_job_video(
-        model,
-        work_dir,
-        model_name,
-        dataset,
-        verbose=False,
-        api_nproc=4,
-        use_vllm=False,
-        retry_failed=True):
+def infer_data_job_video(model,
+                         work_dir,
+                         model_name,
+                         dataset,
+                         result_file=None,
+                         verbose=False,
+                         api_nproc=4,
+                         use_vllm=False,
+                         retry_failed=True):
 
     dataset_name = dataset.dataset_name
     rank, world_size = get_rank_and_world_size()
-    result_file = get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True)
+
+    if result_file is None:
+        result_file = get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True)
 
     prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
     if osp.exists(result_file):

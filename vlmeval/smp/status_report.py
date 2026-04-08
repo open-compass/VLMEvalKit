@@ -1,5 +1,6 @@
 import datetime
 import json
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -100,7 +101,7 @@ def _iso_now():
     return datetime.datetime.now().astimezone().isoformat()
 
 
-def _is_number(value: Any) -> bool:
+def is_number(value: Any) -> bool:
     if isinstance(value, (bool, np.bool_)):
         return False
     if isinstance(value, (int, float, np.integer, np.floating)):
@@ -108,14 +109,24 @@ def _is_number(value: Any) -> bool:
             return not pd.isna(value)
         except Exception:
             return True
+    if isinstance(value, str):
+        try:
+            return not pd.isna(float(value))
+        except Exception:
+            return False
     return False
 
 
-def _to_number(value: Any) -> Any:
+def to_number(value: Any) -> Any:
     if isinstance(value, (np.integer, int)) and not isinstance(value, (bool, np.bool_)):
         return int(value)
     if isinstance(value, (np.floating, float)):
         return float(value)
+    if isinstance(value, str):
+        if value.isdigit():
+            return int(value)
+        else:
+            return float(value)
     return value
 
 
@@ -151,12 +162,12 @@ def _flatten_dataframe(df: pd.DataFrame) -> dict[str, Any]:
 
         for col in numeric_cols:
             val = row[col]
-            if not _is_number(val):
+            if not is_number(val):
                 continue
             key = _safe_key(col) if not dim_prefix else f'{dim_prefix}|{_safe_key(col)}'
             if key in metrics:
                 key = f'{key}#{row_idx}'
-            metrics[key] = _to_number(val)
+            metrics[key] = to_number(val)
     return metrics
 
 
@@ -179,29 +190,29 @@ def _flatten_any(obj: Any, prefix: str, out: dict[str, Any]) -> None:
     if isinstance(obj, (list, tuple)):
         if not obj:
             return
-        if all(_is_number(x) for x in obj):
+        if all(is_number(x) for x in obj):
             if len(obj) == 1:
                 key = prefix or 'value'
                 if key in out:
                     key = f'{key}#0'
-                out[key] = _to_number(obj[0])
+                out[key] = to_number(obj[0])
             else:
                 for idx, val in enumerate(obj):
                     key = f'{prefix}|{idx}' if prefix else str(idx)
                     if key in out:
                         key = f'{key}#dup'
-                    out[key] = _to_number(val)
+                    out[key] = to_number(val)
         else:
             for idx, val in enumerate(obj):
                 next_prefix = f'{prefix}|{idx}' if prefix else str(idx)
                 _flatten_any(val, next_prefix, out)
         return
 
-    if _is_number(obj):
+    if is_number(obj):
         key = prefix or 'value'
         if key in out:
             key = f'{key}#dup'
-        out[key] = _to_number(obj)
+        out[key] = to_number(obj)
 
 
 def flatten_summary_metrics(metrics_source: Any) -> dict[str, Any]:
@@ -219,11 +230,17 @@ def _resolve_dataset_reporter(dataset_name: str, dataset_obj=None):
     if reporter is None:
         try:
             import vlmeval.dataset as dataset_module
+            from vlmeval.dataset.video_dataset_config import supported_video_datasets
 
-            for dataset_cls in dataset_module.DATASET_CLASSES:
-                if dataset_name in dataset_cls.supported_datasets():
-                    reporter = dataset_cls
-                    break
+            if dataset_name in supported_video_datasets:
+                video_ds = supported_video_datasets[dataset_name]
+                if isinstance(video_ds, partial):
+                    reporter = video_ds.func
+            else:
+                for dataset_cls in dataset_module.DATASET_CLASSES:
+                    if dataset_name in dataset_cls.supported_datasets():
+                        reporter = dataset_cls
+                        break
         except Exception:
             reporter = None
 

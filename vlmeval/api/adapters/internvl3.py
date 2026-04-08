@@ -33,7 +33,7 @@ class InternVL3Adapter(ModelAdapter):
     def dump_image(self, line, dataset):
         return self.dump_image_func(line)
 
-    def override_model_args(self, dataset):
+    def override_model_args(self, dataset, gen_kwargs):
         think_ds = [
             'MMMU', 'MathVista', 'SFE', 'Physics', 'MathVision',
             'OlympiadBench', 'IPhO_2025', 'MaCBench',
