@@ -51,6 +51,8 @@ from vlmeval.dataset import build_dataset
 from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_mt import infer_data_job_mt
+from vlmeval.inference_mixed import infer_data_job_mixed
+from vlmeval.smp import *
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.smp import (MMBenchOfficialServer, get_pred_file_format, githash, listinstr, load,
                          load_env, ls, prepare_reuse_files, proxy_set, setup_logger, timestr)
@@ -350,6 +352,17 @@ def main():
                             api_nproc=args.api_nproc,
                             ignore_failed=args.ignore,
                             use_vllm=args.use_vllm)
+                    elif dataset.TYPE == 'MixedOutput':
+                        model = infer_data_job_mixed(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            actual_dataset_name=dataset_name,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            ignore_failed=args.ignore,
+                            use_vllm=args.use_vllm)
                     else:
                         model = infer_data_job(
                             model,
@@ -420,6 +433,8 @@ def main():
                         judge_kwargs['model'] = 'gpt-4.1'
                     elif listinstr(['MathCanvas'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4.1-2025-04-14'
+                    elif dataset.TYPE == 'MixedOutput':
+                        judge_kwargs['model'] = 'qwen-72b'
                     elif listinstr(['MMReason'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4.1',
                     elif listinstr(['CoreCognition'], dataset_name):
