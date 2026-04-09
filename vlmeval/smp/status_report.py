@@ -448,7 +448,7 @@ def collect_run_benchmark_report(run_dir):
                 judge_total=judge_total,
                 primary_metric=primary_metric,
                 primary_metric_value=_serialize_primary_metric_value(primary_metrics),
-                skip_reason=skip_reason if skip_reason and skip_reason != 'mode_infer' else None,
+                skip_reason=skip_reason,
                 eval_error=error_message,
             ))
 

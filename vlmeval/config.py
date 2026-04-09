@@ -703,6 +703,7 @@ api_models = {
     "lmdeploy_internvl_78B_MPO": partial(
         api.LMDeployAPI,
         model="InternVL2_5-78B-MPO",
+        custom_prompt="internvl2-mpo-cot",
         api_base="http://0.0.0.0:23333/v1/chat/completions",
         temperature=0,
         retry=10,
