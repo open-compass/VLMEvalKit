@@ -317,6 +317,8 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
             judge_kwargs['model'] = 'gpt-4o-mini'
         elif listinstr(['MaCBench'], dataset_name):
             judge_kwargs['model'] = 'gpt-4o-mini'
+        elif listinstr(['SciDocBench'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o-mini'
 
     if args.use_verifier:
         judge_kwargs['use_verifier'] = True
