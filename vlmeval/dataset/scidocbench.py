@@ -7,8 +7,9 @@ import tempfile
 
 import pandas as pd
 
-from vlmeval.smp import (decode_base64_to_image_file, dump, get_intermediate_file_path,
-                         get_logger, load, read_ok, toliststr)
+from vlmeval.smp import (decode_base64_to_image_file, dump, get_intermediate_file_path, get_logger,
+                         load, read_ok, toliststr)
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils.judge_util import build_judge
 
@@ -258,6 +259,64 @@ def eval_reasoning(judge_model, prediction, reasoning_ref):
     return _parse_judge_response(raw)
 
 
+# ── Parallel evaluation helper ───────────────────────────────────────────────
+
+_judge_model = None
+
+
+def _parse_field(raw, fallback):
+    """Parse a JSON-serialized field from TSV, with fallback."""
+    if isinstance(raw, str):
+        try:
+            return json.loads(raw)
+        except Exception:
+            return fallback
+    return raw if isinstance(raw, dict) else fallback
+
+
+def _eval_one_item(item_json):
+    """Evaluate a single sample. Called by track_progress_rich."""
+    item = json.loads(item_json)
+    prediction = str(item.get('prediction', ''))
+    eval_method = item.get('eval_method', 'judge')
+
+    answer = _parse_field(item.get('answer', '{}'), item.get('answer', ''))
+    answer_note = _parse_field(item.get('answer_note', '{}'), {})
+
+    judge_prompt = item.get('judge_prompt', '')
+    if isinstance(judge_prompt, float) or not judge_prompt:
+        judge_prompt = None
+
+    try:
+        if eval_method == 'json_match':
+            score, note = eval_json_match(prediction, answer)
+        elif eval_method == 'judge':
+            question = item.get('question', '')
+            answer_str = (json.dumps(answer, ensure_ascii=False)
+                          if isinstance(answer, dict) else str(answer))
+            score, note = eval_judge(
+                _judge_model, prediction, answer_str, question, judge_prompt)
+        elif eval_method == 'exec_match':
+            score, note = eval_exec_match(prediction, answer)
+        else:
+            score, note = 0.0, f"Unknown eval_method: {eval_method}"
+
+        # Reasoning verification
+        reasoning_ref = (answer_note.get('reasoning')
+                         if isinstance(answer_note, dict) else None)
+        if score > 0 and reasoning_ref and _judge_model is not None:
+            reason_score, reason_note = eval_reasoning(
+                _judge_model, prediction, reasoning_ref)
+            original_score = score
+            score = score * reason_score
+            note = (f"answer={original_score:.2f}, reasoning={reason_score:.2f}, "
+                    f"final={score:.2f}; {note}; reasoning: {reason_note}")
+    except Exception as e:
+        score, note = 0.0, f"Eval error: {e}"
+
+    return score, note
+
+
 # ── Dataset class ────────────────────────────────────────────────────────────
 
 
@@ -266,7 +325,7 @@ class SciDocBench(ImageBaseDataset):
     TYPE = 'VQA'
 
     DATASET_URL = {
-        'SciDocBench': 'https://opencompass.openxlab.space/utils/VLMEval/SciDocBench.tsv',
+        'SciDocBench': 'https://opencompass.openxlab.space/utils/VLMEvalKit/SciDocBench.tsv',
     }
     DATASET_MD5 = {
         'SciDocBench': '8947fc96f82c825bd6c9c1167821cd5b',
@@ -278,7 +337,8 @@ class SciDocBench(ImageBaseDataset):
         if 'image' in line and isinstance(line['image'], list):
             tgt_path = []
             if 'image_path' in line:
-                image_path = line['image_path'] if isinstance(line['image_path'], list) else [line['image_path']]
+                image_path = (line['image_path'] if isinstance(line['image_path'], list)
+                              else [line['image_path']])
             else:
                 image_path = [f"{line['index']}_{i}.jpg" for i in range(len(line['image']))]
             for img, im_name in zip(line['image'], image_path):
@@ -320,108 +380,76 @@ class SciDocBench(ImageBaseDataset):
 
     @classmethod
     def evaluate(cls, eval_file, **judge_kwargs):
-        data = load(eval_file)
-        judge_model = None
+        global _judge_model
 
-        # Check if we need a judge model (for judge or reasoning eval)
-        needs_judge = False
-        for i in range(len(data)):
-            item = data.iloc[i]
-            if item.get('eval_method') == 'judge':
-                needs_judge = True
-                break
-            answer_note = item.get('answer_note', '{}')
-            if isinstance(answer_note, str):
-                try:
-                    note = json.loads(answer_note)
-                except Exception:
-                    note = {}
-            else:
-                note = answer_note if isinstance(answer_note, dict) else {}
-            if note.get('reasoning'):
-                needs_judge = True
-                break
+        nproc = judge_kwargs.pop('nproc', 4)
+        model_name = judge_kwargs.get('model', 'gpt-4o-mini')
 
-        if needs_judge:
-            judge_model = build_judge(max_tokens=1024, **judge_kwargs)
+        storage = get_intermediate_file_path(eval_file, f'_{model_name}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}', 'pkl')
 
-        results = []
-        for i in range(len(data)):
-            item = data.iloc[i]
-            sid = item['index']
-            prediction = str(item.get('prediction', ''))
-            eval_method = item.get('eval_method', 'judge')
-            category = item.get('category', '')
+        if osp.exists(storage):
+            logger.info(f'Scoring file {storage} already exists, will reuse.')
+        else:
+            data = load(eval_file)
+            _judge_model = build_judge(max_tokens=1024, **judge_kwargs)
 
-            # Parse answer
-            answer_raw = item.get('answer', '{}')
-            if isinstance(answer_raw, str):
-                try:
-                    answer = json.loads(answer_raw)
-                except Exception:
-                    answer = answer_raw
-            else:
-                answer = answer_raw
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            indices = [str(line['index']) for line in lines]
 
-            # Parse answer_note
-            answer_note_raw = item.get('answer_note', '{}')
-            if isinstance(answer_note_raw, str):
-                try:
-                    answer_note = json.loads(answer_note_raw)
-                except Exception:
-                    answer_note = {}
-            else:
-                answer_note = answer_note_raw if isinstance(answer_note_raw, dict) else {}
+            # Serialize each row to JSON for the worker function
+            tups = []
+            for line in lines:
+                item = {}
+                for col in data.columns:
+                    val = line[col]
+                    if isinstance(val, float) and pd.isna(val):
+                        val = ''
+                    item[col] = val
+                tups.append(json.dumps(item, ensure_ascii=False))
 
-            # Parse judge_prompt
-            judge_prompt = item.get('judge_prompt', '')
-            if isinstance(judge_prompt, float):
-                judge_prompt = ''
-            judge_prompt = judge_prompt if judge_prompt else None
+            # Load checkpoint and skip already-evaluated items
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+                logger.info(f'Loaded {len(ans)} cached results from {tmp_file}')
 
-            try:
-                if eval_method == 'json_match':
-                    score, note = eval_json_match(prediction, answer)
-                elif eval_method == 'judge':
-                    question = item.get('question', '')
-                    answer_str = json.dumps(answer, ensure_ascii=False) if isinstance(answer, dict) else str(answer)
-                    score, note = eval_judge(judge_model, prediction, answer_str, question, judge_prompt)
-                elif eval_method == 'exec_match':
-                    score, note = eval_exec_match(prediction, answer)
-                else:
-                    score, note = 0.0, f"Unknown eval_method: {eval_method}"
+            remaining_tups = [x for x, i in zip(tups, indices) if i not in ans]
+            remaining_indices = [i for i in indices if i not in ans]
 
-                # Reasoning verification
-                reasoning_ref = answer_note.get('reasoning') if isinstance(answer_note, dict) else None
-                if score > 0 and reasoning_ref and judge_model is not None:
-                    reason_score, reason_note = eval_reasoning(judge_model, prediction, reasoning_ref)
-                    original_score = score
-                    score = score * reason_score
-                    note = (f"answer={original_score:.2f}, reasoning={reason_score:.2f}, "
-                            f"final={score:.2f}; {note}; reasoning: {reason_note}")
+            if len(remaining_indices):
+                new_results = track_progress_rich(
+                    _eval_one_item,
+                    remaining_tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=remaining_indices,
+                    save=tmp_file,
+                )
+                for k, v in zip(remaining_indices, new_results):
+                    ans[k] = v
 
-            except Exception as e:
-                score, note = 0.0, f"Eval error: {e}"
-                logger.warning(f'Eval error for {sid}: {e}')
+            # Build result rows in original order
+            results = []
+            for line in lines:
+                sid = str(line['index'])
+                score, note = ans.get(sid, (0.0, 'Not evaluated'))
+                results.append({
+                    'index': sid,
+                    'category': line.get('category', ''),
+                    'eval_method': line.get('eval_method', ''),
+                    'score': score,
+                    'eval_note': note,
+                })
 
-            results.append({
-                'index': sid,
-                'category': category,
-                'eval_method': eval_method,
-                'score': score,
-                'eval_note': note,
-            })
+            result_df = pd.DataFrame(results)
+            dump(result_df, storage)
 
-            logger.info(f'[{i + 1}/{len(data)}] {sid} ({eval_method}) score={score:.2f}')
+        # Load from storage and aggregate
+        result_df = load(storage)
 
-        # Save detailed results
-        result_df = pd.DataFrame(results)
-        detail_file = get_intermediate_file_path(eval_file, '_detail', 'csv')
-        dump(result_df, detail_file)
-
-        # Aggregate scores by category and overall
         summary_rows = []
-        # Overall
         overall_score = result_df['score'].mean() * 100
         summary_rows.append({
             'Category': 'Overall',
@@ -429,7 +457,6 @@ class SciDocBench(ImageBaseDataset):
             'Score': round(overall_score, 2),
         })
 
-        # Per eval_method
         for method in sorted(result_df['eval_method'].unique()):
             subset = result_df[result_df['eval_method'] == method]
             summary_rows.append({
@@ -438,7 +465,6 @@ class SciDocBench(ImageBaseDataset):
                 'Score': round(subset['score'].mean() * 100, 2),
             })
 
-        # Per category
         for cat in sorted(result_df['category'].unique()):
             subset = result_df[result_df['category'] == cat]
             summary_rows.append({
