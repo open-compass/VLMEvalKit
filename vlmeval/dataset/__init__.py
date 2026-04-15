@@ -44,6 +44,7 @@ from .GUI.screenspot_v2 import ScreenSpotV2
 from .GUI.vbgd import VBGD
 from .GUI.venusbench import VenusBench_GD
 from .hipho import HiPhODataset
+from .lica_bench import LICABenchDataset
 from .image_base import ImageBaseDataset, img_root_map
 from .image_caption import ImageCaptionDataset
 from .image_ccocr import CCOCRDataset
@@ -293,6 +294,7 @@ IMAGE_DATASET = [
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,  # noqa: E501
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench,
+    LICABenchDataset,
 ]
 
 # add by EASI team
