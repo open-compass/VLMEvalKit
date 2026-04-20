@@ -1672,6 +1672,7 @@ smolvlm_series = {
         vlm.SmolVLM2, model_path="HuggingFaceTB/SmolVLM2-500M-Video-Instruct"
     ),
     "SmolVLM2": partial(vlm.SmolVLM2, model_path="HuggingFaceTB/SmolVLM2-2.2B-Instruct"),
+    "Solari": partial(vlm.SmolVLM2, model_path="Cubex11/Solari"),
 }
 
 instructblip_series = {
