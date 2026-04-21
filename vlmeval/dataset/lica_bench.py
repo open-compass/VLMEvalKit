@@ -13,12 +13,9 @@ This creates TSV files under $LMUDataRoot/LICABench/ that VLMEvalKit can consume
 import json
 import os
 import os.path as osp
-import re
 import warnings
-from collections import defaultdict
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, toliststr
@@ -57,7 +54,7 @@ def prepare_lica_bench_tsv(dataset_root: str, task_ids=None, out_dir=None):
     """
     try:
         from design_benchmarks import BenchmarkRegistry
-        from design_benchmarks.models.base import ModelInput, Modality
+        from design_benchmarks.models.base import Modality, ModelInput
     except ImportError:
         raise ImportError(
             'lica-bench is required: pip install "lica-bench @ git+https://github.com/purvanshi/lica-bench.git"'
