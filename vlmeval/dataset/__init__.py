@@ -100,6 +100,7 @@ from .omnispatialbench import OmniSpatialBench
 from .omtgbench import OMTGBench
 from .ost_bench import OSTDataset
 from .plotqa import PlotQA
+from .pixmocount import PixmoCountDataset
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 from .reasonmap_plus import ReasonMap_Plus
 from .refcoco import RefCOCODataset
@@ -280,7 +281,7 @@ IMAGE_DATASET = [
     LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot, VenusBench_GD,
     ScreenSpotV2, OSWorld_G, VBGD, MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
-    WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
+    WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA, PixmoCountDataset,
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
