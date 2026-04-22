@@ -29,6 +29,7 @@ from .taichu import TaichuVLAPI, TaichuVLRAPI
 from .taiyi import TaiyiAPI
 from .telemm import TeleMM2_API
 from .telemm_thinking import TeleMM2Thinking_API
+from .litellm_api import LiteLLMAPI
 from .together import TogetherAPI
 from .video_chat_online_v2 import VideoChatOnlineV2API
 
@@ -41,5 +42,5 @@ __all__ = [
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
     'VideoChatOnlineV2API', 'TeleMM2_API', 'TeleMM2Thinking_API', 'TogetherAPI', 'GCPVertexAPI',
-    'BedrockAPI', 'SenseChatVisionV2API', 'MiniMaxAPI',
+    'BedrockAPI', 'SenseChatVisionV2API', 'MiniMaxAPI', 'LiteLLMAPI',
 ]

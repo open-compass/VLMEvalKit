@@ -489,6 +489,37 @@ api_models = {
         max_tokens=2048,
         retry=10,
     ),
+    # LiteLLM — unified gateway to 100+ providers (pip install litellm)
+    # Use any litellm model string. Set provider-specific env vars for auth.
+    # Docs: https://docs.litellm.ai/docs/providers
+    "LiteLLM_GPT4o": partial(
+        api.LiteLLMAPI,
+        model="gpt-4o",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_GPT4o_Mini": partial(
+        api.LiteLLMAPI,
+        model="gpt-4o-mini",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_Claude_Sonnet4": partial(
+        api.LiteLLMAPI,
+        model="anthropic/claude-sonnet-4-20250514",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_Gemini_2.5_Flash": partial(
+        api.LiteLLMAPI,
+        model="gemini/gemini-2.5-flash-preview-04-17",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
     # Claude
     "Claude3V_Opus": partial(
         api.Claude3V, model="claude-3-opus-20240229", temperature=0, retry=10, verbose=False
