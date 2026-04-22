@@ -520,6 +520,34 @@ api_models = {
         max_tokens=2048,
         retry=10,
     ),
+    "LiteLLM_Gemini_2.5_Pro": partial(
+        api.LiteLLMAPI,
+        model="gemini/gemini-2.5-pro",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_Bedrock_Claude": partial(
+        api.LiteLLMAPI,
+        model="bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_Llama_Vision": partial(
+        api.LiteLLMAPI,
+        model="together_ai/meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_Groq_Llama4": partial(
+        api.LiteLLMAPI,
+        model="groq/meta-llama/llama-4-scout-17b-16e-instruct",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
     # Claude
     "Claude3V_Opus": partial(
         api.Claude3V, model="claude-3-opus-20240229", temperature=0, retry=10, verbose=False

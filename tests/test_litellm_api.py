@@ -325,6 +325,10 @@ class TestConfigRegistration:
         assert 'LiteLLM_GPT4o_Mini' in content
         assert 'LiteLLM_Claude_Sonnet4' in content
         assert 'LiteLLM_Gemini_2.5_Flash' in content
+        assert 'LiteLLM_Gemini_2.5_Pro' in content
+        assert 'LiteLLM_Bedrock_Claude' in content
+        assert 'LiteLLM_Llama_Vision' in content
+        assert 'LiteLLM_Groq_Llama4' in content
         assert 'api.LiteLLMAPI' in content
 
     def test_litellm_in_init_all(self):
