@@ -74,7 +74,7 @@ class LiteLLMAPI(BaseAPI):
         if has_images:
             content_list = []
             for item in inputs:
-                if item['type'] == 'text':
+                if item['type'] == 'text' and item['value']:
                     content_list.append({'type': 'text', 'text': item['value']})
                 elif item['type'] == 'image':
                     from PIL import Image
@@ -114,13 +114,13 @@ class LiteLLMAPI(BaseAPI):
         messages = self._prepare_messages(inputs)
 
         completion_kwargs = {
+            **self.litellm_kwargs,
             'model': self.model,
             'messages': messages,
             'temperature': temperature,
             'max_tokens': max_tokens,
             'timeout': self.timeout,
             'drop_params': True,
-            **self.litellm_kwargs,
         }
         if self.api_key:
             completion_kwargs['api_key'] = self.api_key

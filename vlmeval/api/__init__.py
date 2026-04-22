@@ -14,6 +14,7 @@ from .hunyuan import HunyuanVision
 from .jt_vl_chat import JTVLChatAPI
 from .jt_vl_chat_mini import JTVLChatAPI_2B, JTVLChatAPI_Mini
 from .kimivl_api import KimiVLAPI, KimiVLAPIWrapper
+from .litellm_api import LiteLLMAPI
 from .lmdeploy import LMDeployAPI, LMDeployWrapper
 from .minimax_api import MiniMaxAPI
 from .mug_u import MUGUAPI
@@ -29,7 +30,6 @@ from .taichu import TaichuVLAPI, TaichuVLRAPI
 from .taiyi import TaiyiAPI
 from .telemm import TeleMM2_API
 from .telemm_thinking import TeleMM2Thinking_API
-from .litellm_api import LiteLLMAPI
 from .together import TogetherAPI
 from .video_chat_online_v2 import VideoChatOnlineV2API
 
