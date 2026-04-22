@@ -54,6 +54,7 @@ from .monkey import Monkey, MonkeyChat
 from .moondream import Moondream1, Moondream2, Moondream3
 from .mplug_owl2 import mPLUG_Owl2
 from .mplug_owl3 import mPLUG_Owl3
+from .nanovlm import NanoVLM
 from .nvlm import NVLM
 from .ola import Ola
 from .omchat import OmChat
@@ -102,4 +103,3 @@ from .x_vl import X_VL_HF
 from .xcomposer import ShareCaptioner, XComposer, XComposer2, XComposer2_4KHD, XComposer2d5
 from .xgen_mm import XGenMM
 from .yi_vl import Yi_VL
-from .nanovlm import NanoVLM

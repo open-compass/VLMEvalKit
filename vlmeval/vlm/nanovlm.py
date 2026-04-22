@@ -7,26 +7,31 @@ from PIL import Image
 
 from .base import BaseModel
 
-# When the adapter is copied to VLMEvalKit/vlmeval/vlm/nanovlm.py inside the nanoVLM repo,
-# three levels up lands at the nanoVLM repo root (models/, data/, etc.)
-NANOVLM_ROOT = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+_NANOVLM_INSTALL_MSG = (
+    'nanoVLM is not pip-installable. To use this model:\n'
+    '  1. Clone the repo:  git clone https://github.com/huggingface/nanoVLM\n'
+    '  2. Set the env var: export NANOVLM_PATH=/path/to/nanoVLM\n'
+    '  3. Then run VLMEvalKit as usual.'
+)
 
 
 def _ensure_nanovlm_importable():
-    abs_root = os.path.abspath(NANOVLM_ROOT)
-    if abs_root not in sys.path:
-        sys.path.insert(0, abs_root)
+    nanovlm_path = os.environ.get('NANOVLM_PATH', '')
+    if nanovlm_path and nanovlm_path not in sys.path:
+        sys.path.insert(0, nanovlm_path)
 
 
 class NanoVLM(BaseModel):
-    INSTALL_REQ = False
+    INSTALL_REQ = True
     INTERLEAVE = True
 
     def __init__(self, model_path='lusxvr/nanoVLM-460M-8k', **kwargs):
         super().__init__()
         _ensure_nanovlm_importable()
-
-        from models.vision_language_model import VisionLanguageModel
+        try:
+            from models.vision_language_model import VisionLanguageModel
+        except ImportError:
+            raise ImportError(_NANOVLM_INSTALL_MSG)
         from data.processors import get_tokenizer, get_image_processor
 
         self.vlm = VisionLanguageModel.from_pretrained(model_path).to('cuda').eval()
@@ -106,7 +111,10 @@ class NanoVLM(BaseModel):
     # ------------------------------------------------------------------
     def _run_generation(self, prompt, pil_images):
         _ensure_nanovlm_importable()
-        from data.processors import get_image_string
+        try:
+            from data.processors import get_image_string
+        except ImportError:
+            raise ImportError(_NANOVLM_INSTALL_MSG)
 
         all_processed = []
         all_ratios = []
