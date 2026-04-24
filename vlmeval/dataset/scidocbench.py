@@ -549,3 +549,13 @@ class SciDocBench(ImageBaseDataset):
         logger.info(f'SciDocBench evaluation finished. Results saved to {score_file}')
         logger.info(f'\n{summary.to_string(index=False)}')
         return summary
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict[str, float | int]:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        if 'Category=Overall (answer)|Score' in metrics:
+            return {'Overall Acc': metrics['Category=Overall (answer)|Score']}
+        else:
+            return super().report_primary_metric(metrics)
