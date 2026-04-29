@@ -1,7 +1,9 @@
-from ...smp import *
-from .multiple_choice import extract_answer_from_item
-import numpy as np
 import re
+
+import numpy as np
+
+from vlmeval.dataset.utils.multiple_choice import extract_answer_from_item
+from vlmeval.smp.file import load
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -145,6 +147,33 @@ def extract_characters_regex(s):
     if len(s.split()) > 10 and not re.search('[ABCD]', s):
         return ''
     matches = re.search(r'[ABCD]', s)
+    if matches is None:
+        return ''
+    return matches[0]
+
+
+def extract_characters_regex_v2(s):
+    """Extract answer letter from A-H for Video-MME-v2 (supports up to 8 options)."""
+    s = s.strip()
+    answer_prefixes = [
+        'Final Answer:',
+        'The best answer is',
+        'The correct answer is',
+        'The answer is',
+        'The answer',
+        'The best option is',
+        'The correct option is',
+        'Best answer:',
+        'Best option:',
+        'Answer:',
+        'Option:',
+    ]
+    for answer_prefix in answer_prefixes:
+        s = s.replace(answer_prefix, '')
+
+    if len(s.split()) > 10 and not re.search('[A-H]', s):
+        return ''
+    matches = re.search(r'[A-H]', s)
     if matches is None:
         return ''
     return matches[0]

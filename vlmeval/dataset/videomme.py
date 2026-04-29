@@ -1,8 +1,18 @@
+import os
+import os.path as osp
+import pickle
+import warnings
+
+import numpy as np
+import pandas as pd
+import portalocker
 from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
+from PIL import Image
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5, modelscope_flag_set)
+from .utils import DEBUG_MESSAGE, build_judge
 from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -194,9 +204,10 @@ Respond with only the letter (A, B, C, or D) of the correct option.
             assert line < len(self)
             line = self.data.iloc[line]
 
-        frames, indices, video_info = self.save_video_frames(line['video'], video_llm)
-
+        subtitles = ''
         if self.use_subtitle and os.path.exists(osp.join(self.data_root, line['subtitle_path'])):
+            frames, indices, video_info = self.save_video_frames(line['video'], video_llm)
+
             import pysubs2
             subs = pysubs2.load(osp.join(self.data_root, line['subtitle_path']), encoding='utf-8')
             subtitles = []
@@ -211,8 +222,8 @@ Respond with only the letter (A, B, C, or D) of the correct option.
                 if sub_text.strip():
                     subtitles.append(sub_text)
             subtitles = '\n'.join(subtitles)
-        else:
-            subtitles = ''
+        elif not video_llm:
+            frames, indices, video_info = self.save_video_frames(line['video'], video_llm)
 
         message = [dict(type='text', value=self.SYS)]
         if video_llm:
@@ -231,7 +242,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.videomme import get_dimension_rating, extract_characters_regex, extract_option
+        from .utils.videomme import extract_characters_regex, extract_option, get_dimension_rating
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 
@@ -283,3 +294,13 @@ Respond with only the letter (A, B, C, or D) of the correct option.
         rating = get_dimension_rating(score_file)
         dump(rating, tgt_file)
         return rating
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        if 'overall|overall' in metrics:
+            return {'Overall Score': metrics['overall|overall'] * 100}
+        else:
+            return super().report_primary_metric(metrics)

@@ -3,17 +3,19 @@ MedQ-Bench Caption Dataset
 Medical image low-level description capability evaluation (description generation)
 """
 
-import os
-import pandas as pd
-from huggingface_hub import snapshot_download
-from .image_base import ImageBaseDataset
-from ..smp import *
-import re
-import warnings
 import json
+import os
+import os.path as osp
+import re
 import time
-import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import pandas as pd
+import requests
+from huggingface_hub import snapshot_download
+
+from vlmeval.smp import dump, get_cache_path, load
+from .image_base import ImageBaseDataset
 
 # Scoring prompt templates
 PROMPT_TEMPLATES = {
@@ -119,7 +121,7 @@ class MedQBench_Caption_Scorer:
         if match:
             try:
                 return float(match.group(1))
-            except:
+            except Exception:
                 return None
         # Compatible with cases returning only numbers, like "2" or {"score":2}
         try:
@@ -138,7 +140,7 @@ class MedQBench_Caption_Scorer:
         if match2:
             try:
                 return float(match2.group(1))
-            except:
+            except Exception:
                 return None
         return None
 

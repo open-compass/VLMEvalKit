@@ -1,21 +1,17 @@
+import logging
+import math
 import re
-import json
 
 import numpy as np
-import sys
-import math
-import os
-import argparse
 import timeout_decorator
-import logging
 
-from .image_base import ImageBaseDataset
+from ..smp import dump, get_intermediate_file_path, load
 from ..utils import track_progress_rich
-from ..smp import load, dump, get_intermediate_file_path
+from .image_base import ImageBaseDataset
 
 try:
     import sympy as sp
-    from sympy import simplify, Eq, sympify, Pow, pi
+    from sympy import Eq, Pow, simplify, sympify
     from sympy.parsing.latex import parse_latex
 except ImportError:
     logging.warning('sympy is not installed, please install it for MM-Math evaluation.')
@@ -27,22 +23,22 @@ class AutoScoringJudge:
         self.special_signal_map = {
             "\\left": "",
             "\\right": "",
-            "厘米":"",
+            "厘米": "",
             # "∶": ":",
             "，": ",",
             "$": "",
-            "（":"(",
-            "）":")",
-            "\\infty":"oo",
-            "\\colon ":":",
+            "（": "(",
+            "）": ")",
+            "\\infty": "oo",
+            "\\colon ": ":",
             # "\\approx": "=",
             # "\\simeq": "=",
             # "\\sim": "=",
             # "^\\prime": "'",
             # "^{\\prime}": "'",
-            "＋":"+",
+            "＋": "+",
             "\\, ": "",
-            "\\,":"",
+            "\\,": "",
             "^\\circ": "",
             "^{\\circ}": "",
             # "%": "",
@@ -51,7 +47,7 @@ class AutoScoringJudge:
         # MM-Math default precision
         self.precision = 1e-2
 
-    def trans_greater_sign_to_interval(self, expr:str):
+    def trans_greater_sign_to_interval(self, expr: str):
         expr_tmp = expr.split("<")
         return "(" + expr_tmp[0] + ", " + expr_tmp[-1] + ")"
 
@@ -93,7 +89,7 @@ class AutoScoringJudge:
 
         try:
             expression1, expression2 = self.preprocess(expression1, expression2)
-        except:
+        except Exception:
             return False
         if expression1 == expression2:
             # print("Exactly equal")
@@ -173,7 +169,7 @@ class AutoScoringJudge:
                 if self.interval_equal(expression1, expression2):
                     # print("Interval equivalent")
                     return True
-            except:
+            except Exception:
                 return False
 
         # Then check for numerical equality
@@ -181,14 +177,14 @@ class AutoScoringJudge:
             if self.numerical_equal(expression1, expression2):
                 # print("Numerically equivalent")
                 return True
-        except:
+        except Exception:
             pass
         # Then check if expressions are mathematically equal
         try:
             if self.expression_equal(expression1, expression2) and not ("=" in expression1 and "=" in expression2):
                 # print("Expression equivalent")
                 return True
-        except:
+        except Exception:
             pass
 
         # Lastly, check for equation equality
@@ -196,7 +192,7 @@ class AutoScoringJudge:
             if self.equation_equal(expression1, expression2):
                 # print("Equation equivalent")
                 return True
-        except:
+        except Exception:
             pass
 
         return False
@@ -254,7 +250,7 @@ class AutoScoringJudge:
                         return True
                     else:
                         return False
-                except:
+                except Exception:
                     return False
             elif exp_too_long:
                 print(f'Expression {exp1} or {exp2} is too long to compute. ')
@@ -264,7 +260,7 @@ class AutoScoringJudge:
                     simplified_expr = simplify(expr1_sym - expr2_sym)
                     num_value = simplified_expr.evalf()
                     return abs(num_value) < 1e-3
-                except:
+                except Exception:
                     return False
 
     def equation_equal(self, expression1, expression2):
@@ -367,7 +363,7 @@ class AutoScoringJudge:
 
         def sepcial_symbol_replace(expression):
 
-            expression = expression.replace("\\text{cm}^2", '').replace("\\text{cm}", "").replace("\\,cm", '').replace("\\text{ cm}", '').replace("cm", '').replace("\\text{分米}^2", '').replace("cm^{2}", '').replace("60 \\text{ cm}^2",'').replace("\\ \\text{m}", "").replace("\\text{米}","").strip()  # noqa: E501
+            expression = expression.replace("\\text{cm}^2", '').replace("\\text{cm}", "").replace("\\,cm", '').replace("\\text{ cm}", '').replace("cm", '').replace("\\text{分米}^2", '').replace("cm^{2}", '').replace("60 \\text{ cm}^2", '').replace("\\ \\text{m}", "").replace("\\text{米}", "").strip()  # noqa: E501
 
             expression = re.sub(r"(.+)m$", r"\1", expression)
 

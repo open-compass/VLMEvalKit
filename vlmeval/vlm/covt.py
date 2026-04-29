@@ -1,18 +1,17 @@
 from __future__ import annotations
-
+import logging
+import math
 import os
 import re
+import string
 import sys
 import warnings
-import math
-import logging
-import string
-import pandas as pd
 
+import pandas as pd
 import torch
 
+from vlmeval.smp import get_gpu_memory, get_rank_and_world_size
 from .base import BaseModel
-from vlmeval.smp import get_rank_and_world_size, get_gpu_memory
 
 
 def ensure_image_url(image: str) -> str:

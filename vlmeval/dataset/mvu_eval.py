@@ -1,18 +1,18 @@
 # mvu_eval.py
 
+import json
 import os
 import os.path as osp
-import json
-import zipfile
-import string
 import re
+import string
+import zipfile
 
 import numpy as np
 import pandas as pd
 from huggingface_hub import snapshot_download
 
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import LMUDataRoot, get_file_extension, get_intermediate_file_path
 from .video_base import VideoBaseDataset
 
 
@@ -173,8 +173,8 @@ class MVUEval(VideoBaseDataset):
     # ===================== 2) Single video frame extraction (reuse DREAM logic) =====================
     def save_video_frames_single(self, video_id):
         import decord
-        from PIL import Image
         import portalocker
+        from PIL import Image
 
         if self.fps > 0:
             vid_path = osp.join(self.data_root, video_id + '.mp4')
@@ -205,8 +205,8 @@ class MVUEval(VideoBaseDataset):
             return frame_paths
         else:
             import decord
-            from PIL import Image
             import portalocker
+            from PIL import Image
 
             frame_paths = self.frame_paths(video_id)
             flag = np.all([osp.exists(p) for p in frame_paths])

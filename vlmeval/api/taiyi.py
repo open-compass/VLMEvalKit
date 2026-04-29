@@ -1,6 +1,17 @@
-from vlmeval.smp import *
+import base64
+import json
+import os
+import string
+
+import numpy as np
+import pandas as pd
+import requests
+
 from vlmeval.api.base import BaseAPI
-from vlmeval.dataset import DATASET_TYPE, img_root_map
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string, get_logger, listinstr
+
+logger = get_logger(__name__)
 
 
 class TaiyiWrapper(BaseAPI):
@@ -33,7 +44,7 @@ class TaiyiWrapper(BaseAPI):
         super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
         assert url is not None, ('Please set the url ')
         self.url = url
-        self.logger.info(f'Using url: {self.url}; API Key: {self.key}')
+        logger.info(f'Using url: {self.url}; API Key: {self.key}')
 
     def use_custom_prompt(self, dataset):
         if DATASET_TYPE(dataset) == 'Y/N' or DATASET_TYPE(dataset) == 'MCQ' or DATASET_TYPE(dataset) == 'VQA':
@@ -51,7 +62,7 @@ class TaiyiWrapper(BaseAPI):
                 if msg['type'] == 'text':
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
-                    imgbytes = open(msg['value'],'rb').read()
+                    imgbytes = open(msg['value'], 'rb').read()
                     b64 = base64.b64encode(imgbytes).decode('ascii')
                     img_struct = dict(url=f'data:image/jpeg;base64,{b64}')
                     content_list.append(dict(type='image_url', image_url=img_struct))
@@ -174,7 +185,7 @@ class TaiyiWrapper(BaseAPI):
         try:
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
-        except:
+        except Exception:
             pass
         return ret_code, answer, response
 

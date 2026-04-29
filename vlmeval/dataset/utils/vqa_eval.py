@@ -2,8 +2,11 @@
 # Partly adopted from https://github.com/GT-Vision-Lab/VQA
 # Copyright (c) 2014, Aishwarya Agrawal
 
-from ...smp import *
 from typing import Optional
+
+import numpy as np
+
+from vlmeval.smp import istype, listinstr, process_punctuation
 
 
 def _process_digit_article(inText):
@@ -286,7 +289,7 @@ def process_line(line, method='vqa_score'):
 
 
 def process_line_WildDoc(line, method='vqa_score'):
-    ret = {'index':line["index"]}
+    ret = {'index': line["index"]}
     if istype(line['answer'], list):
         answers = eval(line['answer'])
     else:

@@ -1,10 +1,11 @@
-import sys
-import torch
-from transformers import AutoModelForCausalLM
+import logging
 import warnings
-from .base import BaseModel
-from ..smp import *
+
+import torch
 from PIL import Image
+from transformers import AutoModelForCausalLM
+
+from .base import BaseModel
 
 
 class DeepSeekVL2(BaseModel):
@@ -14,7 +15,7 @@ class DeepSeekVL2(BaseModel):
 
     def check_install(self):
         try:
-            import deepseek_vl2
+            import deepseek_vl2  # noqa: F401
         except Exception as e:
             logging.critical(
                 'Please first install deepseek_vl2 from source codes in: https://github.com/deepseek-ai/DeepSeek-VL2')
@@ -24,7 +25,7 @@ class DeepSeekVL2(BaseModel):
         self.check_install()
         assert model_path is not None
         self.model_path = model_path
-        from deepseek_vl2.models import DeepseekVLV2Processor, DeepseekVLV2ForCausalLM
+        from deepseek_vl2.models import DeepseekVLV2ForCausalLM, DeepseekVLV2Processor
 
         self.vl_chat_processor = DeepseekVLV2Processor.from_pretrained(model_path)
         self.tokenizer = self.vl_chat_processor.tokenizer

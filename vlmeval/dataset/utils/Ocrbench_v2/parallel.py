@@ -1,5 +1,6 @@
-from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor, as_completed
+
+from tqdm import tqdm
 
 
 def parallel_process(array, function, n_jobs=16, use_kwargs=False, front_num=0):

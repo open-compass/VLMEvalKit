@@ -11,10 +11,11 @@ import os
 
 import requests
 
-from ..smp import get_logger
+from vlmeval.smp.log import get_logger
 from .base import BaseAPI
 
 MINIMAX_API_BASE = "https://api.minimax.io/v1/chat/completions"
+logger = get_logger(__name__)
 
 
 class MiniMaxAPI(BaseAPI):
@@ -56,7 +57,7 @@ class MiniMaxAPI(BaseAPI):
             **kwargs,
         )
 
-        self.logger.info(f"MiniMaxAPI: model={self.model}, api_base={self.api_base}")
+        logger.info(f"MiniMaxAPI: model={self.model}, api_base={self.api_base}")
 
     def _prepare_messages(self, inputs):
         """Build OpenAI-style messages from VLMEvalKit input format."""
@@ -105,7 +106,7 @@ class MiniMaxAPI(BaseAPI):
             )
         except Exception as err:
             if self.verbose:
-                self.logger.error(f"{type(err).__name__}: {err}")
+                logger.error(f"{type(err).__name__}: {err}")
             return -1, self.fail_msg, str(err)
 
         ret_code = response.status_code
@@ -117,7 +118,7 @@ class MiniMaxAPI(BaseAPI):
             answer = data["choices"][0]["message"]["content"].strip()
         except Exception as err:
             if self.verbose:
-                self.logger.error(f"{type(err).__name__}: {err}")
-                self.logger.error(response.text)
+                logger.error(f"{type(err).__name__}: {err}")
+                logger.error(response.text)
 
         return ret_code, answer, response

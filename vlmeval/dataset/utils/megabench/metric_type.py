@@ -1,7 +1,8 @@
-from functools import cached_property
-from enum import Enum
-from .utils import lazy_import
 import logging
+from enum import Enum
+from functools import cached_property
+
+from .utils import lazy_import
 
 
 class MetricType(Enum):

@@ -1,7 +1,7 @@
-from vlmeval.smp import *
+import os
+
 from vlmeval.api.base import BaseAPI
-from time import sleep
-import mimetypes
+from vlmeval.smp import encode_image_file_to_base64
 
 
 class Reka_Wrapper(BaseAPI):
@@ -20,7 +20,7 @@ class Reka_Wrapper(BaseAPI):
                  **kwargs):
 
         try:
-            import reka
+            import reka  # noqa: F401
         except ImportError:
             raise ImportError('Please install reka by running "pip install reka-api"')
 

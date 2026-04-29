@@ -1,12 +1,13 @@
-# flake8: noqa
+import os.path as osp
 import re
-from functools import partial
+from collections import defaultdict
 
+import pandas as pd
+
+from vlmeval.smp import dump, get_intermediate_file_path, load, toliststr
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
-from ..utils import track_progress_rich
-
+from .utils import DEBUG_MESSAGE, build_judge
 
 SYSTEM_PROMPT = """\
 Please act as an impartial evaluator and assess the quality of the responses provided by two AI assistants to a given user prompt and accompanying image. You will be provided with Assistant A's and Assistant B's answers. Your task is to determine which assistant's response is superior.
@@ -30,7 +31,7 @@ After providing your explanation, you must output only one of the following choi
 5. Assistant B is significantly better: [[B>>A]]
 
 Example output: "My final verdict is tie: [[A=B]]".\
-"""
+"""  # noqa: E501
 
 SYSTEM_PROMPT_GT = """\
 Please act as an impartial evaluator and assess the quality of the responses provided by two AI assistants to a given user prompt and accompanying image. You will be provided with Assistant A's and Assistant B's answers. Your task is to determine which assistant's response is superior.
@@ -54,7 +55,7 @@ After providing your explanation, you must output only one of the following choi
 5. Assistant B is significantly better: [[B>>A]]
 
 Example output: "My final verdict is tie: [[A=B]]".\
-"""
+"""  # noqa: E501
 
 PROMPT_TEMPLATE = """**INPUT**:
 
@@ -97,12 +98,12 @@ def MMAlignBench_auxeval(model, line):
         config = dict(question=line['question'], gt=line['gt'], answer_1=line['A'], answer_2=line['B'])
         prompt = SYSTEM_PROMPT_GT + '\n' + PROMPT_TEMPLATE_GT.format(**config)
         # prompt = PROMPT_TEMPLATE.format(**config)
-        print('gt_prompt'+prompt)
+        print('gt_prompt' + prompt)
     else:
         config = dict(question=line['question'], answer_1=line['A'], answer_2=line['B'])
         prompt = SYSTEM_PROMPT + '\n' + PROMPT_TEMPLATE.format(**config)
         # prompt = PROMPT_TEMPLATE.format(**config)
-        print('prompt'+prompt)
+        print('prompt' + prompt)
 
     prefix = 'data:image/jpeg;base64,'
     img = prefix + line['image']
@@ -214,7 +215,7 @@ class MMAlignBench(ImageBaseDataset):
                 for k, v in zip(indices, new_results):
                     ans[k] = {'score': v[0], 'resp': v[1]}
             else:
-                for k,v in ans.items():
+                for k, v in ans.items():
                     ans[k] = {'score': v[0], 'resp': v[1]}
             # breakpoint()
             data['score'] = [ans[x]['score'] for x in data['index']]

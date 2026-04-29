@@ -1,7 +1,14 @@
+import os
+import os.path as osp
+import string
+import warnings
+
+import pandas as pd
+
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import LMUDataRoot, file_size, get_intermediate_file_path
 from .text_base import TextBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
+from .utils import DEBUG_MESSAGE, build_judge
 
 
 class TextMCQDataset(TextBaseDataset):
@@ -43,7 +50,9 @@ class TextMCQDataset(TextBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import report_acc, report_acc_MMT, mcq_circular_eval, mcq_vanilla_eval
+        from .utils.multiple_choice import (mcq_circular_eval, mcq_vanilla_eval, report_acc,
+                                            report_acc_MMT)
+
         # assert dataset is not None
         dataset_map = {
             'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',

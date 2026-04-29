@@ -1,13 +1,16 @@
+import re
+import string
+import warnings
+
+import pandas as pd
 import torch
 import transformers
-from transformers import AutoModelForCausalLM, AutoTokenizer
 from PIL import Image
-import warnings
-import re
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import listinstr
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
 
 
 class BunnyLLama3(BaseModel):

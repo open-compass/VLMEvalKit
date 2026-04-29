@@ -1,8 +1,8 @@
 # vlmeval/vlm/cosmos.py
-import os
-from .base import BaseModel
 from qwen_vl_utils import process_vision_info
 from transformers import AutoProcessor
+
+from .base import BaseModel
 
 
 class Cosmos(BaseModel):

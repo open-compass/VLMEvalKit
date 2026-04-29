@@ -1,10 +1,16 @@
+import os.path as osp
 import string
-from vlmeval import *
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
+import warnings
+from collections import defaultdict
+
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import get_intermediate_file_path
+from vlmeval.utils import track_progress_rich
 from .image_vqa import ImageVQADataset
 from .utils.judge_util import build_judge
-from ..utils import track_progress_rich
 
 EVAL_TEMPLATE = """
 You are a strict evaluator assessing answer correctness. You must score the model's prediction on a scale from 0 to 9.

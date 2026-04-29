@@ -1,21 +1,21 @@
-import json
-import time
-import Levenshtein
-import evaluate
-import random
-import pdb
 import copy
-import pandas as pd
+import json
+import pdb
+import random
+import time
+from collections import defaultdict, deque
 
-from .utils import save_paired_result,normalized_table
-from collections import defaultdict
-from apted.helpers import Tree
+import evaluate
+import Levenshtein
+import pandas as pd
 from apted import APTED, Config
+from apted.helpers import Tree
 from lxml import etree, html
-from collections import deque
-from tqdm import tqdm
-from collections import defaultdict
 from tabulate import tabulate
+from tqdm import tqdm
+
+from .utils import normalized_table, save_paired_result
+
 
 def show_result(results):
     for metric_name in results.keys():

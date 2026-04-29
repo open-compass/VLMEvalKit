@@ -1,16 +1,15 @@
-import os
-import torch
-from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-import logging
 import copy
-from typing import List, Optional, Union, Tuple, Dict
+import logging
+import string
 import warnings
+from typing import Dict, Optional, Union
+
+import pandas as pd
+import torch
 import transformers
 from PIL import Image
-import io
-import pandas as pd
+
+from .base import BaseModel
 
 
 def preprocess_llama3(
@@ -47,7 +46,7 @@ def preprocess_llama3(
             try:
                 role = conv["role"]
                 content = conv["content"]
-            except:
+            except Exception:
                 role = conv["from"]
                 content = conv["value"]
 
@@ -89,8 +88,8 @@ class InsightV(BaseModel):
     ) -> None:
         super().__init__()
         try:
-            from llava.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
+            from llava.model.builder import load_pretrained_model
         except Exception as err:
             logging.critical('Please install Insight-V before using Insight-V')
             logging.critical('Please install Insight-V from https://github.com/dongyh20/Insight-V')
@@ -160,9 +159,12 @@ class InsightV(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         try:
-            from llava.mm_utils import process_images, tokenizer_image_token
-            from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IGNORE_INDEX  # noqa E501
-            from llava.conversation import conv_templates, SeparatorStyle
+            from llava.constants import DEFAULT_IM_END_TOKEN  # noqa: F401
+            from llava.constants import IMAGE_TOKEN_INDEX  # noqa: F401
+            from llava.constants import (DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN,  # noqa: F401
+                                         IGNORE_INDEX)
+            from llava.conversation import SeparatorStyle, conv_templates  # noqa: F401
+            from llava.mm_utils import process_images, tokenizer_image_token  # noqa: F401
         except Exception as err:
             logging.critical('Please install Insight-V before using Insight-V')
             logging.critical('Please install Insight-V from https://github.com/dongyh20/Insight-V')

@@ -1,7 +1,7 @@
-import numpy as np
 import cv2
-import json
+import numpy as np
 from skimage.metrics import peak_signal_noise_ratio as psnr
+
 from ..base_metric import BaseMetric
 from .CLIP_video import sample_frames_from_video
 

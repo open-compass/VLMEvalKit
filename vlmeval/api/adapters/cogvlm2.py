@@ -4,7 +4,6 @@ import pandas as pd
 
 from vlmeval.dataset import DATASET_TYPE
 from vlmeval.smp import cn_string
-
 from .base import ModelAdapter, register_adapter
 
 

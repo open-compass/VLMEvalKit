@@ -8,19 +8,15 @@
 # --------------------------------------------------------
 
 import math
-import numpy as np
 from typing import Dict, Optional, Tuple
+
+import numpy as np
 import torch
-from torch import Tensor, nn
 import torch.nn.functional as F
+from torch import Tensor, nn
 from torch.nn import LayerNorm, Parameter
-from .modules import (
-    GradMultiply,
-    SamePad,
-    get_activation_fn,
-    GLU_Linear,
-    quant_noise,
-)
+
+from .modules import GLU_Linear, GradMultiply, SamePad, get_activation_fn, quant_noise
 
 
 class TransformerEncoder(nn.Module):

@@ -1,15 +1,16 @@
 import os
-import torch
-import numpy as np
-import cv2
-
-from tqdm import tqdm
 from typing import Literal
+
+import cv2
+import numpy as np
+import torch
 from torch.utils.data import DataLoader
+from tqdm import tqdm
+
 from vlmeval.smp.file import LMUDataRoot
+from ..base_metric import BaseMetric
 from .viclip.simple_tokenizer import SimpleTokenizer as _Tokenizer
 from .viclip.viclip import ViCLIP
-from ..base_metric import BaseMetric
 
 
 def get_clip(name="viclip", ckpt_path="sarena_ckpt/ViClip-InternVid-10M-FLT.pth"):

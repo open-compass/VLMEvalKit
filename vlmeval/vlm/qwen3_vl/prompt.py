@@ -62,6 +62,7 @@ class Qwen3VLPromptMixin:
         Matches Qwen3-VL multi-image style shown in README examples.
         """
         import string
+
         import pandas as pd
 
         tgt_path = self.dump_image(line, dataset)
@@ -97,6 +98,7 @@ class Qwen3VLPromptMixin:
         Keep images before the text per Qwen3-VL convention.
         """
         import string
+
         import pandas as pd
 
         tgt_path = self.dump_image(line, dataset)

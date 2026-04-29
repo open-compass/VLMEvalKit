@@ -1,17 +1,15 @@
 from __future__ import annotations
-
-import os
-import torch
-import re
 import logging
+import re
 import warnings
 
-from .base import BaseModel
-from .qwen2_vl.prompt import Qwen2VLPromptMixin
-from .qwen2_vl.model import ensure_image_url, ensure_video_url
-from ..smp import get_gpu_memory
-from ..dataset import DATASET_TYPE
+import torch
 
+from ..dataset import DATASET_TYPE
+from ..smp import get_gpu_memory
+from .base import BaseModel
+from .qwen2_vl.model import ensure_image_url, ensure_video_url
+from .qwen2_vl.prompt import Qwen2VLPromptMixin
 
 SYSTEM_PROMPT = """A conversation between user and assistant. The user asks a question, and the Assistant solves it. The assistant MUST first think about the reasoning process in the mind and then provide the user with the answer. The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively. When referring to particular objects in the reasoning process, the assistant MUST localize the object with bounding box coordinates between <box> and </box>. You MUST strictly follow the format."""   # noqa: E501
 
@@ -59,7 +57,7 @@ class TreeVGR(Qwen2VLPromptMixin, BaseModel):
         assert model_path is not None
         self.model_path = model_path
 
-        from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+        from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
         MODEL_CLS = Qwen2_5_VLForConditionalGeneration
         self.processor = AutoProcessor.from_pretrained(model_path)
 

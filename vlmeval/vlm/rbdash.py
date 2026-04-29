@@ -1,12 +1,17 @@
-import sys
-import torch
-import os.path as osp
+import logging
 import os
+import os.path as osp
+import string
+import sys
 import warnings
-from .base import BaseModel
-from ..dataset import DATASET_TYPE
-from ..smp import *
+
+import pandas as pd
+import torch
 from PIL import Image
+
+from vlmeval.smp import download_file, listinstr
+from .base import BaseModel
+
 '''
     Please follow the instructions to download ckpt.
     https://github.com/RBDash-Team/RBDash?tab=readme-ov-file#pretrained-weights
@@ -27,8 +32,8 @@ class RBDash(BaseModel):
         assert model_path == 'RBDash-Team/RBDash-v1.5', 'We only support RBDash-v1.5 for now'
         sys.path.append(root)
         try:
-            from rbdash.model.builder import load_pretrained_model
             from rbdash.mm_utils import get_model_name_from_path
+            from rbdash.model.builder import load_pretrained_model
         except Exception as err:
             logging.critical(
                 'Please first install RBdash and set the root path to use RBdash, '
@@ -84,10 +89,10 @@ class RBDash(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         try:
-            from rbdash.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, \
-                DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+            from rbdash.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                          DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX)
             from rbdash.conversation import conv_templates
-            from rbdash.mm_utils import tokenizer_image_token, process_images
+            from rbdash.mm_utils import process_images, tokenizer_image_token
         except Exception as err:
             logging.critical(
                 'Please first install RBdash and set the root path to use RBdash, '

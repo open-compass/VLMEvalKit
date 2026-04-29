@@ -5,9 +5,8 @@ import string
 import pandas as pd
 from PIL import Image
 
-from vlmeval.dataset import DATASET_TYPE, DATASET_MODALITY
-from vlmeval.smp import listinstr, get_logger, LMUDataRoot
-
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import LMUDataRoot, get_logger, listinstr
 from .base import ModelAdapter, register_adapter
 
 logger = get_logger(__name__)
@@ -44,13 +43,14 @@ class InternS1_1NoThinkAdapter(ModelAdapter):
         return False
 
     def build_prompt(self, line, dataset=None):
-        import yaml
         from pathlib import Path
-        from vlmeval.vlm.internvl.utils import (
-            build_mcq_cot_prompt, build_multi_choice_prompt,
-            build_qa_cot_prompt, format_nav_prompt, pile_action_history,
-        )
+
+        import yaml
+
         from vlmeval.dataset import build_dataset, infer_dataset_basename
+        from vlmeval.vlm.internvl.utils import (build_mcq_cot_prompt, build_multi_choice_prompt,
+                                                build_qa_cot_prompt, format_nav_prompt,
+                                                pile_action_history)
 
         assert self.use_custom_prompt(dataset)
 
@@ -121,7 +121,7 @@ class InternS1_1NoThinkAdapter(ModelAdapter):
         return message
 
     def process_inputs(self, inputs, dataset=None):
-        from vlmeval.vlm.internvl.utils import reorganize_prompt, build_video_prompt
+        from vlmeval.vlm.internvl.utils import build_video_prompt, reorganize_prompt
 
         image_items = [x.copy() for x in inputs if x['type'] == 'image']
         image_num = len(image_items)
@@ -261,7 +261,7 @@ class InternS1_1ThinkAdapter(ModelAdapter):
         return msgs
 
     def process_inputs(self, inputs, dataset=None):
-        from vlmeval.vlm.internvl.utils import reorganize_prompt, build_video_prompt
+        from vlmeval.vlm.internvl.utils import build_video_prompt, reorganize_prompt
 
         image_items = [x.copy() for x in inputs if x['type'] == 'image']
         image_num = len(image_items)

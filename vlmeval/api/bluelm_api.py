@@ -1,9 +1,15 @@
-from vlmeval.smp import *
-from vlmeval.api.base import BaseAPI
-from typing import Iterable, List
+import base64
+import json
 import os
 import re
-import json
+
+import numpy as np
+import requests
+
+from vlmeval.api.base import BaseAPI
+from vlmeval.smp import concat_images_vlmeval, get_logger
+
+logger = get_logger(__name__)
 
 
 def split_think(text: str) -> str:
@@ -19,7 +25,7 @@ def split_think(text: str) -> str:
     return answer
 
 
-def remove_boxed(s:str):
+def remove_boxed(s: str):
     left = '\\boxed{'
     try:
         assert s[:len(left)] == left
@@ -29,7 +35,7 @@ def remove_boxed(s:str):
         return None
 
 
-def last_boxed_only_string(string:str):
+def last_boxed_only_string(string: str):
     idx = string.rfind('\\boxed')
     if idx < 0:
         idx = string.rfind('\\fbox')
@@ -57,7 +63,7 @@ def last_boxed_only_string(string:str):
     return retval
 
 
-def extract_boxed(pred_str:str, strip_double_curly_brace=False):
+def extract_boxed(pred_str: str, strip_double_curly_brace=False):
     boxed_str = last_boxed_only_string(pred_str)
     if boxed_str is None:
         return pred_str  # 返回原始字符串
@@ -71,7 +77,7 @@ def extract_boxed(pred_str:str, strip_double_curly_brace=False):
     return answer
 
 
-def extract_boxed_answer(pred_str:str):
+def extract_boxed_answer(pred_str: str):
     if pred_str.rfind('\\boxed') < 0 and pred_str.rfind('\\fbox') < 0:
         return pred_str
     return extract_boxed(pred_str, strip_double_curly_brace=True)
@@ -171,7 +177,7 @@ class BlueLMWrapper(BaseAPI):
                        'AI2D_TEST', 'AI2D_TEST_TO_MASK', 'MMMU_DEV_VAL', 'MMStar']:
             prompt = prompt.replace('Please select the correct answer from the options above.',
                                     'Answer with the option’s letter from the given choices directly.')
-            prompt = prompt.replace('Question: Hint: Please answer the question and provide the correct option letter, e.g., A, B, C, D, at the end.\n','')  # noqa: E501
+            prompt = prompt.replace('Question: Hint: Please answer the question and provide the correct option letter, e.g., A, B, C, D, at the end.\n', '')  # noqa: E501
         elif dataset in ['ChartQA_TEST']:
             prompt = prompt.replace('Answer the question using a single word or phrase.',
                                     'Answer the question using a single number or phrase.')
@@ -219,12 +225,12 @@ class BlueLMWrapper(BaseAPI):
                 answer = extract_boxed_answer(answer)
             else:
                 answer = split_think(response[0])
-            self.logger.info(f'answer : {answer}')
+            logger.info(f'answer : {answer}')
             return 0, answer, 'Succeeded! '
         except Exception as err:
             if self.verbose:
-                self.logger.error(f'{type(err)}: {err}')
-                self.logger.error(f'The input messages are {inputs}.')
+                logger.error(f'{type(err)}: {err}')
+                logger.error(f'The input messages are {inputs}.')
             return -1, '', ''
 
 

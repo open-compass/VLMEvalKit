@@ -1,12 +1,9 @@
-from functools import cached_property
 from enum import Enum
-from .parsing.json_parse import JsonParse
-from .parsing.answer_str_parse import (
-    AnswerStrParse,
-    AsciiAnswerStrParse,
-    VerbatimAnswerStrParse,
-)
+from functools import cached_property
+
 from vlmeval.dataset.utils.megabench.parsing.dummy_parse import DummyParse
+from .parsing.answer_str_parse import AnswerStrParse, AsciiAnswerStrParse, VerbatimAnswerStrParse
+from .parsing.json_parse import JsonParse
 
 
 class ResponseParseType(Enum):

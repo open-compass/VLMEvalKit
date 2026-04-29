@@ -1,7 +1,7 @@
 import torch
+from cdfvd import fvd
 
 from ..base_metric import BaseMetric
-from cdfvd import fvd
 
 
 class FVDCalculator(BaseMetric):

@@ -1,7 +1,9 @@
+import logging
+
 import torch
 from PIL import Image
+
 from .base import BaseModel
-from ..smp import *
 
 
 class DeepSeekOCR(BaseModel):

@@ -1,12 +1,13 @@
-import os
 import re
-from tqdm import tqdm
-import pandas as pd
-
 from os import path as osp
+
+import pandas as pd
+from tqdm import tqdm
+
+from ..smp import decode_base64_to_image_file, dump, get_intermediate_file_path, load
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import decode_base64_to_image_file, load, dump, get_intermediate_file_path
+from .utils import DEBUG_MESSAGE, build_judge
+
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 

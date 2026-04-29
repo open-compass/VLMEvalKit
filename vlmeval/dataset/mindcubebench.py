@@ -1,13 +1,11 @@
-import os
 import ast
-
-from tqdm import tqdm
-
-from .image_mcq import ImageMCQDataset
-from ..smp.file import load
-from ..smp.misc import toliststr, get_cache_path, modelscope_flag_set
+import os
 
 from huggingface_hub import snapshot_download
+from tqdm import tqdm
+
+from vlmeval.smp import get_cache_path, load, modelscope_flag_set, toliststr
+from .image_mcq import ImageMCQDataset
 
 
 class MindCubeBench(ImageMCQDataset):
@@ -152,7 +150,7 @@ class MindCubeBench(ImageMCQDataset):
         return [s for s in segs if s['value']]
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import eval_mcq_score, build_mcq_score_fn
+        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, eval_mcq_score
 
         # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
         score_fn = build_mcq_score_fn(**judge_kwargs)

@@ -1,13 +1,11 @@
-import torch
-import torch.nn as nn
+import math
+import os
 import re
 
-import math
+import torch
+import torch.nn as nn
 
 from .pooler_projector import NormalizedDwPooler
-import os
-import math
-
 
 if 'REGIONAL_POOL' in os.environ:
     REGIONAL_POOL = os.environ['REGIONAL_POOL']

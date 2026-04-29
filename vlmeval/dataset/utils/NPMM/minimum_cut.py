@@ -41,7 +41,7 @@ def validation(graph, answer):
         subset1, subset2 = subsets
         if not (isinstance(subset1, list) and isinstance(subset2, list)):
             return True, total_weight_sum, "each subset should be a list of nodes"
-    except:
+    except Exception:
         return True, total_weight_sum, "invalid answer format"
 
     # Convert to sets

@@ -50,7 +50,7 @@ class ModelAdapter:
         """Return image path(s) for this sample."""
         return self.dump_image_func(line)
 
-    def override_model_args(self, dataset) -> dict:
+    def override_model_args(self, dataset, gen_kwargs) -> dict:
         """Return extra generation kwargs for this dataset.
 
         Recognised keys: ``system_prompt``, ``temperature``, etc.

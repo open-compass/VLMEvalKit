@@ -1,11 +1,13 @@
+import string
+
 import pandas as pd
 import torch
-import string
 from PIL import Image
-from .base import BaseModel
-from ..dataset import DATASET_TYPE
-from ..smp import listinstr, cn_string
 from transformers import AutoModel, AutoTokenizer, CLIPImageProcessor
+
+from ..dataset import DATASET_TYPE
+from ..smp import cn_string, listinstr
+from .base import BaseModel
 
 
 class FlashVL(BaseModel):

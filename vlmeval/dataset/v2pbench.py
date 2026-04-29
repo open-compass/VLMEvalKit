@@ -1,11 +1,13 @@
-from huggingface_hub import snapshot_download
-from ..smp import *
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
 import os
-import zipfile
+import os.path as osp
 import shutil
+import zipfile
+
+import numpy as np
+from huggingface_hub import snapshot_download
+
+from vlmeval.smp import dump, extract_json_objects, get_cache_path, load, modelscope_flag_set
+from .video_base import VideoBaseDataset
 
 prompt_multi_choice = "\nGive only your option letter that accurately addresses the question, no other words."
 
@@ -161,16 +163,16 @@ Please analyze these images and provide the answer to the question about the vid
             jsons = list(extract_json_objects(s))
             assert len(jsons) == 1
             return jsons[0]
-        except:
+        except Exception:
             if '{' in s and s.find('{') == s.rfind('{'):
                 sub_str = s[s.find('{') + 1:].strip()
                 lines = sub_str.split('\n')
                 res = {}
-                for l in lines:
-                    l = l.strip()
-                    if ': ' in l:
-                        key = l.split(': ')[0].strip()
-                        val = l.split(': ')[1].strip()
+                for line in lines:
+                    line = line.strip()
+                    if ': ' in line:
+                        key = line.split(': ')[0].strip()
+                        val = line.split(': ')[1].strip()
                         key = V2PBench.remove_side_quote(key)
                         val = V2PBench.remove_side_quote(val)
                         if len(key) and len(val):
@@ -180,7 +182,8 @@ Please analyze these images and provide the answer to the question about the vid
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.v2pbench.cau_acc import calu_acc_main, xlsx2json, extract_characters_regex, remove_think_blocks
+        from .utils.v2pbench.cau_acc import (calu_acc_main, extract_characters_regex,
+                                             remove_think_blocks, xlsx2json)
 
         assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
 

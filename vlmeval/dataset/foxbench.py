@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import json
 import re
 from pathlib import Path
@@ -7,12 +6,17 @@ from typing import Dict, List
 
 import jieba
 import nltk
-from nltk.metrics import precision, recall, f_measure
+import numpy as np
+from nltk.metrics import f_measure, precision, recall
 from nltk.translate import meteor_score
 from rouge import Rouge
 
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import get_intermediate_file_path
+from vlmeval.smp.log import get_logger
 from .image_base import ImageBaseDataset
-from ..smp import *
+
+logger = get_logger(__name__)
 
 
 def _contain_chinese(text: str) -> bool:
@@ -97,7 +101,7 @@ class FoxBench(ImageBaseDataset):
 
     TYPE = "QA"
     MODALITY = "IMAGE"
-    DATASET_URL = {'FoxBench':'https://huggingface.co/datasets/EasonFan/fox_benchmark.tsv/resolve/main/fox_benchmark_data.tsv'}  # noqa: E501
+    DATASET_URL = {'FoxBench': 'https://huggingface.co/datasets/EasonFan/fox_benchmark.tsv/resolve/main/fox_benchmark_data.tsv'}  # noqa: E501
     DATASET_MD5 = {'FoxBench': '153b88812ad58495558326bab9c90f8e'}
 
     def load_data(self, dataset):
@@ -224,8 +228,6 @@ class FoxBench(ImageBaseDataset):
         dump(scores, score_file)
         detail_file = get_intermediate_file_path(eval_file, "_foxbench_detail", "json")
         dump(details, detail_file)
-
-        logger = get_logger('Evaluation')
         logger.info(f'FoxBench successfully finished evaluating {eval_file}')
         logger.info(f'Results saved in {score_file}')
         logger.info('Score Summary:')

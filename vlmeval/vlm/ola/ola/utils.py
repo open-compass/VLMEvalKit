@@ -13,14 +13,15 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import os
-import sys
-import torch
 import logging
 import logging.handlers
+import os
+import sys
+
+import torch
 import transformers
 
-from ...ola.ola.constants import LOGDIR
+from .constants import LOGDIR
 
 server_error_msg = "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**"
 moderation_msg = "YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES. PLEASE TRY AGAIN."

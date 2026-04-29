@@ -17,17 +17,15 @@ from typing import List, Optional, Tuple, Union
 import torch
 import torch.utils.checkpoint
 from torch import nn
-from transformers import (
-    PreTrainedModel,
-    AutoModel,
-    AutoModelForCausalLM,
-)
+from transformers import AutoModel, AutoModelForCausalLM, PreTrainedModel
 from transformers.activations import ACT2FN
 from transformers.cache_utils import Cache
 from transformers.modeling_outputs import ModelOutput
-from .configuration_ursa import UrsaConfig, AlignerConfig, VisionConfig
+
 from .clip_encoder import CLIPVisionTower, HybridVisionTower
+from .configuration_ursa import AlignerConfig, UrsaConfig, VisionConfig
 from .projector import MlpProjector
+
 
 @dataclass
 class UrsaCausalLMOutputWithPast(ModelOutput):

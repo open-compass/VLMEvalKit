@@ -1,10 +1,11 @@
 import abc
 import base64
 import os
-import requests
 import re
 from io import BytesIO
 from mimetypes import guess_type
+
+import requests
 from PIL import Image
 
 

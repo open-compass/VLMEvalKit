@@ -1,8 +1,7 @@
-import re
 import ast
+import re
 
 from num2words import num2words
-
 
 # Zero-width characters (BOM, ZWSP, ZWNJ, ZWJ)
 ZW_RE = re.compile(

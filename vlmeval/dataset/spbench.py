@@ -1,10 +1,10 @@
-import os
 import ast
+import os
 
-from tqdm import tqdm
 from huggingface_hub import snapshot_download
+from tqdm import tqdm
 
-from ..smp.misc import toliststr, get_cache_path, modelscope_flag_set
+from vlmeval.smp import get_cache_path, modelscope_flag_set, toliststr
 from .image_base import ImageBaseDataset
 
 

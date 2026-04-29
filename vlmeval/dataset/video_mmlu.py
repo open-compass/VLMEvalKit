@@ -1,15 +1,21 @@
 # flake8: noqa
-from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
-import random
-import json
 import ast
+import copy as cp
+import os
+import os.path as osp
+import random
+from collections import defaultdict
 from glob import glob
-from tqdm import tqdm
+
+import numpy as np
+import pandas as pd
+from huggingface_hub import snapshot_download
+
+from vlmeval.smp import (dump, extract_json_objects, get_cache_path, get_file_extension,
+                         get_intermediate_file_path, load, md5)
+from vlmeval.utils import track_progress_rich
+from .utils import build_judge
+from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -227,7 +233,7 @@ class Video_MMLU_CAP(VideoBaseDataset):
             jsons = list(extract_json_objects(s))
             assert len(jsons) == 1
             return jsons[0]
-        except:
+        except Exception:
             if '{' in s and s.find('{') == s.rfind('{'):
                 sub_str = s[s.find('{') + 1:].strip()
                 lines = sub_str.split('\n')
@@ -275,7 +281,9 @@ class Video_MMLU_CAP(VideoBaseDataset):
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.video_mmlu import get_dimension_rating, prepare_response_prompt, prepare_score_prompt, SYSTEM_CAL_SCORE_PROMPT_CAP, SYSTEM_GENER_PRED_PROMPT
+        from .utils.video_mmlu import (SYSTEM_CAL_SCORE_PROMPT_CAP, SYSTEM_GENER_PRED_PROMPT,
+                                       get_dimension_rating, prepare_response_prompt,
+                                       prepare_score_prompt)
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'
         judge = judge_kwargs['model']
@@ -515,7 +523,7 @@ class Video_MMLU_QA(VideoBaseDataset):
             jsons = list(extract_json_objects(s))
             assert len(jsons) == 1
             return jsons[0]
-        except:
+        except Exception:
             if '{' in s and s.find('{') == s.rfind('{'):
                 sub_str = s[s.find('{') + 1:].strip()
                 lines = sub_str.split('\n')
@@ -563,7 +571,8 @@ class Video_MMLU_QA(VideoBaseDataset):
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.video_mmlu import get_dimension_rating, prepare_score_prompt, SYSTEM_CAL_SCORE_PROMPT_QA
+        from .utils.video_mmlu import (SYSTEM_CAL_SCORE_PROMPT_QA, get_dimension_rating,
+                                       prepare_score_prompt)
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'
         judge = judge_kwargs['model']

@@ -1,17 +1,16 @@
+import logging
 import os
 import os.path as osp
 import string
-import sys
-import warnings
 
 import pandas as pd
 import torch
 from huggingface_hub import snapshot_download
 from PIL import Image
 
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string, get_cache_path
 from ..base import BaseModel
-from ...smp import *
-from ...dataset import DATASET_TYPE
 
 
 class LLaVA_XTuner(BaseModel):
@@ -36,7 +35,8 @@ class LLaVA_XTuner(BaseModel):
                 'using LLaVA_XTuner')
             raise err
 
-        from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, StoppingCriteriaList  # noqa
+        from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,  # noqa
+                                  StoppingCriteriaList)
 
         if not osp.isdir(llava_path):
             cache_path = get_cache_path(llava_path)

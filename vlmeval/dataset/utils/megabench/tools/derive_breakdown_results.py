@@ -1,11 +1,9 @@
-import json
 import argparse
+import json
 from pathlib import Path
-from analysis_utils import (
-    task_list_refine,
-    collect_task_metadata,
-    derive_keyword_stats,
-)
+
+from analysis_utils import collect_task_metadata, derive_keyword_stats, task_list_refine
+
 
 def calculate_model_summary(task_results_with_meta):
     """

@@ -1,9 +1,13 @@
-import time
-import random as rd
-from abc import abstractmethod
-import os.path as osp
 import copy as cp
-from ..smp import get_logger, parse_file, concat_images_vlmeval, LMUDataRoot, md5, decode_base64_to_image_file
+import json
+import random as rd
+import re
+import time
+from abc import abstractmethod
+
+from vlmeval.smp import concat_images_vlmeval, get_logger, parse_file
+
+logger = get_logger(__name__)
 
 
 class BaseAPI:
@@ -36,11 +40,10 @@ class BaseAPI:
         self.system_prompt = system_prompt
         self.verbose = verbose
         self.fail_msg = fail_msg
-        self.logger = get_logger(__name__)
 
         if len(kwargs):
-            self.logger.info(f'BaseAPI received the following kwargs: {kwargs}')
-            self.logger.info('Will try to use them as kwargs for `generate`. ')
+            logger.info(f'BaseAPI received the following kwargs: {kwargs}')
+            logger.info('Will try to use them as kwargs for `generate`. ')
         self.default_kwargs = kwargs
 
     @abstractmethod
@@ -50,7 +53,7 @@ class BaseAPI:
         Returns:
             tuple(int, str, str): ret_code, response, log
         """
-        self.logger.warning('For APIBase, generate_inner is an abstract method. ')
+        logger.warning('For APIBase, generate_inner is an abstract method. ')
         assert 0, 'generate_inner not defined'
         ret_code, answer, log = None, None, None
         # if ret_code is 0, means succeed
@@ -145,7 +148,7 @@ class BaseAPI:
                 return self.generate_inner(inputs, **kwargs)
             except Exception as e:
                 if self.verbose:
-                    self.logger.info(f'{type(e)}: {e}')
+                    logger.info(f'{type(e)}: {e}')
                 inputs = inputs[1:]
                 while len(inputs) and inputs[0]['role'] != 'user':
                     inputs = inputs[1:]
@@ -182,12 +185,12 @@ class BaseAPI:
                         try:
                             log = log.text
                         except Exception as e:
-                            self.logger.warning(f'Failed to parse {log} as an http response: {str(e)}. ')
-                    self.logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
+                            logger.warning(f'Failed to parse {log} as an http response: {str(e)}. ')
+                    logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
             except Exception as err:
                 if self.verbose:
-                    self.logger.error(f'An error occured during try {i}: ')
-                    self.logger.error(f'{type(err)}: {err}')
+                    logger.error(f'An error occured during try {i}: ')
+                    logger.error(f'{type(err)}: {err}')
             # delay before each retry
             T = rd.random() * self.wait * 2
             time.sleep(T)
@@ -257,12 +260,12 @@ class BaseAPI:
                         try:
                             log = log.text
                         except Exception as e:
-                            self.logger.warning(f'Failed to parse {log} as an http response: {str(e)}. ')
-                    self.logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
+                            logger.warning(f'Failed to parse {log} as an http response: {str(e)}. ')
+                    logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
             except Exception as err:
                 if self.verbose:
-                    self.logger.error(f'An error occured during try {i}: ')
-                    self.logger.error(f'{type(err)}: {err}')
+                    logger.error(f'An error occured during try {i}: ')
+                    logger.error(f'{type(err)}: {err}')
             # delay before each retry
             T = rd.random() * self.wait * 2
             time.sleep(T)
@@ -298,3 +301,20 @@ class BaseAPI:
 
     def set_dump_image(self, dump_image_func):
         self.dump_image_func = dump_image_func
+
+    @staticmethod
+    def _inspect_payload(payload) -> str:
+        payload = cp.deepcopy(payload)
+
+        def recurive_hide_base64(value):
+            if isinstance(value, str) and (item := re.match(r'^data:[\w/]+;base64,', value)):
+                head = item.group(0)
+                return f'{head}<base64:{len(value) - len(head)}>'
+            elif isinstance(value, dict):
+                return {k: recurive_hide_base64(v) for k, v in value.items()}
+            elif isinstance(value, list):
+                return [recurive_hide_base64(v) for v in value]
+            else:
+                return value
+
+        return json.dumps(recurive_hide_base64(payload), ensure_ascii=False, indent=2)

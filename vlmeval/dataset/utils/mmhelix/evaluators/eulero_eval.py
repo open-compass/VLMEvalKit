@@ -1,6 +1,6 @@
-from typing import Dict, Any, List, Union, Optional
-import re
 import json
+import re
+from typing import Any, Dict, List, Optional
 
 
 def _default_prompt_tpl(q: str) -> str:

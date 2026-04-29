@@ -1,15 +1,15 @@
 from __future__ import annotations
-
-import os
-import torch
-import re
 import logging
+import os
+import re
 import warnings
 
-from .base import BaseModel
-from .qwen2_vl.prompt import Qwen2VLPromptMixin
-from .qwen2_vl.model import ensure_image_url, ensure_video_url
+import torch
+
 from ..smp import get_gpu_memory
+from .base import BaseModel
+from .qwen2_vl.model import ensure_image_url, ensure_video_url
+from .qwen2_vl.prompt import Qwen2VLPromptMixin
 
 
 class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
@@ -58,7 +58,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
         MODEL_CLS = None
 
         if "2.5" in model_path:
-            from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+            from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
             MODEL_CLS = Qwen2_5_VLForConditionalGeneration
             self.processor = AutoProcessor.from_pretrained(model_path)

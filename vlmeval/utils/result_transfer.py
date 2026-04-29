@@ -1,8 +1,17 @@
-from ..smp import *
+import os.path as osp
+import random as rd
+import string
+
+import pandas as pd
+
+from vlmeval.smp import dump, gpt_key_set, load
+from vlmeval.smp.log import get_logger
 from ..dataset.utils.judge_util import build_judge
 from ..dataset.utils.multiple_choice import extract_answer_from_item
 from .matching_util import can_infer
 from .mp_util import track_progress_rich
+
+logger = get_logger(__name__)
 
 
 def MMMU_result_transfer(result_path):
@@ -29,7 +38,6 @@ def MMMU_result_transfer(result_path):
 
 
 def MMTBench_result_transfer(eval_file, dataset='default', **judge_kwargs):
-    logger = get_logger('Evaluation')
     nproc = judge_kwargs.pop('nproc', 4)
 
     rd.seed(2680)

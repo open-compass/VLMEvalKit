@@ -1,8 +1,8 @@
+import cv2
 import torch
 import torch.nn.functional as F
-import cv2
+from transformers import AutoImageProcessor, AutoModel
 
-from transformers import AutoModel, AutoImageProcessor
 from ..base_metric import BaseMetric
 from .CLIP_video import sample_frames_from_video
 

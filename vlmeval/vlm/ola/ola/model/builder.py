@@ -1,11 +1,13 @@
 import os
-import warnings
 import shutil
+import warnings
 
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig, BitsAndBytesConfig
 import torch
-from ...ola.model import *
-from ...ola.model.speech_encoder.builder import build_speech_encoder
+from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+from ..model import OlaQwenForCausalLM
+from ..model.speech_encoder.builder import build_speech_encoder
+
 
 def load_pretrained_model(model_path, model_base, is_lora=False, s2s=False, load_8bit=False, load_4bit=False, device="cuda", use_flash_attn=False, **kwargs):
     if load_8bit:

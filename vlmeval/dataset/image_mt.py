@@ -1,8 +1,13 @@
+import os.path as osp
+from collections import defaultdict
+
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp import dump, get_intermediate_file_path, load, toliststr
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils.judge_util import build_judge
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
 
 
 class ImageMTDataset(ImageBaseDataset):

@@ -1,11 +1,15 @@
-from .image_base import ImageBaseDataset
-import random
-from collections import Counter
 import os
+import os.path as osp
+import random
 import re
-import tempfile
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
+from collections import Counter
+
+import pandas as pd
+from tqdm import tqdm
+
+from vlmeval.smp import (d2df, decode_base64_to_image_file, dump, get_intermediate_file_path, load,
+                         read_ok)
+from .image_base import ImageBaseDataset
 
 
 def get_multi_choice_prediction(response, all_choices, index2ans):

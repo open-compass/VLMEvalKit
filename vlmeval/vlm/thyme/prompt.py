@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ...smp import listinstr
+from vlmeval.smp import listinstr
 
 
 class ThymePromptMixin:
@@ -171,7 +171,7 @@ class ThymePromptMixin:
     def _build_olympiad_prompt(
             self, line, dataset: str) -> list[dict[str, str]]:
 
-        from ...dataset.utils.olympiadbench import get_answer_type_text, make_input
+        from vlmeval.dataset.utils.olympiadbench import get_answer_type_text, make_input
 
         self.is_chinese = "zh" in line["source"]
         self.is_math = "maths" in line["source"]

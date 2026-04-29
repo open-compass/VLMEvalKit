@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 
 class BaseEvaluator:
@@ -260,7 +260,7 @@ class BinarioEvaluator(BaseEvaluator):
                     if isinstance(matrix, list) and all(isinstance(row, list) for row in matrix):
                         if self._is_valid_matrix(matrix):
                             return matrix
-                except:
+                except Exception:
                     pass
 
         return None

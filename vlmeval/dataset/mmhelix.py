@@ -1,10 +1,16 @@
-from vlmeval.smp import *
-from vlmeval.dataset.utils.mmhelix.evaluator import *
+import io
+import os
+import os.path as osp
+
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
 from vlmeval.dataset.image_base import ImageBaseDataset
 from vlmeval.dataset.utils.mmhelix.metrics import metrics
 from vlmeval.dataset.utils.mmhelix.parser import parser
-from datasets import Dataset, DatasetDict, Features, Value, Sequence, Image
-import pandas as pd
+from vlmeval.smp import load
+from vlmeval.smp.file import LMUDataRoot, file_size
 
 
 class MMHELIX(ImageBaseDataset):
@@ -176,10 +182,10 @@ class MMHELIX(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        import re
         import json
-        import pandas as pd
         import os.path as osp
+
+        import pandas as pd
 
         try:
             eval_file = eval_file.replace('.xlsx', '.tsv')
@@ -196,7 +202,7 @@ class MMHELIX(ImageBaseDataset):
                     return s
                 import ast
                 return ast.literal_eval(str(s))
-            except:
+            except Exception:
                 print(f"Warning: Could not parse dictionary string: {s}")
                 return {}
 

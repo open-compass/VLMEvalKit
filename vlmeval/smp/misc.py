@@ -1,29 +1,14 @@
-# flake8: noqa: F401, F403
-import abc
-import argparse
-import csv
-import multiprocessing as mp
+import datetime
 import os
 import os.path as osp
-from pathlib import Path
-import copy as cp
-import random as rd
-import requests
-import shutil
 import subprocess
-import warnings
-import pandas as pd
-from collections import OrderedDict, defaultdict
-from multiprocessing import Pool, current_process
-from tqdm import tqdm
-import datetime
-import matplotlib.pyplot as plt
-from tabulate import tabulate
+from collections import defaultdict
 from json import JSONDecoder
-from huggingface_hub import scan_cache_dir
+from pathlib import Path
+
+import pandas as pd
 from huggingface_hub.utils._cache_manager import _scan_cached_repo
-from sty import fg, bg, ef, rs
-import portalocker
+from sty import fg
 
 
 def modelscope_flag_set():
@@ -34,19 +19,19 @@ def process_punctuation(inText):
     import re
     outText = inText
     punct = [
-        ';', r'/', '[', ']', '"', '{', '}', '(', ')', '=', '+', '\\', '_', '-',
-        '>', '<', '@', '`', ',', '?', '!'
+        ';', r'/', '[', ']', '"', '{', '}', '(', ')', '=', '+', '\\', '_', '-', '>', '<', '@', '`',
+        ',', '?', '!'
     ]
-    commaStrip  = re.compile(r'(\d)(,)(\d)')
+    commaStrip = re.compile(r'(\d)(,)(\d)')
     periodStrip = re.compile(r'(?<!\d)\.(?!\d)')
     for p in punct:
-        if (p + ' ' in inText or ' ' + p in inText) or (re.search(
-                commaStrip, inText) is not None):
+        if (p + ' ' in inText or ' ' + p in inText) or (re.search(commaStrip, inText) is not None):
             outText = outText.replace(p, '')
         else:
             outText = outText.replace(p, ' ')
     outText = periodStrip.sub('', outText, re.UNICODE)
     return outText
+
 
 def h2r(value):
     if value[0] == '#':
@@ -54,8 +39,10 @@ def h2r(value):
     assert len(value) == 6
     return tuple(int(value[i:i + 2], 16) for i in range(0, 6, 2))
 
+
 def r2h(rgb):
     return '#%02x%02x%02x' % rgb
+
 
 def colored(s, color):
     if isinstance(color, str):
@@ -64,19 +51,22 @@ def colored(s, color):
         color = h2r(color)
     return fg(*color) + s + fg.rs
 
+
 def istype(s, type):
     if isinstance(s, type):
         return True
     try:
         return isinstance(eval(s), type)
-    except Exception as _:
+    except Exception:
         return False
+
 
 def bincount(lst):
     bins = defaultdict(lambda: 0)
     for item in lst:
         bins[item] += 1
     return bins
+
 
 def get_cache_path(repo_id, branch='main', repo_type='datasets'):
     try:
@@ -103,15 +93,18 @@ def get_cache_path(repo_id, branch='main', repo_type='datasets'):
         logging.warning(f'{type(e)}: {e}')
         return None
 
+
 def proxy_set(s):
     import os
     for key in ['http_proxy', 'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY']:
         os.environ[key] = s
 
+
 def get_rank_and_world_size():
     rank = int(os.environ.get('RANK', 0))
     world_size = int(os.environ.get('WORLD_SIZE', 1))
     return rank, world_size
+
 
 def get_cuda_visible_devices():
     devices = os.environ.get('CUDA_VISIBLE_DEVICES', None)
@@ -120,8 +113,10 @@ def get_cuda_visible_devices():
     devices = [int(x) for x in devices.split(',')]
     return devices
 
+
 def splitlen(s, sym='/'):
     return len(s.split(sym))
+
 
 def listinstr(lst, s):
     assert isinstance(lst, list)
@@ -130,14 +125,17 @@ def listinstr(lst, s):
             return True
     return False
 
+
 def d2df(D):
     return pd.DataFrame({x: [D[x]] for x in D})
+
 
 def cn_string(s):
     import re
     if re.search(u'[\u4e00-\u9fff]', s):
         return True
     return False
+
 
 def timestr(granularity='second'):
     s = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
@@ -151,6 +149,7 @@ def timestr(granularity='second'):
     elif granularity == 'day':
         return s[:-6]
 
+
 def _minimal_ext_cmd(cmd, cwd=None):
     env = {}
     for k in ['SYSTEMROOT', 'PATH', 'HOME']:
@@ -162,6 +161,7 @@ def _minimal_ext_cmd(cmd, cwd=None):
     env['LC_ALL'] = 'C'
     out = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env, cwd=cwd).communicate()[0]
     return out
+
 
 def githash(fallback='unknown', digits=8):
     if digits is not None and not isinstance(digits, int):
@@ -181,21 +181,25 @@ def githash(fallback='unknown', digits=8):
         sha = fallback
     return sha
 
+
 def dict_merge(dct, merge_dct):
     for k, _ in merge_dct.items():
-        if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], dict)):  #noqa
+        if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], dict)):
             dict_merge(dct[k], merge_dct[k])
         else:
             dct[k] = merge_dct[k]
+
 
 def youtube_dl(idx):
     cmd = f'youtube-dl -f best -f mp4 "{idx}"  -o {idx}.mp4'
     os.system(cmd)
 
+
 def run_command(cmd):
     if isinstance(cmd, str):
         cmd = cmd.split()
     return subprocess.check_output(cmd).decode()
+
 
 def load_env():
     import logging
@@ -206,7 +210,8 @@ def load_env():
     try:
         import vlmeval
     except ImportError:
-        logging.error('VLMEval is not installed. Failed to import environment variables from .env file. ')
+        logging.error(
+            'VLMEval is not installed. Failed to import environment variables from .env file. ')
         return
     pth = osp.realpath(vlmeval.__path__[0])
     pth = osp.join(pth, '../.env')
@@ -222,13 +227,14 @@ def load_env():
             os.environ[k] = v
     logging.info(f'API Keys successfully loaded from {pth}')
 
+
 def pip_install_robust(package):
     import sys
     retry = 3
     while retry > 0:
         try:
-            package_base = package.split('=')[0]
-            module = __import__(package)
+            package.split('=')[0]
+            __import__(package)
             return True
         except ImportError:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
@@ -237,8 +243,9 @@ def pip_install_robust(package):
 
 
 def version_cmp(v1, v2, op='eq'):
-    from packaging import version
     import operator
+
+    from packaging import version
     op_func = getattr(operator, op)
     return op_func(version.parse(v1), version.parse(v2))
 
@@ -257,7 +264,8 @@ def extract_json_objects(text, decoder=JSONDecoder()):
     pos = 0
     while True:
         match = text.find('{', pos)
-        if match == -1: break
+        if match == -1:
+            break
         try:
             result, index = decoder.raw_decode(text[match:])
             yield result
@@ -270,7 +278,8 @@ def get_gpu_memory():
     import subprocess
     try:
         command = "nvidia-smi --query-gpu=memory.free --format=csv"
-        memory_free_info = subprocess.check_output(command.split()).decode('ascii').split('\n')[:-1][1:]
+        memory_free_info = subprocess.check_output(
+            command.split()).decode('ascii').split('\n')[:-1][1:]
         memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
         return memory_free_values
     except Exception as e:

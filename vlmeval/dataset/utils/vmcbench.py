@@ -1,6 +1,7 @@
-import pandas as pd
-import numpy as np
 import random
+
+import numpy as np
+import pandas as pd
 
 
 def parse_multi_choice_response(response, all_choices, index2ans):
@@ -79,7 +80,7 @@ def report_vmc_acc(data):
     general_datasets = ["SEEDBench", "MMStar", "A-OKVQA", "VizWiz", "MMVet", "VQAv2", "OKVQA"]
     reason_datasets = ["MMMU", "MathVista", "ScienceQA", "RealWorldQA", "GQA", "MathVision"]
     ocr_datasets = ["TextVQA", "OCRVQA"]
-    doc_datasets = ["AI2D", "ChartQA","DocVQA", "InfoVQA", "TableVQABench"]
+    doc_datasets = ["AI2D", "ChartQA", "DocVQA", "InfoVQA", "TableVQABench"]
     results = {}
     for category in data['category'].unique():
         results[category] = data[data['category'] == category]['hit'].mean()

@@ -1,5 +1,6 @@
 import json
 import os
+
 import cv2
 import numpy as np
 
@@ -11,7 +12,7 @@ def add_bbox(bbox_img_path):
 
     bbox_dir = os.path.dirname(bbox_img_path)
     os.makedirs(bbox_dir, exist_ok=True)
-    vid, frame_idx, person_id = bbox_img_path.split('/')[-4],bbox_img_path.split('/')[-2], bbox_img_path.split('/')[-1].split('.')[0]  # noqa: E501
+    vid, frame_idx, person_id = bbox_img_path.split('/')[-4], bbox_img_path.split('/')[-2], bbox_img_path.split('/')[-1].split('.')[0]  # noqa: E501
     import os.path as osp
     json_file = os.path.join(osp.dirname(osp.dirname(osp.dirname(osp.dirname(bbox_img_path)))), vid, 'Segmentation/T', frame_idx + '.json')  # noqa: E501
     ori_img_path = json_file.replace('.json', '.jpg')
@@ -37,7 +38,7 @@ def add_bbox(bbox_img_path):
         cv2.fillPoly(mask, [np.array(shape["points"], np.int32)], 1)
 
         retval, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
-        stats = stats[stats[:,4].argsort()]
+        stats = stats[stats[:, 4].argsort()]
         bboxs = stats[:-1]
 
         for b in bboxs:

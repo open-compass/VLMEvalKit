@@ -1,11 +1,10 @@
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
 import warnings
-import os.path as osp
+
+import torch
 from PIL import Image
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
 
 
 class QH_360VL(BaseModel):

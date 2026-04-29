@@ -1,24 +1,16 @@
-# flake8: noqa
-import os
-import json
-from typing import Dict, List, Tuple, Any, Union
-import pandas as pd
-import warnings
-
-from vlmeval.dataset.image_base import ImageBaseDataset
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
-from .utils import build_judge
-from openai import OpenAI
-from tqdm import tqdm
-from datasets import load_dataset
+import os.path as osp
 import re
 from collections import defaultdict
+from typing import Any, Dict, List, Union
 
+import pandas as pd
 
-# gpt4_key = "your-key"
-# client = OpenAI(api_key = gpt4_key)
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.smp import dump, get_intermediate_file_path, get_logger, load, toliststr
+from vlmeval.utils import track_progress_rich
+from .utils import build_judge
+
+logger = get_logger(__name__)
 
 COMPARE_ANSWER_PROMPT = """You are provided with a question and two answers. Please determine if these answers are equivalent. Follow these guidelines:
 
@@ -57,7 +49,7 @@ Answer 2: [ANSWER2]
 
 Please respond with:
 - "Yes" if the answers are equivalent
-- "No" if the answers are different"""
+- "No" if the answers are different"""  # noqa: E501
 
 
 def get_question(QUESTION):
@@ -73,7 +65,7 @@ def get_question(QUESTION):
     </think>
     <answer>
     ... your final answer (entity(s) or number) ...
-    </answer>"""
+    </answer>"""  # noqa: E501
 
     return QA_PROMPT
 
@@ -121,7 +113,7 @@ class ChartMuseum(ImageBaseDataset):
             line = self.data.iloc[line]
 
         if self.meta_only:
-            tgt_path = misc.toliststr(line["image"])
+            tgt_path = toliststr(line["image"])
         else:
             tgt_path = self.dump_image(line)
 
@@ -155,7 +147,7 @@ class ChartMuseum(ImageBaseDataset):
         gts = benchmark["answer"].astype(str).tolist()
         categories = benchmark['category'].astype(str).tolist()
 
-        data = file.load(eval_file)
+        data = load(eval_file)
         pred_list = data['prediction'].astype(str).tolist()
         id_list = data['index'].astype(int).tolist()
         pred_answers = [extract_answer(p) for p in pred_list]
@@ -165,7 +157,8 @@ class ChartMuseum(ImageBaseDataset):
         judge_model_name = judge_kwargs.pop('judge_model', 'gpt-4.1-mini-2025-04-14')
         nproc = judge_kwargs.pop('nproc', 4)
         if judge_model_name != 'gpt-4.1-mini-2025-04-14':
-            print(f"Recommend to use gpt-4.1-mini-2025-04-14 as judge model for ChartMuseum, Now using {judge_model_name}")
+            logger.warning("Recommend to use gpt-4.1-mini-2025-04-14 as judge model for "
+                           f"ChartMuseum, Now using {judge_model_name}")
         tmp_file = get_intermediate_file_path(eval_file, f'_{judge_model_name}', 'pkl')
         if osp.exists(tmp_file):
             already_judged = load(tmp_file)
@@ -173,7 +166,11 @@ class ChartMuseum(ImageBaseDataset):
             already_judged = {}
         judge_model = build_judge(model=judge_model_name, **judge_kwargs)
 
-        input_tuples = [(cat, q, gt, pa, idx, judge_model) for cat, q, gt, pa, idx in zip(categories, questions, gts, pred_answers, id_list) if idx not in already_judged]
+        input_tuples = [
+            (cat, q, gt, pa, idx, judge_model)
+            for cat, q, gt, pa, idx in zip(categories, questions, gts, pred_answers, id_list)
+            if idx not in already_judged
+        ]
         indices = [idx for _, _, _, _, idx, _ in input_tuples]
         if len(indices):
             _ = track_progress_rich(
@@ -197,6 +194,6 @@ class ChartMuseum(ImageBaseDataset):
         score["Overall"] = [sum(all_flags) / len(all_flags) * 100]
         score_file = get_intermediate_file_path(eval_file, "_acc", "csv")
         out_score = pd.DataFrame(score)
-        file.dump(out_score, score_file)
+        dump(out_score, score_file)
 
         return out_score

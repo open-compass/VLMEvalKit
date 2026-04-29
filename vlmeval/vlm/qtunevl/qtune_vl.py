@@ -1,13 +1,12 @@
 from __future__ import annotations
-
+import logging
 import os
 import warnings
-import logging
 
 import torch
 
+from vlmeval.smp import listinstr
 from ..base import BaseModel
-from ...smp import listinstr
 
 
 class QTuneVLPromptMixin:
@@ -172,7 +171,7 @@ class QTuneVL(QTuneVLPromptMixin, BaseModel):
         verbose: bool = False,
         **kwargs,
     ):
-        from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+        from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
         super().__init__(use_custom_prompt=use_custom_prompt)
         self.min_pixels = min_pixels
         self.max_pixels = max_pixels
@@ -255,7 +254,7 @@ class QTuneVL(QTuneVLPromptMixin, BaseModel):
             elif s['type'] == 'text':
                 item = {'type': 'text', 'text': s['value']}
             elif s['type'] == 'audio':
-                item = {'type':'audio','audio':s['value']}
+                item = {'type': 'audio', 'audio': s['value']}
             else:
                 raise ValueError(f"Invalid message type: {s['type']}, {s}")
             content.append(item)

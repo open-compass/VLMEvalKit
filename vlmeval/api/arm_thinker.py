@@ -1,16 +1,18 @@
-import os
-import uuid
-import requests
-import logging
-import datetime as dt
-from vlmeval.api.base import BaseAPI
-from vlmeval.smp import *
-import json
 import base64
-import traceback
-import numpy as np
-import sys
+import datetime as dt
+import json
+import logging
+import os
 import os.path as osp
+import sys
+import traceback
+import uuid
+
+import numpy as np
+import requests
+
+from vlmeval.api.base import BaseAPI
+from vlmeval.smp import encode_image_to_base64
 
 
 class LMDeployWrapper(BaseAPI):
@@ -66,7 +68,7 @@ class LMDeployWrapper(BaseAPI):
         print(f"agent_repo_root: {agent_repo_root}")
         sys.path.append(agent_repo_root)
         try:
-            from arm_agent.agent_verl import VerlAgent
+            from arm_agent.agent_verl import VerlAgent  # noqa: F401
         except Exception:
             raise ValueError('Please install ARM-Thinker from https://github.com/InternLM/ARM-Thinker')
 

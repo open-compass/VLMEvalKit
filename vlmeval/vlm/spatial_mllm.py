@@ -1,13 +1,13 @@
-import torch
-import warnings
 import logging
+import warnings
 
+import torch
 from PIL import ImageOps
 
-from .base import BaseModel
-from .qwen2_vl.prompt import Qwen2VLPromptMixin
-from .qwen2_vl.model import ensure_image_url, ensure_video_url
 from ..dataset import DATASET_TYPE
+from .base import BaseModel
+from .qwen2_vl.model import ensure_image_url, ensure_video_url
+from .qwen2_vl.prompt import Qwen2VLPromptMixin
 
 
 def pad_images_to_max(image_inputs, fill=(0, 0, 0)):
@@ -105,10 +105,8 @@ class SpatialMLLM(Qwen2VLPromptMixin, BaseModel):
         """
         try:
             # Import Spatial-MLLM components (should be installed via pip install -e .)
-            from spatialmllm.models import (
-                Qwen2_5_VL_VGGTForConditionalGeneration,
-                Qwen2_5_VLProcessor
-            )
+            from spatialmllm.models import (Qwen2_5_VL_VGGTForConditionalGeneration,
+                                            Qwen2_5_VLProcessor)
         except ImportError as err:
             logging.critical(
                 "Failed to import Spatial-MLLM components. Please ensure:\n"

@@ -1,14 +1,12 @@
-import torch
-import warnings
-import copy as cp
-import numpy as np
-import sys
-import os
 import logging
-from ..base import BaseModel
-from ...smp import isimg, listinstr
-from ...dataset import DATASET_TYPE
+import os
+
+import numpy as np
+import torch
 from PIL import Image
+
+from vlmeval.smp import listinstr
+from ..base import BaseModel
 
 
 def _get_rawvideo_dec(
@@ -114,19 +112,11 @@ class Chatunivi(BaseModel):
             self.resolution = 336
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
-        from ChatUniVi.conversation import conv_templates, SeparatorStyle
-        from ChatUniVi.constants import (
-            DEFAULT_IMAGE_PATCH_TOKEN,
-            DEFAULT_IMAGE_TOKEN,
-            IMAGE_TOKEN_INDEX,
-            DEFAULT_IM_START_TOKEN,
-            DEFAULT_IM_END_TOKEN,
-            MAX_IMAGE_LENGTH,
-        )
-        from ChatUniVi.mm_utils import (
-            tokenizer_image_token,
-            KeywordsStoppingCriteria,
-        )
+        from ChatUniVi.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                         DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IMAGE_TOKEN,
+                                         IMAGE_TOKEN_INDEX, MAX_IMAGE_LENGTH)
+        from ChatUniVi.conversation import SeparatorStyle, conv_templates
+        from ChatUniVi.mm_utils import KeywordsStoppingCriteria, tokenizer_image_token
 
         mm_use_im_start_end = getattr(model.config, 'mm_use_im_start_end', False)
         mm_use_im_patch_token = getattr(model.config, 'mm_use_im_patch_token', True)

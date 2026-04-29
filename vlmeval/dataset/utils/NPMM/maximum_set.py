@@ -24,11 +24,11 @@ def validation(graph, answer):
             independent_set = eval(answer_part)
         else:
             # Try to parse other formats (comma separated, etc.)
-            independent_set = [int(x.strip()) for x in answer_part.replace('[','').replace(']','').split(',')]
+            independent_set = [int(x.strip()) for x in answer_part.replace('[', '').replace(']', '').split(',')]
 
         if not isinstance(independent_set, list):
             return True, -1, "Answer must be a list of vertices"
-    except:
+    except Exception:
         return True, -1, "Could not parse the independent set from answer"
 
     # Convert all node keys to strings for consistency

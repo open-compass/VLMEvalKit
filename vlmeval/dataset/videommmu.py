@@ -1,14 +1,21 @@
 import io
-import re
 import json
-from huggingface_hub import snapshot_download
+import os
+import os.path as osp
+import re
+from collections import defaultdict
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+import portalocker
+from huggingface_hub import snapshot_download
+from PIL import Image
+
+from vlmeval.smp import (dump, get_cache_path, get_intermediate_file_path, load, md5,
+                         modelscope_flag_set)
 from vlmeval.utils import track_progress_rich
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -610,15 +617,17 @@ class VideoMMMU(VideoBaseDataset):
             assert line < len(self)
             line = self.data.iloc[line]
 
-        frames, indices, video_info = self.save_video_frames(
-            line['id'], line['video'], video_llm)
-
         message = []
         if video_llm:
             message.append(
                 dict(type='video',
                      value=osp.join(self.data_root, line['video'])))
+        elif not self.split_frame:
+            raise ValueError('fps and nframe should be set at least one valid value for ')
         else:
+            frames, indices, video_info = self.save_video_frames(
+                line['id'], line['video'], video_llm)
+
             message.extend(dict(type='image', value=im) for im in frames)
 
         if line['category'] == 'Adaptation':

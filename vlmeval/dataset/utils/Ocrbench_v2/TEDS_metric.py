@@ -10,24 +10,26 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # Apache 2.0 License for more details.
 
-import re
 import ast
 import json
-import ipdb
-import distance
-from apted import APTED, Config
+import re
+import string
+from collections import deque
 from itertools import product
+from typing import Any, Callable, Optional, Sequence
+
+import distance
+import editdistance
+import ipdb
+import Levenshtein
+import numpy as np
+from apted import APTED, Config
 from apted.helpers import Tree
 from lxml import etree, html
-from collections import deque
-from vlmeval.dataset.utils.Ocrbench_v2.parallel import parallel_process
 from tqdm import tqdm
-from zss import simple_distance, Node
-import string
-from typing import Any, Callable, Optional, Sequence
-import numpy as np
-import Levenshtein
-import editdistance
+from zss import Node, simple_distance
+
+from vlmeval.dataset.utils.Ocrbench_v2.parallel import parallel_process
 
 
 class TableTree(Tree):

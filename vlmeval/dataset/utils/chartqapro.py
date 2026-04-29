@@ -1,10 +1,11 @@
 # flake8: noqa
-import ast
-import re
-from typing import List, Optional, Any, Tuple, Dict
-import pandas as pd
-import json
 import argparse
+import ast
+import json
+import re
+from typing import Any, Dict, List, Optional, Tuple
+
+import pandas as pd
 
 
 def prompt_context(question, answer, q_type, vqa_type):

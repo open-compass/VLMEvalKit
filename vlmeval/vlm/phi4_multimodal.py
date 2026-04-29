@@ -1,8 +1,8 @@
+import logging
+
 from PIL import Image
-import torch
 
 from .base import BaseModel
-from ..smp import *
 
 
 class Phi4Multimodal(BaseModel):
@@ -12,14 +12,14 @@ class Phi4Multimodal(BaseModel):
 
     def __init__(self, model_path='microsoft/Phi-4-multimodal-instruct', **kwargs):
         try:
-            from transformers import AutoProcessor, AutoModelForCausalLM, GenerationConfig
+            from transformers import AutoModelForCausalLM, AutoProcessor, GenerationConfig
         except Exception as e:
             logging.critical('Please install the latest version transformers.')
             raise e
 
         model = AutoModelForCausalLM.from_pretrained(
             model_path, device_map='cuda', trust_remote_code=True,
-            torch_dtype='auto',attn_implementation='flash_attention_2'
+            torch_dtype='auto', attn_implementation='flash_attention_2'
         ).eval()
         processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
         generation_config = GenerationConfig.from_pretrained(model_path)

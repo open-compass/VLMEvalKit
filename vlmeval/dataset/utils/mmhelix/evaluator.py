@@ -1,7 +1,5 @@
-from typing import Dict, Any, List, Union, Optional
 import re
-import ast
-import numpy as np
+from typing import Any
 
 
 class BaseEvaluator:

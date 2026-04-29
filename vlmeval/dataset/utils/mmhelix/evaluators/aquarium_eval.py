@@ -1,6 +1,6 @@
-import re
 import json
-from typing import Dict, List, Any, Optional, Tuple, Union
+import re
+from typing import Any, Dict, List, Optional, Union
 
 
 class BaseEvaluator:

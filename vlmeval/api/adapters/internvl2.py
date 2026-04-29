@@ -1,9 +1,8 @@
 import copy
 from functools import partial
 
-from vlmeval.dataset import DATASET_TYPE, DATASET_MODALITY
-from vlmeval.smp import listinstr, LMUDataRoot
-
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import LMUDataRoot, listinstr
 from .base import ModelAdapter, register_adapter
 
 
@@ -40,12 +39,13 @@ class InternVL2Adapter(ModelAdapter):
     def build_prompt(self, line, dataset=None):
         import os
         from pathlib import Path
+
         import yaml
-        from vlmeval.vlm.internvl.utils import (
-            build_mcq_cot_prompt, build_mpo_prompt, build_multi_choice_prompt,
-            build_qa_cot_prompt, format_nav_prompt, pile_action_history,
-        )
+
         from vlmeval.dataset import build_dataset, infer_dataset_basename
+        from vlmeval.vlm.internvl.utils import (build_mcq_cot_prompt, build_mpo_prompt,
+                                                build_multi_choice_prompt, build_qa_cot_prompt,
+                                                format_nav_prompt, pile_action_history)
 
         use_mpo_prompt = self.use_mpo_prompt and (
             getattr(self, 'use_cot', False)

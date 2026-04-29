@@ -1,10 +1,10 @@
-import torch
-import os.path as osp
 import warnings
-from .base import BaseModel
-from ..smp import splitlen, listinstr
-from PIL import Image
+
+import torch
 from transformers.image_utils import load_image
+
+from ..smp import listinstr
+from .base import BaseModel
 
 
 class DOCLING(BaseModel):
@@ -12,7 +12,7 @@ class DOCLING(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path='ibm-granite/granite-docling-258M', **kwargs):
-        from transformers import AutoProcessor, AutoModelForVision2Seq
+        from transformers import AutoModelForVision2Seq, AutoProcessor
         assert model_path is not None
         self.model_path = model_path
         self.processor = AutoProcessor.from_pretrained(model_path)
@@ -335,7 +335,7 @@ class DOCLING(BaseModel):
             'ScienceQA_TEST',
         ]:
             content, formatted_images = self.build_prompt_puremcq(message)
-        elif dataset is not None and listinstr(['MLVU','TempCompass','MVBench'], dataset):
+        elif dataset is not None and listinstr(['MLVU', 'TempCompass', 'MVBench'], dataset):
             content, formatted_images = self.build_prompt_default(message, change_the_img_place=True)
         else:
             content, formatted_images = self.build_prompt_default(message)

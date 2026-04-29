@@ -1,19 +1,14 @@
 import pickle
 import warnings
+from collections import OrderedDict
+
 import numpy as np
 import pandas as pd
 
-from collections import OrderedDict
-
-from ..smp.misc import toliststr
-from ..smp.file import load
+from vlmeval.smp import load, toliststr
 from .image_base import ImageBaseDataset
-from .utils.spatial_bench.cal_scores import (
-    build_mcq_score_fn,
-    build_na_score_fn,
-    mean_relative_accuracy,
-    attach_score_cache,
-)
+from .utils.spatial_bench.cal_scores import (attach_score_cache, build_mcq_score_fn,
+                                             build_na_score_fn, mean_relative_accuracy)
 from .utils.spatial_bench.tools.files import build_eval_paths, get_judge_tag_from_score_fn
 
 

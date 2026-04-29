@@ -2,10 +2,10 @@ import functools
 import logging
 import math
 import random
-from geopy.distance import distance
-from geopy.geocoders import Nominatim
-from geopy.extra.rate_limiter import RateLimiter
 
+from geopy.distance import distance
+from geopy.extra.rate_limiter import RateLimiter
+from geopy.geocoders import Nominatim
 
 USER_AGENT_SUFFIX = hex(random.getrandbits(128))[2:]
 geolocator = Nominatim(user_agent=f"vlm-mega-benchmark_{USER_AGENT_SUFFIX}")

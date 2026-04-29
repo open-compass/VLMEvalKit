@@ -16,25 +16,27 @@
 Based on HF math_verify, verl, open reasoner zero, etc.
 """
 
+import math
 import os
 import re
 import signal
-import math
+import threading
 import time
 import traceback
+from decimal import Decimal, localcontext
+from functools import partial, wraps
+from itertools import islice, zip_longest
+from typing import Optional
+
+import sympy
+from math_verify import ExprExtractionConfig, LatexExtractionConfig, parse, verify
+from pylatexenc import latex2text
+from sympy import Mul, N, Pow
+from sympy.parsing import sympy_parser
+
 # OpenAI import removed - now using judge_model directly
 
 FAIL_MSG = 'Failed to obtain answer via API.'
-from functools import wraps, partial
-from itertools import islice, zip_longest
-from typing import Optional, Union
-from pylatexenc import latex2text
-from decimal import Decimal, localcontext
-import sympy
-from sympy import N, Pow, Mul
-from sympy.parsing import sympy_parser
-from math_verify import (ExprExtractionConfig, LatexExtractionConfig, parse, verify)
-import threading
 
 # Model configuration will be passed from judge_kwargs instead of environment variables
 
@@ -220,7 +222,7 @@ def _strip_string(string):
                 else:
                     try:
                         assert len(substr) >= 2
-                    except:
+                    except Exception:
                         return string
                     a = substr[0]
                     b = substr[1]
@@ -250,7 +252,7 @@ def _strip_string(string):
             assert string == "{}/{}".format(a, b)
             new_string = "\\frac{" + str(a) + "}{" + str(b) + "}"
             return new_string
-        except:
+        except Exception:
             return string
 
     def _remove_right_units(string):
@@ -398,7 +400,7 @@ def _is_float(num: str) -> bool:
 def _is_int(x: float) -> bool:
     try:
         return abs(x - int(round(x))) <= 1e-7
-    except:
+    except Exception:
         return False
 
 
@@ -411,7 +413,7 @@ def _str_is_int(x: str) -> bool:
         x = _strip_properly_formatted_commas(x)
         x = float(x)
         return abs(x - int(round(x))) <= 1e-7
-    except:
+    except Exception:
         return False
 
 
@@ -460,7 +462,7 @@ def mathd_normalize_answer(answer: Optional[str]) -> Optional[str]:
         if m is not None:
             answer = m.group("text").strip()
         return _strip_string(answer)
-    except:
+    except Exception:
         return answer
 
 
@@ -504,7 +506,7 @@ def sympy_normalize_answer(expr: str) -> str:
     if "\\" in expr:
         try:
             expr = _parse_latex(expr)
-        except:
+        except Exception:
             pass
 
     # edge case with mixed numbers and negative signs
@@ -670,7 +672,7 @@ def handle_pi(string, pi):
         # Evaluate the expression using eval() function
         try:
             string = eval(string)
-        except:
+        except Exception:
             pass
 
     return string
@@ -835,9 +837,9 @@ def grade_answer_sympy(given_answer: str, ground_truth: str) -> bool:
 
 
 def repeatness(s: str):
-    def ranks(l):
-        index = {v: i for i, v in enumerate(sorted(set(l)))}
-        return [index[v] for v in l]
+    def ranks(lst):
+        index = {v: i for i, v in enumerate(sorted(set(lst)))}
+        return [index[v] for v in lst]
 
     def suffixArray(s):
         line = ranks(s)
@@ -1118,7 +1120,7 @@ def remove_boxed(s):
         assert s[: len(left)] == left
         assert s[-1] == "}"
         return s[len(left):-1]
-    except:
+    except Exception:
         return None
 
 
@@ -1179,7 +1181,7 @@ def grade(model_answer: str, gt_answer: str, is_matched: bool, problem=None,
                     and isinstance(extracted_gt[0], sympy.sets.sets.Interval)):
                 correct = 1.0 if extracted_gt[0].contains(extracted_pred[0]) else 0.0
                 safe_debug_log(f"interval check result: {correct}")
-        except:
+        except Exception:
             pass
         if (not correct) and enable_split:
             correct, extracted_pred, extracted_gt = grade_answer_math_verify(
@@ -1312,7 +1314,7 @@ def answer_tag_reward_fn_for_r1(model_output: str, ground_truths, problem=None,
     if len(points) == num_questions_to_answer:
         try:
             point = sum([s * p for s, p in zip(score_list, points)])
-        except:
+        except Exception:
             point = 0
     else:
         point = score

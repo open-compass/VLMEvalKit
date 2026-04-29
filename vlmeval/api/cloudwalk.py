@@ -1,6 +1,13 @@
-from ..smp import *
+import json
 import os
-from .base import BaseAPI
+
+import numpy as np
+import requests
+
+from vlmeval.api.base import BaseAPI
+from vlmeval.smp import encode_image_to_base64, get_logger
+
+logger = get_logger(__name__)
 
 
 class CWWrapper(BaseAPI):
@@ -73,7 +80,7 @@ class CWWrapper(BaseAPI):
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 
         if 0 < max_tokens <= 100:
-            self.logger.warning(
+            logger.warning(
                 'Less than 100 tokens left, '
                 'may exceed the context window with some additional meta symbols. '
             )
@@ -97,7 +104,7 @@ class CWWrapper(BaseAPI):
             answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
             if self.verbose:
-                self.logger.error(f'{type(err)}: {err}')
-                self.logger.error(response.text if hasattr(response, 'text') else response)
+                logger.error(f'{type(err)}: {err}')
+                logger.error(response.text if hasattr(response, 'text') else response)
 
         return ret_code, answer, response

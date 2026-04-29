@@ -1,11 +1,12 @@
-from .base import BaseModel
 import torch
 from PIL import Image
+
+from .base import BaseModel
 
 
 class LFM2VL(BaseModel):
     def __init__(self, model_path, **kwargs):
-        from transformers import AutoProcessor, AutoModelForImageTextToText
+        from transformers import AutoModelForImageTextToText, AutoProcessor
         self.default_instruction_prompt = (
             "\nPlease answer directly with only the final answer, "
             "do not give any explanation."

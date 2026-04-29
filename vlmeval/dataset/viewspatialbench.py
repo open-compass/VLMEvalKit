@@ -1,11 +1,10 @@
-import os
 import ast
+import os
 
-from tqdm import tqdm
 from huggingface_hub import snapshot_download
+from tqdm import tqdm
 
-from ..smp.file import load
-from ..smp.misc import toliststr, get_cache_path, modelscope_flag_set
+from vlmeval.smp import get_cache_path, load, modelscope_flag_set, toliststr
 from .image_mcq import ImageMCQDataset
 
 
@@ -145,7 +144,7 @@ class ViewSpatialBench(ImageMCQDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import eval_mcq_score, build_mcq_score_fn
+        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, eval_mcq_score
 
         # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
         score_fn = build_mcq_score_fn(**judge_kwargs)

@@ -1,21 +1,25 @@
 # flake8: noqa
-import os
-import json
-import ipdb
 import argparse
-
-import os
-import re
 import ast
 import json
-import argparse
+import os
+import re
+
+import ipdb
 import numpy as np
 from tqdm import tqdm
-from .Ocrbench_v2.vqa_metric import vqa_evaluation, cn_vqa_evaluation, math_expression_evaluation, vqa_evaluation_case_sensitive, counting_evaluation, cn_math_expression_evaluation
-from .Ocrbench_v2.IoUscore_metric import vqa_with_position_evaluation, calculate_iou, extract_coordinates
-from .Ocrbench_v2.TEDS_metric import TEDS, convert_markdown_table_to_html, convert_str_to_dict, convert_str_to_multi_dict, generate_combinations, dict_to_html, compute_f1_score, doc_parsing_evaluation, wrap_html_table
+
+from .Ocrbench_v2.IoUscore_metric import (calculate_iou, extract_coordinates,
+                                          vqa_with_position_evaluation)
 from .Ocrbench_v2.page_ocr_metric import cal_per_metrics
 from .Ocrbench_v2.spotting_metric import extract_bounding_boxes_robust, spotting_evaluation
+from .Ocrbench_v2.TEDS_metric import (TEDS, compute_f1_score, convert_markdown_table_to_html,
+                                      convert_str_to_dict, convert_str_to_multi_dict, dict_to_html,
+                                      doc_parsing_evaluation, generate_combinations,
+                                      wrap_html_table)
+from .Ocrbench_v2.vqa_metric import (cn_math_expression_evaluation, cn_vqa_evaluation,
+                                     counting_evaluation, math_expression_evaluation,
+                                     vqa_evaluation, vqa_evaluation_case_sensitive)
 
 
 def is_nan_value(value):

@@ -1,6 +1,7 @@
+import logging
 import warnings
+
 from .base import BaseModel
-from ..smp import *
 
 
 class VisualGLM(BaseModel):
@@ -10,7 +11,7 @@ class VisualGLM(BaseModel):
 
     def __init__(self, model_path='THUDM/visualglm-6b', **kwargs):
         try:
-            import sat
+            import sat  # noqa: F401
         except Exception as err:
             logging.critical('Please install SwissArmyTransformer to use VisualGLM')
             raise err
@@ -18,8 +19,7 @@ class VisualGLM(BaseModel):
         assert model_path is not None
         self.model_path = model_path
 
-        from transformers import AutoModel
-        from transformers import AutoTokenizer
+        from transformers import AutoModel, AutoTokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         model = AutoModel.from_pretrained(model_path, trust_remote_code=True).half().cuda()
         self.model = model

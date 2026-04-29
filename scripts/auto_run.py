@@ -1,6 +1,10 @@
 import argparse
-from vlmeval.smp import *
+import os
+import os.path as osp
+
 from vlmeval.config import supported_VLM
+from vlmeval.smp import listinstr
+
 
 def is_api(x):
     return getattr(supported_VLM[x].func, 'is_api', False)

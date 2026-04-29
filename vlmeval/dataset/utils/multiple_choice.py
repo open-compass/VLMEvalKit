@@ -1,8 +1,18 @@
-import pandas as pd
-from ...utils import can_infer, track_progress_rich, can_infer_lego
-from ...smp import *
-import numpy as np
+import os.path as osp
+import random as rd
 import re
+import string
+from collections import defaultdict
+
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp import (cn_string, d2df, dump, get_logger, get_pred_file_format, istype, load,
+                         timestr)
+from vlmeval.smp.vlm import build_option_str
+from vlmeval.utils import can_infer, can_infer_lego, track_progress_rich
+
+logger = get_logger(__name__)
 
 MMB_abbrs = {
     'coarse_perception': 'CP',
@@ -50,7 +60,6 @@ MMT_abbrs = {
 
 
 def MMMU_preproc(data):
-    logger = get_logger('Evaluation')
     cnt = 0
     As, Bs, Ans = list(data['A']), list(data['B']), list(data['answer'])
     lt = len(data)
@@ -309,7 +318,7 @@ def build_prompt_cn(question, options, prediction):
     return tmpl.format(question, options, prediction)
 
 
-def build_prompt_LEGO(question, options, prediction,question_type):
+def build_prompt_LEGO(question, options, prediction, question_type):
     if question_type == 'sort':
         tmpl = (
             'You are an AI assistant who will help me to arrange options in the correct order. '
@@ -348,7 +357,6 @@ def prefetch_answer(item):
 
 
 def extract_answer_from_item(model, item, dataset_name=None):
-    logger = get_logger('Evaluation')
     # It will return: (pred, raw, llm_time)
     choices = build_choices(item)
     option_str = build_option_str(choices)
@@ -360,7 +368,7 @@ def extract_answer_from_item(model, item, dataset_name=None):
     elif cn_string(item['question']):
         prompt = build_prompt_cn(item['question'], option_str, item['prediction'])
     elif dataset_name is not None and 'LEGO' in dataset_name:
-        prompt = build_prompt_LEGO(item['question'], option_str, item['prediction'],item['question_type'])
+        prompt = build_prompt_LEGO(item['question'], option_str, item['prediction'], item['question_type'])
     else:
         prompt = build_prompt(item['question'], option_str, item['prediction'])
     retry = 3
@@ -544,7 +552,6 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
         if len(tups) == 0:
             pass
         elif model is None:
-            logger = get_logger('Evaluation')
             logger.warning('Exact Matching mode, will not do GPT-based answer matching. ')
             for k in keys:
                 result[k] = dict(

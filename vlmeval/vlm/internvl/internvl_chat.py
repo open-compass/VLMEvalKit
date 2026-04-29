@@ -1,34 +1,21 @@
-import math
-import pandas as pd
-import random
+import os
 import re
-import yaml
-import string
-import torch
-import torch.distributed as dist
-import torchvision.transforms as T
-import transformers
 import warnings
+from pathlib import Path
+
+import torch
+import transformers
+import yaml
 from PIL import Image
-from functools import partial
-from torchvision.transforms.functional import InterpolationMode
-from transformers import AutoTokenizer, AutoConfig, AutoModel, CLIPImageProcessor
+from transformers import AutoModel, AutoTokenizer, CLIPImageProcessor
 
-from .utils import (build_multi_choice_prompt,
-                    build_video_prompt,
-                    build_mpo_prompt,
-                    build_mcq_cot_prompt,
-                    build_qa_cot_prompt,
-                    mpo_post_processing,
-                    format_nav_prompt,
-                    pile_action_history,
-                    reorganize_prompt,
-                    load_image)
-from .utils import mpo_prompt_with_final_answer, mpo_prompt_without_final_answer, parse_bbox_internvl
-
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE, build_dataset, infer_dataset_basename
+from vlmeval.smp import encode_image_to_base64, listinstr, version_cmp
 from ..base import BaseModel
-from ...dataset import DATASET_TYPE, DATASET_MODALITY, build_dataset, infer_dataset_basename
-from ...smp import *
+from .utils import (build_mcq_cot_prompt, build_mpo_prompt, build_multi_choice_prompt,
+                    build_qa_cot_prompt, build_video_prompt, format_nav_prompt, load_image,
+                    mpo_post_processing, parse_bbox_internvl, pile_action_history,
+                    reorganize_prompt)
 
 # load all the gui templates
 upper_path = Path(__file__).parent
@@ -175,7 +162,7 @@ class InternVLChat(BaseModel):
         self.screen_parse = screen_parse
 
         if use_lmdeploy:
-            from lmdeploy import TurbomindEngineConfig, PytorchEngineConfig, VisionConfig, pipeline
+            from lmdeploy import PytorchEngineConfig, TurbomindEngineConfig, VisionConfig, pipeline
             engine_type = PytorchEngineConfig if "internvl3_5" in model_path.lower() else TurbomindEngineConfig
             vision_config = VisionConfig(max_batch_size=4)
             num_gpus = torch.cuda.device_count()
@@ -240,7 +227,7 @@ class InternVLChat(BaseModel):
             return False
         if dataset in ["SSI_Bench"]:
             return False
-        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench', 'ChartQAPro', 'ChartMuseum', 'MMSIVideo_U50','MMSIVideo_SC'], dataset):  # noqa: E501
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench', 'ChartQAPro', 'ChartMuseum', 'MMSIVideo_U50', 'MMSIVideo_SC'], dataset):  # noqa: E501
             # For Multi-Turn we don't have custom prompt
             return False
         if DATASET_TYPE(dataset) == 'MCQ':

@@ -1,11 +1,15 @@
+import os.path as osp
 import re
-from functools import partial
+from collections import defaultdict
 
+import pandas as pd
+
+from vlmeval.smp import dump, get_intermediate_file_path, get_logger, load, toliststr
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
+from .utils import DEBUG_MESSAGE, build_judge
+
+logger = get_logger(__name__)
 
 
 SYSTEM_PROMPT = """\

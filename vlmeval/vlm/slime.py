@@ -1,12 +1,10 @@
+import copy
+import logging
+
 import torch
 from PIL import Image
-from abc import abstractproperty
-import sys
-import os.path as osp
+
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-import copy
 
 
 class SliME(BaseModel):
@@ -20,9 +18,9 @@ class SliME(BaseModel):
     def __init__(self, model_path='yifanzhang114/SliME-Llama3-8B', **kwargs):
         assert model_path is not None
         try:
-            from llava.model.builder import load_pretrained_model
             from llava.conversation import conv_templates
             from llava.mm_utils import get_model_name_from_path, tokenizer_image_token
+            from llava.model.builder import load_pretrained_model
         except Exception as err:
             logging.critical('Please install requirements on https://github.com/yfzhang114/SliME before using SliME')
             raise err

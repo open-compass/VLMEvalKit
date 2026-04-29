@@ -1,5 +1,5 @@
-from .jaccard import Jaccard
 from .common.conversions import cast_to_dict
+from .jaccard import Jaccard
 
 
 class DictJaccardAggJaccard:

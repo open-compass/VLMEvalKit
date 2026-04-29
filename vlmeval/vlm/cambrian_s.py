@@ -1,11 +1,10 @@
-import os
 import logging
-from typing import List, Dict, Union, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from PIL import Image
 from decord import VideoReader, cpu
+from PIL import Image
 
 from .base import BaseModel
 
@@ -54,16 +53,12 @@ class CambrianS(BaseModel):
     ):
         assert model_path is not None
         try:
-            from cambrian.model.builder import load_pretrained_model
-            from cambrian.mm_utils import (
-                process_images, tokenizer_image_token,
-                get_model_name_from_path, expand2square,
-            )
-            from cambrian.constants import (
-                IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN,
-                DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN,
-            )
+            from cambrian.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                            DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX)
             from cambrian.conversation import conv_templates
+            from cambrian.mm_utils import (expand2square, get_model_name_from_path, process_images,
+                                           tokenizer_image_token)
+            from cambrian.model.builder import load_pretrained_model
         except Exception as e:
             logging.critical(
                 "Failed to import Cambrian-S modules. Please ensure you have:\n"

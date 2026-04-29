@@ -1,9 +1,9 @@
 import io
-import pathlib
 import json
 import multiprocessing
-from unittest.mock import patch
+import pathlib
 from multiprocessing.queues import Empty
+from unittest.mock import patch
 
 BIG_BENCH_PATH = pathlib.Path(__file__).resolve().parent.parent.parent
 

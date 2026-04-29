@@ -1,14 +1,15 @@
 from typing import List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
-
-from transformers.modeling_outputs import CausalLMOutputWithPast
+from transformers import (AutoConfig, AutoModelForCausalLM, Qwen2Config, Qwen2ForCausalLM,
+                          Qwen2Model)
 from transformers.generation.utils import GenerateOutput
-from transformers import Qwen2Config, Qwen2Model, Qwen2ForCausalLM
-from transformers import AutoConfig, AutoModelForCausalLM
+from transformers.modeling_outputs import CausalLMOutputWithPast
 from transformers.utils import logging
+
+from ..hawk_arch import HawkMetaForCausalLM, HawkMetaModel
 from ..vision_encoder.qwen_vit import QwenVisionConfig
-from ..hawk_arch import HawkMetaModel, HawkMetaForCausalLM
 
 logger = logging.get_logger(__name__)
 

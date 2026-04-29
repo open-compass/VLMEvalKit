@@ -33,6 +33,8 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2025-08-04]** In [PR 1175](https://github.com/open-compass/VLMEvalKit/pull/1175), we refine the `can_infer_option` and `can_infer_text`, which increasingly route the evaluation to LLM choice extractors and empirically leads to slight performance improvement for MCQ benchmarks.
 
 ## 🆕 News
+
+- **[2026-04-08]** Supported [**Video-MME-v2**](https://github.com/MME-Benchmarks/Video-MME-v2). Video-MME-v2 is an authoritative benchmark towards the next stage in video understanding evaluation. 🔥🔥🔥
 - **[2025-07-07]** Supported [**SeePhys**](https://seephys.github.io/), which is a ​full spectrum multimodal benchmark for evaluating physics reasoning across different knowledge levels. thanks to [**Quinn777**](https://github.com/Quinn777) 🔥🔥🔥
 - **[2025-07-02]** Supported [**OvisU1**](https://huggingface.co/AIDC-AI/Ovis-U1-3B), thanks to [**liyang-7**](https://github.com/liyang-7) 🔥🔥🔥
 - **[2025-06-16]** Supported [**PhyX**](https://phyx-bench.github.io/), a benchmark aiming to assess capacity for physics-grounded reasoning in visual scenarios. 🔥🔥🔥

@@ -1,14 +1,11 @@
-import re
-import numpy as np
-from PIL import Image
-from transformers import AutoModelForCausalLM, AutoProcessor
-from io import BytesIO
 import base64
+from io import BytesIO
 from mimetypes import guess_type
 
+from PIL import Image
+from transformers import AutoModelForCausalLM, AutoProcessor
+
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE, DATASET_MODALITY
 
 
 def extract_boxed_content(ans: str):

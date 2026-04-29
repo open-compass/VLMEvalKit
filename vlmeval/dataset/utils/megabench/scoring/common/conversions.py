@@ -1,11 +1,13 @@
 import ast
 import json
 import re
-from matplotlib import font_manager
-from PIL import Image, ImageDraw, ImageFont
-from ...parsing.common.parsers import parse_json
 from numbers import Number
 from typing import Tuple, Union
+
+from matplotlib import font_manager
+from PIL import Image, ImageDraw, ImageFont
+
+from vlmeval.dataset.utils.megabench.parsing.common.parsers import parse_json
 
 
 def freeze_structure(obj):

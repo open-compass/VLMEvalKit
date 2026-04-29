@@ -1,18 +1,13 @@
 import json
+import logging
 import os
-import copy
-import pandas as pd
-import base64
-import numpy as np
-from tqdm import tqdm
-import torch.distributed as dist
-from .image_base import ImageBaseDataset
-from ..smp import *
-
-import glob
-import random
 import re
-from PIL import Image
+
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
+from .image_base import ImageBaseDataset
 
 
 def contain_chinese_string(text):
@@ -21,6 +16,10 @@ def contain_chinese_string(text):
 
 
 def cal_per_metrics(pred, gt):
+    import jieba
+    import nltk
+    from nltk.metrics.scores import f_measure, precision, recall
+    from nltk.translate.meteor_score import meteor_score
 
     metrics = {}
 
@@ -32,7 +31,7 @@ def cal_per_metrics(pred, gt):
         hypothesis = pred.split()
 
     metrics["bleu"] = nltk.translate.bleu([reference], hypothesis)
-    metrics["meteor"] = meteor_score.meteor_score([reference], hypothesis)
+    metrics["meteor"] = meteor_score([reference], hypothesis)
 
     reference = set(reference)
     hypothesis = set(hypothesis)
@@ -117,7 +116,8 @@ def run_eval_wrapper(args):
 
 
 def oceanocr_evaluate(tsv_path, eval_file):
-    # pass
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+
     print("\nStarting evaluation Ocean-OCR Bench...")
     df = pd.read_excel(eval_file)
     if "id" in df.iloc[0].values:
@@ -197,13 +197,13 @@ class OceanOCRBench(ImageBaseDataset):
     MODALITY = 'IMAGE'
     TYPE = 'QA'
 
-    DATASET_URL = {'OceanOCRBench':'https://opencompass.openxlab.space/utils/VLMEval/OceanOCRBench.tsv'}
+    DATASET_URL = {'OceanOCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OceanOCRBench.tsv'}
     DATASET_MD5 = {'OceanOCRBench': '482553a1bcf5cbcadcb31d847e6e01c8'}  # 测试版本的tsv文件  50243d62799e3467149195980cd7d660
 
     system_prompt = "Can you pull all textual information from the image?"
 
-    def __init__(self,dataset='OceanOCRBench',**kwargs):
-        super().__init__(dataset,**kwargs)
+    def __init__(self, dataset='OceanOCRBench', **kwargs):
+        super().__init__(dataset, **kwargs)
         print(f'self.img_root:{self.img_root}')
 
     def build_prompt(self, line):
@@ -217,11 +217,10 @@ class OceanOCRBench(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         try:
-            import nltk
-            from nltk.metrics import precision, recall, f_measure
-            import jieba
-            from nltk.translate import meteor_score
-            from concurrent.futures import ProcessPoolExecutor, as_completed
+            import jieba  # noqa: F401
+            import nltk  # noqa: F401
+            from nltk.metrics import f_measure, precision, recall  # noqa: F401
+            from nltk.translate import meteor_score  # noqa: F401
         except ImportError as e:
             logging.critical(
                 "Please follow the requirements (see vlmeval/dataset/utils/oceanoctbench/eval_req.txt) \

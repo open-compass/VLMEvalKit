@@ -1,6 +1,8 @@
 import logging
-from .common.conversions import str_to_coords
+
 import numpy as np
+
+from .common.conversions import str_to_coords
 
 
 class CoordsSequenceSimilarity:

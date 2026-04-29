@@ -1,10 +1,13 @@
+import copy as cp
+import string
+
+import pandas as pd
 import torch
-from transformers import AutoModel, AutoTokenizer
-from transformers import StoppingCriteria, StoppingCriteriaList
 from PIL import Image
+from transformers import AutoModel, AutoTokenizer, StoppingCriteria, StoppingCriteriaList
+
+from vlmeval.dataset import DATASET_TYPE
 from ..base import BaseModel
-from ...smp import *
-from ...dataset import DATASET_TYPE
 
 
 class StoppingCriteriaSub(StoppingCriteria):

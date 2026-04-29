@@ -1,9 +1,10 @@
 from __future__ import annotations
 import os
-from typing import List, Dict, Any, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoProcessor
 
 
 def _is_url(s: str) -> bool:

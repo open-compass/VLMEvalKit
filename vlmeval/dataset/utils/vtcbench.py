@@ -1,8 +1,10 @@
-from ...smp import *
-from ...utils import can_infer
-from .verifier import QUESTION_QUALITY_PROMPT_EN_NO_COT
-from rouge_score import rouge_scorer
+import time
 from typing import Literal
+
+from rouge_score import rouge_scorer
+
+from vlmeval.smp import istype
+from .verifier import QUESTION_QUALITY_PROMPT_EN_NO_COT
 
 
 def calc_vtc_metrics(
@@ -153,7 +155,7 @@ def gpt_eval_vtcbemch(model, line):
                 else:
                     raise RuntimeError(f'Invalid judge response: {judge_response}')
                 break
-            except:
+            except Exception:
                 time.sleep(1)
 
         if i == retry - 1:

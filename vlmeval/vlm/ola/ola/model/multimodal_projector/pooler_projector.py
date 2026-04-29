@@ -1,10 +1,10 @@
+import math
+import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-
 from transformers.models.clip.modeling_clip import CLIPVisionModel
-import os
 
 
 class PoolerProjector(nn.Module):

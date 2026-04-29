@@ -1,5 +1,5 @@
-from vlmeval.dataset.utils.mmhelix.evaluator import *
 import re
+
 import regex  # Import regex module to support recursive matching of balanced brackets
 
 

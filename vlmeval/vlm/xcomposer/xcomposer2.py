@@ -1,11 +1,16 @@
+import re
+import string
+
+import pandas as pd
 import torch
 import torchvision
-from transformers import AutoModel, AutoTokenizer
 from PIL import Image
+from transformers import AutoModel, AutoTokenizer
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import listinstr
 from ..base import BaseModel
-from ...smp import *
-from ...dataset import DATASET_TYPE
-import re
+
 pattern = re.compile(r'[A-Z]')
 
 
@@ -47,7 +52,7 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
         if i < len(images):
             try:
                 image = Image.open(images[i]).convert('RGB')
-            except:
+            except Exception:
                 image = images[i].convert('RGB')
             if padding:
                 image = __padding__(image)

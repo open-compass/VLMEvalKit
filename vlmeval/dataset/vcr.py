@@ -1,8 +1,16 @@
+import logging
 import uuid
 from functools import partial
+
+import numpy as np
+from tqdm import tqdm
+
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import get_intermediate_file_path
+from vlmeval.smp.log import get_logger
 from .image_base import ImageBaseDataset
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
+
+logger = get_logger(__name__)
 
 
 rouge = None
@@ -100,8 +108,9 @@ def find_best_match(needle, hay, language, rouge):
     tuple: The highest similarity value and the best matching string.
     """
     assert language in ['en', 'zh']
-    from nltk.util import ngrams
     from difflib import SequenceMatcher as SM
+
+    from nltk.util import ngrams
 
     tokens_hay = tokenize(hay, language)
     tokens_needle = tokenize(needle, language)
@@ -270,7 +279,6 @@ class VCRDataset(ImageBaseDataset):
 
         vcr_score_list = {'Exact_Match': [], 'Jaccard': []}
         vcr_score = {'Exact_Match': 0, 'Jaccard': 0}
-        logger = get_logger('Evaluation')
         data = load(eval_file)
 
         lt = len(data)

@@ -1,13 +1,13 @@
-import re
-import torch
 import logging
+import re
 import string
+
 import pandas as pd
-from transformers import set_seed
-from transformers import AutoProcessor, AutoModel
+import torch
+from transformers import AutoModel, AutoProcessor, set_seed
+
+from vlmeval.dataset import DATASET_TYPE
 from ..base import BaseModel
-from ...dataset import DATASET_TYPE
-from ...smp import *
 
 
 class Valley2Chat(BaseModel):
@@ -76,7 +76,7 @@ class Valley2Chat(BaseModel):
     def use_custom_prompt(self, dataset):
         if not self._use_custom_prompt:
             return False
-        if any(dataset.startswith(prefix) for prefix in ['TextVQA', 'ChartQA', 'InfoVQA', 'DocVQA','CMMMU']):
+        if any(dataset.startswith(prefix) for prefix in ['TextVQA', 'ChartQA', 'InfoVQA', 'DocVQA', 'CMMMU']):
             return True
         if any(dataset.startswith(prefix) for prefix in ['MMVet', 'MathVista', 'MathVerse', 'MathVision']):
             return True
@@ -133,7 +133,7 @@ class Valley2Chat(BaseModel):
 
         if dataset == 'MMVet':
             prompt = self.build_mmvet_prompt(line, dataset)
-        elif any(dataset.startswith(prefix) for prefix in ('TextVQA', 'ChartQA', 'InfoVQA', 'DocVQA','CMMMU')):
+        elif any(dataset.startswith(prefix) for prefix in ('TextVQA', 'ChartQA', 'InfoVQA', 'DocVQA', 'CMMMU')):
             prompt = self.build_ocr_cmmmu_prompt(line, dataset)
         elif any(dataset.startswith(prefix) for prefix in ('MathVista', 'MathVerse', 'MathVision')):
             prompt = self.build_math_prompt(line, dataset)

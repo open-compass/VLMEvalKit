@@ -1,21 +1,23 @@
+import string
+import warnings
+
+import pandas as pd
 import torch
 from PIL import Image
-from abc import abstractproperty
-import sys
-import os.path as osp
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import cn_string
 from ..base import BaseModel
-from ...smp import *
-from ...dataset import DATASET_TYPE, DATASET_MODALITY
-import copy
-import requests
+
 try:
     from transformers import AutoModelForVision2Seq, AutoProcessor
 except ImportError:
-    from transformers import AutoModelForImageTextToText as AutoModelForVision2Seq, AutoProcessor
+    from transformers import AutoModelForImageTextToText as AutoModelForVision2Seq
+    from transformers import AutoProcessor
 
 flash_attn_flag = False
 try:
-    import flash_attn
+    import flash_attn  # noqa: F401
     flash_attn_flag = True
 except ImportError:
     pass

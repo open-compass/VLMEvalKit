@@ -1,15 +1,14 @@
-import os
 import ast
-import decord
+import os
 import string
-import numpy as np
 
+import decord
+import numpy as np
+from huggingface_hub import snapshot_download
 from PIL import Image
 from tqdm import tqdm
-from huggingface_hub import snapshot_download
 
-from ..smp.misc import get_cache_path, modelscope_flag_set
-from ..smp.file import LMUDataRoot, load
+from vlmeval.smp import LMUDataRoot, get_cache_path, load, modelscope_flag_set
 from .video_base import VideoBaseDataset
 
 
@@ -226,7 +225,7 @@ class STIBench(VideoBaseDataset):
         return message
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import eval_mcq_score, build_mcq_score_fn
+        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, eval_mcq_score
 
         # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
         score_fn = build_mcq_score_fn(**judge_kwargs)

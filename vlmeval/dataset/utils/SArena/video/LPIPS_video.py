@@ -1,15 +1,15 @@
 import os
 import shutil
-import torch
-import lpips
-import cv2
-import json
 
+import cv2
+import lpips
+import torch
 from PIL import Image
-from tqdm import tqdm
-from vlmeval.smp.file import LMUDataRoot
 from torch.utils.data import DataLoader
-from torchvision.transforms import ToTensor, Normalize
+from torchvision.transforms import Normalize, ToTensor
+from tqdm import tqdm
+
+from vlmeval.smp.file import LMUDataRoot
 from ..base_metric import BaseMetric
 from .CLIP_video import sample_frames_from_video
 

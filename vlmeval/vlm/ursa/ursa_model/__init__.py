@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from .configuration_ursa import AlignerConfig, UrsaConfig, VisionConfig
 from .image_processing_vlm import VLMImageProcessor, VLMImageProcessorConfig
 from .modeling_ursa import UrsaForConditionalGeneration, UrsaForTokenClassification
 from .processing_ursa import UrsaProcessor
-from .configuration_ursa import VisionConfig, UrsaConfig, AlignerConfig
 from .projector import MlpProjector
 
 __all__ = [

@@ -1,10 +1,12 @@
+import copy as cp
+import warnings
+
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import warnings
-import copy as cp
-from .base import BaseModel
-from ..smp import isimg, listinstr
+
 from ..dataset import DATASET_TYPE
+from ..smp import listinstr
+from .base import BaseModel
 
 
 class QwenVL(BaseModel):

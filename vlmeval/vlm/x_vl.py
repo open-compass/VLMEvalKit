@@ -1,10 +1,8 @@
 import torch
 from PIL import Image
-import sys
-import os.path as osp
+
+from ..dataset import DATASET_MODALITY
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE, DATASET_MODALITY
 
 
 class X_VL_HF(BaseModel):
@@ -14,7 +12,7 @@ class X_VL_HF(BaseModel):
     IMAGE_TOKEN_INDEX = -200
 
     def __init__(self, model_path="YannQi/X-VL-4B", **kwargs):
-        from transformers import AutoProcessor, AutoModel
+        from transformers import AutoModel, AutoProcessor
         assert model_path is not None, "Model path must be provided."
         self.model = AutoModel.from_pretrained(
             model_path,

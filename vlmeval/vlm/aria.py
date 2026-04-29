@@ -1,13 +1,15 @@
-import torch
-import warnings
 import copy as cp
-from PIL import Image
-import pandas as pd
-import string
 import re
+import string
+import warnings
+
+import pandas as pd
+import torch
+from PIL import Image
+
+from ..dataset import DATASET_MODALITY, DATASET_TYPE
+from ..smp import listinstr
 from .base import BaseModel
-from ..smp import isimg, listinstr, cn_string
-from ..dataset import DATASET_TYPE, DATASET_MODALITY
 
 
 class Aria(BaseModel):

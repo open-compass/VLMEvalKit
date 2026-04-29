@@ -1,12 +1,13 @@
 # pylint: skip-file
 
-import pandas as pd
-import json
-import numpy as np
-import os
 import argparse
+import json
+import os
 
-from ...smp import load
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp.file import load
 
 # four_dimensional_metrics.py
 

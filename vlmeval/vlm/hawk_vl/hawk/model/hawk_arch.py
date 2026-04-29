@@ -15,11 +15,13 @@
 
 
 from abc import ABC, abstractmethod
+from typing import List, Optional
+
 import torch
-from .vision_encoder import VISION_TRANSFORMER_CLASSES
-from typing import Optional, List
-from .multimodal_projector.builder import build_vision_projector
+
 from ..constants import IGNORE_INDEX
+from .multimodal_projector.builder import build_vision_projector
+from .vision_encoder import VISION_TRANSFORMER_CLASSES
 
 
 class HawkMetaModel:

@@ -1,7 +1,10 @@
-from ..smp import *
-from ..utils import *
+import os.path as osp
+import warnings
+
+from vlmeval.smp import dump, get_intermediate_file_path, listinstr, load
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
+from .utils import DEBUG_MESSAGE, build_judge
 
 
 class ImageYORNDataset(ImageBaseDataset):
@@ -15,7 +18,7 @@ class ImageYORNDataset(ImageBaseDataset):
         'AMBER': 'https://huggingface.co/datasets/yifanzhang114/AMBER_base64/resolve/main/AMBER.tsv',
         'VSR-zeroshot': (
             "https://huggingface.co/datasets/ignoreandfly/"
-            "vsr_zeroshot_tsv/resolve/main/vsr_zeroshot_dataset_yn_strict.tsv"),}
+            "vsr_zeroshot_tsv/resolve/main/vsr_zeroshot_dataset_yn_strict.tsv"), }
 
     DATASET_MD5 = {
         'MME': 'b36b43c3f09801f5d368627fb92187c3',
@@ -36,8 +39,8 @@ class ImageYORNDataset(ImageBaseDataset):
 
     # It returns a dataframe
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.yorn import YOrN_Extraction, YOrN_auxeval
-        from .utils.yorn import default_rating, MME_rating, Hallusion_rating, POPE_rating, AMBER_rating, VSR_rating
+        from .utils.yorn import (AMBER_rating, Hallusion_rating, MME_rating, POPE_rating,
+                                 VSR_rating, YOrN_auxeval, YOrN_Extraction, default_rating)
 
         dataset = self.dataset_name
         data = load(eval_file)

@@ -1,19 +1,14 @@
-import os
+import ast
+import os.path as osp
 import re
-import tempfile
-from functools import partial
 
 import pandas as pd
-import ast
+from PIL import Image
 
-from ..image_base import img_root_map
+from vlmeval.smp import LMUDataRoot, get_logger, load, toliststr
 from .screenspot import ScreenSpot
-from ..utils import build_judge, DEBUG_MESSAGE
-from ...smp import *
-from ...utils import track_progress_rich
-from ipdb import set_trace as st
 
-logger = get_logger("RUN")
+logger = get_logger(__name__)
 
 """
 {
