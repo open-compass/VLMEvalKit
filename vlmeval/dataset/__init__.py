@@ -104,6 +104,7 @@ from .plotqa import PlotQA
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 from .reasonmap_plus import ReasonMap_Plus
 from .refcoco import RefCOCODataset
+from .pixmopoints import PixmoPointsDataset
 from .refspatial import RefSpatialDataset
 from .refspatialbench import RefSpatialBench
 from .robospatialbench import RoboSpatialBench
@@ -293,7 +294,7 @@ IMAGE_DATASET = [
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,  # noqa: E501
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,  # noqa: E501
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
-    SciDocBench,
+    SciDocBench, PixmoPointsDataset
 ]
 
 # add by EASI team
