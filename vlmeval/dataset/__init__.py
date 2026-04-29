@@ -1,6 +1,11 @@
+import copy
+import os.path as osp
 import warnings
 
-from ..smp import *
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, localize_df, toliststr
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
 from .CGAVCounting.cg_av_counting import CGAVCounting
@@ -68,7 +73,6 @@ from .medqbench_mcq import MedqbenchMCQDataset
 from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
 from .megabench import MEGABench
 from .miabench import MIABench
-# Add by EASI team
 from .mindcubebench import MindCubeBench
 from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
 from .mmalignbench import MMAlignBench
@@ -110,7 +114,6 @@ from .SGI_Bench_1_0.experimental_reasoning import SGI_Bench_Experimental_Reasoni
 from .SGI_Bench_1_0.idea_generation import SGI_Bench_Idea_Generation
 from .SGI_Bench_1_0.wet_experiment import SGI_Bench_Wet_Experiment
 from .simplevqa import SimpleVQA
-# Add by EASI team
 from .sitebench import SiteBenchImage, SiteBenchVideo
 from .siuo import SIUODataset
 from .siuo_gen import SIUOGenDataset
@@ -127,13 +130,12 @@ from .tamperbench import MVTamperBench
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 from .uni_svg import UniSVG
-from .utils import *
+from .utils import DEBUG_MESSAGE, build_judge, extract_answer_from_item, prefetch_answer
 from .v2pbench import V2PBench
 from .vcr import VCRDataset
 from .vcrbench import VCRBench
 from .vdc import VDC
 from .video_concat_dataset import ConcatVideoDataset
-from .video_dataset_config import *
 from .video_holmes import Video_Holmes
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
 from .videomme import VideoMME
@@ -151,6 +153,8 @@ from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
 from .xstest import XSTestDataset
+
+from .video_dataset_config import supported_video_datasets  # isort: skip
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -209,7 +213,7 @@ class ConcatDataset(ImageBaseDataset):
         idx = line['original_index']
         dname = line['SUB_DATASET']
         org_data = self.dataset_map[dname].data
-        org_line = cp.deepcopy(org_data[org_data['index'] == idx]).iloc[0]
+        org_line = copy.deepcopy(org_data[org_data['index'] == idx]).iloc[0]
         return self.dataset_map[dname].build_prompt(org_line)
 
     def dump_image(self, line):
@@ -282,11 +286,11 @@ IMAGE_DATASET = [
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
     ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
-    MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,
-    Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning
+    Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning,
+    MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
 ]
 
 # add by EASI team
@@ -409,4 +413,5 @@ def infer_dataset_basename(dataset_name):
 
 __all__ = [
     'build_dataset', 'img_root_map', 'build_judge', 'extract_answer_from_item', 'prefetch_answer', 'DEBUG_MESSAGE'
-] + [cls.__name__ for cls in DATASET_CLASSES]
+]
+__all__.extend([cls.__name__ for cls in DATASET_CLASSES])

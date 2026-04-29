@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from ..smp import *  # noqa: F401,F403
 from ..smp.file import LMUDataRoot, dump, get_intermediate_file_path, load
 from ..smp.vlm import read_ok
 from ..utils import track_progress_rich
