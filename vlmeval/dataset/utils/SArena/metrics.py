@@ -51,28 +51,36 @@ class InternSVGMetrics:
         for metric in self.active_metrics.values():
             metric.reset()
 
+    @staticmethod
+    def _normalize_metric_result(result):
+        if isinstance(result, tuple):
+            return result[0]
+        return result
+
+    @staticmethod
+    def _is_valid_scalar(value):
+        try:
+            return not math.isnan(float(value))
+        except (TypeError, ValueError):
+            return False
+
     def calculate_metrics(self, batch):
         avg_results_dict = {}
 
         for metric_name, metric in self.active_metrics.items():
             print(f"Calculating {metric_name}...")
-            if metric_name in ['FID', 'FID-C']:
-                avg_result = metric.calculate_score(batch)
-                if not math.isnan(avg_result):
-                    avg_results_dict[metric_name] = avg_result
-            else:
-                avg_result, values = metric.calculate_score(batch)
-                if not math.isnan(avg_result):
-                    avg_results_dict[metric_name] = avg_result
+            metric_result = self._normalize_metric_result(metric.calculate_score(batch))
+            if isinstance(metric_result, dict):
+                avg_results_dict[metric_name] = metric_result
+            elif self._is_valid_scalar(metric_result):
+                avg_results_dict[metric_name] = float(metric_result)
 
         return avg_results_dict
 
     def summarize_metrics(self):
         summary_scores = {}
         for name, calc in self.active_metrics.items():
-            meter = getattr(calc, 'meter', None)
-            if meter is not None:
-                summary_scores[name] = meter.avg
+            summary_scores[name] = calc.get_average_score()
         return summary_scores
 
     def __len__(self) -> int:

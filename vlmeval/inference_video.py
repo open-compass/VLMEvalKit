@@ -2,6 +2,7 @@ import argparse
 import os
 import os.path as osp
 import warnings
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -9,7 +10,7 @@ import torch.distributed as dist
 from tqdm import tqdm
 
 from vlmeval.config import supported_VLM
-from vlmeval.smp import dump, get_rank_and_world_size, load
+from vlmeval.smp import dump, get_pred_file_path, get_rank_and_world_size, load
 from vlmeval.utils import track_progress_rich
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -26,7 +27,7 @@ def parse_args():
 
 
 # Only API model is accepted
-def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_nproc=4):
+def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_nproc=4, retry_failed=True):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset_name = dataset.dataset_name
@@ -34,6 +35,8 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
     assert getattr(model, 'is_api', False)
 
     indices = list(samples_dict.keys())
+    # Build str→orig mapping for checkpoint key conversion
+    index_str_to_orig = {str(i): i for i in indices}
     if getattr(model, 'backend', None) == 'genai':
         if dataset.nframe > 0:
             print(
@@ -66,29 +69,40 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
     )
 
     if dataset.nframe > 0:
-        out_file = f'{work_dir}/{model_name}_{dataset_name}_{dataset.nframe}frame_{packstr}_supp.pkl'
+        out_file = f'{work_dir}/{model_name}_{dataset_name}_{dataset.nframe}frame_{packstr}_checkpoint.pkl'
     else:
-        out_file = f'{work_dir}/{model_name}_{dataset_name}_{dataset.fps}fps_{packstr}_supp.pkl'
+        out_file = f'{work_dir}/{model_name}_{dataset_name}_{dataset.fps}fps_{packstr}_checkpoint.pkl'
     res = load(out_file) if osp.exists(out_file) else {}
+    if retry_failed:
+        res = {k: v for k, v in res.items() if FAIL_MSG not in str(v)}
 
-    structs = [s for i, s in zip(indices, structs) if i not in res or res[i] == FAIL_MSG]
+    structs = [s for i, s in zip(indices, structs) if str(i) not in res]
     structs = [struct for struct in structs if struct is not None]
-    indices = [i for i in indices if i not in res or res[i] == FAIL_MSG]
+    indices = [i for i in indices if str(i) not in res]
 
     gen_func = model.generate
     structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
 
     if len(structs):
-        track_progress_rich(gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
+        str_indices = [str(i) for i in indices]
+        track_progress_rich(gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=str_indices)
 
-    res = load(out_file)
-    return res
+    # Load the full accumulated results (str keys)
+    if osp.exists(out_file):
+        res = load(out_file)
+    # Convert str keys back to original types for caller compatibility
+    result = {index_str_to_orig[k]: v for k, v in res.items() if k in index_str_to_orig}
+    return result
 
 
-def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False):
-    res = load(out_file) if osp.exists(out_file) else {}
-    rank, world_size = get_rank_and_world_size()
+def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False,
+               retry_failed=True):
     dataset_name = dataset.dataset_name
+    prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
+    res = load(prev_file) if osp.exists(prev_file) else {}
+    if osp.exists(out_file):
+        res.update(load(out_file))
+    rank, world_size = get_rank_and_world_size()
 
     sample_indices = list(dataset.videos) if getattr(dataset, 'pack', False) else list(dataset.data['index'])
     samples = list(dataset.videos) if getattr(dataset, 'pack', False) else list(range(len(dataset.data)))
@@ -126,7 +140,8 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
             model_name=model_name,
             dataset=dataset,
             samples_dict={k: sample_map[k] for k in sample_indices_subrem},
-            api_nproc=api_nproc)
+            api_nproc=api_nproc,
+            retry_failed=retry_failed)
         for k in sample_indices_subrem:
             assert k in supp
         res.update(supp)
@@ -212,24 +227,38 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
 
 
 # A wrapper for infer_data, do the pre & post processing
-def infer_data_job_video(
-        model,
-        work_dir,
-        model_name,
-        dataset,
-        result_file_name,
-        verbose=False,
-        api_nproc=4,
-        use_vllm=False):
+def infer_data_job_video(model,
+                         work_dir,
+                         model_name,
+                         dataset,
+                         result_file=None,
+                         verbose=False,
+                         api_nproc=4,
+                         use_vllm=False,
+                         retry_failed=True):
 
     dataset_name = dataset.dataset_name
     rank, world_size = get_rank_and_world_size()
-    result_file = osp.join(work_dir, result_file_name)
-    # Dump Predictions to Prev File if result file exists
-    if osp.exists(result_file):
-        return model
 
-    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{osp.splitext(result_file_name)[0]}.pkl')
+    if result_file is None:
+        result_file = get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True)
+
+    prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
+    if osp.exists(result_file):
+        if retry_failed:
+            if rank == 0:
+                data = load(result_file)
+                results = {k: v for k, v in zip(data['index'], data['prediction'])}
+                results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
+                if len(results) == len(data):
+                    return model
+                dump(results, prev_file)
+            if world_size > 1:
+                dist.barrier()
+        else:
+            return model
+
+    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{Path(result_file).stem}.pkl')
     out_file = tmpl.format(rank)
 
     model = infer_data(
@@ -240,7 +269,8 @@ def infer_data_job_video(
         out_file=out_file,
         verbose=verbose,
         api_nproc=api_nproc,
-        use_vllm=use_vllm)
+        use_vllm=use_vllm,
+        retry_failed=retry_failed)
 
     if world_size > 1:
         dist.barrier()
@@ -264,4 +294,19 @@ def infer_data_job_video(
         dump(meta, result_file)
         for i in range(world_size):
             os.remove(tmpl.format(i))
+        # Clean up API checkpoint files
+        packstr = 'pack' if getattr(dataset, 'pack', False) else 'nopack'
+        if dataset.nframe > 0:
+            checkpoint_file = (
+                f'{work_dir}/{model_name}_{dataset_name}_{dataset.nframe}frame_{packstr}_checkpoint.pkl'
+            )
+        else:
+            checkpoint_file = (
+                f'{work_dir}/{model_name}_{dataset_name}_{dataset.fps}fps_{packstr}_checkpoint.pkl'
+            )
+        if osp.exists(checkpoint_file):
+            os.remove(checkpoint_file)
+        # Clean up PREV file
+        if osp.exists(prev_file):
+            os.remove(prev_file)
     return model

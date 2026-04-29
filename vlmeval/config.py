@@ -703,6 +703,7 @@ api_models = {
     "lmdeploy_internvl_78B_MPO": partial(
         api.LMDeployAPI,
         model="InternVL2_5-78B-MPO",
+        custom_prompt="internvl2-mpo-cot",
         api_base="http://0.0.0.0:23333/v1/chat/completions",
         temperature=0,
         retry=10,
@@ -1066,7 +1067,7 @@ long_vita_series = {
 
 interns1_mini = {
     "Intern-S1-mini": partial(
-        vlm.InternS1Chat, model_path="/mnt/shared-storage-user/mllm/lijinsong/models/Intern-S1-mini/"
+        vlm.InternS1Chat, model_path="internlm/Intern-S1-mini"
     ),
 }
 

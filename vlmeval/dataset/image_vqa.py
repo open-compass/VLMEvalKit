@@ -191,6 +191,16 @@ class ImageVQADataset(ImageBaseDataset):
         dump(ret, result_file)
         return ret
 
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        if 'split=none|Overall' in metrics:
+            return {'Overall Acc': metrics['split=none|Overall']}
+        else:
+            return super().report_primary_metric(metrics)
+
 
 class VizWiz(ImageBaseDataset):
     TYPE = 'VQA'
@@ -248,7 +258,7 @@ class VTCBench(ImageBaseDataset):
 
     @classmethod
     def supported_datasets(cls):
-        return 'VTCBench'
+        return ['VTCBench']
 
     def load_data(self, dataset: str):
         """Load dataset from HuggingFace"""
@@ -960,6 +970,16 @@ class MathVision(ImageBaseDataset):
         score_pth = get_intermediate_file_path(eval_file, '_score', 'csv')
         dump(score, score_pth)
         return score
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        if 'Subject=Overall|acc' in metrics:
+            return {'Overall Acc': metrics['Subject=Overall|acc']}
+        else:
+            return super().report_primary_metric(metrics)
 
 
 class LENS(ImageBaseDataset):

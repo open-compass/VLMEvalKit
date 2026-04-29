@@ -292,3 +292,13 @@ class MaCBench(ImageBaseDataset):
             result[group].append(
                 float(group_hit.get(group, 0) / group_total[group]))
         return pd.DataFrame(result)
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        if 'Overall' in metrics:
+            return {'Overall Acc': metrics['Overall'] * 100}
+        else:
+            return super().report_primary_metric(metrics)

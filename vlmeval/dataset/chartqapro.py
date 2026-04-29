@@ -121,3 +121,13 @@ class ChartQAPro(ImageBaseDataset):
         file.dump(score, score_file)
 
         return score
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        if '0=Overall|1' in metrics:
+            return {'Overall Acc': metrics['0=Overall|1'] * 100}
+        else:
+            return super().report_primary_metric(metrics)

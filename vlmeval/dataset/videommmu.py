@@ -617,15 +617,17 @@ class VideoMMMU(VideoBaseDataset):
             assert line < len(self)
             line = self.data.iloc[line]
 
-        frames, indices, video_info = self.save_video_frames(
-            line['id'], line['video'], video_llm)
-
         message = []
         if video_llm:
             message.append(
                 dict(type='video',
                      value=osp.join(self.data_root, line['video'])))
+        elif not self.split_frame:
+            raise ValueError('fps and nframe should be set at least one valid value for ')
         else:
+            frames, indices, video_info = self.save_video_frames(
+                line['id'], line['video'], video_llm)
+
             message.extend(dict(type='image', value=im) for im in frames)
 
         if line['category'] == 'Adaptation':

@@ -8,6 +8,8 @@ from torchvision.transforms import ToTensor
 from tqdm import tqdm
 
 from .base_metric import BaseMetric
+from .runtime import (get_available_cpu_count, get_in_memory_dataloader_workers,
+                      get_metric_batch_size)
 
 
 class CLIPScoreCalculator(BaseMetric):
@@ -18,6 +20,14 @@ class CLIPScoreCalculator(BaseMetric):
         self.clip_score = CLIPScore(model_name_or_path="openai/clip-vit-large-patch14")
         self.clip_score.to(self.device)
         self.task_type = task_type
+        default_cpu_batch = max(16, min(get_available_cpu_count(), 64))
+        self.batch_size = get_metric_batch_size(
+            "VLMEVAL_SARENA_CLIP_BATCH_SIZE",
+            cpu_default=default_cpu_batch,
+            cuda_default=64,
+            cpu_cap=64,
+        )
+        self.num_workers = get_in_memory_dataloader_workers()
 
     def CLIP_Score(self, images, captions):
         if isinstance(captions, tuple):
@@ -36,19 +46,30 @@ class CLIPScoreCalculator(BaseMetric):
             tensor_gt_imgs = [ToTensor()(img) for img in gt_imgs]
             return tensor_pred_imgs, tensor_gt_imgs
 
-    def calculate_score(self, batch, batch_size=64, update=True):
+    def calculate_score(self, batch, batch_size=None, update=True):
+        effective_batch_size = batch_size or self.batch_size
         if self.task_type == 'T2I':
             pred_images = batch['pred_im']
             captions = batch['caption']
-            data_loader = DataLoader(list(zip(pred_images, captions)), collate_fn=self.collate_fn,
-                                     batch_size=batch_size, shuffle=False,
-                                     num_workers=4, pin_memory=True)
+            data_loader = DataLoader(
+                list(zip(pred_images, captions)),
+                collate_fn=self.collate_fn,
+                batch_size=effective_batch_size,
+                shuffle=False,
+                num_workers=self.num_workers,
+                pin_memory=(self.device == "cuda"),
+            )
         else:
             pred_images = batch['pred_im']
             gt_images = batch['gt_im']
-            data_loader = DataLoader(list(zip(pred_images, gt_images)), collate_fn=self.collate_fn,
-                                     batch_size=batch_size, shuffle=False,
-                                     num_workers=4, pin_memory=True)
+            data_loader = DataLoader(
+                list(zip(pred_images, gt_images)),
+                collate_fn=self.collate_fn,
+                batch_size=effective_batch_size,
+                shuffle=False,
+                num_workers=self.num_workers,
+                pin_memory=(self.device == "cuda"),
+            )
 
         all_scores = []
         for batch_eval in tqdm(data_loader):

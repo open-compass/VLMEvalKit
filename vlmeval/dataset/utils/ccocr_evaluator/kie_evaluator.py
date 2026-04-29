@@ -4,12 +4,14 @@ Donut
 Copyright (c) 2022-present NAVER Corp.
 MIT License
 """
+import ast
 import json
 import re
 from collections import Counter
 from typing import Any, Dict, List, Union
 
 import zss
+from json_repair import repair_json
 from nltk import edit_distance
 from zss import Node
 
@@ -114,6 +116,30 @@ def normalize_dict(data: Union[Dict, List, Any]):
     else:
         new_data = [str(data).strip()]
     return new_data
+
+
+def _load_json_like(text: Any):
+    if isinstance(text, (dict, list)):
+        return text
+    if not isinstance(text, str):
+        return text
+
+    parsers = (
+        json.loads,
+        lambda s: repair_json(s, return_objects=True),
+        ast.literal_eval,
+    )
+    last_error = None
+    for parser in parsers:
+        try:
+            parsed = parser(text)
+            if isinstance(parsed, (dict, list)):
+                return parsed
+        except Exception as err:
+            last_error = err
+    if last_error is not None:
+        raise last_error
+    return text
 
 
 def cal_f1_all(preds, answers):
@@ -362,8 +388,7 @@ class KieEvaluator(BaseMetric):
         """
         # gt should be a dict for kie task, fix for VLMEvalKit
         for image_name, label_content in gt_info.items():
-            if isinstance(label_content, str):
-                gt_info[image_name] = json.loads(label_content)
+            gt_info[image_name] = _load_json_like(label_content)
 
         response_info = normalize_values_of_nested_dict(response_info, self.normalize_func)
         gt_info = normalize_values_of_nested_dict(gt_info, self.normalize_func)

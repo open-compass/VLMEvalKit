@@ -9,6 +9,8 @@ from tqdm import tqdm
 
 from vlmeval.smp.file import LMUDataRoot
 from .base_metric import BaseMetric
+from .runtime import (get_available_cpu_count, get_in_memory_dataloader_workers,
+                      get_metric_batch_size)
 
 
 def get_lpips_vgg_model(device):
@@ -33,14 +35,22 @@ def get_lpips_vgg_model(device):
 
 
 class LPIPSCalculator(BaseMetric):
-    def __init__(self):
+    def __init__(self, batch_size=None):
         super().__init__()
         self.class_name = self.__class__.__name__
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = get_lpips_vgg_model(self.device)
+        self.model = get_lpips_vgg_model(self.device).eval()
         self.metric = self.LPIPS
         self.to_tensor = ToTensor()
         self.normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        default_cpu_batch = max(4, min(get_available_cpu_count(), 16))
+        self.batch_size = batch_size or get_metric_batch_size(
+            "VLMEVAL_SARENA_LPIPS_BATCH_SIZE",
+            cpu_default=default_cpu_batch,
+            cuda_default=8,
+            cpu_cap=32,
+        )
+        self.num_workers = get_in_memory_dataloader_workers()
 
     def LPIPS(self, tensor_image1, tensor_image2):
         tensor_image1, tensor_image2 = tensor_image1.to(self.device), tensor_image2.to(self.device)
@@ -55,12 +65,20 @@ class LPIPSCalculator(BaseMetric):
         tensor_pred_imgs = torch.stack([self.to_tensor_transform(img) for img in pred_imgs])
         return tensor_gt_imgs, tensor_pred_imgs
 
-    def calculate_score(self, batch, batch_size=8, update=True):
+    @torch.inference_mode()
+    def calculate_score(self, batch, batch_size=None, update=True):
         gt_images = batch['gt_im']
         pred_images = batch['pred_im']
+        effective_batch_size = batch_size or self.batch_size
 
-        data_loader = DataLoader(list(zip(gt_images, pred_images)), batch_size=batch_size,
-                                 collate_fn=self.collate_fn, shuffle=False)
+        data_loader = DataLoader(
+            list(zip(gt_images, pred_images)),
+            batch_size=effective_batch_size,
+            collate_fn=self.collate_fn,
+            shuffle=False,
+            num_workers=self.num_workers,
+            pin_memory=(self.device == "cuda"),
+        )
 
         values = []
         for tensor_gt_batch, tensor_pred_batch in tqdm(data_loader):

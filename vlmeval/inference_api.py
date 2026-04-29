@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Literal
 import pandas as pd
 from tabulate import tabulate
 
-from vlmeval.smp import dump, get_logger, load
+from vlmeval.smp import dump, get_logger, load, upsert_dataset_status
 from vlmeval.smp.log import setup_subprocess_logger
 
 logger = get_logger(__name__)
@@ -37,9 +37,6 @@ def _eval_subprocess_target(
         with open(log_file, 'a') as f:
             with redirect_stdout(f), redirect_stderr(f):
                 result = dataset_obj.evaluate(result_file, **judge_kwargs)
-
-        if isinstance(result, pd.DataFrame):
-            result = result.to_dict()
 
         return {'success': True, 'result': result, 'error': None}
 
@@ -150,6 +147,7 @@ class APIEvalPipeline:
         run_infer: bool = True,
         run_eval: bool = True,
         debug: bool = False,
+        retry_failed: bool = True,
     ):
         """
         Args:
@@ -159,6 +157,7 @@ class APIEvalPipeline:
             run_infer: Whether to inference.
             run_eval: Whether to eval.
             debug: Debug mode (Evaluate in the main process).
+            retry_failed: Whether to retry previously failed samples.
         """
         self.dataset_configs = dataset_configs
         self.concurrency = concurrency
@@ -166,6 +165,7 @@ class APIEvalPipeline:
         self.run_infer = run_infer
         self.run_eval = run_eval
         self.debug = debug
+        self.retry_failed = retry_failed
         self.all_infer_done = False
 
         self.infer_executor = ThreadPoolExecutor(max_workers=concurrency)
@@ -191,6 +191,36 @@ class APIEvalPipeline:
             Path(cfg.work_dir).mkdir(parents=True, exist_ok=True)
             if not self.run_eval:
                 cfg.eval_status = EvalStatus.Skipped
+            self._upsert_dataset_status(cfg.dataset_name, status='pending')
+
+    def _upsert_dataset_status(
+        self,
+        dataset_name: str,
+        status: str,
+        metrics_source=None,
+        skip_reason: str | None = None,
+        error_message: str | None = None,
+    ) -> None:
+        cfg = self.states[dataset_name]
+        try:
+            summary_kwargs = dict(
+                run_dir=cfg.work_dir,
+                model_name=cfg.model_name,
+                dataset_name=dataset_name,
+                status=status,
+            )
+            if metrics_source is not None:
+                summary_kwargs['metrics_source'] = metrics_source
+                summary_kwargs['dataset_obj'] = cfg.dataset_obj
+            if skip_reason is not None:
+                summary_kwargs['skip_reason'] = skip_reason
+            if error_message is not None:
+                summary_kwargs['error_message'] = error_message
+            upsert_dataset_status(**summary_kwargs)
+        except Exception as summary_err:
+            logger.warning(
+                f'Failed to update status.json for {cfg.model_name} x {dataset_name}: {summary_err}'
+            )
 
     def _release_dataset_memory(self, cfg: DatasetConfig):
         """Release dataset after evaluation."""
@@ -206,21 +236,42 @@ class APIEvalPipeline:
                 logger.warning(f"   [{dataset_name}] Failed to release dataset memory: {e}")
 
     def _shutdown_executors(self):
-        """Shutdown all Executor."""
+        """Shutdown all executors and terminate child processes."""
         try:
-            self.infer_executor.shutdown(wait=False)
+            self.infer_executor.shutdown(wait=False, cancel_futures=True)
             logger.debug("Shutdown infer_executor")
 
-            self.eval_executor.shutdown(wait=False)
-            logger.debug("Shutdown eval_executor")
+            for name, executor in [
+                ("eval_executor", self.eval_executor),
+                ("producer_executor", self.producer_executor),
+            ]:
+                # 必须在 shutdown() 前获取进程引用。shutdown() 会唤醒管理线程
+                # 执行清理，可能将 _processes 置为 None，之后就无法访问了。
+                processes = getattr(executor, '_processes', None) or {}
+                alive = [p for p in processes.values() if p.is_alive()]
+                executor.shutdown(wait=False, cancel_futures=True)
+                self._terminate_workers(name, alive)
 
-            self.producer_executor.shutdown(wait=False)
-            logger.debug("Shutdown producer_executor")
-
-            logger.info("🧹 All executors shutdown")
+            logger.info("All executors shutdown")
 
         except Exception as e:
             logger.warning(f"Failed to shutdown executors: {e}")
+
+    @staticmethod
+    def _terminate_workers(name, alive, timeout=5):
+        """Terminate worker processes.
+
+        Sends SIGTERM first, waits up to *timeout* seconds, then SIGKILL
+        for any process that is still alive.
+        """
+        for p in alive:
+            logger.debug(f"Terminating {name} worker (pid={p.pid})")
+            p.terminate()
+        for p in alive:
+            p.join(timeout=timeout)
+            if p.is_alive():
+                logger.debug(f"Force killing {name} worker (pid={p.pid})")
+                p.kill()
 
     def _get_checkpoint_file(self, dataset_name: str) -> Path:
         cfg = self.states[dataset_name]
@@ -236,6 +287,8 @@ class APIEvalPipeline:
         if checkpoint_file.exists():
             try:
                 results = load(str(checkpoint_file))
+                if self.retry_failed:
+                    results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
                 logger.info(f"   [{dataset_name}] Loaded {len(results)} results from checkpoint")
             except Exception as e:
                 logger.warning(f"   [{dataset_name}] Failed to load checkpoint: {e}")
@@ -246,11 +299,17 @@ class APIEvalPipeline:
             try:
                 data = load(str(result_path))
                 if isinstance(data, pd.DataFrame):
-                    existing_results = {
-                        str(idx): pred
-                        for idx, pred in zip(data['index'], data['prediction'])
-                        if FAIL_MSG not in str(pred)
-                    }
+                    if self.retry_failed:
+                        existing_results = {
+                            str(idx): pred
+                            for idx, pred in zip(data['index'], data['prediction'])
+                            if FAIL_MSG not in str(pred)
+                        }
+                    else:
+                        existing_results = {
+                            str(idx): pred
+                            for idx, pred in zip(data['index'], data['prediction'])
+                        }
                     results.update(existing_results)
                     logger.info(f"   [{dataset_name}] Loaded {len(existing_results)} "
                                 "results from result file")
@@ -309,8 +368,37 @@ class APIEvalPipeline:
 
             return True
 
+    def _create_symlinks(self, dataset_name: str):
+        """Create symbolic links for dataset results in the model base directory.
+
+        Links are created as relative paths so that moving the output root
+        directory does not break them.
+        """
+        cfg = self.states[dataset_name]
+        pred_root = Path(cfg.work_dir)
+        model_base_dir = pred_root.parent
+
+        try:
+            if not pred_root.exists():
+                return
+            for f in pred_root.iterdir():
+                if not f.is_file():
+                    continue
+                if f'{cfg.model_name}_{dataset_name}' not in f.name:
+                    continue
+                # Skip temporary intermediate files
+                if f.name.endswith(('_checkpoint.pkl', '_PREV.pkl', '_structs.pkl')):
+                    continue
+                link_addr = model_base_dir / f.name
+                rel_target = f.relative_to(model_base_dir)
+                if link_addr.exists() or link_addr.is_symlink():
+                    link_addr.unlink()
+                link_addr.symlink_to(rel_target)
+        except Exception as e:
+            logger.warning(f"   [{dataset_name}] Failed to create symlinks: {e}")
+
     async def _producer(self):
-        """Genearte all sampels to inference."""
+        """Generate all samples to inference."""
         logger.info("📦 Initializing tasks and checking checkpoints...")
 
         for cfg in self.dataset_configs:
@@ -320,8 +408,12 @@ class APIEvalPipeline:
             logger.info(
                 f"   [{dataset_name}] Start build prompt [type={dataset_type}]"
             )
+            if self.run_infer:
+                self._upsert_dataset_status(dataset_name, status='infer')
+
             # 1. Try to load checkpoint
             existing_results = self._load_checkpoint(dataset_name)
+            skipped = len(existing_results)
             cfg.results_dict = existing_results
             cfg.processed = len(existing_results)
             cfg.total_samples = len(cfg.dataset_obj.data)
@@ -339,8 +431,16 @@ class APIEvalPipeline:
                 # Save result file if not exists.
                 if not Path(cfg.result_file).exists():
                     self._save_final_result(dataset_name)
-                # Trigger evaluation.
-                asyncio.create_task(self._trigger_eval(dataset_name))
+                self._create_symlinks(dataset_name)
+                if cfg.eval_status == EvalStatus.Skipped:
+                    self._upsert_dataset_status(
+                        dataset_name,
+                        status='done',
+                        skip_reason='mode_infer',
+                    )
+                else:
+                    # Trigger evaluation.
+                    asyncio.create_task(self._trigger_eval(dataset_name))
                 continue
 
             # 3. Dispatch according to dataset type.
@@ -354,11 +454,16 @@ class APIEvalPipeline:
             # Skip evaluation if no prompt is built.
             if tasks_generated == 0:
                 cfg.eval_status = EvalStatus.Skipped
+                self._upsert_dataset_status(
+                    dataset_name,
+                    status='done',
+                    skip_reason='no_inference_tasks_generated',
+                )
 
             self.total_tasks_generated += tasks_generated
             logger.info(
                 f"   [{dataset_name}] Generated {tasks_generated} tasks "
-                f"(Skipped {cfg.processed}) [type={dataset_type}]"
+                f"(Skipped {skipped}) [type={dataset_type}]"
             )
 
         # Stop sign
@@ -566,10 +671,21 @@ class APIEvalPipeline:
                         f"[{task.dataset_name}] Sample {task.sample_index}: "
                         f"{output_preview} (took {inference_time:.2f}s)")
 
-                # Trigger evaluation if all tasks of the dataset is done.
-                if cfg.processed == cfg.total_samples and cfg.eval_status == EvalStatus.Pending:
-                    if self._save_final_result(task.dataset_name):
+                # Save final result and create symlinks when all samples are done.
+                if cfg.processed == cfg.total_samples:
+                    self._save_final_result(task.dataset_name)
+                    self._create_symlinks(task.dataset_name)
+                    if cfg.eval_status == EvalStatus.Pending:
                         asyncio.create_task(self._trigger_eval(task.dataset_name))
+                    else:
+                        if cfg.eval_status == EvalStatus.Skipped:
+                            self._upsert_dataset_status(
+                                task.dataset_name,
+                                status='done',
+                                skip_reason='mode_infer',
+                            )
+                        # Release dataset resources if the evaluation is skipped.
+                        self._release_dataset_memory(cfg)
 
             except Exception as e:
                 logger.error(
@@ -590,6 +706,7 @@ class APIEvalPipeline:
 
         cfg.eval_status = EvalStatus.Running
         cfg.eval_start_time = time.time()
+        self._upsert_dataset_status(dataset_name, status='eval')
 
         # Create evaluation log.
         eval_log_dir = Path(cfg.work_dir) / 'eval_logs'
@@ -624,6 +741,11 @@ class APIEvalPipeline:
             cfg.eval_status = EvalStatus.Error
             cfg.eval_duration = time.time() - cfg.eval_start_time
             logger.error(f"❌ [Eval Failed] {dataset_name}: {e}")
+            self._upsert_dataset_status(
+                dataset_name,
+                status='done',
+                error_message=str(e),
+            )
 
     async def _run_eval_in_subprocess(self, dataset_name: str, eval_log_path: str):
         cfg = self.states[dataset_name]
@@ -648,6 +770,11 @@ class APIEvalPipeline:
                 f"❌ [Eval Failed] {dataset_name}: {e}\n"
                 f"   Check log file: {eval_log_path}"
             )
+            self._upsert_dataset_status(
+                dataset_name,
+                status='done',
+                error_message=str(e),
+            )
 
     def _handle_eval_result(self,
                             dataset_name: str,
@@ -669,6 +796,7 @@ class APIEvalPipeline:
                 logger.info(f"   Results: {json.dumps(result, indent=2, default=str)}")
             else:
                 logger.info(f"   Results:\n{result}")
+            self._upsert_dataset_status(dataset_name, status='done', metrics_source=result)
         else:
             cfg.eval_status = EvalStatus.Error
             cfg.eval_duration = time.time() - cfg.eval_start_time
@@ -676,7 +804,14 @@ class APIEvalPipeline:
                 f"❌ [Eval Failed] {dataset_name}: {eval_result['error']}\n"
                 f"   Check log file: {eval_log_path}"
             )
+            self._upsert_dataset_status(
+                dataset_name,
+                status='done',
+                error_message=eval_result['error'],
+            )
 
+        # Update symlinks to capture evaluation output files.
+        self._create_symlinks(dataset_name)
         # Release dataset data after evaluation.
         self._release_dataset_memory(cfg)
 
@@ -774,14 +909,13 @@ class APIEvalPipeline:
                     for _ in range(self.concurrency)
                 ]
                 await producer_task
-                self.all_infer_done = True
                 await asyncio.gather(*workers)
                 logger.info("🎉 All inference tasks finished. Waiting for pending evaluations...")
             else:
                 await producer_task
-                self.all_infer_done = True
                 logger.info("📊 Eval mode only. Skipping inference...")
 
+            self.all_infer_done = True
             await monitor_task
 
             # Final report

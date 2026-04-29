@@ -103,7 +103,7 @@ class OpenAISDKWrapper(BaseAPI):
 
     def generate_inner(self, inputs, dataset=None, **kwargs) -> tuple:
         if self.adapter is not None:
-            model_args = self.adapter.override_model_args(dataset)
+            model_args = self.adapter.override_model_args(dataset, kwargs)
             system_prompt = model_args.pop('system_prompt', self.system_prompt)
             inputs = self.adapter.process_inputs(inputs, dataset)
             kwargs.update(model_args)
@@ -135,6 +135,8 @@ class OpenAISDKWrapper(BaseAPI):
             answer = resp_struct['choices'][0]['message']['content'].strip()
             if self.adapter is not None:
                 answer = self.adapter.postprocess(answer, dataset=dataset)
-        except Exception:
-            pass
+        except Exception as err:
+            logger.error(f'{type(err)}: {err}')
+            if self.verbose:
+                logger.error(response.text if hasattr(response, 'text') else response)
         return ret_code, answer, response

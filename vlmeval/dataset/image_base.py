@@ -1,13 +1,110 @@
 import os
 import os.path as osp
 import warnings
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from vlmeval.smp import (LMUDataRoot, decode_base64_to_image_file, download_file, file_size,
                          istype, load, md5, mmqa_display, read_ok, toliststr)
+from vlmeval.smp.file import INFER_FAIL_MSG, RUN_STATUS_NAME, _prediction_table, fetch_aux_files
+from vlmeval.smp.status_report import is_number, to_number
+
+
+def _choose_primary_metric_key(metrics: dict[str, Any]) -> str | None:
+    if not metrics:
+        return None
+
+    scored = []
+    for key in metrics:
+        lower_key = str(key).lower()
+        score = 0
+        if lower_key == 'overall':
+            score = 100
+        elif lower_key.endswith('|overall'):
+            score = 95
+        elif 'overall' in lower_key:
+            score = 90
+        elif lower_key == 'acc' or lower_key.endswith('|acc'):
+            score = 80
+        elif 'acc' in lower_key:
+            score = 70
+        elif lower_key == 'score' or lower_key.endswith('|score'):
+            score = 60
+        elif 'score' in lower_key:
+            score = 50
+
+        if 'split=test' in lower_key:
+            score += 4
+        elif 'split=validation' in lower_key:
+            score += 3
+        elif 'split=val' in lower_key:
+            score += 2
+        elif 'split=dev' in lower_key:
+            score += 1
+        scored.append((score, str(key)))
+
+    scored.sort(key=lambda item: (-item[0], item[1]))
+    return scored[0][1]
+
+
+def _count_markers_in_obj(obj: Any, markers: tuple[str, ...]) -> int:
+    if obj is None:
+        return 0
+
+    if isinstance(obj, pd.DataFrame):
+        candidate_cols = [
+            col for col in obj.columns if any(
+                tag in str(col).lower()
+                for tag in ('judge', 'log', 'res', 'rating', 'comment', 'response'))
+        ]
+        if not candidate_cols:
+            candidate_cols = [col for col in obj.columns if obj[col].dtype == object]
+
+        return sum(
+            any(marker in str(value) for marker in markers)
+            for col in candidate_cols
+            for value in obj[col]
+        )
+
+    if isinstance(obj, dict):
+        return sum(_count_markers_in_obj(value, markers) for value in obj.values())
+
+    if isinstance(obj, (list, tuple, set)):
+        return sum(_count_markers_in_obj(value, markers) for value in obj)
+
+    return int(any(marker in str(obj) for marker in markers))
+
+
+def _score_judge_file_candidate(candidate: Path, judge_model: str | None = None) -> tuple[int, str]:
+    name = candidate.name.lower()
+    stem = candidate.stem.lower()
+    score = 0
+
+    if judge_model and judge_model.lower() in name:
+        score += 100
+
+    if 'judge' in stem:
+        score += 40
+    if 'result' in stem:
+        score += 30
+    if any(tag in stem for tag in ('response', 'rating', 'review')):
+        score += 20
+
+    if candidate.suffix.lower() == '.pkl':
+        score += 12
+    elif candidate.suffix.lower() in {'.xlsx', '.xls', '.json', '.jsonl', '.tsv'}:
+        score += 8
+    elif candidate.suffix.lower() == '.csv':
+        score += 2
+
+    if any(tag in stem for tag in ('_score', '_acc', 'metrics')):
+        score -= 100
+
+    return score, candidate.name
 
 
 def img_root_map(dataset):
@@ -36,11 +133,15 @@ def img_root_map(dataset):
     return dataset
 
 
-class ImageBaseDataset:
+class ImageBaseDataset(metaclass=ABCMeta):
 
     MODALITY = 'IMAGE'
     DATASET_URL = {}
     DATASET_MD5 = {}
+    DEFAULT_JUDGE: str | list = 'gpt-4o-mini'
+
+    INFER_FAIL_MARKERS = (INFER_FAIL_MSG, )
+    JUDGE_FAIL_MARKERS = (INFER_FAIL_MSG, )
 
     def __init__(self, dataset='MMBench', skip_noimg=True):
         ROOT = LMUDataRoot()
@@ -86,6 +187,33 @@ class ImageBaseDataset:
 
     def __getitem__(self, idx):
         return dict(self.data.iloc[idx])
+
+    @classmethod
+    def get_judge_file(cls, eval_file: str | Path, judge_model: str | None = None) -> Path | None:
+        eval_path = Path(eval_file)
+        aux_files = fetch_aux_files(str(eval_path))
+        if not aux_files:
+            return None
+
+        prediction_path = eval_path.resolve() if eval_path.exists() else None
+        candidates = []
+        for aux_file in aux_files:
+            aux_path = Path(aux_file)
+            if not aux_path.exists():
+                continue
+            if prediction_path is not None and aux_path.resolve() == prediction_path:
+                continue
+            if aux_path.name == RUN_STATUS_NAME or aux_path.suffix == '.lock':
+                continue
+            if aux_path.name.endswith(('_checkpoint.pkl', '_PREV.pkl', '_structs.pkl')):
+                continue
+            candidates.append(aux_path)
+
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda path: _score_judge_file_candidate(path, judge_model), reverse=True)
+        return candidates[0]
 
     def prepare_tsv(self, url, file_md5=None):
         data_root = LMUDataRoot()
@@ -212,3 +340,68 @@ class ImageBaseDataset:
     @abstractmethod
     def evaluate(self, eval_file, **judge_kwargs):
         pass
+
+    @classmethod
+    def report_infer_err(cls, prediction_file: str | Path | None) -> dict[str, int]:
+        if prediction_file is None or not Path(prediction_file).exists():
+            return dict(failed=0, total=0)
+
+        frame = _prediction_table(str(prediction_file))
+        if frame is None:
+            return dict(failed=0, total=0)
+
+        predictions = frame['prediction'] if 'prediction' in frame else []
+        total = len(predictions)
+        failed = sum(
+            any(marker in str(prediction) for marker in cls.INFER_FAIL_MARKERS)
+            for prediction in predictions
+        )
+        return dict(failed=failed, total=total)
+
+    @classmethod
+    def report_judge_err(
+        cls,
+        prediction_file: str | Path | None,
+        *,
+        total_samples: int | None,
+        judge_model: str | None = None,
+        error_message: str | None = None,
+    ) -> dict[str, int | None]:
+        if total_samples is None or total_samples <= 0:
+            return dict(failed=0, total=total_samples)
+
+        if prediction_file is None or not Path(prediction_file).exists():
+            failed = total_samples if error_message else 0
+            return dict(failed=failed, total=total_samples)
+
+        judge_file = cls.get_judge_file(prediction_file, judge_model=judge_model)
+        if judge_file is None:
+            failed = total_samples if error_message else 0
+            return dict(failed=failed, total=total_samples)
+
+        try:
+            data = load(str(judge_file))
+        except Exception:
+            data = None
+
+        failed = min(_count_markers_in_obj(data, cls.JUDGE_FAIL_MARKERS), total_samples)
+        if error_message and failed == 0:
+            failed = total_samples
+        return dict(failed=failed, total=total_samples)
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict[str, Any] | None) -> dict[str, float | int]:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        matched_keys = []
+        fallback = _choose_primary_metric_key(metrics)
+        if fallback is not None:
+            matched_keys = [fallback]
+
+        primary_metrics = {}
+        for key in matched_keys:
+            value = metrics.get(key)
+            if is_number(value):
+                primary_metrics[str(key)] = to_number(value)
+        return primary_metrics

@@ -1,24 +1,29 @@
-import logging
 from collections import defaultdict
 
 import pandas as pd
 import timeout_decorator
 
-from vlmeval.smp import load
+from vlmeval.smp import get_logger, load
 from vlmeval.utils import can_infer
 
-try:
-    from latex2sympy2 import latex2sympy
-except Exception as e:
-    logging.critical(f'{type(e)}: {e}')
-    logging.critical('Please install latex2sympy2 by running "pip install latex2sympy2"')
-    raise e
+logger = get_logger(__name__)
 
+try:
+    try:
+        from latex2sympy2_extended import latex2sympy
+    except ImportError:
+        from latex2sympy2 import latex2sympy
+
+except Exception as e:
+    logger.critical(f'{type(e)}: {e}')
+    logger.critical('Please install latex2sympy2-extended by '
+                    'running "pip install latex2sympy2-extended"')
+    raise e
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 
-@timeout_decorator.timeout(30)
+@timeout_decorator.timeout(30, use_signals=False)
 def is_equal(asw: str, gt_asw: str) -> bool:
     if not isinstance(asw, str) != str or not isinstance(gt_asw, str):
         print('Warning: input is not string')
@@ -131,7 +136,7 @@ def post_check(line, prefetch=False):
         else:
             return False
     except Exception as err:
-        logging.warning(f'{type(err)}: {err}')
+        logger.warning(f'{type(err)}: {err}')
         return False
 
 

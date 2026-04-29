@@ -52,6 +52,54 @@ videomme_dataset = {
     'Video-MME_0.5fps_subs': partial(VideoMME, dataset='Video-MME', fps=0.5, use_subtitle=True),
 }
 
+videommev2_dataset = {
+    # ── No subtitle ──
+    'Video-MME-v2_64frame': partial(VideoMMEv2, dataset='Video-MME-v2', nframe=64),
+    'Video-MME-v2_1fps': partial(VideoMMEv2, dataset='Video-MME-v2', fps=1.0),
+    # ── Subtitle (non-interleave, concatenated as text block) ──
+    'Video-MME-v2_64frame_subs': partial(
+        VideoMMEv2, dataset='Video-MME-v2', nframe=64, with_subtitle=True),
+    'Video-MME-v2_1fps_subs': partial(
+        VideoMMEv2, dataset='Video-MME-v2', fps=1.0, with_subtitle=True),
+    # ── Subtitle (interleave, timestamp-aligned between frames) ──
+    'Video-MME-v2_64frame_subs_interleave': partial(
+        VideoMMEv2, dataset='Video-MME-v2', nframe=64,
+        with_subtitle=True, subtitle_interleave=True),
+    'Video-MME-v2_1fps_subs_interleave': partial(
+        VideoMMEv2, dataset='Video-MME-v2', fps=1.0,
+        with_subtitle=True, subtitle_interleave=True),
+    # ── Reasoning (no subtitle) ──
+    'Video-MME-v2_64frame_reasoning': partial(
+        VideoMMEv2, dataset='Video-MME-v2', nframe=64, reasoning=True),
+    # ── Reasoning + subtitle (non-interleave) ──
+    'Video-MME-v2_64frame_reasoning_subs': partial(
+        VideoMMEv2, dataset='Video-MME-v2', nframe=64,
+        reasoning=True, with_subtitle=True),
+    # ── Reasoning + subtitle (interleave) ──
+    'Video-MME-v2_64frame_reasoning_subs_interleave': partial(
+        VideoMMEv2, dataset='Video-MME-v2', nframe=64,
+        reasoning=True, with_subtitle=True, subtitle_interleave=True),
+    # ── Resize (no subtitle) ──
+    'Video-MME-v2_64frame_resize': partial(
+        VideoMMEv2, dataset='Video-MME-v2', nframe=64,
+        resize_target_area=448 * 448),
+    'Video-MME-v2_1fps_resize': partial(
+        VideoMMEv2, dataset='Video-MME-v2', fps=1.0,
+        resize_target_area=448 * 448),
+    # ── Resize + subtitle ──
+    'Video-MME-v2_64frame_resize_subs': partial(
+        VideoMMEv2, dataset='Video-MME-v2', nframe=64,
+        resize_target_area=448 * 448, with_subtitle=True),
+    # ── Resize + subtitle interleave ──
+    'Video-MME-v2_64frame_resize_subs_interleave': partial(
+        VideoMMEv2, dataset='Video-MME-v2', nframe=64,
+        resize_target_area=448 * 448, with_subtitle=True, subtitle_interleave=True),
+    # ── Resize + reasoning ──
+    'Video-MME-v2_64frame_resize_reasoning': partial(
+        VideoMMEv2, dataset='Video-MME-v2', nframe=64,
+        resize_target_area=448 * 448, reasoning=True),
+}
+
 videommmu_dataset = {
     'VideoMMMU_8frame': partial(VideoMMMU, dataset='VideoMMMU', nframe=8),
     'VideoMMMU_64frame': partial(VideoMMMU, dataset='VideoMMMU', nframe=64),
@@ -329,8 +377,8 @@ dsr_dataset = _build_video_variants(dsr_subsets, DSRBench, dsr_variants)
 supported_video_datasets = {}
 
 dataset_groups = [
-    mmbench_video_dataset, mvbench_dataset, videomme_dataset, videommmu_dataset, longvideobench_dataset,
-    mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
+    mmbench_video_dataset, mvbench_dataset, videomme_dataset, videommev2_dataset, videommmu_dataset,
+    longvideobench_dataset, mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
     video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset

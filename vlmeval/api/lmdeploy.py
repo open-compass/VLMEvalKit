@@ -1,4 +1,6 @@
+import base64
 import os
+from pathlib import Path
 
 import numpy as np
 
@@ -15,7 +17,6 @@ class LMDeployWrapper(OpenAISDKWrapper):
     Handles lmdeploy-specific details:
 
     * ``LMDEPLOY_API_KEY`` / ``LMDEPLOY_API_BASE`` environment variables
-    * Automatic adapter selection based on model name (see :meth:`_detect_adapter`)
     * lmdeploy image-encoding format via :meth:`prepare_itlist`
 
     Model-specific prompt building and payload post-processing are
@@ -33,6 +34,8 @@ class LMDeployWrapper(OpenAISDKWrapper):
                  api_base=None,
                  system_prompt=None,
                  custom_prompt=None,
+                 video_llm: bool = False,
+                 local_media: bool = False,
                  **kwargs):
         self.fail_msg = 'Failed to obtain answer via API. '
         self.timeout = timeout
@@ -43,6 +46,15 @@ class LMDeployWrapper(OpenAISDKWrapper):
         assert api_base, 'Please set the environment variable LMDEPLOY_API_BASE.'
         self.key = key
         self.api_base = api_base
+
+        self.VIDEO_LLM = video_llm
+        self.local_media = local_media or (os.getenv('VLMEVAL_LOCAL_MEDIA', '0') == '1')
+        if self.local_media:
+            logger.info(
+                f'lmdeploy: `local_media={self.local_media}`, pass local media file path directly.')
+        else:
+            logger.info(
+                f'lmdeploy: `local_media={self.local_media}`, pass media file base64.')
 
         kwargs = {'max_tokens': 16384, 'temperature': 0.0, **kwargs}
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -61,32 +73,9 @@ class LMDeployWrapper(OpenAISDKWrapper):
         logger.info(f'lmdeploy evaluate model: {self.model}')
 
         # Resolve and instantiate adapter
-        if custom_prompt is None:
-            custom_prompt = self._detect_adapter(self.model)
         if custom_prompt is not None:
             self.adapter = build_adapter(custom_prompt)
             logger.info(f'Using model adapter: {custom_prompt}')
-
-    # ------------------------------------------------------------------
-    # Adapter auto-detection
-    # ------------------------------------------------------------------
-
-    def _detect_adapter(self, model_name):
-        """Return the adapter name for *model_name*, or ``None``."""
-        name = model_name.lower()
-        if 'cogvlm2-llama3-chat-19b' in name:
-            return 'cogvlm2'
-        if 'interns1' in name or 'intern-s1' in name:
-            return 'interns1_1_no_think'
-        if 'internvl3' in name:
-            return 'internvl3'
-        if 'internvl' in name:
-            if 'mpo' in name:
-                return 'internvl2-mpo-cot'
-            return 'internvl2'
-        if 'qwen3' in name:
-            return 'qwen3'
-        return None
 
     # ------------------------------------------------------------------
     # HTTP message formatting (lmdeploy-specific)
@@ -94,19 +83,39 @@ class LMDeployWrapper(OpenAISDKWrapper):
 
     def prepare_itlist(self, inputs):
         assert np.all([isinstance(x, dict) for x in inputs])
-        has_images = np.sum([x['type'] == 'image' for x in inputs])
-        if has_images:
+        multimedia = sum(x['type'] in ('image', 'video') for x in inputs)
+        if multimedia:
             content_list = []
             for msg in inputs:
                 if msg['type'] == 'text':
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
-                    from PIL import Image
-                    img = Image.open(msg['value'])
-                    b64 = encode_image_to_base64(img)
+                    if self.local_media:
+                        image_data_url = f"file://{Path(msg['value']).resolve()}"
+                    else:
+                        from PIL import Image
+                        img = Image.open(msg['value'])
+                        b64 = encode_image_to_base64(img)
+                        image_data_url = f'data:image/jpeg;base64,{b64}'
                     extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
-                    img_struct = dict(url=f'data:image/jpeg;base64,{b64}', **extra_args)
+                    img_struct = dict(url=image_data_url, **extra_args)
                     content_list.append(dict(type='image_url', image_url=img_struct))
+                elif msg['type'] == 'video':
+                    if self.local_media:
+                        video_data_url = f"file://{Path(msg['value']).resolve()}"
+                    else:
+                        with open(msg['value'], 'rb') as f:
+                            video_b64 = base64.b64encode(f.read()).decode("utf-8")
+                        ext = Path(msg['value']).suffix
+                        mime_map = {
+                            ".mp4": "video/mp4", ".avi": "video/avi", ".mkv": "video/x-matroska",
+                            ".mov": "video/quicktime", ".webm": "video/webm", ".flv": "video/x-flv",
+                        }
+                        mime = mime_map.get(ext, "video/mp4")
+                        video_data_url = f"data:{mime};base64,{video_b64}"
+                    extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
+                    vid_struct = dict(url=video_data_url, **extra_args)
+                    content_list.append(dict(type='video_url', video_url=vid_struct))
         else:
             assert all(x['type'] == 'text' for x in inputs)
             text = '\n'.join(x['value'] for x in inputs)

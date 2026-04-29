@@ -1,4 +1,5 @@
 import csv
+import datetime
 import hashlib
 import json
 import mimetypes
@@ -6,15 +7,24 @@ import multiprocessing as mp
 import os
 import os.path as osp
 import pickle
+import re
+import shutil
 import time
-import warnings
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import validators
 
+from .log import get_logger
 from .misc import toliststr
 from .vlm import decode_base64_to_image_file
+
+NEW_EVAL_ID_PATTERN = re.compile(r'^T\d{8}-\d{6}$')
+LEGACY_EVAL_ID_PATTERN = re.compile(r'^T\d{8}_G([0-9a-fA-F]+)$')
+RUN_STATUS_NAME = 'status.json'
+INFER_FAIL_MSG = 'Failed to obtain answer'
+logger = get_logger(__name__)
 
 
 def decode_img_omni(tup):
@@ -168,7 +178,7 @@ def dump(data, f, **kwargs):
     except Exception:
         # if dump failed, fallback to pkl format
         pkl_file = f.rsplit('.', 1)[0] + '.pkl'
-        warnings.warn(f'Failed to dump to {suffix} format, falling back to pkl: {pkl_file}')
+        logger.warning(f'Failed to dump to {suffix} format, falling back to pkl: {pkl_file}')
         return dump_pkl(data, pkl_file, **kwargs)
 
 
@@ -435,27 +445,234 @@ def parquet_to_tsv(file_path):
     data.to_csv(osp.join(pth, f'{data_name}.tsv'), sep='\t', index=False)
 
 
+def build_eval_id():
+    return 'T' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+
+
+def is_eval_run_id(eval_id):
+    return bool(NEW_EVAL_ID_PATTERN.match(eval_id) or LEGACY_EVAL_ID_PATTERN.match(eval_id))
+
+
+def _dataset_shadow_names(dataset_name):
+    from vlmeval.dataset import SUPPORTED_DATASETS
+
+    return [d for d in SUPPORTED_DATASETS if d.startswith(dataset_name) and d != dataset_name]
+
+
+def _filter_shadow_dataset_files(files, model_name, dataset_name):
+    shadow_names = _dataset_shadow_names(dataset_name)
+    if not shadow_names:
+        return files
+
+    filtered = []
+    for file_path in files:
+        base = osp.basename(file_path)
+        skip = False
+        for shadow_name in shadow_names:
+            if f'{model_name}_{shadow_name}' in base or f'_{shadow_name}.' in base or f'_{shadow_name}_' in base:
+                skip = True
+                break
+        if not skip:
+            filtered.append(file_path)
+    return filtered
+
+
+def list_eval_run_dirs(root_dir, current_run_dir=None):
+    if not osp.isdir(root_dir):
+        return []
+
+    run_dirs = []
+    current_run_dir = osp.abspath(current_run_dir) if current_run_dir is not None else None
+    for entry in os.listdir(root_dir):
+        path = osp.join(root_dir, entry)
+        if not osp.isdir(path) or not is_eval_run_id(entry):
+            continue
+        if current_run_dir is not None and osp.abspath(path) == current_run_dir:
+            continue
+        run_dirs.append(path)
+    run_dirs.sort(key=osp.getmtime, reverse=True)
+    return run_dirs
+
+
+def find_prediction_files(run_dir, model_name, dataset_name):
+    if not osp.isdir(run_dir):
+        return []
+    files = ls(run_dir, match=f'{model_name}_{dataset_name}.', mode='file')
+    files = _filter_shadow_dataset_files(files, model_name, dataset_name)
+    return sorted(files)
+
+
+def _status_commit(run_dir, status=None):
+    status = status or {}
+    commit = status.get('commit')
+    if commit:
+        return str(commit)
+    match = LEGACY_EVAL_ID_PATTERN.match(osp.basename(run_dir))
+    if match:
+        return match.group(1)
+    return None
+
+
+def _prediction_table(pred_file):
+    try:
+        data = load(pred_file)
+    except Exception as err:
+        logger.warning(f'Failed to load prediction file {pred_file}: {err}')
+        return None
+
+    if isinstance(data, pd.DataFrame):
+        frame = data
+    elif isinstance(data, list):
+        frame = pd.DataFrame(data)
+    elif isinstance(data, dict):
+        if not _should_convert_to_dataframe(data):
+            return None
+        if 'columns' in data and 'data' in data:
+            frame = pd.DataFrame(data['data'], columns=data['columns'])
+        else:
+            frame = pd.DataFrame(data)
+    else:
+        return None
+
+    if 'index' not in frame or 'prediction' not in frame:
+        return None
+    return frame
+
+
+def copy_prediction_file(src_file, dst_file):
+    os.makedirs(osp.dirname(dst_file), exist_ok=True)
+    src_suffix = osp.splitext(src_file)[1].lower()
+    dst_suffix = osp.splitext(dst_file)[1].lower()
+    if src_suffix == dst_suffix:
+        shutil.copy2(src_file, dst_file)
+        return True
+
+    frame = _prediction_table(src_file)
+    if frame is None:
+        logger.warning(
+            f'Can not convert prediction file {src_file} to target format {dst_suffix}, reuse skipped.'
+        )
+        return False
+    dump(frame, dst_file)
+    if osp.exists(dst_file):
+        return True
+    logger.warning(
+        f'Failed to materialize converted prediction file at {dst_file}, reuse skipped.'
+    )
+    return False
+
+
+def is_prediction_complete(pred_file, dataset_indices, retry_failed=True):
+    if not osp.exists(pred_file):
+        return False
+    frame = _prediction_table(pred_file)
+    if frame is None:
+        return False
+
+    finished = {
+        str(idx): pred
+        for idx, pred in zip(frame['index'], frame['prediction'])
+    }
+    if retry_failed:
+        finished = {k: v for k, v in finished.items() if INFER_FAIL_MSG not in str(v)}
+    return all(str(idx) in finished for idx in dataset_indices)
+
+
+def get_infer_aux_file_names(model_name,
+                             dataset_name,
+                             dataset,
+                             result_file_base,
+                             world_size=1) -> set:
+    infer_aux = {f'{model_name}_{dataset_name}_checkpoint.pkl'}
+
+    if dataset.MODALITY == 'VIDEO':
+        packstr = 'pack' if getattr(dataset, 'pack', False) else 'nopack'
+        if getattr(dataset, 'nframe', 0) > 0:
+            video_prefix = f'{model_name}_{dataset_name}_{dataset.nframe}frame_{packstr}'
+        else:
+            video_prefix = f'{model_name}_{dataset_name}_{dataset.fps}fps_{packstr}'
+        infer_aux.add(f'{video_prefix}_checkpoint.pkl')
+        infer_aux.add(f'{video_prefix}_structs.pkl')
+
+        result_stem = osp.splitext(result_file_base)[0]
+        for rank in range(world_size):
+            infer_aux.add(f'{rank}{world_size}_{result_stem}.pkl')
+    else:
+        for rank in range(world_size):
+            infer_aux.add(f'{rank}{world_size}_{dataset_name}.pkl')
+    return infer_aux
+
+
+def select_reuse_run(
+    pred_root_meta,
+    eval_id,
+    model_name,
+    dataset_name,
+    result_file,
+    infer_aux_file_names,
+):
+    current_run_dir = osp.join(pred_root_meta, eval_id)
+    run_dirs = list_eval_run_dirs(pred_root_meta, current_run_dir=current_run_dir)
+
+    candidates = []
+    for run_dir in run_dirs:
+        status = _load_run_status_for_reuse(run_dir)
+        prediction_files = find_prediction_files(run_dir, model_name, dataset_name)
+        prediction_file = None
+        if prediction_files:
+            exact_name = osp.basename(result_file)
+            exact_match = [x for x in prediction_files if osp.basename(x) == exact_name]
+            prediction_file = exact_match[0] if exact_match else prediction_files[0]
+            if len(prediction_files) > 1:
+                logger.warning(
+                    f'Multiple prediction candidates in {run_dir}: '
+                    f'{prediction_files}. Will use {prediction_file}'
+                )
+
+        infer_aux_files = [
+            osp.join(run_dir, file_name)
+            for file_name in infer_aux_file_names
+            if osp.exists(osp.join(run_dir, file_name))
+        ]
+        if prediction_file is None and not infer_aux_files:
+            continue
+
+        item = dict(
+            run_dir=run_dir,
+            status=status,
+            prediction_file=prediction_file,
+            infer_aux_files=infer_aux_files,
+        )
+        candidates.append(item)
+
+    return candidates[0] if len(candidates) else None
+
+
+def _load_run_status_for_reuse(run_dir):
+    status_file = Path(run_dir) / RUN_STATUS_NAME
+    if not status_file.exists():
+        return {}
+    try:
+        data = load(str(status_file))
+    except Exception as err:
+        logger.warning(f'Failed to load run status from {status_file}: {err}')
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 def fetch_aux_files(eval_file):
     file_root = osp.dirname(eval_file)
     file_name = osp.basename(eval_file)
 
     eval_id = osp.basename(file_root)
-    if eval_id[:3] == 'T20' and eval_id[9:11] == '_G':
+    if is_eval_run_id(eval_id):
         model_name = osp.basename(osp.dirname(file_root))
     else:
         model_name = eval_id
 
     dataset_name = osp.splitext(file_name)[0][len(model_name) + 1:]
-    from vlmeval.dataset import SUPPORTED_DATASETS
-    to_handle = []
-    for d in SUPPORTED_DATASETS:
-        if d.startswith(dataset_name) and d != dataset_name:
-            to_handle.append(d)
-    fs = ls(file_root, match=f'{model_name}_{dataset_name}')
-    if len(to_handle):
-        for d in to_handle:
-            fs = [x for x in fs if d not in x]
-    return fs
+    fs = ls(file_root, match=f'{model_name}_{dataset_name}', mode='file')
+    return _filter_shadow_dataset_files(fs, model_name, dataset_name)
 
 
 def get_file_extension(file_path):
@@ -484,57 +701,84 @@ def get_intermediate_file_path(eval_file, suffix, target_format=None):
     return eval_file.replace(f'.{original_ext}', f'{suffix}.{target_format}')
 
 
-def prepare_reuse_files(pred_root_meta, eval_id, model_name, dataset_name, reuse, reuse_aux):
-    import shutil
-
-    from .misc import timestr
+def prepare_reuse_files(
+    pred_root_meta,
+    eval_id,
+    model_name,
+    dataset_name,
+    dataset,
+    result_file,
+    reuse,
+    reuse_aux,
+    retry_failed=True,
+    judge_model=None,
+    world_size=1,
+):
     work_dir = osp.join(pred_root_meta, eval_id)
     os.makedirs(work_dir, exist_ok=True)
+    context = dict(
+        source_eval_id=None,
+        prediction_complete=False,
+    )
     if not reuse:
-        files = ls(work_dir, match=f'{model_name}_{dataset_name}')
-        if len(files):
-            t_str = timestr('second')
-            bak_dir = osp.join(work_dir, f'bak_{t_str}_{dataset_name}')
-            os.makedirs(bak_dir, exist_ok=True)
-            for f in files:
-                shutil.move(f, bak_dir)
-            warnings.warn(
-                f'--reuse flag not set but history records detected in {work_dir}. '
-                f'Those files are moved to {bak_dir} for backup. '
-            )
-            return
-    # reuse flag is set
-    prev_pred_roots = ls(pred_root_meta, mode='dir')
-    prev_pred_roots.sort()
-    prev_pred_roots.remove(work_dir)
+        return context
 
-    files = ls(work_dir, match=f'{model_name}_{dataset_name}.')
-    prev_file = None
-    prev_aux_files = None
-    if len(files):
-        pass
-    else:
-        for root in prev_pred_roots[::-1]:
-            fs = ls(root, match=f'{model_name}_{dataset_name}.')
-            if len(fs):
-                if len(fs) > 1:
-                    warnings.warn(f'Multiple candidates in {root}: {fs}. Will use {fs[0]}')
-                prev_file = fs[0]
-                prev_aux_files = fetch_aux_files(prev_file)
-                break
-        if prev_file is not None:
-            warnings.warn(f'--reuse is set, will reuse prediction file {prev_file}')
-            os.system(f'cp {prev_file} {work_dir}')
+    infer_aux_file_names = get_infer_aux_file_names(
+        model_name=model_name,
+        dataset_name=dataset_name,
+        dataset=dataset,
+        result_file_base=osp.basename(result_file),
+        world_size=world_size,
+    )
+    source = select_reuse_run(
+        pred_root_meta=pred_root_meta,
+        eval_id=eval_id,
+        model_name=model_name,
+        dataset_name=dataset_name,
+        result_file=result_file,
+        infer_aux_file_names=infer_aux_file_names,
+    )
+    if source is None:
+        return context
 
-    if not reuse_aux:
-        warnings.warn(f'--reuse-aux is not set, all auxiliary files in {work_dir} are removed. ')
-        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*openai*")}')
-        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*csv")}')
-        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*json")}')
-        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*pkl")}')
-        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*gpt*")}')
-    elif prev_aux_files is not None:
-        for f in prev_aux_files:
-            os.system(f'cp {f} {work_dir}')
-            warnings.warn(f'--reuse-aux is set, will reuse auxiliary file {f}')
-    return
+    context['source_eval_id'] = osp.basename(source['run_dir'])
+
+    src_prediction_file = source['prediction_file']
+    if src_prediction_file is not None and copy_prediction_file(src_prediction_file, result_file):
+        logger.info(f'--reuse is set, will reuse prediction file {src_prediction_file}')
+
+    if reuse_aux in ['infer', 'all']:
+        for src_file in source['infer_aux_files']:
+            dst_file = osp.join(work_dir, osp.basename(src_file))
+            shutil.copy2(src_file, dst_file)
+            logger.info(f'--reuse-aux={reuse_aux}, will reuse inference auxiliary file {src_file}')
+
+    context['prediction_complete'] = is_prediction_complete(
+        result_file,
+        dataset_indices=list(dataset.data['index']),
+        retry_failed=retry_failed,
+    )
+
+    source_dataset_status = source['status'].get('datasets', {}).get(dataset_name, {})
+    source_judge_model = source_dataset_status.get('judge_model')
+    if (
+        reuse_aux == 'all'
+        and judge_model is not None
+        and context['prediction_complete']
+        and src_prediction_file is not None
+        and source_judge_model == judge_model
+    ):
+        infer_model_aux = {
+            file_name
+            for file_name in infer_aux_file_names
+            if file_name.startswith(f'{model_name}_{dataset_name}_')
+        }
+        all_aux_files = fetch_aux_files(src_prediction_file)
+        for src_file in all_aux_files:
+            base = osp.basename(src_file)
+            if base == osp.basename(src_prediction_file) or base in infer_model_aux:
+                continue
+            dst_file = osp.join(work_dir, base)
+            shutil.copy2(src_file, dst_file)
+            logger.info(f'--reuse-aux=all, will reuse evaluation auxiliary file {src_file}')
+    return context

@@ -11,6 +11,8 @@ from tqdm import tqdm
 from vlmeval.smp.file import LMUDataRoot
 from .base_metric import BaseMetric
 from .inception import InceptionV3
+from .runtime import (get_available_cpu_count, get_in_memory_dataloader_workers,
+                      get_metric_batch_size)
 
 
 class FIDCalculator(BaseMetric):
@@ -33,8 +35,16 @@ class FIDCalculator(BaseMetric):
             model = InceptionV3([block_idx]).to(self.device)
             preprocess = TF.Compose([TF.ToTensor()])
 
-        self.model = model.to(self.device)
+        self.model = model.to(self.device).eval()
         self.preprocess = preprocess
+        default_cpu_batch = min(max(32, get_available_cpu_count() * 2), 96)
+        self.batch_size = get_metric_batch_size(
+            "VLMEVAL_SARENA_FID_BATCH_SIZE",
+            cpu_default=default_cpu_batch,
+            cuda_default=50,
+            cpu_cap=128,
+        )
+        self.num_workers = get_in_memory_dataloader_workers()
 
     def calculate_frechet_distance(self, mu1, sigma1, mu2, sigma2, eps=1e-6):
         """Numpy implementation of the Frechet Distance.
@@ -92,36 +102,40 @@ class FIDCalculator(BaseMetric):
         return (diff.dot(diff) + np.trace(sigma1)
                 + np.trace(sigma2) - 2 * tr_covmean)
 
+    @torch.inference_mode()
     def get_activations(self, images):
         dataset = ImageDataset(images, self.preprocess)
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=50, shuffle=False, num_workers=4)
-        pred_arr = np.empty((len(images), self.dims))
+        dataloader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+            pin_memory=(self.device.type == "cuda"),
+        )
+        pred_arr = np.empty((len(images), self.dims), dtype=np.float32)
         start_idx = 0
         for batch in tqdm(dataloader):
             batch = batch.to(self.device)
 
-            with torch.no_grad():
-                if self.model_name == 'ViT-B/32':
-                    pred = self.model.encode_image(batch).cpu().numpy()
-                elif self.model_name == 'InceptionV3':
-                    pred = self.model(batch)[0]
+            if self.model_name == 'ViT-B/32':
+                pred = self.model.encode_image(batch).cpu().numpy()
+            elif self.model_name == 'InceptionV3':
+                pred = self.model(batch)[0]
 
-                    # If model output is not scalar, apply global spatial average pooling.
-                    # This happens if you choose a dimensionality not equal 2048.
-                    if pred.size(2) != 1 or pred.size(3) != 1:
-                        pred = adaptive_avg_pool2d(pred, output_size=(1, 1))
+                # If model output is not scalar, apply global spatial average pooling.
+                # This happens if you choose a dimensionality not equal 2048.
+                if pred.size(2) != 1 or pred.size(3) != 1:
+                    pred = adaptive_avg_pool2d(pred, output_size=(1, 1))
 
-                    pred = pred.squeeze(3).squeeze(2).cpu().numpy()
-                pred_arr[start_idx:start_idx + pred.shape[0]] = pred
-                start_idx = start_idx + pred.shape[0]
+                pred = pred.squeeze(3).squeeze(2).cpu().numpy()
+            pred_arr[start_idx:start_idx + pred.shape[0]] = pred
+            start_idx = start_idx + pred.shape[0]
 
         return pred_arr
 
-    def calculate_activation_statistics(self, images):
-        # Fixed E117 (Over-indentation)
-        act = self.get_activations(images)
-        mu = np.mean(act, axis=0)
-        sigma = np.cov(act, rowvar=False)
+    def calculate_activation_statistics(self, activations):
+        mu = np.mean(activations, axis=0)
+        sigma = np.cov(activations, rowvar=False)
         return mu, sigma
 
     def pil_images_to_tensor(self, images_list):
@@ -130,8 +144,12 @@ class FIDCalculator(BaseMetric):
         return torch.stack(tensors_list).to(self.device)  # BxCxHxW format
 
     def calculate_score(self, batch, update=True):
-        m1, s1 = self.calculate_activation_statistics(batch['gt_im'])
-        m2, s2 = self.calculate_activation_statistics(batch['pred_im'])
+        gt_images = batch['gt_im']
+        pred_images = batch['pred_im']
+        combined_activations = self.get_activations(gt_images + pred_images)
+        split_index = len(gt_images)
+        m1, s1 = self.calculate_activation_statistics(combined_activations[:split_index])
+        m2, s2 = self.calculate_activation_statistics(combined_activations[split_index:])
         fid_value = self.calculate_frechet_distance(m1, s1, m2, s2)
         if update:
             self.meter.update(fid_value, len(batch['gt_im']))

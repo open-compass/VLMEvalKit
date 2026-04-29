@@ -53,6 +53,7 @@ class OpenAIWrapper(BaseAPI):
                  max_tokens: int = 2048,
                  img_size: int = -1,
                  total_img_size: int = -1,
+                 max_file_size: int = 1e9,
                  img_detail: str = 'low',
                  use_azure: bool = False,
                  **kwargs):
@@ -93,7 +94,7 @@ class OpenAIWrapper(BaseAPI):
             env_key = os.environ.get('GOOGLE_API_KEY', '')
             if key is None:
                 key = env_key
-            api_base = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+            # api_base = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
         elif 'ernie' in model:
             env_key = os.environ.get('BAIDU_API_KEY', '')
             if key is None:
@@ -120,6 +121,7 @@ class OpenAIWrapper(BaseAPI):
         self.img_size = img_size
         assert total_img_size > 0 or total_img_size == -1
         self.total_img_size = total_img_size
+        self.max_file_size = max_file_size
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
         self.timeout = timeout
@@ -175,7 +177,7 @@ class OpenAIWrapper(BaseAPI):
         if has_images:
             content_list = []
             for msg in inputs:
-                if msg['type'] == 'text':
+                if msg['type'] == 'text' and msg['value']:  # Skip empty string
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
                     from PIL import Image
@@ -186,7 +188,8 @@ class OpenAIWrapper(BaseAPI):
                     if self.total_img_size > 0:
                         target_size = min(target_size, int(self.img_size / (image_num**0.5)))
                     target_size = -1 if math.isinf(target_size) else target_size
-                    b64 = encode_image_to_base64(img, target_size=target_size)
+                    b64 = encode_image_to_base64(
+                        img, target_size=target_size, max_file_size=self.max_file_size)
                     img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
                     content_list.append(dict(type='image_url', image_url=img_struct))
         else:
@@ -263,8 +266,8 @@ class OpenAIWrapper(BaseAPI):
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
+            logger.error(f'{type(err)}: {err}')
             if self.verbose:
-                logger.error(f'{type(err)}: {err}')
                 logger.error(response.text if hasattr(response, 'text') else response)
 
         return ret_code, answer, response
