@@ -64,6 +64,7 @@ from .image_vqa import (BMMR, CRPE, LENS, MMNIAH, AyaVisionBench, CoreCognition,
                         QSpatial, SeePhys, TableVQABench, TallyQA, TDBenchGrounding, VGRPBench,
                         VizWiz, VLMsAreBiased, VTCBench, WildDocBenchmark, ZEROBench)
 from .image_yorn import ImageYORNDataset
+from .lica_bench import LICABenchDataset
 from .longvideobench import LongVideoBench
 from .m3oralbench import M3oralBenchDataset
 from .m4bench import M4Bench
@@ -294,6 +295,7 @@ IMAGE_DATASET = [
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,  # noqa: E501
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench,
+    LICABenchDataset,
 ]
 
 # add by EASI team
