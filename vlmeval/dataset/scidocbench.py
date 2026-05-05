@@ -15,6 +15,13 @@ from .utils.judge_util import build_judge
 
 logger = get_logger(__name__)
 
+# Categories that genuinely require a reasoning chain (derivation, data
+# cross-checking, cross-doc synthesis, code writing, alignment). Everything else
+# is fact lookup / extraction where the answer alone is what matters — the
+# ``reasoning`` field is neither requested in the prompt (stripped at prepare
+# time; see scidocbench_prepare.py) nor evaluated here.
+REASONING_CATEGORIES = {"C1", "C2", "C3", "D2", "D3", "E2", "F1", "F2", "G1"}
+
 # ── Normalization helpers (ported from SciDocBench eval.py) ──────────────────
 
 
@@ -220,27 +227,34 @@ Respond with a JSON object only, no extra text:
 {{"score": <float between 0.0 and 1.0>, "eval_note": "<brief reason>"}}"""
 
 SCIDOC_REASONING_CHECK_PROMPT = """\
-You are verifying whether a model's reasoning process is correct, independent of its final answer.
+You are auditing a model's reasoning on a scientific-paper task. You do NOT
+have access to the paper itself, so you cannot verify whether cited numbers or
+references truly exist. Assess only what can be judged from the text alone.
 
-Reference reasoning (ground truth derivation):
-{reference_reasoning}
+Question the model was given:
+{prompt}
 
-Model's full output:
+Model's full output (answer + reasoning):
 {prediction}
 
-Evaluate ONLY the reasoning process. Check for:
-- Factual errors (wrong numbers, wrong table/figure references, wrong page citations)
-- Hallucinated evidence (citing data or results that don't exist in the paper)
-- Incorrect logical steps (wrong causal chains, flawed deductions)
-- Missing critical reasoning steps (skipping key intermediate steps that are necessary for the conclusion)
+Rate the reasoning on two independent axes, each in [0.0, 1.0]:
 
-Do NOT penalize for:
-- Different wording or phrasing of the same correct reasoning
-- Additional correct reasoning not in the reference
-- Minor formatting differences
+1. internal_consistency — Does the chain of reasoning actually arrive at the
+   final answer the model gives? Penalize contradictions between the stated
+   reasoning and the stated answer, or logical leaps that skip steps that would
+   change the conclusion. A short reasoning that cleanly justifies a short
+   answer is fine; consistency is about coherence, not length.
+
+2. no_hallucination — Does the reasoning avoid fabricating specifics? Penalize
+   invented table/figure/equation numbers, made-up citation keys, suspiciously
+   precise numeric claims that look retrofitted to the answer, or appeals to
+   content the question doesn't suggest exists. Vague but honest reasoning
+   ("the table shows X is higher") is preferable to confident-sounding
+   fabrications ("Table 7 row 3 reports 42.1%").
 
 Respond with a JSON object only, no extra text:
-{{"reasoning_score": <float between 0.0 and 1.0>, "reasoning_note": "<brief explanation, no newlines>"}}"""
+{{"internal_consistency": <float>, "no_hallucination": <float>, \
+"reasoning_note": "<brief explanation, no newlines>"}}"""
 
 
 def eval_judge(judge_model, prediction, answer, prompt, judge_prompt=None):
@@ -250,13 +264,42 @@ def eval_judge(judge_model, prediction, answer, prompt, judge_prompt=None):
     return _parse_judge_response(raw)
 
 
-def eval_reasoning(judge_model, prediction, reasoning_ref):
+def _parse_reasoning_response(raw: str) -> tuple:
+    """Parse the two-axis reasoning judge output; average the axes."""
+    def _extract(obj):
+        ic = obj.get("internal_consistency")
+        nh = obj.get("no_hallucination")
+        if ic is None or nh is None:
+            return None
+        score = (float(ic) + float(nh)) / 2.0
+        note = obj.get("reasoning_note", "")
+        return score, f"ic={float(ic):.2f}, nh={float(nh):.2f}; {note}"
+
+    try:
+        result = _extract(json.loads(raw))
+        if result is not None:
+            return result
+    except Exception:
+        pass
+    try:
+        result = _extract(json.loads(_repair_json_escapes(raw)))
+        if result is not None:
+            return result
+    except Exception:
+        pass
+    ic_m = re.search(r'"internal_consistency"\s*:\s*([0-9.]+)', raw)
+    nh_m = re.search(r'"no_hallucination"\s*:\s*([0-9.]+)', raw)
+    if ic_m and nh_m:
+        ic, nh = float(ic_m.group(1)), float(nh_m.group(1))
+        return (ic + nh) / 2.0, f"[regex] ic={ic:.2f}, nh={nh:.2f}"
+    return 0.0, f"Failed to parse reasoning response: {raw}"
+
+
+def eval_reasoning(judge_model, prediction, question):
     message = SCIDOC_REASONING_CHECK_PROMPT.format(
-        reference_reasoning=reasoning_ref,
-        prediction=prediction
-    )
+        prompt=question, prediction=prediction)
     raw = judge_model.generate(message, temperature=0)
-    return _parse_judge_response(raw)
+    return _parse_reasoning_response(raw)
 
 
 # ── Parallel evaluation helper ───────────────────────────────────────────────
@@ -275,46 +318,51 @@ def _parse_field(raw, fallback):
 
 
 def _eval_one_item(item_json):
-    """Evaluate a single sample. Called by track_progress_rich."""
+    """Evaluate a single sample. Called by track_progress_rich.
+
+    Returns (answer_score, reasoning_score, note). ``reasoning_score`` is None
+    only when the sample's category is outside REASONING_CATEGORIES. For
+    whitelisted categories the reasoning axis is evaluated regardless of
+    whether the answer is right — wrong-answer cases are often where reasoning
+    quality (and hallucination) matter most for error attribution. Answer and
+    reasoning scores are independent axes and are NOT multiplied together.
+    """
     item = json.loads(item_json)
     prediction = str(item.get('prediction', ''))
     eval_method = item.get('eval_method', 'judge')
+    category = str(item.get('category', '') or '')
 
     answer = _parse_field(item.get('answer', '{}'), item.get('answer', ''))
-    answer_note = _parse_field(item.get('answer_note', '{}'), {})
 
     judge_prompt = item.get('judge_prompt', '')
     if isinstance(judge_prompt, float) or not judge_prompt:
         judge_prompt = None
 
+    question = str(item.get('question', ''))
+
     try:
         if eval_method == 'json_match':
-            score, note = eval_json_match(prediction, answer)
+            answer_score, note = eval_json_match(prediction, answer)
         elif eval_method == 'judge':
-            question = item.get('question', '')
             answer_str = (json.dumps(answer, ensure_ascii=False)
                           if isinstance(answer, dict) else str(answer))
-            score, note = eval_judge(
+            answer_score, note = eval_judge(
                 _judge_model, prediction, answer_str, question, judge_prompt)
         elif eval_method == 'exec_match':
-            score, note = eval_exec_match(prediction, answer)
+            answer_score, note = eval_exec_match(prediction, answer)
         else:
-            score, note = 0.0, f"Unknown eval_method: {eval_method}"
+            answer_score, note = 0.0, f"Unknown eval_method: {eval_method}"
 
-        # Reasoning verification
-        reasoning_ref = (answer_note.get('reasoning')
-                         if isinstance(answer_note, dict) else None)
-        if score > 0 and reasoning_ref and _judge_model is not None:
-            reason_score, reason_note = eval_reasoning(
-                _judge_model, prediction, reasoning_ref)
-            original_score = score
-            score = score * reason_score
-            note = (f"answer={original_score:.2f}, reasoning={reason_score:.2f}, "
-                    f"final={score:.2f}; {note}; reasoning: {reason_note}")
+        reasoning_score = None
+        if category in REASONING_CATEGORIES and _judge_model is not None:
+            reasoning_score, reason_note = eval_reasoning(
+                _judge_model, prediction, question)
+            note = (f"answer={answer_score:.2f}, reasoning={reasoning_score:.2f}; "
+                    f"{note}; reasoning: {reason_note}")
     except Exception as e:
-        score, note = 0.0, f"Eval error: {e}"
+        return 0.0, None, f"Eval error: {e}"
 
-    return score, note
+    return answer_score, reasoning_score, note
 
 
 # ── Dataset class ────────────────────────────────────────────────────────────
@@ -328,7 +376,7 @@ class SciDocBench(ImageBaseDataset):
         'SciDocBench': 'https://opencompass.openxlab.space/utils/VLMEvalKit/SciDocBench.tsv',
     }
     DATASET_MD5 = {
-        'SciDocBench': '',
+        'SciDocBench': None,
     }
 
     def dump_image(self, line):
@@ -430,16 +478,25 @@ class SciDocBench(ImageBaseDataset):
                 for k, v in zip(remaining_indices, new_results):
                     ans[k] = v
 
-            # Build result rows in original order
+            # Build result rows in original order. Tolerate legacy 2-tuple
+            # cached entries from older runs.
             results = []
             for line in lines:
                 sid = str(line['index'])
-                score, note = ans.get(sid, (0.0, 'Not evaluated'))
+                cached = ans.get(sid)
+                if cached is None:
+                    answer_score, reasoning_score, note = 0.0, None, 'Not evaluated'
+                elif len(cached) == 3:
+                    answer_score, reasoning_score, note = cached
+                else:
+                    answer_score, note = cached
+                    reasoning_score = None
                 results.append({
                     'index': sid,
                     'category': line.get('category', ''),
                     'eval_method': line.get('eval_method', ''),
-                    'score': score,
+                    'score': answer_score,
+                    'reasoning_score': reasoning_score,
                     'eval_note': note,
                 })
 
@@ -449,20 +506,33 @@ class SciDocBench(ImageBaseDataset):
         # Load from storage and aggregate
         result_df = load(storage)
 
+        def _mean_pct(series):
+            vals = series.dropna()
+            return round(vals.mean() * 100, 2) if len(vals) else float('nan')
+
         summary_rows = []
-        overall_score = result_df['score'].mean() * 100
         summary_rows.append({
-            'Category': 'Overall',
+            'Category': 'Overall (answer)',
             'Num': len(result_df),
-            'Score': round(overall_score, 2),
+            'Score': _mean_pct(result_df['score']),
         })
+        if 'reasoning_score' in result_df.columns:
+            reasoning_subset = result_df[
+                result_df['category'].isin(REASONING_CATEGORIES)
+                & result_df['reasoning_score'].notna()
+            ]
+            summary_rows.append({
+                'Category': 'Reasoning (whitelist)',
+                'Num': len(reasoning_subset),
+                'Score': _mean_pct(reasoning_subset['reasoning_score']),
+            })
 
         for method in sorted(result_df['eval_method'].unique()):
             subset = result_df[result_df['eval_method'] == method]
             summary_rows.append({
                 'Category': f'method:{method}',
                 'Num': len(subset),
-                'Score': round(subset['score'].mean() * 100, 2),
+                'Score': _mean_pct(subset['score']),
             })
 
         for cat in sorted(result_df['category'].unique()):
@@ -470,7 +540,7 @@ class SciDocBench(ImageBaseDataset):
             summary_rows.append({
                 'Category': cat,
                 'Num': len(subset),
-                'Score': round(subset['score'].mean() * 100, 2),
+                'Score': _mean_pct(subset['score']),
             })
 
         summary = pd.DataFrame(summary_rows)

@@ -44,6 +44,7 @@ from .GUI.screenspot_v2 import ScreenSpotV2
 from .GUI.vbgd import VBGD
 from .GUI.venusbench import VenusBench_GD
 from .hipho import HiPhODataset
+from .hle import HLEDataset
 from .image_base import ImageBaseDataset, img_root_map
 from .image_caption import ImageCaptionDataset
 from .image_ccocr import CCOCRDataset
@@ -85,6 +86,8 @@ from .mmlongbench import MMLongBench
 from .mmmath import MMMath
 from .mmoral_opg_closed import MMOral_OPG_CLOSED
 from .mmoral_opg_open import MMOral_OPG_OPEN
+from .mmrarebench import (MMRarebenchCrossmodal, MMRarebenchDiagnosis, MMRarebenchExamination,
+                          MMRarebenchTreatment)
 from .mmsafetybench import MMSafetyBenchDataset
 from .mmsibench import MMSIBench, MMSIVideoBench
 from .moat import MOAT
@@ -276,7 +279,7 @@ IMAGE_DATASET = [
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
     OlympiadBench, SeePhys, WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,  # noqa: E501
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
-    CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
+    CreationMMBenchDataset, HLEDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
     LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot, VenusBench_GD,
     ScreenSpotV2, OSWorld_G, VBGD, MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
@@ -294,6 +297,7 @@ IMAGE_DATASET = [
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,  # noqa: E501
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench,
+    MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
 ]
 
 # add by EASI team
