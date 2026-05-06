@@ -10,7 +10,8 @@ from openai import OpenAI
 from pydantic import BaseModel, Field, model_validator
 from tqdm import tqdm
 
-from vlmeval.smp import load, load_env
+from vlmeval.smp import dump, load, load_env
+from .judge_cache import load_judge_cache
 
 current_script_path = Path(__file__).resolve()
 current_dir = current_script_path.parent
@@ -159,31 +160,52 @@ def _process_single_item(item_data):
         return final_result
 
 
-def evaluate_with_judge(eval_file, ground_truth_data, **judge_kwargs):
+def mathcanvas_judge_failed(result):
+    return not isinstance(result, dict) or result.get('status') != 'success' or 'evaluation' not in result
+
+
+def evaluate_with_judge(eval_file, ground_truth_data, cache_file=None, **judge_kwargs):
     if OpenAI is None:
         raise ImportError("OpenAI library is required for MathCanvas evaluation. Please install it.")
 
     predictions = load(eval_file)
 
-    load_env()
-    api_key = os.environ.get("OPENAI_API_KEY", None)
-    base_url = os.environ.get("OPENAI_API_BASE", None)
-    client = OpenAI(api_key=api_key, base_url=base_url)
-
     tasks = []
-    gt_map = {row['index']: row for _, row in ground_truth_data.iterrows()}
+    task_keys = []
+    gt_map = {row['index']: row.to_dict() for _, row in ground_truth_data.iterrows()}
+    cache = load_judge_cache(cache_file) if cache_file is not None else {}
 
     for _, pred_row in predictions.iterrows():
         gt_row = gt_map.get(pred_row['index'])
         if gt_row is not None:
-            tasks.append((client, gt_row, pred_row.to_dict(), judge_kwargs))
+            task_key = pred_row['index']
+            if task_key not in cache or mathcanvas_judge_failed(cache[task_key]):
+                tasks.append((gt_row, pred_row.to_dict(), judge_kwargs))
+                task_keys.append(task_key)
+
+    max_workers = judge_kwargs.get('nproc', 16)
+    if tasks:
+        load_env()
+        api_key = os.environ.get("OPENAI_API_KEY", None)
+        base_url = os.environ.get("OPENAI_API_BASE", None)
+        client = OpenAI(api_key=api_key, base_url=base_url)
+        tasks = [(client, gt_row, pred_row, kwargs) for gt_row, pred_row, kwargs in tasks]
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            results_iterator = executor.map(_process_single_item, tasks)
+            for task_key, result in tqdm(
+                zip(task_keys, results_iterator),
+                total=len(tasks),
+                desc="Evaluating with Judge LLM",
+            ):
+                cache[task_key] = result
+                if cache_file is not None:
+                    dump(cache, cache_file)
 
     detailed_results = []
-    max_workers = judge_kwargs.get('nproc', 16)
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        results_iterator = executor.map(_process_single_item, tasks)
-        for result in tqdm(results_iterator, total=len(tasks), desc="Evaluating with Judge LLM"):
-            detailed_results.append(result)
+    for _, pred_row in predictions.iterrows():
+        gt_row = gt_map.get(pred_row['index'])
+        if gt_row is not None and pred_row['index'] in cache:
+            detailed_results.append(cache[pred_row['index']])
 
     return detailed_results
 
