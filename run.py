@@ -58,10 +58,11 @@ from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.inference_video import infer_data_job_video
+from vlmeval.judge import get_default_judge_model
 from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, collect_run_benchmark_report,
                          get_eval_file_format, get_logger, get_pred_file_format,
-                         get_pred_file_path, githash, is_prediction_complete, listinstr, load,
-                         load_env, prepare_reuse_files, proxy_set, setup_logger, timestr,
+                         get_pred_file_path, githash, is_prediction_complete, load, load_env,
+                         prepare_reuse_files, proxy_set, setup_logger, timestr,
                          upsert_dataset_status, upsert_run_status)
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
@@ -256,69 +257,9 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
     if args.judge is not None:
         judge_kwargs['model'] = args.judge
     else:
-        if dataset_type in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro'] or listinstr(
-            ['moviechat1k', 'mme-reasoning'], dataset_name.lower()
-        ):
-            if listinstr(['WeMath', 'MME-Reasoning'], dataset_name):
-                judge_kwargs['model'] = 'gpt-4o-mini'
-            elif listinstr(['VisualPuzzles'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            elif listinstr(['PuzzleVQA'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            elif listinstr(['VisuLogic'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            else:
-                judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
-            if listinstr(['LLaVABench_KO'], dataset_name):
-                judge_kwargs['model'] = 'gpt-4o-0806'
-            else:
-                judge_kwargs['model'] = 'gpt-4-turbo'
-        elif listinstr(['VGRPBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(
-            ['MathVista', 'MathVerse', 'MathVision', 'LENS', 'DynaMath', 'VL-RewardBench',
-             'LogicVista', 'MOAT', 'OCR_Reasoning', 'VTCBench', 'Asclepius',
-             'MMSafetyBench', 'MSSBench', 'SIUO', 'SIUO_GEN', 'XSTest', 'Flames'], dataset_name
-        ):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['OlympiadBench'], dataset_name):
-            use_api_judger = judge_kwargs.get("olympiad_use_api_judger", False)
-            if use_api_judger:
-                judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(
-            ['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench',
-             'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name
-        ):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['ChartMimic'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['VDC'], dataset_name):
-            judge_kwargs['model'] = 'llama31-8b'
-        elif listinstr(['Video_MMLU_QA', 'Video_MMLU_CAP'], dataset_name):
-            judge_kwargs['model'] = 'qwen-72b'
-        elif listinstr(['MMVMBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['CVQA_EN', 'CVQA_LOC'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['M4Bench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['AyaVisionBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['MathCanvas'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1-2025-04-14'
-        elif listinstr(['MMReason'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['CoreCognition'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['WorldVQA'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-1120'
-        elif listinstr(['Video-MME'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['MaCBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['SciDocBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
+        judge_model = get_default_judge_model(dataset_name, dataset_type, judge_kwargs)
+        if judge_model is not None:
+            judge_kwargs['model'] = judge_model
 
     if args.use_verifier:
         judge_kwargs['use_verifier'] = True
