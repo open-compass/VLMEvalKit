@@ -245,6 +245,9 @@ class OpenAIWrapper(BaseAPI):
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
 
+        if 'openai.com' not in self.api_base and payload.get('n') == 1:
+            payload.pop('n', None)
+
         proxies = {}
         if os.getenv('http_proxy'):
             proxies['http'] = os.getenv('http_proxy')
