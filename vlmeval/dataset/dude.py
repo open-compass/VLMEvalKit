@@ -9,13 +9,15 @@ from typing import List
 
 import pandas as pd
 from PIL import Image
-from tqdm import tqdm
 
+from vlmeval.dataset.utils.judge_cache import (get_judge_cache_file, get_judge_detail_file,
+                                               get_judge_score_file, load_judge_cache,
+                                               run_cached_tasks)
 from vlmeval.smp import (LMUDataRoot, decode_base64_to_image_file, download_file, dump,
                          encode_image_to_base64, get_intermediate_file_path, get_logger, listinstr,
                          load, md5, read_ok, toliststr)
 from .image_base import ImageBaseDataset
-from .mmlongbench import MMLongBench_auxeval, anls_compute, concat_images
+from .mmlongbench import MMLongBench_auxeval, MMLongBench_judge_failed, anls_compute, concat_images
 from .utils.judge_util import build_judge
 
 logger = get_logger(__name__)
@@ -176,36 +178,34 @@ class DUDE(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        model = judge_kwargs['model']
-
-        storage = get_intermediate_file_path(eval_file, f'_{model}')
-        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
+        judge_name = judge_kwargs['model']
+        storage = get_judge_detail_file(eval_file, 'extract', judge_name)
+        tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
+        legacy_tmp_file = get_intermediate_file_path(eval_file, f'_{judge_name}', 'pkl')
 
         if osp.exists(storage):
             logger.warning(f'GPT scoring file {storage} already exists, will reuse it in DUDE_eval. ')
         else:
             data = load(eval_file)
-            model = build_judge(max_tokens=128, **judge_kwargs)
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
-            tups = [(model, line) for line in lines]
             indices = [line['index'] for line in lines]
-
-            ans = {}
-            if osp.exists(tmp_file):
-                ans = load(tmp_file)
-            tups = [x for x, i in zip(tups, indices) if i not in ans]
-            indices = [i for i in indices if i not in ans]
-
-            if len(indices):
-                new_results = list()
-                for model, line in tqdm(tups):
-                    res = MMLongBench_auxeval(model, line)
-                    new_results.append(res)
+            ans = load_judge_cache(tmp_file, legacy_files=[legacy_tmp_file])
+            pending = [idx for idx in indices if idx not in ans or MMLongBench_judge_failed(ans[idx])]
+            if pending:
+                model = build_judge(max_tokens=128, **judge_kwargs)
+                tups = [(model, line) for line in lines]
+                ans = run_cached_tasks(
+                    MMLongBench_auxeval,
+                    tups,
+                    indices,
+                    tmp_file,
+                    legacy_files=[legacy_tmp_file],
+                    failure_fn=MMLongBench_judge_failed,
+                )
 
             log_map, res_map, pred_map = {}, {}, {}
-            all_inds = [line['index'] for line in lines]
-            for k, v in zip(all_inds, new_results):
+            for k, v in ans.items():
                 log_map[k] = v['log']
                 res_map[k] = v['res']
                 pred_map[k] = v['pred']
@@ -215,7 +215,7 @@ class DUDE(ImageBaseDataset):
             dump(data, storage)
 
         score = DUDE_acc(storage)
-        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+        score_pth = get_judge_score_file(eval_file, judge_name, 'csv')
 
         dump(score, score_pth)
         logger.info(f'DUDE successfully finished evaluating {eval_file}, results saved in {score_pth}')
