@@ -254,7 +254,7 @@ revsi_dataset = {
     'revsi_16_frame': partial(ReVSI, dataset='ReVSI', nframe=16),
     'revsi_32_frame': partial(ReVSI, dataset='ReVSI', nframe=32),
     'revsi_64_frame': partial(ReVSI, dataset='ReVSI', nframe=64),
-    'revsi_all_frame': partial(ReVSI, dataset='ReVSI', nframe="all"),
+    'revsi_all_frame': partial(ReVSI, dataset='ReVSI', nframe=None),
 }
 
 dream_1k_dataset = {
