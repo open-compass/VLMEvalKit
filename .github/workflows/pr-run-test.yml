@@ -88,3 +88,52 @@ jobs:
           conda activate ${{env.CONDA_ENV}}
           cp -r /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/${{matrix.model}} outputs
           python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name ${{matrix.model}}
+
+  vlm_api_test:
+    if: ${{!cancelled()}}
+    runs-on: [yidian_cu12_mllm]
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Clean workdir
+        run: sudo git clean -ffdx
+      - name: clone_repo
+        uses: actions/checkout@v3
+      - name: reinstall vlmeval
+        run: |
+          . ${{env.CONDA_PATH}}/bin/activate
+          conda activate ${{env.CONDA_ENV}}
+          pip uninstall vlmeval -y
+          pip install .
+          pip install numpy==1.23.0 transformers==4.57.1
+      - name: evaluation_model
+        run: |
+          . ${{env.CONDA_PATH}}/bin/activate
+          conda activate ${{env.CONDA_ENV}}
+          pip list
+
+          rjob submit --metadata-name=vllm-api-pr-test-${{ github.run_id }}-mock-api-${{ github.run_attempt }} --charged-group=opencompass_gpu --private-machine=group --group=opencompass_gpu --gpu=0 --cpu=16 --memory=32568 --private-machine=group --image=registry.h.pjlab.org.cn/ailab-puyu-puyu_wsp_cpu/vlmevalkit:auto-v0.0.10 --env=HF_HUB_CACHE=/mnt/shared-storage-gpfs2/gpfs2-shared-public/huggingface/hub --env=HF_HUB_OFFLINE=1 --env=LMUData=/mnt/shared-storage-user/auto-eval-pipeline/vlmeval/LMUData --mount=gpfs://gpfs1/qa-llm-cicd:/mnt/shared-storage-user/qa-llm-cicd --mount=gpfs://gpfs1/opencompass-shared:/mnt/shared-storage-user/opencompass-shared --mount=gpfs://gpfs1/auto-eval-pipeline:/mnt/shared-storage-user/auto-eval-pipeline --mount=gpfs://gpfs2/gpfs2-shared-public:/mnt/shared-storage-gpfs2/gpfs2-shared-public --mount=gpfs://gpfs1/mllm:/mnt/shared-storage-user/mllm --host-network=True -- bash -exc 'cd ${{github.workspace}}; source /mnt/shared-storage-user/opencompass-shared/qa-llm-cicd/miniconda3/bin/activate; conda activate ${{env.CONDA_ENV}}; nohup python /mnt/shared-storage-user/opencompass-shared/qa-llm-cicd/mock_choice_start.py;sleep 3;python run.py --data XLRS-Bench-lite MMVet MMMU_DEV_VAL MathVista_MINI HallusionBench OCRBench AI2D_TEST MMStar MMBench_V11 MMBench_CN_V11 --model Qwen/Qwen3-VL-8B-Instruct --api-mode --base-url http://0.0.0.0:23333/v1 --api-nproc 128 --local-media --judge Qwen2.5-32B-Instruct --judge-base-url http://0.0.0.0:23333/v1 --work-dir /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/mock_api_test --reuse 2>&1'
+
+          for i in {1..1200}; do
+            current_status=$(rjob get vllm-api-pr-test-${{ github.run_id }}-mock-api-${{ github.run_attempt }} | grep -oP 'rjob [^:]+: \K[^ ]+')
+            echo "Current status: $current_status, stop checking"
+            if [[ $current_status == "Succeeded" ]]; then
+              echo "Task succeeded"
+              rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{ github.run_attempt }} -n 100
+              exit 0
+            elif [[ $current_status == "Failed" || $current_status == "Stopped" ]]; then
+              echo "Task failed or stopped, fetching logs"
+              rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{ github.run_attempt }}
+              exit 1
+            fi
+            sleep 6
+          done
+          rjob stop vllm-api-pr-test-${{ github.run_id }}-mock-api-${{ github.run_attempt }}
+          rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{ github.run_attempt }} -n 100
+          echo "Task timeout"
+          exit 1
+      - name: assert_result
+        run: |
+          . ${{env.CONDA_PATH}}/bin/activate
+          conda activate ${{env.CONDA_ENV}}
+          cp -r /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/mock_api_test outputs
