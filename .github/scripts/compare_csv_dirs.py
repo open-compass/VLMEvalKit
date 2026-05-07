@@ -7,7 +7,10 @@ import pandas as pd
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Compare CSV files with the same relative path in two directories."
+        description=(
+            "Compare CSV files with the same basename in two directories (top-level only). "
+            "Row order is ignored; rows are sorted by all columns before comparing."
+        )
     )
     parser.add_argument("dir_a", type=str, help="First directory")
     parser.add_argument("dir_b", type=str, help="Second directory")
@@ -31,6 +34,17 @@ def normalize_value(value):
     return str(value)
 
 
+def _sort_rows_for_compare(df: pd.DataFrame) -> pd.DataFrame:
+    """Sort rows so order-independent comparison matches multiset of rows."""
+    if df.empty:
+        return df.reset_index(drop=True)
+    sort_cols = list(df.columns)
+    # Stable sort on all columns; NaNs last for reproducibility.
+    return df.sort_values(by=sort_cols, kind="mergesort", na_position="last").reset_index(
+        drop=True
+    )
+
+
 def compare_csv(file_a: Path, file_b: Path, max_diff: int):
     diffs = []
     try:
@@ -51,8 +65,14 @@ def compare_csv(file_a: Path, file_b: Path, max_diff: int):
     if cols_a != cols_b:
         diffs.append(f"columns differ: left={cols_a}, right={cols_b}")
 
-    common_rows = min(len(df_a), len(df_b))
-    common_cols = [c for c in cols_a if c in set(cols_b)]
+    if diffs:
+        return diffs
+
+    df_a = _sort_rows_for_compare(df_a)
+    df_b = _sort_rows_for_compare(df_b)
+
+    common_rows = len(df_a)
+    common_cols = list(df_a.columns)
 
     printed = 0
     for row_idx in range(common_rows):
@@ -61,7 +81,7 @@ def compare_csv(file_a: Path, file_b: Path, max_diff: int):
             vb = normalize_value(df_b.iloc[row_idx][col])
             if va != vb:
                 diffs.append(
-                    f"row={row_idx}, col='{col}': left={va!r}, right={vb!r}"
+                    f"sorted_row={row_idx}, col='{col}': left={va!r}, right={vb!r}"
                 )
                 printed += 1
                 if printed >= max_diff:
