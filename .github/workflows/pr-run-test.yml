@@ -130,21 +130,21 @@ jobs:
 
 
           for i in {1..1200}; do
-            current_status=$(rjob get vllm-api-pr-test-${{ github.run_id }}-mock-api-${{ github.run_attempt }} | grep -oP 'rjob [^:]+: \K[^ ]+')
+            current_status=$(rjob get vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }} | grep -oP 'rjob [^:]+: \K[^ ]+')
             echo "Current status: $current_status, stop checking"
             if [[ $current_status == "Succeeded" ]]; then
               echo "Task succeeded"
-              rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{ github.run_attempt }} -n 100
+              rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }}  -n 100
               exit 0
             elif [[ $current_status == "Failed" || $current_status == "Stopped" ]]; then
               echo "Task failed or stopped, fetching logs"
-              rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{ github.run_attempt }}
+              rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }}
               exit 1
             fi
             sleep 6
           done
 
-          rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{ github.run_attempt }} -n 100
+          rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }} -n 100
           echo "Task timeout"
           exit 1
       - name: assert_result
@@ -155,4 +155,4 @@ jobs:
       - name: stop job
         if: always()
         run: |
-          rjob stop job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{ github.run_attempt }}
+          rjob stop job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }}
