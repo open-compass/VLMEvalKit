@@ -21,7 +21,8 @@ def parse_args():
 
 
 def list_csv_files(root: Path):
-    return {str(p.relative_to(root)): p for p in root.rglob("*.csv")}
+    # Compare only CSV files directly under the given directory.
+    return {p.name: p for p in root.glob("*.csv")}
 
 
 def normalize_value(value):
