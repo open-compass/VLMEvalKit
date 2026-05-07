@@ -98,14 +98,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        answer_type: ["choice", "bool_answer", "score", "text"]
+        answer_type: ["choice", "bool", "score", "text"]
         include:
           - answer_type: choice
-            dataset: XLRS-Bench-lite MMMU_DEV_VAL MathVista_MINI AI2D_TEST MMStar MMBench_V11 MMBench_CN_V11
-          - answer_type: bool_answer
+            dataset: XLRS-Bench-lite MMMU_DEV_VAL MathVista_MINI AI2D_TEST MMStar
+          - answer_type: bool
             dataset: HallusionBench
           - answer_type: score
-            dataset: MMVet
+            dataset: MMVet MMBench_V11 MMBench_CN_V11
           - answer_type: text
             dataset: OCRBench
     steps:
@@ -151,7 +151,9 @@ jobs:
         run: |
           . ${{env.CONDA_PATH}}/bin/activate
           conda activate ${{env.CONDA_ENV}}
-          cp -r /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/mock_api_test outputs
+          CURRENT_DIR=/mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/mock_api_${{matrix.answer_type}}
+          BASELINE_DIR=/mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/baseline/mock_api_${{matrix.answer_type}}
+          python .github/scripts/compare_csv_dirs.py "$BASELINE_DIR" "$CURRENT_DIR"
       - name: stop job
         if: always()
         run: |
