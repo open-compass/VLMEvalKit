@@ -151,8 +151,8 @@ jobs:
         run: |
           . ${{env.CONDA_PATH}}/bin/activate
           conda activate ${{env.CONDA_ENV}}
-          CURRENT_DIR=/mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/mock_api_${{matrix.answer_type}}
-          BASELINE_DIR=/mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/baseline/mock_api_${{matrix.answer_type}}
+          CURRENT_DIR=/mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/mock_api_${{matrix.answer_type}}/mock--mock-api
+          BASELINE_DIR=/mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/baseline/mock_api_${{matrix.answer_type}}/mock--mock-api
           python .github/scripts/compare_dirs.py "$BASELINE_DIR" "$CURRENT_DIR"
       - name: stop job
         if: always()
