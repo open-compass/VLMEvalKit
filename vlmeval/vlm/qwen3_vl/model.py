@@ -74,13 +74,19 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         self.temperature = temperature
         if self.total_pixels and self.total_pixels > 24576 * 32 * 32:
             print('The total number of video tokens might too large, resulting in an overly long input sequence.')
+        do_sample = kwargs.pop('do_sample', temperature is not None and temperature > 0)
+
         self.generate_kwargs = dict(
             max_new_tokens=self.max_new_tokens,
-            top_p=top_p,
-            top_k=top_k,
-            temperature=temperature,
             repetition_penalty=repetition_penalty,
+            do_sample=do_sample,
         )
+        if do_sample:
+            self.generate_kwargs.update(
+                top_p=top_p,
+                top_k=top_k,
+                temperature=temperature,
+            )
         self.system_prompt = system_prompt
         self.verbose = verbose
         self.post_process = post_process
