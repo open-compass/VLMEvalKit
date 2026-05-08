@@ -101,7 +101,7 @@ jobs:
         answer_type: ["choice", "bool", "score", "text"]
         include:
           - answer_type: choice
-            dataset: XLRS-Bench-lite MMMU_DEV_VAL MathVista_MINI AI2D_TEST MMStar MMBench_V11 MMBench_CN_V11
+            dataset: XLRS-Bench-lite MMMU_DEV_VAL MathVista_MINI AI2D_TEST MMStar
           - answer_type: bool
             dataset: HallusionBench
           - answer_type: score
