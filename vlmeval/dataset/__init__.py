@@ -125,6 +125,7 @@ from .siuo_mcq import SIUOMCQDataset
 from .slidevqa import SlideVQA
 from .sparbench import SparBench
 from .spatial457 import Spatial457
+from .spatial_dise import SpatialDISE
 from .spatialvizbench import SpatialVizBench
 from .spbench import SPBench
 from .ssi_bench import SSIBenchDataset
@@ -302,7 +303,7 @@ IMAGE_DATASET = [
 # add by EASI team
 IMAGE_DATASET += [
     MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
-    SparBench, SpatialVizBench, StareBench, OmniSpatialBench, ERQABench, RoboSpatialBench, RefSpatialBench,  # noqa: E501
+    SparBench, SpatialVizBench, SpatialDISE, StareBench, OmniSpatialBench, ERQABench, RoboSpatialBench, RefSpatialBench,  # noqa: E501
     SPBench, ERIQBench, DA2K
 ]
 
