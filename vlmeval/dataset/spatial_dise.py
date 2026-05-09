@@ -52,6 +52,16 @@ class SpatialDISE(ImageMCQDataset):
         'Extrinsic-Static',
         'Extrinsic-Dynamic',
     ]
+    IMAGE_COLUMNS = [
+        ('image', 'merged image'),
+        ('question_image_path', 'separate question image'),
+        ('question_image_1_path', 'separate question image 1'),
+        ('question_image_2_path', 'separate question image 2'),
+        ('option_a_image_path', 'separate option A image'),
+        ('option_b_image_path', 'separate option B image'),
+        ('option_c_image_path', 'separate option C image'),
+        ('option_d_image_path', 'separate option D image'),
+    ]
 
     DATASET_URL = {name: '' for name in SPLITS}
     DATASET_MD5 = {}
@@ -82,6 +92,29 @@ class SpatialDISE(ImageMCQDataset):
         if path.startswith('images/'):
             path = path[len('images/'):]
         return path.lstrip('/\\')
+
+    @classmethod
+    def _image_refs(cls, row, tar_index):
+        refs = []
+        missing = []
+        seen = set()
+        for column, label in cls.IMAGE_COLUMNS:
+            value = row.get(column, '')
+            if pd.isna(value):
+                continue
+            value = str(value).strip()
+            if not value:
+                continue
+            member = cls._csv_path_to_tar_member(value)
+            if member in seen:
+                continue
+            shard = tar_index.get(member)
+            if shard is None:
+                missing.append(f'{column}={value}')
+                continue
+            refs.append((label, member, shard))
+            seen.add(member)
+        return refs, missing
 
     @classmethod
     def _tar_index(cls, dataset_root):
@@ -124,18 +157,21 @@ class SpatialDISE(ImageMCQDataset):
         records = []
         missing = []
         for row_id, row in raw.iterrows():
-            member = self._csv_path_to_tar_member(row['image'])
-            shard = tar_index.get(member)
-            if shard is None:
-                missing.append(row['image'])
+            image_refs, row_missing = self._image_refs(row, tar_index)
+            if row_missing:
+                missing.extend(row_missing)
+                continue
+            if not image_refs:
+                missing.append(f'image={row.get("image", "")}')
                 continue
 
             record = {
                 'index': f'{split}_{row_id}',
                 'question': str(row['question']).strip(),
                 'answer': str(row['answer']).strip().upper(),
-                'image_path': member,
-                'image_shard': shard,
+                'image_path': [member for _, member, _ in image_refs],
+                'image_shard': [shard for _, _, shard in image_refs],
+                'image_role': [label for label, _, _ in image_refs],
                 'split': split,
                 'category': row.get('category', ''),
                 'difficulty': row.get('difficulty', ''),
@@ -156,24 +192,29 @@ class SpatialDISE(ImageMCQDataset):
         return pd.DataFrame.from_records(records)
 
     def dump_image(self, line):
-        member = self._csv_path_to_tar_member(line['image_path'])
-        shard = str(line['image_shard'])
+        members = [self._csv_path_to_tar_member(x) for x in toliststr(line['image_path'])]
+        shards = toliststr(line['image_shard'])
+        if len(members) != len(shards):
+            raise RuntimeError('Spatial-DISE image_path and image_shard lengths do not match.')
 
-        target = osp.abspath(osp.join(self.img_root, member))
         root = osp.abspath(self.img_root)
-        if not target.startswith(root + os.sep):
-            raise RuntimeError(f'Unsafe Spatial-DISE image path: {member}')
+        targets = []
+        for member, shard in zip(members, shards):
+            target = osp.abspath(osp.join(self.img_root, member))
+            if not target.startswith(root + os.sep):
+                raise RuntimeError(f'Unsafe Spatial-DISE image path: {member}')
 
-        if not read_ok(target):
-            os.makedirs(osp.dirname(target), exist_ok=True)
-            with tarfile.open(shard) as tf:
-                image_file = tf.extractfile(member)
-                if image_file is None:
-                    raise FileNotFoundError(f'{member} not found in {shard}')
-                with open(target, 'wb') as out:
-                    out.write(image_file.read())
+            if not read_ok(target):
+                os.makedirs(osp.dirname(target), exist_ok=True)
+                with tarfile.open(shard) as tf:
+                    image_file = tf.extractfile(member)
+                    if image_file is None:
+                        raise FileNotFoundError(f'{member} not found in {shard}')
+                    with open(target, 'wb') as out:
+                        out.write(image_file.read())
+            targets.append(target)
 
-        return [target]
+        return targets
 
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -183,7 +224,9 @@ class SpatialDISE(ImageMCQDataset):
         question = str(line['question']).strip()
         prompt = (
             f'{question}\n'
-            'The image contains answer choices labeled A, B, C, and D. '
+            'Images are provided in order: first the merged full image, followed by the available separate '
+            'question/view/option images from the original sample. '
+            'Use all images together. The answer choices are labeled A, B, C, and D. '
             'Please select the correct answer and respond with only one letter: A, B, C, or D.'
         )
 
