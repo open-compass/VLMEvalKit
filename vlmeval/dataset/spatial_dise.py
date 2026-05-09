@@ -110,6 +110,18 @@ class SpatialDISE(ImageMCQDataset):
             path = path[len('images/'):]
         return path.lstrip('/\\')
 
+    @staticmethod
+    def _option_letters(value):
+        if value is None or (isinstance(value, float) and pd.isna(value)):
+            return list(string.ascii_uppercase[:4])
+        letters = []
+        raw_options = value if isinstance(value, list) else str(value).replace('，', ',').split(',')
+        for option in raw_options:
+            option = option.strip().upper()
+            if option and option[0] in string.ascii_uppercase and option[0] not in letters:
+                letters.append(option[0])
+        return letters or list(string.ascii_uppercase[:4])
+
     @classmethod
     def _image_refs(cls, row, tar_index, image_mode):
         refs = []
@@ -182,11 +194,13 @@ class SpatialDISE(ImageMCQDataset):
             if not image_refs:
                 missing.append(f'image={row.get("image", "")}')
                 continue
+            options = self._option_letters(row.get('options', ''))
 
             record = {
                 'index': f'{split}_{row_id}',
                 'question': str(row['question']).strip(),
                 'answer': str(row['answer']).strip().upper(),
+                'options': options,
                 'image_path': [member for _, member, _ in image_refs],
                 'image_shard': [shard for _, _, shard in image_refs],
                 'image_role': [label for label, _, _ in image_refs],
@@ -197,7 +211,7 @@ class SpatialDISE(ImageMCQDataset):
                 'source': row.get('source', ''),
                 'dise_category': row.get('dise_category', ''),
             }
-            for option in string.ascii_uppercase[:4]:
+            for option in options:
                 record[option] = option
             records.append(record)
 
@@ -241,18 +255,20 @@ class SpatialDISE(ImageMCQDataset):
 
         tgt_path = self.dump_image(line)
         question = str(line['question']).strip()
+        options = self._option_letters(line.get('options', ''))
+        option_text = ', '.join(options)
         if str(line.get('image_mode', 'merge')) == 'separate':
             prompt = (
                 f'{question}\n'
                 'Images are provided as separate question/view/option images from the original sample. '
-                'Use all images together. The answer choices are labeled A, B, C, and D. '
-                'Please select the correct answer and respond with only one letter: A, B, C, or D.'
+                f'Use all images together. The answer choices are labeled {option_text}. '
+                'Please select the correct answer and respond with only one option letter.'
             )
         else:
             prompt = (
                 f'{question}\n'
-                'The image contains answer choices labeled A, B, C, and D. '
-                'Please select the correct answer and respond with only one letter: A, B, C, or D.'
+                f'The image contains answer choices labeled {option_text}. '
+                'Please select the correct answer and respond with only one option letter.'
             )
 
         msgs = []
