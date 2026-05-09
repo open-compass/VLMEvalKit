@@ -102,7 +102,7 @@ jobs:
         include:
           - answer_type: choice
             dataset: XLRS-Bench-lite MMMU_DEV_VAL MathVista_MINI AI2D_TEST MMStar
-            mem_resoure: 1024
+            mem_resoure: 2048
           - answer_type: bool
             dataset: HallusionBench
             mem_resoure: 1024
