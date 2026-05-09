@@ -27,10 +27,24 @@ class SpatialDISE(ImageMCQDataset):
     REPO_ID = 'TACPS-liv/Spatial-DISE'
     SPLITS = {
         'Spatial-DISE': 'benchmark',
+        'Spatial-DISE_MERGE': 'benchmark',
         'Spatial-DISE_BENCH': 'benchmark',
+        'Spatial-DISE_BENCH_MERGE': 'benchmark',
+        'Spatial-DISE_SEPARATE': 'benchmark',
+        'Spatial-DISE_BENCH_SEPARATE': 'benchmark',
         'Spatial-DISE_TEST': 'test',
+        'Spatial-DISE_TEST_MERGE': 'test',
+        'Spatial-DISE_TEST_SEPARATE': 'test',
         'Spatial-DISE_VAL': 'val',
+        'Spatial-DISE_VAL_MERGE': 'val',
+        'Spatial-DISE_VAL_SEPARATE': 'val',
         'Spatial-DISE_TRAIN': 'train',
+        'Spatial-DISE_TRAIN_MERGE': 'train',
+        'Spatial-DISE_TRAIN_SEPARATE': 'train',
+    }
+    MODES = {
+        name: ('separate' if name.endswith('_SEPARATE') else 'merge')
+        for name in SPLITS
     }
 
     CATEGORY_ORDER = [
@@ -52,8 +66,10 @@ class SpatialDISE(ImageMCQDataset):
         'Extrinsic-Static',
         'Extrinsic-Dynamic',
     ]
-    IMAGE_COLUMNS = [
+    MERGE_IMAGE_COLUMNS = [
         ('image', 'merged image'),
+    ]
+    SEPARATE_IMAGE_COLUMNS = [
         ('question_image_path', 'separate question image'),
         ('question_image_1_path', 'separate question image 1'),
         ('question_image_2_path', 'separate question image 2'),
@@ -69,6 +85,7 @@ class SpatialDISE(ImageMCQDataset):
     _TAR_INDEX_CACHE = {}
 
     def __init__(self, dataset='Spatial-DISE', skip_noimg=True):
+        self.image_mode = self.MODES.get(dataset, 'merge')
         super().__init__(dataset=dataset, skip_noimg=skip_noimg)
 
     @staticmethod
@@ -94,11 +111,12 @@ class SpatialDISE(ImageMCQDataset):
         return path.lstrip('/\\')
 
     @classmethod
-    def _image_refs(cls, row, tar_index):
+    def _image_refs(cls, row, tar_index, image_mode):
         refs = []
         missing = []
         seen = set()
-        for column, label in cls.IMAGE_COLUMNS:
+        columns = cls.SEPARATE_IMAGE_COLUMNS if image_mode == 'separate' else cls.MERGE_IMAGE_COLUMNS
+        for column, label in columns:
             value = row.get(column, '')
             if pd.isna(value):
                 continue
@@ -157,7 +175,7 @@ class SpatialDISE(ImageMCQDataset):
         records = []
         missing = []
         for row_id, row in raw.iterrows():
-            image_refs, row_missing = self._image_refs(row, tar_index)
+            image_refs, row_missing = self._image_refs(row, tar_index, self.image_mode)
             if row_missing:
                 missing.extend(row_missing)
                 continue
@@ -172,6 +190,7 @@ class SpatialDISE(ImageMCQDataset):
                 'image_path': [member for _, member, _ in image_refs],
                 'image_shard': [shard for _, _, shard in image_refs],
                 'image_role': [label for label, _, _ in image_refs],
+                'image_mode': self.image_mode,
                 'split': split,
                 'category': row.get('category', ''),
                 'difficulty': row.get('difficulty', ''),
@@ -222,13 +241,19 @@ class SpatialDISE(ImageMCQDataset):
 
         tgt_path = self.dump_image(line)
         question = str(line['question']).strip()
-        prompt = (
-            f'{question}\n'
-            'Images are provided in order: first the merged full image, followed by the available separate '
-            'question/view/option images from the original sample. '
-            'Use all images together. The answer choices are labeled A, B, C, and D. '
-            'Please select the correct answer and respond with only one letter: A, B, C, or D.'
-        )
+        if str(line.get('image_mode', 'merge')) == 'separate':
+            prompt = (
+                f'{question}\n'
+                'Images are provided as separate question/view/option images from the original sample. '
+                'Use all images together. The answer choices are labeled A, B, C, and D. '
+                'Please select the correct answer and respond with only one letter: A, B, C, or D.'
+            )
+        else:
+            prompt = (
+                f'{question}\n'
+                'The image contains answer choices labeled A, B, C, and D. '
+                'Please select the correct answer and respond with only one letter: A, B, C, or D.'
+            )
 
         msgs = []
         for path in toliststr(tgt_path):
