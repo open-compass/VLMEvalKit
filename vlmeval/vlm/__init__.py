@@ -20,7 +20,7 @@ from .eagle_x import Eagle
 from .emu import Emu, Emu3_chat, Emu3_gen
 from .falcon_vlm import Falcon2VLM
 from .flash_vl import FlashVL
-from .gemma import Gemma3, PaliGemma
+from .gemma import Gemma3, Gemma4, PaliGemma
 from .granite_docling import DOCLING
 from .granite_vision import GraniteVision3
 from .h2ovl_mississippi import H2OVLChat
