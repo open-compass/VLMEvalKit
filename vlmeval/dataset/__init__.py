@@ -72,6 +72,12 @@ from .matbench import MATBench
 from .medqbench_caption import MedqbenchCaptionDataset
 from .medqbench_mcq import MedqbenchMCQDataset
 from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
+from .medq_deg_bench import MedQDEGBenchDataset
+from .olmOCRBench.olmocrbench import olmOCRBench
+from .oceanocr import OceanOCRBench
+from .matbench import MATBench
+
+# Add by EASI team
 from .megabench import MEGABench
 from .miabench import MIABench
 from .mindcubebench import MindCubeBench
@@ -288,7 +294,8 @@ IMAGE_DATASET = [
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
-    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,  # noqa: E501
+    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, MedQDEGBenchDataset,
+    ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
     ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
