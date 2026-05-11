@@ -54,6 +54,7 @@ from .monkey import Monkey, MonkeyChat
 from .moondream import Moondream1, Moondream2, Moondream3
 from .mplug_owl2 import mPLUG_Owl2
 from .mplug_owl3 import mPLUG_Owl3
+from .nanovlm import NanoVLM
 from .nvlm import NVLM
 from .ola import Ola
 from .omchat import OmChat

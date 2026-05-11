@@ -2644,5 +2644,13 @@ model_groups = [
 # add by EASI team
 model_groups.extend([bagel_series, spatial_related_models, sensenova_si_series])
 
+
+nanovlm_series = {
+    "nanoVLM-460M-8k": partial(vlm.NanoVLM, model_path="lusxvr/nanoVLM-460M-8k"),
+    "nanoVLM-230M-8k": partial(vlm.NanoVLM, model_path="lusxvr/nanoVLM-230M-8k"),
+}
+
+model_groups.append(nanovlm_series)
+
 for grp in model_groups:
     supported_VLM.update(grp)
