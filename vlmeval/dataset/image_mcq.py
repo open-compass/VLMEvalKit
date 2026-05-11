@@ -104,7 +104,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMStar_TR': 'https://huggingface.co/datasets/kesimeg/MMStar_tr/resolve/main/MMStar_TR.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
-        'BLINK': 'https://huggingface.co/buckets/Ryoo72/BLINK/resolve/BLINK.fixed.tsv',
+        'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
         'BLINK_circular': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK_circular.tsv',
         'TaskMeAnything_v1_imageqa_random': (
             'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/'
@@ -185,7 +185,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'RealWorldQA': '4de008f55dc4fd008ca9e15321dc44b7',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': 'd5e8af148b10ac69f535ff7b23f3f989',
-        'BLINK_circular': '75aee2332420c7654dc51b1442fafc7b',
+        'BLINK_circular': 'f44c9f19afda14262cd1e0731bd01f9e',
         'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889',
         'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
