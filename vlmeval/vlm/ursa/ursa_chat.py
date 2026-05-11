@@ -1,14 +1,13 @@
+import logging
+import re
+from typing import Dict, List, Optional, Union
+
 import torch
 from PIL import Image
-from ..base import BaseModel
-from ...smp import *
-from typing import Dict
-import logging
-from transformers import set_seed
-from transformers import AutoTokenizer, AutoProcessor
-import re
-from typing import List, Optional, Union
+from transformers import AutoProcessor, AutoTokenizer, set_seed
+
 from vlmeval.dataset import DATASET_TYPE
+from ..base import BaseModel
 
 
 class UrsaChat(BaseModel):

@@ -1,4 +1,5 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
 
 class Constraint():
     def __init__(self) -> None:

@@ -1,7 +1,4 @@
-from ...smp import *
-from .multiple_choice import extract_answer_from_item
-from PIL import Image, ImageOps
-import numpy as np
+from vlmeval.smp import load
 
 sys_prompt = "You are an AI assistant for question answering."
 
@@ -248,7 +245,7 @@ def get_dimension_rating(score_file):
     for idx, item in data.iterrows():
         dict_key = item['dim'] + '. ' + item['task_type']
         if dict_key not in result_dict:
-            result_dict[dict_key] = [0,0]
+            result_dict[dict_key] = [0, 0]
         result_dict[dict_key][0] += int(item['score'])
         result_dict[dict_key][1] += 1
     return result_dict

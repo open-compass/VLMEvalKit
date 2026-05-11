@@ -4,11 +4,15 @@ Implements Hybrid Matching: template matching first, then LLM matching as fallba
 Supports both MCQ (multiple choice) and YORN (yes or no) question types.
 """
 
-import pandas as pd
 import re
 from concurrent.futures import ThreadPoolExecutor
+
+import pandas as pd
 from tqdm import tqdm
-from ...smp import get_logger
+
+from vlmeval.smp import get_logger
+
+logger = get_logger(__name__)
 
 OPTIONS_MCQ = ['A', 'B', 'C', 'D', 'E', 'F']
 OPTIONS_YORN = ['YES', 'NO']
@@ -150,7 +154,6 @@ def can_infer(answer):
 
 def llm_match(model, question, prediction, question_type):
     """LLM-based answer matching for MCQ and YORN."""
-    logger = get_logger('Evaluation')
 
     if model is None:
         return dict(opt='Fail', log='No model available for LLM matching.')

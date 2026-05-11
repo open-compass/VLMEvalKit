@@ -1,9 +1,14 @@
-# from http import HTTPStatus
+import json
 import os
+
+import numpy as np
 import requests
-from ..dataset import DATASET_TYPE, DATASET_MODALITY
+
 from vlmeval.api.base import BaseAPI
-from vlmeval.smp import *
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import encode_image_to_base64, get_logger, listinstr
+
+logger = get_logger(__name__)
 
 
 class MUGUWrapper(BaseAPI):
@@ -35,9 +40,9 @@ class MUGUWrapper(BaseAPI):
         _ = requests.get(model_url)
         self.model = model
         if hasattr(self, 'custom_prompt'):
-            self.logger.info(f'using custom prompt {self.custom_prompt}')
+            logger.info(f'using custom prompt {self.custom_prompt}')
         self.temperature = temperature
-        self.logger.info(f'Init temperature: {self.temperature}')
+        logger.info(f'Init temperature: {self.temperature}')
         self.use_mpo_prompt = use_mpo_prompt
 
         self.temperature = 0.0
@@ -75,10 +80,8 @@ class MUGUWrapper(BaseAPI):
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
-        from ..vlm.internvl.utils import (build_multi_choice_prompt,
-                                          build_mcq_cot_prompt,
-                                          build_qa_cot_prompt,
-                                          build_mpo_prompt,
+        from ..vlm.internvl.utils import (build_mcq_cot_prompt, build_mpo_prompt,
+                                          build_multi_choice_prompt, build_qa_cot_prompt,
                                           reorganize_prompt)
 
         tgt_path = self.dump_image(line, dataset)
@@ -172,7 +175,7 @@ class MUGUWrapper(BaseAPI):
         input_msgs = self.prepare_inputs(inputs)
 
         temperature = kwargs.pop('temperature', self.temperature)
-        self.logger.info(f'Generate temperature: {temperature}')
+        logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 
         headers = {'Content-Type': 'application/json'}
@@ -199,8 +202,9 @@ class MUGUWrapper(BaseAPI):
             # for internvl2-8b-mpo-cot
             if getattr(self, 'use_mpo_prompt', False):
                 from ..vlm.internvl.utils import mpo_post_processing
+
                 answer = mpo_post_processing(answer, kwargs.get('dataset'))
-        except:
+        except Exception:
             pass
         return ret_code, answer, response
 

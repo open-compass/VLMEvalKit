@@ -1,11 +1,12 @@
-import re
 import json
-from collections import defaultdict
-
-from .image_base import ImageBaseDataset
-from ..smp import *
+import re
 from ast import literal_eval
 
+import pandas as pd
+
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import get_intermediate_file_path
+from .image_base import ImageBaseDataset
 
 PROMPT_TEMPLATE = """All spatial relationships are defined from the viewer's perspective, where 'front' means closer to the viewer and 'back' means farther from the viewer. Please provide the bounding box coordinate of the object the following statement describes:
 {description}
@@ -23,7 +24,7 @@ def parse_bbox(text):
                 return [0, 0, 0, 0]
             if isinstance(bbox, list) and len(bbox) == 4:
                 return [float(coord) for coord in bbox]
-    except:
+    except Exception:
         pass
 
     # Fallback: try to extract four numbers
@@ -121,7 +122,7 @@ class GroundingME(ImageBaseDataset):
                 gt_bbox = literal_eval(raw_item['answer'])
                 if not isinstance(gt_bbox, list):
                     gt_bbox = [0, 0, 0, 0]
-            except:
+            except Exception:
                 gt_bbox = [0, 0, 0, 0]
 
             # Get image dimensions

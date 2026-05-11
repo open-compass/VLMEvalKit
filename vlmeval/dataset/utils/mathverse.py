@@ -1,6 +1,11 @@
-from ...smp import *
-from ...utils import can_infer
+import copy as cp
+import json
+from collections import defaultdict
 
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp.file import load
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

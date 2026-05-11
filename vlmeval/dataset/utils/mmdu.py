@@ -1,4 +1,6 @@
-from ...smp import *
+import logging
+
+import pandas as pd
 
 meta_prompt = """
 You are an assistant skilled at evaluating the quality of creative text.

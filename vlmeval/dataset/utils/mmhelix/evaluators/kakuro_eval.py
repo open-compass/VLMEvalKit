@@ -1,7 +1,7 @@
-from typing import Dict, Any, List, Tuple, Optional, Union
-import re
 import json
+import re
 from ast import literal_eval
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class BaseEvaluator:

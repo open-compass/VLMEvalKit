@@ -1,9 +1,17 @@
-from ...smp import *
-from .multiple_choice import extract_answer_from_item
-import pandas as pd
-import numpy as np
+import json
+import os
+import os.path as osp
 import re
 import zipfile
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import portalocker
+from PIL import Image
+from tqdm import tqdm
+
+from vlmeval.smp import load
 
 FAIL_MSG = "Failed to obtain answer via API."
 
@@ -583,7 +591,7 @@ def get_chunk_number(filename):
     try:
         num = filename.split("chunk_")[1].split(".zip")[0]
         return int(num)
-    except:
+    except Exception:
         return float('inf')
 
 

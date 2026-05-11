@@ -27,21 +27,17 @@ from typing import Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn import LayerNorm
-
 from transformers.activations import ACT2FN
 # from transformers.modeling_flash_attention_utils import is_flash_attn_available
 from transformers.modeling_utils import PreTrainedModel
-from transformers.utils import (
-    logging
-)
-from .configuration_qwen_vit import QwenVisionConfig
+from transformers.utils import logging
 
+from .configuration_qwen_vit import QwenVisionConfig
 
 try:
     from transformers.modeling_flash_attention_utils import flash_attn_varlen_func
     has_flash_attn = True
-except:
+except Exception:
     print('FlashAttention2 is not installed.')
     has_flash_attn = False
 

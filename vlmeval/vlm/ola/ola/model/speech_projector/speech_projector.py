@@ -1,6 +1,8 @@
+import math
+
 import torch
 import torch.nn as nn
-import math
+
 
 class EncoderProjectorConcat(nn.Module):
     def __init__(self, config):

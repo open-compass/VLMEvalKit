@@ -2,6 +2,7 @@ import torch
 
 from .perceiver import DynamicCompressor
 
+
 class IdentityMap(torch.nn.Module):
     def __init__(self):
         super().__init__()

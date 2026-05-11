@@ -1,14 +1,12 @@
-import torch
-import warnings
 import copy as cp
-import numpy as np
-import sys
-import os
 import logging
-from ..base import BaseModel
-from ...smp import isimg, listinstr, load, dump, download_file
-from ...dataset import DATASET_TYPE
+import os
+
+import torch
 from huggingface_hub import snapshot_download
+
+from vlmeval.smp import download_file, dump, listinstr, load
+from ..base import BaseModel
 
 
 def load_video(video_path, setting_fps):
@@ -66,10 +64,10 @@ class LLaMAVID(BaseModel):
         self.fps = 1
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
-        from llamavid.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
-        from llamavid.constants import DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
-        from llamavid.conversation import conv_templates, SeparatorStyle
-        from llava.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
+        from llamavid.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                        DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX)
+        from llamavid.conversation import SeparatorStyle, conv_templates
+        from llava.mm_utils import KeywordsStoppingCriteria, tokenizer_image_token
 
         if type(qs) is dict:
             original_qs = cp.deepcopy(qs['user'])

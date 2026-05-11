@@ -1,19 +1,18 @@
+import base64
+import copy
+import hashlib
+import mimetypes
 import os
 import re
-import json
-import base64
-import hashlib
 import warnings
-from typing import Dict, List, Tuple, Any, Union
+from typing import Any, Dict, List, Union
 
 import pandas as pd
 
-from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp import misc, file
 from vlmeval import utils
+from vlmeval.dataset.image_base import ImageBaseDataset
 from vlmeval.dataset.utils import build_judge
-import copy
-import mimetypes
+from vlmeval.smp import file
 
 JUDGE_WORLDQA_PROMPT_EN = (
     "### Role\n"

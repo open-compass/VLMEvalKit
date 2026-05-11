@@ -1,7 +1,15 @@
-from vlmeval.smp import *
+import os
+import time
+
+from PIL import Image
+
 from vlmeval.api.base import BaseAPI
+from vlmeval.smp import get_logger, proxy_set
 
 headers = 'Content-Type: application/json'
+
+
+logger = get_logger(__name__)
 
 
 class GeminiWrapper(BaseAPI):
@@ -55,7 +63,7 @@ class GeminiWrapper(BaseAPI):
                     "Could not import 'google.genai'. Please install it with:\n"
                     "    pip install --upgrade google-genai"
                 ) from e
-            self.media_resolution_dict = {
+            self.media_resolution_dict = {  # noqa: F841
                 'low': types.MediaResolution.MEDIA_RESOLUTION_LOW,
                 'medium': types.MediaResolution.MEDIA_RESOLUTION_MEDIUM,
                 'high': types.MediaResolution.MEDIA_RESOLUTION_HIGH
@@ -72,7 +80,6 @@ class GeminiWrapper(BaseAPI):
         super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def upload_video_genai(self, video_path):
-        from google import genai
         from google.genai import types
         myfile = self.client.files.upload(file=video_path)
 
@@ -110,7 +117,7 @@ class GeminiWrapper(BaseAPI):
         return messages, video_in_msg
 
     def build_msgs_vertex(self, inputs):
-        from vertexai.generative_models import Part, Image
+        from vertexai.generative_models import Image, Part
         messages = [] if self.system_prompt is None else [self.system_prompt]
         for inp in inputs:
             if inp['type'] == 'text':
@@ -156,8 +163,8 @@ class GeminiWrapper(BaseAPI):
                 return 0, answer, 'Succeeded! '
             except Exception as err:
                 if self.verbose:
-                    self.logger.error(f'{type(err)}: {err}')
-                    self.logger.error(f'The input messages are {inputs}.')
+                    logger.error(f'{type(err)}: {err}')
+                    logger.error(f'The input messages are {inputs}.')
 
                 return -1, '', ''
         elif self.backend == 'vertex':
@@ -173,8 +180,8 @@ class GeminiWrapper(BaseAPI):
                 return 0, answer, 'Succeeded! '
             except Exception as err:
                 if self.verbose:
-                    self.logger.error(f'{type(err)}: {err}')
-                    self.logger.error(f'The input messages are {inputs}.')
+                    logger.error(f'{type(err)}: {err}')
+                    logger.error(f'The input messages are {inputs}.')
 
                 return -1, '', ''
 

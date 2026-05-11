@@ -1,4 +1,9 @@
-from ...smp import *
+from collections import defaultdict
+
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp import d2df, load, process_punctuation
 
 
 def AMBER_rating(data_file):

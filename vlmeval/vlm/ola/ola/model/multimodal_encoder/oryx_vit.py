@@ -2,49 +2,31 @@ import math
 import warnings
 from dataclasses import dataclass
 from functools import partial
-from typing import (
-    Callable,
-    Dict,
-    Final,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import (Callable, Dict, Final, List, Literal, Optional, Sequence, Set, Tuple, Type,
+                    Union)
 
-from torch.utils.checkpoint import checkpoint
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
+
 try:
-    from timm.layers import (
-        AttentionPoolLatent,
-        DropPath,
-        LayerType,
-        Mlp,
-        PatchDropout,
-        PatchEmbed,
-        resample_abs_pos_embed,
-    )
+    from timm.layers import (AttentionPoolLatent, DropPath, LayerType, Mlp, PatchDropout,
+                             PatchEmbed, resample_abs_pos_embed)
     from timm.models._manipulate import checkpoint_seq, named_apply
 except:
     print('Wrong timm version')
 
-from flash_attn import flash_attn_func, flash_attn_varlen_func
-
+import logging
+import os
 from typing import Optional
 
-import logging
+import deepspeed
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from flash_attn import flash_attn_func, flash_attn_varlen_func
 
-import deepspeed
-import os
 if 'LOAD_VISION_EARLY' in os.environ:
     print("LOAD_VISION_EARLY is set")
     LOAD_VISION_EARLY = True
@@ -867,8 +849,9 @@ def create_siglip_vit(
         model.set_grad_checkpointing(True)
     return model
 
-from transformers import CLIPImageProcessor
 import torch.distributed as dist
+from transformers import CLIPImageProcessor
+
 
 class SigLIPViTAnysizeWrapper(nn.Module):
     def __init__(self, vision_tower, path, args, delay_load=False):

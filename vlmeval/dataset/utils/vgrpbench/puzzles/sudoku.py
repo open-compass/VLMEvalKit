@@ -1,13 +1,15 @@
-from typing import List, Tuple, Union, Dict, Any
-import random
-import copy
-from abc import ABC, abstractmethod
-import os
-import json
 import argparse
+import copy
+import json
+import os
+import random
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Tuple, Union
 
+from .common_constriants import (Constraint, ConstraintColNoRepeat, ConstraintRowNoRepeat,
+                                 ConstraintSubGridNoRepeat)
 from .common_puzzle_factory import PuzzleFactory
-from .common_constriants import Constraint, ConstraintRowNoRepeat, ConstraintColNoRepeat, ConstraintSubGridNoRepeat
+
 
 class SudokuPuzzleFactory(PuzzleFactory):
     def __init__(self, size: int) -> None:

@@ -4,12 +4,12 @@ providing a unified Vision-Language Model (VLM) framework integrating 3D reconst
 for deep spatial understanding from monocular video.
 """
 import logging
+import math
 from typing import Optional
 
-import math
-import torch
 import decord
 import numpy as np
+import torch
 from PIL import Image
 from transformers import AutoConfig
 
@@ -54,20 +54,13 @@ class VLM3R(BaseModel):
     ):
         super().__init__()
         try:
-            from llava.constants import (
-                DEFAULT_IM_END_TOKEN,
-                DEFAULT_IM_START_TOKEN,
-                DEFAULT_IMAGE_PATCH_TOKEN,
-                DEFAULT_IMAGE_TOKEN,
-                IMAGE_TOKEN_INDEX,
-            )
-            from llava.model.builder import load_pretrained_model
+            from llava.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                         DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IMAGE_TOKEN,
+                                         IMAGE_TOKEN_INDEX)
             from llava.conversation import SeparatorStyle, conv_templates
-            from llava.mm_utils import (
-                KeywordsStoppingCriteria,
-                get_model_name_from_path,
-                tokenizer_image_token,
-            )
+            from llava.mm_utils import (KeywordsStoppingCriteria, get_model_name_from_path,
+                                        tokenizer_image_token)
+            from llava.model.builder import load_pretrained_model
 
         except Exception as e:
             logging.critical(
@@ -147,10 +140,8 @@ class VLM3R(BaseModel):
 
             if "v1.5" in pretrained:
                 # A hardcode solution here to load v1.5 model, otherwise it will use LlavaConfig from hf transformers
-                from llavavid.model.language_model.llava_llama import (
-                    LlavaConfig,
-                    LlavaLlamaForCausalLM,
-                )
+                from llavavid.model.language_model.llava_llama import (LlavaConfig,
+                                                                       LlavaLlamaForCausalLM)
                 from transformers import AutoTokenizer
 
                 self.tokenizer = AutoTokenizer.from_pretrained(pretrained, use_fast=False)

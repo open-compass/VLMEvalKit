@@ -1,23 +1,20 @@
-import logging
+import base64
+import json
 import os
 import os.path as osp
 import re
-import json
-import warnings
-from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from io import BytesIO
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from PIL import Image
-import base64
-from io import BytesIO
 
-from .image_base import ImageBaseDataset
-from ..smp import *  # noqa: F401,F403
-from ..smp.file import LMUDataRoot, get_intermediate_file_path
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.smp.file import LMUDataRoot, dump, get_intermediate_file_path, load
+from vlmeval.smp.log import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RefSpatialDataset(ImageBaseDataset):

@@ -11,9 +11,11 @@
 #with Word Spotting: The detected word must coincide (ingnoring case) to a filtered Ground Truth containing only dictionary words (see include_in_dictionary and include_in_dictionary_transcription functions)
 #without Word Spotting: words must be equal excluding a set of special characters
 
-from collections import namedtuple
-import vlmeval.dataset.utils.Ocrbench_v2.spotting_eval.rrc_evaluation_funcs_1_1 as rrc_evaluation_funcs
 import importlib
+from collections import namedtuple
+
+import vlmeval.dataset.utils.Ocrbench_v2.spotting_eval.rrc_evaluation_funcs_1_1 as rrc_evaluation_funcs
+
 
 def evaluation_imports():
     """

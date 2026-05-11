@@ -1,10 +1,12 @@
-from .image_base import ImageBaseDataset
-from ..smp import *
 import warnings
+
 import pandas as pd
 from datasets import load_dataset
-from vlmeval.smp import encode_image_to_base64
 from tqdm import tqdm
+
+from vlmeval.smp import dump, load
+from vlmeval.smp.vlm import encode_image_to_base64
+from .image_base import ImageBaseDataset
 
 
 def prepare_chartcap():
@@ -86,10 +88,11 @@ class ChartCapDataset(ImageBaseDataset):
         return list(cls.DATASET_URL)
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.megabench.scoring.sacrebleu_bleu import Bleu
-        from bert_score import BERTScorer
-        from sentence_transformers import SentenceTransformer
         import evaluate
+        from bert_score import BERTScorer
+        from sentence_transformers import SentenceTransformer  # noqa: F401
+
+        from .utils.megabench.scoring.sacrebleu_bleu import Bleu
 
         data = load(eval_file)
 

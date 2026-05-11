@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class AggregationType(Enum):
     MEAN = 0
 

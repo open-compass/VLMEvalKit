@@ -1,8 +1,9 @@
-import dataclasses
-from enum import auto, Enum
-from typing import List, Any, Union, Tuple
 import base64
+import dataclasses
+from enum import Enum, auto
 from io import BytesIO
+from typing import Any, List, Tuple, Union
+
 from PIL import Image
 
 

@@ -1,11 +1,13 @@
-import random
-import numpy as np
 import argparse
 import os
-from typing import List, Dict, Any, Tuple
+import random
+from typing import Any, Dict, List, Tuple
 
-from .common_puzzle_factory import PuzzleFactory
+import numpy as np
+
 from .common_constriants import Constraint
+from .common_puzzle_factory import PuzzleFactory
+
 
 class ConstraintBase:
     def _check_line_hints(self, line, hints) -> bool:

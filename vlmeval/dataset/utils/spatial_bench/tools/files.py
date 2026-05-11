@@ -1,4 +1,4 @@
-from .....smp.file import get_intermediate_file_path
+from vlmeval.smp.file import get_intermediate_file_path
 
 
 def _judge_tag_from_mode_and_model(judge_mode: str | None, judge_model: str | None) -> str:

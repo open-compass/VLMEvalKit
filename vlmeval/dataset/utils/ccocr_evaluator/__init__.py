@@ -1,8 +1,7 @@
-from .kie_evaluator import KieEvaluator
+from .common import summary  # noqa: F401
 from .doc_parsing_evaluator import ParsingEvaluator
+from .kie_evaluator import KieEvaluator
 from .ocr_evaluator import OcrEvaluator
-from .common import summary
-
 
 evaluator_map_info = {
     "kie": KieEvaluator("kie"),

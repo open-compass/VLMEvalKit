@@ -1,10 +1,12 @@
-import pandas as pd
 import string
+
+import pandas as pd
 import torch
 from PIL import Image
+
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import listinstr
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE, DATASET_MODALITY
 
 
 class VarcoVision(BaseModel):
@@ -236,8 +238,8 @@ class VarcoVision(BaseModel):
         return self.processor.decode(output[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
 
     def load_video(self, video_path, max_frames_num, fps=1, force_sample=False):
-        from decord import VideoReader, cpu
         import numpy as np
+        from decord import VideoReader, cpu
 
         vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
         total_frame_num = len(vr)

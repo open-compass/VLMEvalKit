@@ -1,13 +1,11 @@
-import os
-import re
-import evaluate
-import numpy as np
-import pandas as pd
 import json
-import jsonlines
-from tqdm import tqdm
 import os.path as osp
-from vlmeval import load, dump, track_progress_rich
+import re
+
+import pandas as pd
+from tqdm import tqdm
+
+from vlmeval import dump, load
 from vlmeval.dataset.utils.bmmr_grade import math_equal
 
 
@@ -137,7 +135,7 @@ def open_end_verify(ref, cand):
     if not raw_judge:
         # ans = extract_boxed_content(raw_ans.split('Answer###')[-1])[0]
 
-        raw_judge = math_equal(gt_ans,ans)
+        raw_judge = math_equal(gt_ans, ans)
 
     return {'acc': raw_judge}
 

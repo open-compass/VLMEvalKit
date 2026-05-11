@@ -49,11 +49,11 @@ def validation(graph, answer):
     try:
         try:
             path = [int(x.strip()) for x in path_str.split(',')]
-        except:
+        except Exception:
             return True, total_distance_sum, "path must be a list of integers"
         if not path:
             return True, total_distance_sum, "path cannot be empty"
-    except:
+    except Exception:
         return True, total_distance_sum, "invalid answer format"
 
     #  TSP specific validation

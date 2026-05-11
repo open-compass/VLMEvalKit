@@ -1,13 +1,17 @@
+import logging
 import re
+import string
+from urllib.request import urlopen
 
 import numpy as np
+import pandas as pd
 import torch
 import torchvision.transforms as transforms
 from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoModel, AutoTokenizer
 
-from ...dataset import DATASET_TYPE
-from ...smp import *
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import listinstr
 from ..base import BaseModel
 
 pattern = re.compile(r'[A-Z]')
@@ -80,8 +84,8 @@ def HD_transform(img, im_num=36, id_scale=1.5):
     new_h = int(new_w / ratio)
 
     try:
-        img = transforms.functional.resize(img, [new_h, new_w],)
-    except:
+        img = transforms.functional.resize(img, [new_h, new_w])
+    except Exception:
         print((height, width))
         print((new_h, new_w))
         print(im_num)
@@ -113,7 +117,7 @@ def img_process(imgs):
     pad = 40
     if w > h:
         for im in imgs:
-            w,h = im.size
+            w, h = im.size
             new_w = max(new_w, w)
             new_h += h + 10 + pad
         font = get_font()
@@ -121,7 +125,7 @@ def img_process(imgs):
         draw = ImageDraw.Draw(new_img)
         curr_h = 0
         for idx, im in enumerate(imgs):
-            w,h = im.size
+            w, h = im.size
             new_img.paste(im, (0, pad + curr_h))
             draw.text((0, curr_h), f'<IMAGE {idx}>', font=font, fill='black')
             if idx + 1 < len(imgs):
@@ -130,7 +134,7 @@ def img_process(imgs):
         # print (new_w, new_h)
     else:
         for im in imgs:
-            w,h = im.size
+            w, h = im.size
             new_w += w + 10
             new_h = max(new_h, h)
         new_h += pad
@@ -139,7 +143,7 @@ def img_process(imgs):
         draw = ImageDraw.Draw(new_img)
         curr_w = 0
         for idx, im in enumerate(imgs):
-            w,h = im.size
+            w, h = im.size
             new_img.paste(im, (curr_w, pad))
             draw.text((curr_w, 0), f'<IMAGE {idx}>', font=font, fill='black')
             if idx + 1 < len(imgs):

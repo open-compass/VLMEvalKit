@@ -1,9 +1,9 @@
 
-import numpy as np
-import Levenshtein
-import re
 import json
-from ...smp import *
+import re
+
+import Levenshtein
+import numpy as np
 
 # --- SCRM Logic ---
 
@@ -24,7 +24,17 @@ def is_float(val):
         return False
 
 
-def csv2triples(csv, separator='\\t', delimiter='\\n'):
+def extract_csv(text):
+    text = text.strip()
+    if '```csv' in text:
+        text = text.split('```csv')[1].split('```')[0]
+    elif '```' in text:
+        text = text.split('```')[1].split('```')[0]
+    return text.strip()
+
+
+def csv2triples(csv, separator='\t', delimiter='\n'):
+    csv = extract_csv(csv)
     lines = csv.strip().split(delimiter)
     if not lines:
         return []
@@ -206,23 +216,23 @@ QA_EXAMPLES = [
     {
         "query": "<question> What was the incremental increase in revenue from 2020 to 2021? "
         "<groundtruth answer> 5 million $ <answer> 20\n</s>",
-        "answer": "False"
+        "answer": "Answer: False"
     },
     {
         "query": "<question> What percentage of government spending was allocated to infrastructure in 2020? "
         "<groundtruth answer> 10% <answer> 14-4=10\n</s>",
-        "answer": "True"
+        "answer": "Answer: True"
     },
     {
         "query": "<question> What is the total production of Wind Energy in the four months from January to "
         "April 2021? <groundtruth answer> 2300 MW <answer> The total production of Wind Energy in the four "
         "months from January to April 2021 is 2450 MW.",
-        "answer": "True"
+        "answer": "Answer: True"
     },
     {
         "query": "<question> What is the total of manufactured goods for UK and Germany combined? "
         "<groundtruth answer> 5 <answer> Five",
-        "answer": "True"
+        "answer": "Answer: True"
     },
 ]
 
@@ -230,7 +240,8 @@ QA_PREFIX = (
     "Given multiple question-answer pairs and the corresponding predictions, evaluate the correctness of "
     "predictions. The output should be only \"True\" or \"False\". Note that if the groundtruth answer is a "
     "numeric value with/without the unit, impose 5% error tolerance to the answer, e.g., the answer of 95 is "
-    "marked as correct when groundtruth value is 100 million."
+    "marked as correct when groundtruth value is 100 million.\n"
+    "Please provide your evaluation result at the very end in the format: 'Answer: True' or 'Answer: False'."
 )
 QA_SUFFIX = """
     User: {query}
@@ -249,6 +260,7 @@ CRITERIA = {  # noqa: E501
         5 points: Comprehensive, accurate description; excellent understanding with no errors; clear and
         detailed, perfect as a standalone explanation.
         Score the model's description on this scale, providing a single value without providing any reasons.
+        Please provide your evaluation score at the very end in the format: 'Score: <score>'.
         """,
     'summary': """
         You're an expert evaluating a model's summarization of a chart, based on its alignment with the
@@ -268,6 +280,7 @@ CRITERIA = {  # noqa: E501
         aspects of the original text. It demonstrates excellent understanding, is error-free, clear, concise,
         well-structured, and serves as an excellent standalone representation of the original content.
         Score the model's summarization on this scale, providing a single value without providing any reasons.
+        Please provide your evaluation score at the very end in the format: 'Score: <score>'.
         """,
     'redrawing': """
         You're an expert evaluating a redrawing code of a chart, based on its alignment with the ground truth
@@ -286,6 +299,7 @@ CRITERIA = {  # noqa: E501
         5 points: Comprehensive, Accurate Code; Excellent Understanding, No Errors. Perfectly replicates all
         details and data of the chart. Generated chart is indistinguishable from the original, flawless.
         Score the redrawing code on this scale, providing a single value without providing ant reasons.
+        Please provide your evaluation score at the very end in the format: 'Score: <score>'.
         """
 }
 
@@ -324,13 +338,18 @@ def ChartX_auxeval(model, item):
         response = model.generate(prompt)
 
         score = 0
-        if 'True' in response:
-            score = 1
-        elif 'False' in response:
-            score = 0
-        else:
-            # simple fallback
-            score = 0
+        try:
+            hits = re.findall(r'Answer:\s*(True|False)', response, re.IGNORECASE)
+            if hits:
+                score = 1 if hits[-1].lower() == 'true' else 0
+            else:
+                # Fallback strictly to first occurrence if formatting failed
+                response_lower = response.lower()
+                hits = re.findall(r'\b(true|false)\b', response_lower)
+                if hits:
+                    score = 1 if hits[0] == 'true' else 0
+        except Exception:
+            pass
 
         return {'score': score, 'log': response}
 
@@ -351,7 +370,7 @@ def ChartX_auxeval(model, item):
         metadata_str = item.get('metadata', '{}')
         try:
             metadata = json.loads(metadata_str)
-        except BaseException:
+        except Exception:
             metadata = {}
 
         title = metadata.get('title', 'Unknown Title')
@@ -377,11 +396,15 @@ def ChartX_auxeval(model, item):
         # Extract score 0-5
         score = 0
         try:
-            # find first digit 0-5
-            hits = re.findall(r'[0-5]', response)
+            hits = re.findall(r'Score:\s*([0-5])', response, re.IGNORECASE)
             if hits:
-                score = int(hits[0])
-        except BaseException:
+                score = int(hits[-1])
+            else:
+                # Fallback
+                hits = re.findall(r'[0-5]', response)
+                if hits:
+                    score = int(hits[-1])
+        except Exception:
             pass
 
         return {'score': score, 'log': response}

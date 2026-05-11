@@ -11,8 +11,10 @@ import os
 import numpy as np
 import requests
 
-from ..smp import get_logger, encode_image_to_base64
+from ..smp import encode_image_to_base64, get_logger
 from .base import BaseAPI
+
+logger = get_logger(__name__)
 
 TOGETHER_API_BASE = "https://api.together.xyz/v1/chat/completions"
 
@@ -58,7 +60,7 @@ class TogetherAPI(BaseAPI):
             **kwargs,
         )
 
-        self.logger.info(f"TogetherAPI: model={self.model}, api_base={self.api_base}")
+        logger.info(f"TogetherAPI: model={self.model}, api_base={self.api_base}")
 
     def _prepare_content(self, inputs):
         """Build OpenAI-style content list (text + image_url with base64)."""
@@ -121,7 +123,7 @@ class TogetherAPI(BaseAPI):
             )
         except Exception as err:
             if self.verbose:
-                self.logger.error(f"{type(err).__name__}: {err}")
+                logger.error(f"{type(err).__name__}: {err}")
             return -1, self.fail_msg, str(err)
 
         ret_code = response.status_code
@@ -133,7 +135,7 @@ class TogetherAPI(BaseAPI):
             answer = data["choices"][0]["message"]["content"].strip()
         except Exception as err:
             if self.verbose:
-                self.logger.error(f"{type(err).__name__}: {err}")
-                self.logger.error(response.text)
+                logger.error(f"{type(err).__name__}: {err}")
+                logger.error(response.text)
 
         return ret_code, answer, response

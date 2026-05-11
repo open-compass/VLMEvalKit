@@ -1,4 +1,8 @@
-from ...smp import *
+from collections import defaultdict
+
+import pandas as pd
+
+from vlmeval.smp import load
 
 
 def build_mmvet_gpt4_prompt(line):

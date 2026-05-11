@@ -4,20 +4,25 @@ python vis_geochat_data.py
 # browse data in http://127.0.0.1:10064
 """
 
-import os
+import argparse
+import base64
+import copy
 import io
 import json
-import copy
+import os
+import os.path as osp
+import string
 import time
-import gradio as gr
-import base64
-from PIL import Image
 from io import BytesIO
-from argparse import Namespace
-# from llava import conversation as conversation_lib
 from typing import Sequence
-from vlmeval import *
+
+import gradio as gr
+import pandas as pd
+from PIL import Image
+
+from vlmeval.api import OpenAIWrapper
 from vlmeval.dataset import SUPPORTED_DATASETS, build_dataset
+from vlmeval.smp import LMUDataRoot, encode_image_file_to_base64, load
 
 SYS = "You are a helpful assistant. Your job is to faithfully translate all provided text into Chinese faithfully. "
 

@@ -1,10 +1,16 @@
+import string
+import sys
+
+import pandas as pd
 import torch
 from PIL import Image
 from transformers import AutoTokenizer
 
-from .base import BaseModel
-from ..smp import *
 from ..dataset import DATASET_TYPE
+from ..smp.log import get_logger
+from .base import BaseModel
+
+logger = get_logger(__name__)
 
 
 DEFAULT_IMAGE_TOKEN = '<image>'
@@ -15,8 +21,8 @@ DEFAULT_IM_END_TOKEN = '<im_end>'
 
 def init_omni_lmm(model_path):
     from omnilmm.model.omnilmm import OmniLMMForCausalLM
-    from omnilmm.utils import disable_torch_init
     from omnilmm.model.utils import build_transform
+    from omnilmm.utils import disable_torch_init
 
     torch.backends.cuda.matmul.allow_tf32 = True
     disable_torch_init()
@@ -118,8 +124,7 @@ class OmniLMM12B(BaseModel):
         prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         try:
             image = Image.open(image_path).convert('RGB')
-        except:
-            logger = get_logger('OmniLMM Inference')
+        except Exception:
             logger.error('Image Decode Error')
             return 'Image Decode Error'
 

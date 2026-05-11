@@ -1,13 +1,16 @@
 # flake8: noqa
-import re
-import os
 import ast
-import ipdb
+import os
+import re
 import shutil
-import zipfile
 import subprocess
+import zipfile
+
+import ipdb
+
 import vlmeval.dataset.utils.Ocrbench_v2.spotting_eval.rrc_evaluation_funcs_1_1 as rrc_evaluation_funcs
-from vlmeval.dataset.utils.Ocrbench_v2.spotting_eval.script import default_evaluation_params,validate_data,evaluate_method
+from vlmeval.dataset.utils.Ocrbench_v2.spotting_eval.script import (default_evaluation_params,
+                                                                    evaluate_method, validate_data)
 
 
 def extract_bounding_boxes_robust(predict_str):

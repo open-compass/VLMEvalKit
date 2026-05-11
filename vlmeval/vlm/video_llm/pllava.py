@@ -1,15 +1,14 @@
-import torch
-import warnings
-import copy as cp
-import numpy as np
-import sys
-from PIL import Image
-import torchvision
 import logging
-from ..base import BaseModel
-from ...smp import isimg, listinstr
-from ...dataset import DATASET_TYPE
+import sys
+
+import numpy as np
+import torchvision
 from huggingface_hub import snapshot_download
+from PIL import Image
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import listinstr
+from ..base import BaseModel
 
 
 class PLLaVA(BaseModel):
@@ -67,8 +66,8 @@ class PLLaVA(BaseModel):
         return offsets
 
     def generate_inner(self, message, dataset=None):
-        from tasks.eval.model_utils import pllava_answer
         from tasks.eval.eval_utils import conv_templates
+        from tasks.eval.model_utils import pllava_answer
 
         question, video = self.message_to_promptvideo(message)
 

@@ -1,8 +1,8 @@
 # # flake8: noqa
 import os
-import squarify
-
 import warnings
+
+import squarify
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -13,22 +13,24 @@ import sys
 if os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] not in sys.path:
     sys.path.insert(0, os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"])
 
-import networkx
-import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
-import networkx as nx
-from matplotlib.axes._base import _process_plot_var_args
-from matplotlib.axes._axes import Axes
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.colors as mcolors
-import networkx.drawing.nx_pylab as nx_pylab
-from matplotlib.projections.polar import PolarAxes
-from matplotlib.image import NonUniformImage
-from matplotlib.patches import Ellipse, Circle
-from matplotlib_venn._common import VennDiagram
 import inspect
+
+import matplotlib
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import networkx
+import networkx as nx
+import networkx.drawing.nx_pylab as nx_pylab
+import numpy as np
 from evaluator.color_utils import filter_color
+from matplotlib.axes._axes import Axes
+from matplotlib.axes._base import _process_plot_var_args
+from matplotlib.image import NonUniformImage
+from matplotlib.patches import Circle, Ellipse
+from matplotlib.projections.polar import PolarAxes
+from matplotlib_venn._common import VennDiagram
+from mpl_toolkits.mplot3d import Axes3D
+
 # from chart2code.utils.evaluator.color_utils import filter_color
 
 

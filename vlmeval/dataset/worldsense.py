@@ -1,9 +1,20 @@
-from huggingface_hub import snapshot_download
-from ..smp import *
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
 import json
+import os
+import os.path as osp
+import warnings
 
+import numpy as np
+import pandas as pd
+import portalocker
+from huggingface_hub import snapshot_download
+from PIL import Image
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         get_logger, load, md5, modelscope_flag_set)
+from .utils import DEBUG_MESSAGE, build_judge
+from .video_base import VideoBaseDataset
+
+logger = get_logger(__name__)
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -73,6 +84,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
             def unzip_hf_zip(pth):
                 import zipfile
+
                 from moviepy.editor import VideoFileClip
                 base_dir = pth
                 target_dir = os.path.join(pth, 'videos/')
@@ -282,7 +294,8 @@ Respond with only the letter (A, B, C, or D) of the correct option.
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.worldsense import get_dimension_rating, extract_characters_regex, extract_option
+        from .utils.worldsense import (extract_characters_regex, extract_option,
+                                       get_dimension_rating)
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 

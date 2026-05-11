@@ -1,9 +1,11 @@
+import logging
 import os
 import warnings
-from .prompt import HawkVLPromptMixin
-from ..base import BaseModel
-import logging
+
 import torch
+
+from ..base import BaseModel
+from .prompt import HawkVLPromptMixin
 
 
 def ensure_image_url(image: str) -> str:

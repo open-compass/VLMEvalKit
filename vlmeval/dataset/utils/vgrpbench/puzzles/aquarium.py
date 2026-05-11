@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Tuple
 from .common_constriants import Constraint
 from .common_puzzle_factory import PuzzleFactory
 
+
 class ConstraintAquariumFill(Constraint):
     """Check aquarium conditions:
     1. If there's a highest water row in the aquarium, all cells from that row downward in the same aquarium must not be empty.

@@ -1,17 +1,19 @@
 import json
 import os
-from huggingface_hub import snapshot_download
-import numpy as np
-import re
-import time
-import pandas as pd
+import os.path as osp
 import zipfile
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
-from .video_base import VideoBaseDataset
-from .utils import build_judge
-from ..api import OpenAIWrapper
+
+import numpy as np
+import pandas as pd
+import portalocker
+from huggingface_hub import snapshot_download
+from PIL import Image
+
+from vlmeval.smp import dump, load, md5
+from vlmeval.smp.file import LMUDataRoot, get_file_extension, get_intermediate_file_path
 from ..utils import track_progress_rich
+from .utils import build_judge
+from .video_base import VideoBaseDataset
 
 EXTRACTION_PROMPT = (
     "Bellow is a description of a video clip:\n"
@@ -245,11 +247,11 @@ class DREAM(VideoBaseDataset):
                         if end != -1:
                             text = text[:end + 1]
                     return json.loads(text)
-                except:
+                except Exception:
                     import ast
                     try:
                         return ast.literal_eval(text)
-                    except:
+                    except Exception:
                         return None
 
             def process_sample(row, gpt_model, gt_map):
@@ -282,7 +284,7 @@ class DREAM(VideoBaseDataset):
                     if 'events' in gt_row and pd.notna(gt_row['events']):
                         try:
                             gt_events = json.loads(gt_row['events'])
-                        except:
+                        except Exception:
                             res = extract_events(gt_response, gpt_model)
                             parsed = parse_json(res)
                             gt_events = parsed.get('events', []) if parsed else []

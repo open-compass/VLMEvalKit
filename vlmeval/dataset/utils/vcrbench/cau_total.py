@@ -1,6 +1,5 @@
-from collections import defaultdict
 import json
-import sys
+from collections import defaultdict
 
 
 def load_data(file_path):

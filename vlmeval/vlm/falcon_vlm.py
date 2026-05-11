@@ -1,5 +1,4 @@
 from PIL import Image
-import requests
 
 from .base import BaseModel
 

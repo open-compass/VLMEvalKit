@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
+
 from .common.conversions import str_to_set
 from .common.metrics import jaccard_index
 

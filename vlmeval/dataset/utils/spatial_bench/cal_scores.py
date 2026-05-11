@@ -1,18 +1,17 @@
 import ast
 import math
+import warnings
+from collections import OrderedDict
+
 import numpy as np
 import pandas as pd
-import warnings
 
-from collections import OrderedDict
-from typing import Dict, Any, List
-
-from .matching_func import can_match_na, can_match_option
-from .tools.files import get_judge_tag_from_score_fn, build_eval_paths
-from .llm_extract import parallel_llm_extract
+from vlmeval.smp.file import get_intermediate_file_path
+from vlmeval.smp.vlm import gpt_key_set
 from ..judge_util import build_judge
-from ....smp.vlm import gpt_key_set
-from ....smp.file import get_intermediate_file_path
+from .llm_extract import parallel_llm_extract
+from .matching_func import can_match_na, can_match_option
+from .tools.files import build_eval_paths, get_judge_tag_from_score_fn
 
 
 def exact_match(pred: str, target: str) -> float:

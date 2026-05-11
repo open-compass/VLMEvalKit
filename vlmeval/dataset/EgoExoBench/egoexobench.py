@@ -1,17 +1,24 @@
-import huggingface_hub
-from huggingface_hub import snapshot_download
-from ...smp import *
-from ..video_base import VideoBaseDataset
-from ..utils import build_judge, DEBUG_MESSAGE
-import torchvision.transforms as T
-from torchvision import transforms
-import pandas as pd
-import os
-import re
-from .utils import *
-import torch
-import shutil
 import glob
+import os
+import os.path as osp
+import re
+import shutil
+import warnings
+
+import numpy as np
+import pandas as pd
+import torch
+import torchvision.transforms as T
+from huggingface_hub import snapshot_download
+from PIL import Image
+from torchvision import transforms
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5)
+from vlmeval.smp.file import LMUDataRoot
+from ..utils import DEBUG_MESSAGE, build_judge
+from ..video_base import VideoBaseDataset
+from .utils import Stack, ToTorchFormatTensor
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -97,8 +104,8 @@ class EgoExoBench_MCQ(VideoBaseDataset):
 
     def load_into_video_and_process(self, media, mcq_idx):
         try:
-            from moviepy.editor import VideoFileClip, ImageSequenceClip
-        except:
+            from moviepy.editor import ImageSequenceClip, VideoFileClip
+        except Exception:
             raise ImportError(
                 'MoviePy is not installed, please install it by running "pip install moviepy==1.0.3"'
             )
@@ -243,7 +250,7 @@ class EgoExoBench_MCQ(VideoBaseDataset):
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils import get_dimension_rating, extract_characters_regex, extract_option
+        from .utils import extract_characters_regex, extract_option, get_dimension_rating
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], \
             'data file should be an supported format (xlsx/json/tsv) file'

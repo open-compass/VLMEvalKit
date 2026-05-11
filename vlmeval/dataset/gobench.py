@@ -1,13 +1,15 @@
 # vlmeval/dataset/gobench.py
 
-import pandas as pd
-import re
-import numpy as np
-from ..smp import *
-from .image_base import ImageBaseDataset
-import os
-import warnings
 import json
+import re
+import warnings
+
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import get_intermediate_file_path
+from .image_base import ImageBaseDataset
 
 try:
     from .utils import build_judge

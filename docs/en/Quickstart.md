@@ -45,6 +45,8 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
   HUNYUAN_SECRET_ID=
   # LMDeploy API
   LMDEPLOY_API_BASE=
+  # MiniMax API
+  MINIMAX_API_KEY=
   # You can also set a proxy for calling api models during the evaluation stage
   EVAL_PROXY=
   ```

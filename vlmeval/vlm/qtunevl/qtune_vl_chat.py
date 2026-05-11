@@ -1,21 +1,21 @@
 import math
-import pandas as pd
-import random
+import os
 import re
 import string
+import warnings
+
+import pandas as pd
 import torch
 import torch.distributed as dist
 import torchvision.transforms as T
 import transformers
-import warnings
 from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
-from transformers import AutoTokenizer, AutoConfig, AutoModel, CLIPImageProcessor
+from transformers import AutoConfig, AutoModel, AutoTokenizer
 
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import cn_string, get_rank_and_world_size, listinstr, version_cmp
 from ..base import BaseModel
-from ...dataset import DATASET_TYPE, DATASET_MODALITY
-from ...smp import *
-
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
@@ -33,7 +33,7 @@ def auto_split_flag():
             return True
         else:
             return False
-    except:
+    except Exception:
         return False
 
 
@@ -277,7 +277,7 @@ def split_model(model_path):
     rank, world_size = get_rank_and_world_size()
     try:
         local_rank, local_world_size = get_local_rank_and_local_world_size()
-    except:
+    except Exception:
         local_rank = rank
 
     if 'GPUS_PER_PROCESS' in os.environ:

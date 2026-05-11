@@ -1,6 +1,6 @@
-from ...smp import *
 import numpy as np
-import re
+
+from vlmeval.smp import load
 
 
 def get_dimension_rating(data_path):

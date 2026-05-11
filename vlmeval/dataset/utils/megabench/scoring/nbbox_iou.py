@@ -1,8 +1,10 @@
-import logging
 import ast
+import logging
+
+import numpy as np
+
 from .common.conversions import str_to_bboxes
 from .common.metrics import calculate_iou
-import numpy as np
 
 
 class NbboxIouTuple:

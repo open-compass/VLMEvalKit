@@ -1,7 +1,9 @@
-from http import HTTPStatus
+import copy as cp
 import os
+from http import HTTPStatus
+
 from vlmeval.api.base import BaseAPI
-from vlmeval.smp import *
+from vlmeval.smp import proxy_set
 
 
 # Note: This is a pure language model API.
@@ -51,7 +53,6 @@ class QwenAPI(BaseAPI):
         return ret
 
     def generate_inner(self, inputs, **kwargs) -> str:
-        from dashscope import MultiModalConversation
         assert isinstance(inputs, str) or isinstance(inputs, list)
         inputs = [inputs] if isinstance(inputs, str) else inputs
         messages = self.build_msgs(msgs_raw=inputs, system_prompt=self.system_prompt)

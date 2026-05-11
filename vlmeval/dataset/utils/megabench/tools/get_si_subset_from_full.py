@@ -4,13 +4,11 @@ instead, we directly compute the SI results by extracting the subset results fro
 """
 
 
-from pathlib import Path
-import json
 import argparse
-from analysis_utils import (
-    derive_keyword_stats,
-    collect_task_metadata
-)
+import json
+from pathlib import Path
+
+from analysis_utils import collect_task_metadata, derive_keyword_stats
 from derive_breakdown_results import calculate_model_summary
 
 

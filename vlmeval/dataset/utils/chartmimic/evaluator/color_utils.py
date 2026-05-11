@@ -22,8 +22,8 @@ def rgb_to_lab(rgb):
     RGB values should be in the range [0, 255].
     """
     # Create an sRGBColor object from RGB values
-    from colormath.color_objects import sRGBColor, LabColor
     from colormath.color_conversions import convert_color
+    from colormath.color_objects import LabColor, sRGBColor
     rgb_color = sRGBColor(rgb[0], rgb[1], rgb[2], is_upscaled=True)
 
     # Convert to Lab color space

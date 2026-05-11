@@ -1,10 +1,3 @@
-import random
-import re
-import pandas
-import json
-import copy
-import pdb
-
 model_keys = ["model_response"]
 mapper = {"正确": "is_correct", "错误": "is_incorrect", "未尝试": "is_not_attempted"}
 

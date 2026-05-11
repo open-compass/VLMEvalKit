@@ -1,11 +1,13 @@
 import types
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import WhisperFeatureExtractor
 import whisper
+from transformers import WhisperFeatureExtractor
 
-from ....ola.model.speech_encoder.beats.BEATs import BEATsConfig, BEATs
+from vlmeval.vlm.ola.ola.model.speech_encoder.beats.BEATs import BEATs, BEATsConfig
+
 
 class WhisperWrappedEncoder:
 

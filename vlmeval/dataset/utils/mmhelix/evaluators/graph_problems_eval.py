@@ -1,10 +1,6 @@
-import json
-from typing import Any, List, Dict, Union
-import logging
 import ast
-
-# Configure logger
-logger = logging.getLogger(__name__)
+import json
+from typing import Any, Dict, List
 
 
 def safe_parse_answer(answer_str: str, verbose: bool = False):
@@ -846,13 +842,13 @@ class TopologicalSortEvaluator:
                 if inner_content.startswith('[') and inner_content.endswith(']'):
                     try:
                         return ast.literal_eval(inner_content)
-                    except:
+                    except Exception:
                         pass
 
                 # 尝试作为单个数组解析
                 try:
                     return ast.literal_eval(f'[{inner_content}]')
-                except:
+                except Exception:
                     # 如果还是失败，可能是格式不规范，使用更宽松的解析方式
                     numbers = re.findall(r'-?\d+', inner_content)
                     if numbers:
@@ -872,8 +868,6 @@ class TopologicalSortEvaluator:
         Returns:
             bool: Whether the predicted answer is correct
         """
-        import ast
-        import re
         # predicted_answer = self.extract_array(predicted_answer)
         if self.verbose:
             print("predicted_answer: ", predicted_answer[:255])

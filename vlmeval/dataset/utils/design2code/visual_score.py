@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup, Comment, NavigableString
 from colormath.color_conversions import convert_color
 from colormath.color_diff import delta_e_cie2000
 from colormath.color_objects import LabColor, sRGBColor
-from PIL import Image, ImageDraw
+from PIL import Image
 from scipy.optimize import linear_sum_assignment
 
 from .dedup_post_gen import check_repetitive_content

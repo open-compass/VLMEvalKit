@@ -1,11 +1,11 @@
-import re
-from .simple_str_match import SimpleStrMatch
-
-from sympy.parsing.latex import parse_latex
 import math
 import multiprocessing
-
+import re
 import signal
+
+from sympy.parsing.latex import parse_latex
+
+from .simple_str_match import SimpleStrMatch
 
 
 class TimeoutException(Exception):

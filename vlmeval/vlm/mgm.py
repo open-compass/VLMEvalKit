@@ -1,11 +1,13 @@
-import sys
-import torch
-import os.path as osp
+import logging
 import os
+import os.path as osp
+import sys
 import warnings
-from .base import BaseModel
-from ..smp import *
+
+import torch
 from PIL import Image
+
+from .base import BaseModel
 
 '''
     Please follow the instructions to download ckpt.
@@ -28,8 +30,8 @@ class Mini_Gemini(BaseModel):
         self.model_path = model_path
         sys.path.append(root)
         try:
-            from mgm.model.builder import load_pretrained_model
             from mgm.mm_utils import get_model_name_from_path
+            from mgm.model.builder import load_pretrained_model
         except Exception as e:
             logging.critical(
                 'Please first install Mini_Gemini and set the root path to use Mini_Gemini, '
@@ -66,10 +68,10 @@ class Mini_Gemini(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         try:
-            from mgm.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, \
-                DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+            from mgm.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                       DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX)
             from mgm.conversation import conv_templates
-            from mgm.mm_utils import tokenizer_image_token, process_images
+            from mgm.mm_utils import process_images, tokenizer_image_token
         except Exception as e:
             logging.critical(
                 'Please first install Mini_Gemini and set the root path to use Mini_Gemini, '

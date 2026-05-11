@@ -1,15 +1,19 @@
+import logging
 import math
-import torch
+import os
 import random
+import re
+import string
+
 import numpy as np
+import pandas as pd
+import torch
 from PIL import Image
 from transformers import AutoModel, AutoTokenizer
 
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
+from vlmeval.smp import encode_image_to_base64, listinstr
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE, DATASET_MODALITY
-
-import re
 
 
 class MiniCPM_V(BaseModel):
@@ -276,7 +280,7 @@ class MiniCPM_V_2_6(BaseModel):
                 'All images will be placed at the beginning of the prompt, '
                 'which may lead to performance degradation.'
             )
-            from lmdeploy import TurbomindEngineConfig, pipeline, ChatTemplateConfig
+            from lmdeploy import TurbomindEngineConfig, pipeline
             num_gpus = torch.cuda.device_count()
             self.model = pipeline(
                 model_path,

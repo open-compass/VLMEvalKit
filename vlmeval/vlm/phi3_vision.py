@@ -1,8 +1,8 @@
+import logging
+
 from PIL import Image
-import torch
 
 from .base import BaseModel
-from ..smp import *
 
 
 class Phi3Vision(BaseModel):
@@ -12,7 +12,7 @@ class Phi3Vision(BaseModel):
 
     def __init__(self, model_path='microsoft/Phi-3-vision-128k-instruct', **kwargs):
         try:
-            from transformers import AutoProcessor, AutoModelForCausalLM
+            from transformers import AutoModelForCausalLM, AutoProcessor
         except Exception as e:
             logging.critical('Please install the latest version transformers.')
             raise e
@@ -109,7 +109,7 @@ class Phi3_5Vision(BaseModel):
 
     def __init__(self, model_path='microsoft/Phi-3.5-vision-instruct', **kwargs):
         try:
-            from transformers import AutoProcessor, AutoModelForCausalLM
+            from transformers import AutoModelForCausalLM, AutoProcessor
         except Exception as e:
             logging.critical('Please install the latest version transformers.')
             raise e

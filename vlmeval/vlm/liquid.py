@@ -1,11 +1,12 @@
-from .base import BaseModel
 import torch
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForImageTextToText
+
+from .base import BaseModel
 
 
 class LFM2VL(BaseModel):
     def __init__(self, model_path, **kwargs):
+        from transformers import AutoModelForImageTextToText, AutoProcessor
         self.default_instruction_prompt = (
             "\nPlease answer directly with only the final answer, "
             "do not give any explanation."
@@ -14,7 +15,8 @@ class LFM2VL(BaseModel):
         self.model = (
             AutoModelForImageTextToText.from_pretrained(
                 model_path,
-                attn_implementation="flash_attention_2",
+                # attn_implementation="flash_attention_2",
+                attn_implementation="sdpa",
                 torch_dtype=torch.bfloat16,
             )
             .cuda()

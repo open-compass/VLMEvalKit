@@ -1,22 +1,19 @@
-import torch
-import warnings
-import copy as cp
-import numpy as np
-import sys
-import os.path as osp
-import os
-import requests
-import shutil
-import huggingface_hub
 import logging
-from transformers import StoppingCriteria, StoppingCriteriaList
+import os
+import os.path as osp
+import shutil
+import sys
+
+import huggingface_hub
+import numpy as np
+import requests
+import torch
 from huggingface_hub import snapshot_download
-from PIL import Image
-from torchvision.transforms import PILToTensor
 from torchvision import transforms
+from transformers import StoppingCriteria, StoppingCriteriaList
+
+from vlmeval.smp import listinstr
 from ..base import BaseModel
-from ...smp import *
-from ...dataset import DATASET_TYPE
 
 
 def get_prompt(conv):
@@ -65,7 +62,7 @@ class VideoChat2_HD(BaseModel):
                  root='./Ask-Anything', config_file='./configs/videochat2_hd.json',
                  **kwargs):
 
-        from peft import get_peft_model, LoraConfig, TaskType
+        from peft import LoraConfig, TaskType, get_peft_model
         self.config_file = config_file
         self.root = root
         self.model_path = model_path
@@ -76,10 +73,11 @@ class VideoChat2_HD(BaseModel):
 
         sys.path.append(osp.join(root, 'video_chat2'))
         try:
-            from utils.config import Config
-            from utils.easydict import EasyDict
+            from dataset.hd_utils import HD_transform_no_padding  # noqa: F401
+            from dataset.hd_utils import HD_transform_padding  # noqa: F401
             from models import VideoChat2_it_hd_mistral
-            from dataset.hd_utils import HD_transform_padding, HD_transform_no_padding
+            from utils.config import Config
+            from utils.easydict import EasyDict  # noqa: F401
         except Exception as err:
             logging.critical(
                 'Please first install VideoChat2 and set the root path to use VideoChat2, '

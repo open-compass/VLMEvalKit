@@ -1,15 +1,16 @@
 # flake8: noqa
-import os
+import copy as cp
 import math
+import os
+
 import numpy as np
+import torch
 from PIL import Image
-from ..smp import *
-from .base import BaseModel
-from ..dataset import DATASET_TYPE
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.generation import GenerationConfig
-import torch
 
+from ..dataset import DATASET_TYPE
+from .base import BaseModel
 
 IMG_TAG_TOKEN = "<image>"
 VID_TAG_TOKEN = "<video>"

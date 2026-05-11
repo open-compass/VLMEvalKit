@@ -83,9 +83,9 @@ This logic is largely copied from the Hendrycks' MATH release (math_equivalence)
 
 
 import contextlib
+import math
 import re
 import signal
-import math
 from math import isclose
 from typing import Union
 

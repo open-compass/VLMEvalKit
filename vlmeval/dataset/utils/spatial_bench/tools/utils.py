@@ -1,11 +1,14 @@
-import re
 import ast
 import json
+import re
 import string
-import pandas as pd
-import numpy as np
 
-from .....smp.log import get_logger
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp.log import get_logger
+
+logger = get_logger(__name__)
 
 
 # ---------------------------------------------------------------------
@@ -284,7 +287,6 @@ class Point2DParser:
     """
 
     _has_logged_hint = False
-    logger = get_logger('Point2DParser')
 
     @classmethod
     def log_hint(cls, task_name: str | None = None):

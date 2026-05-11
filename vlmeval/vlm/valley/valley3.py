@@ -1,13 +1,13 @@
-import re
-import torch
 import logging
+import re
 import string
+
 import pandas as pd
-from transformers import set_seed
-from transformers import AutoProcessor, AutoModel
+import torch
+from transformers import AutoModel, AutoProcessor, set_seed
+
+from vlmeval.dataset import DATASET_TYPE
 from ..base import BaseModel
-from ...dataset import DATASET_TYPE
-from ...smp import *
 
 GTHINKER_SYS_PROMPT = (
     "A conversation between User and Assistant. The user asks a question, and the Assistant solves it. "
@@ -278,7 +278,7 @@ class Valley3Chat(BaseModel):
                 prompt = self.build_ocrbench_prompt(line, dataset)
             elif dataset == 'M3CoT_Test':
                 prompt = self.build_m3cot_prompt(line, dataset)
-            elif any(dataset.startswith(prefix) for prefix in ('TextVQA', 'ChartQA', 'InfoVQA', 'DocVQA','CMMMU')):
+            elif any(dataset.startswith(prefix) for prefix in ('TextVQA', 'ChartQA', 'InfoVQA', 'DocVQA', 'CMMMU')):
                 prompt = self.build_ocr_cmmmu_prompt(line, dataset)
             elif any(dataset.startswith(prefix) for prefix in ('MathVista', 'MathVerse', 'MathVision')):
                 prompt = self.build_math_prompt(line, dataset)
@@ -370,8 +370,8 @@ class Valley3Chat(BaseModel):
                 "conversations": messages,
                 "images": images
             },
-            min_pixels=min_pixels,
-            max_pixels=max_pixels,
+            min_pixels=min_pixels // len(images),
+            max_pixels=max_pixels // len(images),
             enable_thinking=self._use_gthinker_thinking
         )
 

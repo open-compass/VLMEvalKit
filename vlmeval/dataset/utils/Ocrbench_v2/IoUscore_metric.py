@@ -1,8 +1,10 @@
 # flake8: noqa
+import ast
 import os
 import re
-import ast
+
 import ipdb
+
 from vlmeval.dataset.utils.Ocrbench_v2.vqa_metric import vqa_evaluation
 
 

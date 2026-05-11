@@ -1,6 +1,9 @@
-from ..smp import *
-from ..dataset import img_root_map, DATASET_TYPE
+import logging
+import warnings
 from abc import abstractmethod
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import concat_images_vlmeval, encode_image_to_base64, listinstr, parse_file
 
 
 class BaseModel:

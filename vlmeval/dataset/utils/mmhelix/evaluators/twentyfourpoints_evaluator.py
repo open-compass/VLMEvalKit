@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Any, Union, List
+from typing import Any, Dict, List
 
 
 class BaseEvaluator:

@@ -1,14 +1,14 @@
 import json
 import math
-
-from ...smp import *
-import numpy as np
 import re
-import zipfile
-
-from pathlib import Path
-from tqdm import tqdm
 import signal
+import zipfile
+from pathlib import Path
+
+import numpy as np
+from tqdm import tqdm
+
+from vlmeval.smp import load
 
 
 def rating_func(data_path):
@@ -208,6 +208,7 @@ def timeout_handler(signum, frame):
 def compute_wcs_unlabeled(gt_clusters, pred_clusters, iou_type='tIoU',
                           timeout=10):  # 主要是给attribute用的，但是object和event视作一个cluster也能用
     from scipy.optimize import linear_sum_assignment
+
     # Set the timeout signal handler
     signal.signal(signal.SIGALRM, timeout_handler)
     signal.alarm(timeout)  # Set the alarm to go off in 'timeout' seconds
@@ -249,7 +250,7 @@ def post_process(response, right_answer, task_mode, category):
         if response:
             try:
                 pred = w2n.word_to_num(response)
-            except:
+            except Exception:
                 pred = 0
             if abs(float(right_answer) - float(pred)) <= 1e-5:
                 result["acc"] = 1
@@ -257,7 +258,7 @@ def post_process(response, right_answer, task_mode, category):
             if abs(float(right_answer) - float(pred)) <= 1:
                 result["oboa"] = 1
 
-            if abs(float(right_answer) - float(pred)) <= max(2 * float(right_answer),100):
+            if abs(float(right_answer) - float(pred)) <= max(2 * float(right_answer), 100):
                 result["mae"] = abs(float(right_answer) - float(pred))
                 result["rmse"] = abs(float(right_answer) - float(pred)) ** 2
             else:
@@ -273,9 +274,9 @@ def post_process(response, right_answer, task_mode, category):
             try:
                 try:
                     j = json.loads(student_answer)
-                except:
+                except Exception:
                     j = json.loads(extract_outer_json(student_answer))
-            except:
+            except Exception:
                 pass
             if j is not None:
                 try:
@@ -283,11 +284,11 @@ def post_process(response, right_answer, task_mode, category):
                         pred = []
                         for e in j:
 
-                            if isinstance(e[0],str) and isinstance(e[1],str) and ":" in e[0] and ":" in e[1]:
+                            if isinstance(e[0], str) and isinstance(e[1], str) and ":" in e[0] and ":" in e[1]:
                                 pred.append([time_str_to_seconds(e[0]), time_str_to_seconds(e[1])])
                             else:
-                                pred.append([float(e[0].split(" ")[0]) if isinstance(e[0],str) else e[0],
-                                             float(e[1].split(" ")[0]) if isinstance(e[1],str) else e[1]])
+                                pred.append([float(e[0].split(" ")[0]) if isinstance(e[0], str) else e[0],
+                                             float(e[1].split(" ")[0]) if isinstance(e[1], str) else e[1]])
                         gt = []
                         for e in clues:
                             gt.append([float(e['start']), float(e['end'])])
@@ -309,14 +310,14 @@ def post_process(response, right_answer, task_mode, category):
                             idx = int(key.replace("Frame", "")) - 1
                             if len(j[key]) == 0:
                                 continue
-                            if isinstance(j[key][0],list) and len(j[key][0]) == 4:
+                            if isinstance(j[key][0], list) and len(j[key][0]) == 4:
                                 for e in j[key]:
-                                    if isinstance(e,list) and len(e) == 4:
+                                    if isinstance(e, list) and len(e) == 4:
                                         pred.append((idx, e))
-                            elif isinstance(j[key][0],list) and len(j[key][0]) == 2:
+                            elif isinstance(j[key][0], list) and len(j[key][0]) == 2:
                                 for ii in range(int(len(j[key]) // 2)):
-                                    if isinstance(j[key][ii * 2],list) and len(j[key][ii * 2]) == 2 and isinstance(
-                                            j[key][ii * 2 + 1],list) and len(j[key][ii * 2 + 1]) == 2:
+                                    if isinstance(j[key][ii * 2], list) and len(j[key][ii * 2]) == 2 and isinstance(
+                                            j[key][ii * 2 + 1], list) and len(j[key][ii * 2 + 1]) == 2:
                                         pred.append((idx, [j[key][ii * 2][0], j[key][ii * 2][1], j[key][ii * 2 + 1][0],
                                                            j[key][ii * 2 + 1][1]]))
                         result["wcs"] = compute_wcs_unlabeled([gt], [pred], "sIoU")
@@ -342,15 +343,15 @@ def post_process(response, right_answer, task_mode, category):
                                 if e['label'] not in pred.keys():
                                     pred[e['label']] = []
                                 if 'bbox' in e:
-                                    if isinstance(e['bbox'],list) and len(e['bbox']) == 4:
+                                    if isinstance(e['bbox'], list) and len(e['bbox']) == 4:
                                         pred[e['label']].append((idx, e['bbox']))
                                 if 'bbox_2d' in e:
-                                    if isinstance(e['bbox_2d'],list) and len(e['bbox_2d']) == 4:
+                                    if isinstance(e['bbox_2d'], list) and len(e['bbox_2d']) == 4:
                                         pred[e['label']].append((idx, e['bbox_2d']))
                         pred_list = [pred[key] for key in pred]
                         result["wcs"] = compute_wcs_unlabeled(gt, pred_list, "sIoU")
                         result["ifa"] = 1
-                except:
+                except Exception:
                     pass
 
     return result
@@ -360,7 +361,7 @@ def get_chunk_number(filename):
     try:
         num = filename.split("chunk_")[1].split(".zip")[0]
         return int(num)
-    except:
+    except Exception:
         return float('inf')
 
 
@@ -416,7 +417,7 @@ def unzip_hf_zip(target_dir):
 
     videos_dir.mkdir(parents=True, exist_ok=True)
 
-    auto_merge_and_unzip_parts(target_dir,ref_videos_dir, zip_prefix="ref_videos")
-    auto_merge_and_unzip_parts(target_dir,videos_dir, zip_prefix="videos")
+    auto_merge_and_unzip_parts(target_dir, ref_videos_dir, zip_prefix="ref_videos")
+    auto_merge_and_unzip_parts(target_dir, videos_dir, zip_prefix="videos")
 
     print("sucessfully unzip all files.")

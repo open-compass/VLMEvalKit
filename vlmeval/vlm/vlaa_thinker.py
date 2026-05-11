@@ -1,16 +1,14 @@
 from __future__ import annotations
-
-import os
-import torch
-import re
-import math
 import logging
+import re
 import warnings
 
-from .base import BaseModel
-from .qwen2_vl.prompt import Qwen2VLPromptMixin
-from .qwen2_vl.model import ensure_image_url, ensure_video_url
+import torch
+
 from ..smp import get_gpu_memory, listinstr
+from .base import BaseModel
+from .qwen2_vl.model import ensure_image_url, ensure_video_url
+from .qwen2_vl.prompt import Qwen2VLPromptMixin
 
 
 def extract_answer_tag(s: str, verbose=False) -> str:
@@ -84,7 +82,7 @@ class VLAAThinkerChat(Qwen2VLPromptMixin, BaseModel):
         MODEL_CLS = None
 
         if listinstr(['2.5', '2_5', 'qwen25'], model_path.lower()):
-            from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+            from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
             MODEL_CLS = Qwen2_5_VLForConditionalGeneration
             self.processor = AutoProcessor.from_pretrained(model_path)
         else:

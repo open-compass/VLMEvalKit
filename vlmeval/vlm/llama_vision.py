@@ -1,10 +1,13 @@
+import logging
+import string
+
+import pandas as pd
 import torch
 from PIL import Image
-import os.path as osp
-import sys
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp import listinstr
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
 
 
 class llama_vision(BaseModel):
@@ -14,7 +17,7 @@ class llama_vision(BaseModel):
 
     def __init__(self, model_path='meta-llama/Llama-3.2-11B-Vision-Instruct', **kwargs):
         try:
-            from transformers import MllamaForConditionalGeneration, AutoProcessor
+            from transformers import AutoProcessor, MllamaForConditionalGeneration
         except Exception as e:
             logging.critical('Please install transformers>=4.45.0 before using llama_vision.')
             raise e

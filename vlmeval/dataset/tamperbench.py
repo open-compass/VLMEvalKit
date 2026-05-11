@@ -1,18 +1,29 @@
-import huggingface_hub
-from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-import torchvision.transforms as T
-from torchvision import transforms
-import imageio
-import cv2
-import zipfile
-import os
 import glob
-from .utils.tamperbench import *
+import json
+import os
+import os.path as osp
+import shutil
 import warnings
+import zipfile
+
+import cv2
+import huggingface_hub
+import imageio
+import numpy as np
+import pandas as pd
+import portalocker
+import torch
+import torchvision.transforms as T
+from huggingface_hub import snapshot_download
+from PIL import Image
+from torchvision import transforms
+
+from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                         load, md5)
+from .utils import DEBUG_MESSAGE, build_judge
+from .utils.tamperbench import (Stack, ToTorchFormatTensor, aggregate_metrics_with_macro_average,
+                                check_ans_with_model, get_dimension_rating, process_results)
+from .video_base import VideoBaseDataset
 
 # constants
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -331,8 +342,8 @@ class MVTamperBench(VideoBaseDataset):
             ImportError: If MoviePy is not installed.
         """
         try:
-            from moviepy.editor import VideoFileClip, ImageSequenceClip
-        except:
+            from moviepy.editor import ImageSequenceClip, VideoFileClip
+        except Exception:
             raise ImportError(
                 'MoviePy is not installed, please install it by running "pip install moviepy==1.0.3"'
             )

@@ -1,16 +1,17 @@
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel
-import warnings
-from .base import BaseModel
-from PIL import Image
-from ..smp import *
-from ..dataset import DATASET_TYPE
-import pandas as pd
 import string
+import warnings
+
+import pandas as pd
+import torch
 import torchvision.transforms as T
 import transformers
-
+from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
+from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
+
+from vlmeval.smp import cn_string, listinstr, version_cmp
+from ..dataset import DATASET_TYPE
+from .base import BaseModel
 
 
 class MMAlaya(BaseModel):

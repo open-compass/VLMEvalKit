@@ -1,8 +1,8 @@
 import os
-import cairosvg
 import xml.etree.ElementTree as ET
-
 from dataclasses import dataclass
+
+import cairosvg
 
 
 @dataclass

@@ -1,12 +1,11 @@
-from ...smp import *
-from .multiple_choice import extract_answer_from_item
-import numpy as np
 import re
+
+from vlmeval.smp import load
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 TASK_CATEGORIES = [
-    'SR','IMC','TCI','TA','MHR','PAR','CTI',
+    'SR', 'IMC', 'TCI', 'TA', 'MHR', 'PAR', 'CTI',
 ]
 
 
@@ -44,7 +43,7 @@ def extract_option(pred):
     pattern = r'<answer>\s*(.*?)\s*</answer>'
     try:
         matches = re.findall(pattern, pred, re.DOTALL)
-    except:
+    except Exception:
         matches = []
 
     if matches:

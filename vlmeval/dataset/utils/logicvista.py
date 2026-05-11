@@ -1,8 +1,9 @@
+from collections import defaultdict
+
 import pandas as pd
 
 # from colorama import Fore, Back, Style
-from ...smp import *
-
+from vlmeval.smp.file import load
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

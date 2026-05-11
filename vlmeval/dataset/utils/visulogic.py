@@ -1,9 +1,9 @@
 import re
-from ...smp import *
-from ...utils import can_infer
-import timeout_decorator
+from collections import defaultdict
 
-Option_list = ['A','B','C','D']
+from vlmeval.smp import load
+
+Option_list = ['A', 'B', 'C', 'D']
 
 
 def extract_last_boxed_content(text):
@@ -45,7 +45,7 @@ def extract_last_boxed_content(text):
 
 def extract_lang_content(ans):
     ans = str(ans)
-    ans = ans.replace("<|endoftext|>","")
+    ans = ans.replace("<|endoftext|>", "")
     for c in Option_list:
         if (
             ans.endswith(f" {c}.")

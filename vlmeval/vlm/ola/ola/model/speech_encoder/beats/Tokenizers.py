@@ -8,22 +8,21 @@
 # --------------------------------------------------------
 
 
+import logging
+from typing import Optional
+
 import torch
 import torch.nn as nn
 from torch.nn import LayerNorm
+
+from .backbone import TransformerEncoder
+from .kaldi import fbank as kaldi_fbank
+from .quantizer import NormEMAVectorQuantizer
+
 # import torchaudio.compliance.kaldi as ta_kaldi
 
-from .kaldi import fbank as kaldi_fbank
 
-from .backbone import (
-    TransformerEncoder,
-)
-from .quantizer import (
-    NormEMAVectorQuantizer,
-)
 
-import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

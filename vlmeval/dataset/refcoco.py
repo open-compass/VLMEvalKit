@@ -8,9 +8,8 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 
+from vlmeval.smp import LMUDataRoot, download_file, dump, get_intermediate_file_path, load, md5
 from .image_base import ImageBaseDataset
-from ..smp import *  # noqa: F401,F403
-from ..smp.file import LMUDataRoot, get_intermediate_file_path
 
 
 class RefCOCODataset(ImageBaseDataset):

@@ -1,10 +1,13 @@
-import sys
-import torch
-from transformers import AutoModelForCausalLM, AutoConfig
+import logging
+import string
 import warnings
-from .base import BaseModel
-from ..smp import *
+
+import pandas as pd
+import torch
+from transformers import AutoModelForCausalLM
+
 from ..dataset import DATASET_TYPE
+from .base import BaseModel
 
 
 class Janus(BaseModel):
@@ -14,7 +17,7 @@ class Janus(BaseModel):
 
     def check_install(self):
         try:
-            import janus
+            import janus  # noqa: F401
         except Exception as e:
             logging.critical(
                 'Please first install janus from source codes in: https://github.com/deepseek-ai/Janus')

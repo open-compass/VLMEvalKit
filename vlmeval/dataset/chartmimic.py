@@ -1,14 +1,23 @@
 # flake8: noqa
-import re
+import base64
+import json
+import mimetypes
 import os
+import os.path as osp
+import re
+import shutil
+import subprocess
 import sys
+import warnings
+
 from timeout_decorator import timeout
 
-from ..smp import *
+from vlmeval.smp import (LMUDataRoot, download_file, dump, file_size, get_intermediate_file_path,
+                         get_logger, load, md5)
 
 FAIL_MSG = "Failed to obtain answer via API."
 
-logger = get_logger("ChartMimic")
+logger = get_logger(__name__)
 
 # SET VLMEVAL_CHARTMIMIC_UTILS_PATH for chartmimic evaluator
 # ".../VLMEvalKit/vlmeval..."
@@ -18,15 +27,14 @@ os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] = util_path
 if os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] not in sys.path:
     sys.path.insert(0, os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"])
 
-from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-
-# from ..utils import track_progress_rich
-from ..dataset.utils.chartmimic.evaluator.text_evaluator import TextEvaluator
 from ..dataset.utils.chartmimic.evaluator.chart_type_evaluator import ChartTypeEvaluator
 from ..dataset.utils.chartmimic.evaluator.color_evaluator import ColorEvaluator
 from ..dataset.utils.chartmimic.evaluator.layout_evaluator import LayoutEvaluator
+# from ..utils import track_progress_rich
+from ..dataset.utils.chartmimic.evaluator.text_evaluator import TextEvaluator
 from ..dataset.utils.chartmimic.mp_util import track_progress_rich_new
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
 
 # from ..dataset.utils.chartmimic.evaluator.legend_evaluator import LegendEvaluator
 # from ..dataset.utils.chartmimic.evaluator.grid_evaluator import GridEvaluator
@@ -564,11 +572,11 @@ class ChartMimic(ImageBaseDataset):
 
         # Test dependencies first
         try:
-            from pdf2image import convert_from_path
-            from colormath.color_objects import sRGBColor, LabColor
-            import squarify
             import matplotlib_venn
             import PIL
+            import squarify
+            from colormath.color_objects import LabColor, sRGBColor
+            from pdf2image import convert_from_path
         except ImportError as e:
             logging.critical(
                 "Please follow the requirements (see vlmeval/dataset/utils/chartmimic/eval_req.txt) \

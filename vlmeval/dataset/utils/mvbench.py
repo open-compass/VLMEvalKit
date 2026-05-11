@@ -1,11 +1,14 @@
-from ...smp import *
-from .multiple_choice import extract_answer_from_item
-from PIL import Image, ImageOps
-import torchvision
-import random
-import numbers
 import math
+import numbers
+import random
+
+import numpy as np
 import torch
+import torchvision
+from PIL import Image, ImageOps
+
+from vlmeval.smp import load
+from .multiple_choice import extract_answer_from_item
 
 
 def get_dimension_rating(data_path):
@@ -93,7 +96,7 @@ def check_ans_advanced(pred, gt):
     try:
         gt_content = number_table[int(gt_content.strip('. \n'))]
         print(gt_content)
-    except:
+    except Exception:
         pass
 
     if pred_option.replace('.', '') in gt_option:

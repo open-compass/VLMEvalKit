@@ -1,10 +1,12 @@
 # flake8: noqa
+import os
 from typing import Dict
+
+from ..eval_configs.global_config import run_script_safe
+
 # from dotenv import load_dotenv
 # load_dotenv()
 
-import os
-from ..eval_configs.global_config import run_script_safe
 
 
 class ChartTypeEvaluator:

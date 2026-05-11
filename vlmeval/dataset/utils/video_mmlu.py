@@ -1,7 +1,10 @@
 # flake8: noqa
-from ...smp import *
+import json
+
 import numpy as np
 import pandas as pd
+
+from vlmeval.smp import load
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

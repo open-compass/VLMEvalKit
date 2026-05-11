@@ -2,16 +2,13 @@ from typing import List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-
 import transformers
-from transformers import AutoConfig, AutoModelForCausalLM
-
-
-from transformers.modeling_outputs import CausalLMOutputWithPast
+from transformers import (AutoConfig, AutoModelForCausalLM, Qwen2Config, Qwen2ForCausalLM,
+                          Qwen2Model)
 from transformers.generation.utils import GenerateOutput
+from transformers.modeling_outputs import CausalLMOutputWithPast
 
-from ..ola_arch import OlaMetaModel, OlaMetaForCausalLM
-from transformers import Qwen2Config, Qwen2Model, Qwen2ForCausalLM
+from ..ola_arch import OlaMetaForCausalLM, OlaMetaModel
 
 
 class OlaConfigQwen(Qwen2Config):

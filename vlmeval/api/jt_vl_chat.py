@@ -1,19 +1,20 @@
 import base64
-# flake8: noqa
-import pandas as pd
-import requests
 import json
 import os
+import os.path as osp
+import string
 
 import pandas as pd
 import requests
 
 from vlmeval.api.base import BaseAPI
 from vlmeval.dataset import DATASET_TYPE, img_root_map
-from vlmeval.smp import *
+from vlmeval.smp import (LMUDataRoot, cn_string, concat_images_vlmeval,
+                         decode_base64_to_image_file, get_logger, listinstr, read_ok, toliststr)
+
+logger = get_logger(__name__)
 
 API_ENDPOINT = "https://hl.jiutian.10086.cn/kunlun/ingress/api/hl-4a9c15/7b11a3451e1a4612a6661c3e22235df6/ai-4dfc1be4e6854a75a833aab9b956128c/service-e5893ba5c1154a1192cb8e60af11e276/v1/chat/completions"  # noqa: E501
-
 APP_CODE = "B0m6Tuglt5shfY7t3GyoJn1V5yVAm0Ba"
 
 
@@ -39,7 +40,6 @@ class JTVLChatWrapper(BaseAPI):
         self.max_tokens = max_tokens
         self.api_base = API_ENDPOINT
         self.app_code = APP_CODE
-
 
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
@@ -144,6 +144,7 @@ class JTVLChatWrapper(BaseAPI):
         assert not self.INTERLEAVE
         model_name = self.__class__.__name__
         import warnings
+
         warnings.warn(f'Model {model_name} does not support interleaved input. '
                       'Will use the first image and aggregated texts as prompt. ')
         num_images = len([x for x in message if x['type'] == 'image'])
@@ -249,7 +250,7 @@ class JTVLChatWrapper(BaseAPI):
 
                                     # 记录最后一个有效的usage（不累加）
                                     if 'usage' in chunk:
-                                        last_valid_usage = chunk['usage']
+                                        last_valid_usage = chunk['usage']  # noqa: F841
 
                                     if 'choices' in chunk:
                                         for choice in chunk['choices']:
@@ -270,13 +271,13 @@ class JTVLChatWrapper(BaseAPI):
                     r_json = r.json()
                     output = r_json['choices'][0]['message']['content']
                     return 0, output, 'Succeeded! '
-                except:
+                except Exception:
                     error_msg = f'Error! code {r.status_code} content: {r.content}'
                     error_con = r.content.decode('utf-8')
                     if self.verbose:
-                        self.logger.error(error_msg)
-                        self.logger.error(error_con)
-                        self.logger.error(f'The input messages are {inputs}.')
+                        logger.error(error_msg)
+                        logger.error(error_con)
+                        logger.error(f'The input messages are {inputs}.')
                     return -1, error_msg, ''
         except Exception as e:
             return -1, f'Error: {str(e)}', ''
