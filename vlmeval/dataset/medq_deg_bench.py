@@ -1,8 +1,11 @@
 import os
+import os.path as osp
+
 import pandas as pd
 from huggingface_hub import snapshot_download
+
+from vlmeval.smp import dump, get_cache_path, get_intermediate_file_path, load
 from .image_mcq import ImageMCQDataset
-from ..smp import *
 
 
 class MedQDEGBenchDataset(ImageMCQDataset):
