@@ -160,6 +160,7 @@ from .vlm2bench import VLM2Bench
 from .vlmbias import VLMBias
 from .vlrmbench import VLRMBench
 from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
+from .wiki_vqa_bench import WikiVQABench
 from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
@@ -297,7 +298,7 @@ IMAGE_DATASET = [
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, MedQDEGBenchDataset,
     ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
-    ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
+    ERQADataset, SimpleVQA, HiPhODataset, MaCBench, WikiVQABench,
     UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,  # noqa: E501
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,  # noqa: E501
