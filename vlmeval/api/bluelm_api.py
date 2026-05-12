@@ -71,7 +71,7 @@ def extract_boxed(pred_str: str, strip_double_curly_brace=False):
     if answer is None:
         return pred_str  # 返回原始字符串
     if strip_double_curly_brace:
-        match = re.match('^\{(.*)\}$', answer)  # noqa: W605
+        match = re.match(r'^\{(.*)\}$', answer)
         if match:
             answer = match.group(1)
     return answer

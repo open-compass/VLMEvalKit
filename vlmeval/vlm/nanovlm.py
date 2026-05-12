@@ -32,7 +32,7 @@ class NanoVLM(BaseModel):
             from models.vision_language_model import VisionLanguageModel
         except ImportError:
             raise ImportError(_NANOVLM_INSTALL_MSG)
-        from data.processors import get_tokenizer, get_image_processor
+        from data.processors import get_image_processor, get_tokenizer
 
         self.vlm = VisionLanguageModel.from_pretrained(model_path).to('cuda').eval()
         self.cfg = self.vlm.cfg

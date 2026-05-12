@@ -69,14 +69,10 @@ from .m3oralbench import M3oralBenchDataset
 from .m4bench import M4Bench
 from .macbench import MaCBench
 from .matbench import MATBench
+from .medq_deg_bench import MedQDEGBenchDataset
 from .medqbench_caption import MedqbenchCaptionDataset
 from .medqbench_mcq import MedqbenchMCQDataset
 from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
-from .medq_deg_bench import MedQDEGBenchDataset
-from .olmOCRBench.olmocrbench import olmOCRBench
-from .oceanocr import OceanOCRBench
-from .matbench import MATBench
-
 # Add by EASI team
 from .megabench import MEGABench
 from .miabench import MIABench
