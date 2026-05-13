@@ -75,11 +75,6 @@ class ImageShortQADataset(ImageBaseDataset):
         'LiveMMBench_Reasoning': '',
         'LiveMMBench_Reasoning_circular': '',
         'LiveMMBench_Spatial': '',
-        'hle': 'https://opencompass.openxlab.space/utils/VLMEval/hle.tsv',
-    }
-
-    DATASET_MD5 = {
-        'hle': 'a83cbdbea89f27c2aa5b8f34a8894b72',
     }
 
     def build_prompt(self, line):

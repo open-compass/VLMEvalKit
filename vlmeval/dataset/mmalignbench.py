@@ -79,7 +79,7 @@ PROMPT_TEMPLATE_GT = """**INPUT**:
 """
 
 
-REGEX_PATTERN = re.compile("\[\[([AB<>=]+)\]\]")  # noqa: W605
+REGEX_PATTERN = re.compile(r"\[\[([AB<>=]+)\]\]")
 
 
 def get_score(judgement, pattern=REGEX_PATTERN):

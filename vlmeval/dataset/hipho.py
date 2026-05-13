@@ -841,7 +841,7 @@ class HiPhODataset(ImageBaseDataset):
         earned_points = max(result['fine_grained_score'], result['coarse_grained_score'])
 
         return {
-            "id": str(row.get('id', f"{self.dataset_name}_{index+1}")),
+            "id": str(row.get('id', f"{self.dataset_name}_{index + 1}")),
             "context": str(row.get('context', '')).strip(),
             "question": str(row.get('question', '')).strip(),
             "solution": str(row.get('solution', '')).strip(),

@@ -265,7 +265,7 @@ def evaluator(tsv_path, eval_file):
         #         f.write(entry["md_content"])
         # repeat==1
         for i, entry in enumerate(items):
-            md_file = os.path.join(cate_dir, f"{base}_pg{entry['test'].page}_repeat{i+1}.md")
+            md_file = os.path.join(cate_dir, f"{base}_pg{entry['test'].page}_repeat{i + 1}.md")
             with open(md_file, "w", encoding="utf-8") as f:
                 f.write(entry["md_content"])
             break
