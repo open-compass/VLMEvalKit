@@ -521,7 +521,17 @@ def run_local_mode(args):
         args.work_dir = os.environ['MMEVAL_ROOT']
 
     commit_id = githash(digits=8)
-    eval_id = build_eval_id()
+    if WORLD_SIZE > 1:
+        import torch.distributed as dist
+        dist.init_process_group(
+            backend='nccl',
+            timeout=datetime.timedelta(seconds=int(os.environ.get('DIST_TIMEOUT', 3600)))
+        )
+        eval_id_holder = [build_eval_id() if RANK == 0 else None]
+        dist.broadcast_object_list(eval_id_holder, src=0)
+        eval_id = eval_id_holder[0]
+    else:
+        eval_id = build_eval_id()
     setup_logger(log_file=os.path.join(args.work_dir, 'logs', f'{eval_id}_{timestr()}.log'))
 
     if args.mode == 'eval':
@@ -552,13 +562,6 @@ def run_local_mode(args):
                     kws = supported_VLM[m].keywords
                     supported_VLM[m] = partial(GPT4V, **kws)
                     logger.warning(f'FWD_API is set, will use class `GPT4V` for {m}')
-
-    if WORLD_SIZE > 1:
-        import torch.distributed as dist
-        dist.init_process_group(
-            backend='nccl',
-            timeout=datetime.timedelta(seconds=int(os.environ.get('DIST_TIMEOUT', 3600)))
-        )
 
     for _, model_name in enumerate(args.model):
         logger.info(f'=========== {model_name} ===========')
