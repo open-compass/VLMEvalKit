@@ -74,6 +74,7 @@ def VLRewardBench_eval_answer(model, line):
 
 class VLRewardBench(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     DATASET_URL = {
         'VL-RewardBench': 'https://huggingface.co/datasets/MMInstruction/VL-RewardBench/resolve/main/vl_rewardbench.tsv'
     }

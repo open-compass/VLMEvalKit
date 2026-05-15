@@ -234,6 +234,7 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
 # -------------------- dataset --------------------
 class WorldVQA(ImageBaseDataset):
     TYPE = "VQA"
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-1120'
     DATASET_URL = {
         # 改成你自己的 tsv 路径或挂载路径
         "WorldVQA": "https://huggingface.co/datasets/moonshotai/WorldVQA/blob/main/WorldVQA.tsv",

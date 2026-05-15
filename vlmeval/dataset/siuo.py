@@ -20,6 +20,7 @@ class SIUODataset(ImageBaseDataset):
     """
 
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     MODALITY = 'IMAGE'
     SUB_DATASETS = ['SIUO_GEN', 'SIUO_MCQ']
 

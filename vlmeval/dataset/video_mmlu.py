@@ -53,6 +53,7 @@ class Video_MMLU_CAP(VideoBaseDataset):
     MD5 = ''
 
     TYPE = 'Video-VQA'
+    DEFAULT_JUDGE_MODEL = 'qwen-72b'
     MODALITY = 'VIDEO'
 
     def __init__(self, dataset='Video_MMLU_CAP', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
@@ -369,6 +370,7 @@ class Video_MMLU_QA(VideoBaseDataset):
     MD5 = ''
 
     TYPE = 'Video-VQA'
+    DEFAULT_JUDGE_MODEL = 'qwen-72b'
     MODALITY = 'VIDEO'
 
     def __init__(self, dataset='Video_MMLU_QA', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):

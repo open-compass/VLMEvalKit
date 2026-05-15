@@ -55,6 +55,7 @@ def _flames_judge(model, dimension, question, response):
 
 class FlamesDataset(TextBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     MODALITY = 'TEXT'
     DATASET_URL = {'Flames': 'https://opencompass.openxlab.space/utils/VLMEval/Flames.tsv'}
     DATASET_MD5 = {'Flames': 'b567b6c96717c9e6c8bb9b458a85635a'}

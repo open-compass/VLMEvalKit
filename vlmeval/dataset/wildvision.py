@@ -95,6 +95,7 @@ def WildVision_auxeval(model, line):
 
 class WildVision(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
     DATASET_URL = {
         'WildVision': 'https://opencompass.openxlab.space/utils/VLMEval/WildVision.tsv'
     }

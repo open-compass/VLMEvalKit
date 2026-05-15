@@ -447,7 +447,7 @@ def EVAL(dataset_name, data_file, **kwargs):
     # Set the judge kwargs first before evaluation or dumping
     judge_kwargs = {'nproc': 4, 'verbose': True}
     if 'model' not in kwargs:
-        judge_model = get_default_judge_model(dataset_name, dataset.TYPE, judge_kwargs)
+        judge_model = get_default_judge_model(dataset, dataset.TYPE, judge_kwargs)
         if judge_model is not None:
             judge_kwargs['model'] = judge_model
     else:

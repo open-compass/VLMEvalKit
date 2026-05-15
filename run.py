@@ -222,7 +222,7 @@ def build_model_from_base_url(args):
     return model_args
 
 
-def get_judge_kwargs(dataset_name, dataset_type, args):
+def get_judge_kwargs(dataset_name, dataset_type, args, dataset=None):
     """Determine judge kwargs based on dataset name and type.
 
     Uses run.py's logic as the canonical source for dataset-specific judge model
@@ -257,7 +257,7 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
     if args.judge is not None:
         judge_kwargs['model'] = args.judge
     else:
-        judge_model = get_default_judge_model(dataset_name, dataset_type, judge_kwargs)
+        judge_model = get_default_judge_model(dataset, dataset_type, judge_kwargs)
         if judge_model is not None:
             judge_kwargs['model'] = judge_model
 
@@ -596,7 +596,7 @@ def run_local_mode(args):
                             )
                         continue
 
-                judge_kwargs = get_judge_kwargs(dataset_name, dataset.TYPE, args)
+                judge_kwargs = get_judge_kwargs(dataset_name, dataset.TYPE, args, dataset=dataset)
                 judge_model = judge_kwargs.get('model', '')
 
                 if RANK == 0:
@@ -982,7 +982,7 @@ def run_api_mode(args):
                 logger.info(f'{ds_name} requires special handling, skipped in pipeline.')
                 continue
 
-            judge_kwargs = get_judge_kwargs(ds_name, dataset.TYPE, args)
+            judge_kwargs = get_judge_kwargs(ds_name, dataset.TYPE, args, dataset=dataset)
             judge_model = judge_kwargs.get('model', '')
             logger.info(f'Judge kwargs: {judge_kwargs}')
 
