@@ -539,6 +539,18 @@ class MMMUDataset(ImageMCQDataset):
         msgs = self.split_MMMU(msgs)
         return msgs
 
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        if 'split=test|Overall' in metrics:
+            return {'Overall Acc (test)': metrics['split=test|Overall'] * 100}
+        elif 'split=validation|Overall' in metrics:
+            return {'Overall Acc (val)': metrics['split=validation|Overall'] * 100}
+        else:
+            return super().report_primary_metric(metrics)
+
 
 class MMMUProDataset(MMMUDataset):
 
