@@ -69,9 +69,11 @@ from .m3oralbench import M3oralBenchDataset
 from .m4bench import M4Bench
 from .macbench import MaCBench
 from .matbench import MATBench
+from .medq_deg_bench import MedQDEGBenchDataset
 from .medqbench_caption import MedqbenchCaptionDataset
 from .medqbench_mcq import MedqbenchMCQDataset
 from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
+# Add by EASI team
 from .megabench import MEGABench
 from .miabench import MIABench
 from .mindcubebench import MindCubeBench
@@ -154,6 +156,7 @@ from .vlm2bench import VLM2Bench
 from .vlmbias import VLMBias
 from .vlrmbench import VLRMBench
 from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
+from .wiki_vqa_bench import WikiVQABench
 from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
@@ -288,9 +291,10 @@ IMAGE_DATASET = [
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
-    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,  # noqa: E501
+    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, MedQDEGBenchDataset,
+    ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
-    ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
+    ERQADataset, SimpleVQA, HiPhODataset, MaCBench, WikiVQABench,
     UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,  # noqa: E501
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,  # noqa: E501

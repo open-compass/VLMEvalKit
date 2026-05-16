@@ -20,7 +20,7 @@ from .eagle_x import Eagle
 from .emu import Emu, Emu3_chat, Emu3_gen
 from .falcon_vlm import Falcon2VLM
 from .flash_vl import FlashVL
-from .gemma import Gemma3, PaliGemma
+from .gemma import Gemma3, Gemma4, PaliGemma
 from .granite_docling import DOCLING
 from .granite_vision import GraniteVision3
 from .h2ovl_mississippi import H2OVLChat
@@ -54,6 +54,7 @@ from .monkey import Monkey, MonkeyChat
 from .moondream import Moondream1, Moondream2, Moondream3
 from .mplug_owl2 import mPLUG_Owl2
 from .mplug_owl3 import mPLUG_Owl3
+from .nanovlm import NanoVLM
 from .nvlm import NVLM
 from .ola import Ola
 from .omchat import OmChat
