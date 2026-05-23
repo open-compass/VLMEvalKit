@@ -23,14 +23,14 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 # ──────────────────────────────────────────────
 # Scoring helpers
 # ──────────────────────────────────────────────
-def cal_relevance(scores):
+def cal_relevance_rating(scores):
     score_map_exponential = {0: 0.0, 1: 100.0 / 16, 2: 100.0 * 4 / 16, 3: 100.0 * 9 / 16, 4: 100.0}
     correct_count = sum(scores)
-    exp_score = score_map_exponential.get(correct_count, 0.0)
-    return exp_score
+    rating = score_map_exponential.get(correct_count, 0.0)
+    return rating
 
 
-def cal_logic(scores, group_structure):
+def cal_logic_rating(scores, group_structure):
     group_structure_list = ast.literal_eval(group_structure)
     last_correct_idx = -1
     for idx, val in enumerate(scores):
@@ -50,15 +50,15 @@ def cal_logic(scores, group_structure):
             last_correct_idx += 1
     else:
         raise ValueError(f'Unknown group_structure_list: {group_structure_list}')
-    logic_score = score_map.get(last_correct_idx + 1, 0.0)
-    return logic_score
+    rating = score_map.get(last_correct_idx + 1, 0.0)
+    return rating
 
 
 def get_final_rating(score_file):
     data = load(score_file)
 
     overall_rating = {'total': []}
-    group_rating = {'relevance': [], 'logic': []}
+    group_type_rating = {'relevance': [], 'logic': []}
     level_rating = {'level_1': [], 'level_2': [], 'level_3': []}
     second_head_rating = {}
     third_head_rating = {}
@@ -80,26 +80,26 @@ def get_final_rating(score_file):
         level, second_head, third_head = group[-1][2], group[-1][3], group[-1][4]
         scores = [item[5] for item in group]
         if group_type == 'relevance':
-            exp_score = cal_relevance(scores)
-            group_rating['relevance'].append(exp_score)
+            rating = cal_relevance_rating(scores)
+            group_type_rating['relevance'].append(rating)
         elif group_type == 'logic':
-            exp_score = cal_logic(scores, group_structure)
-            group_rating['logic'].append(exp_score)
+            rating = cal_logic_rating(scores, group_structure)
+            group_type_rating['logic'].append(rating)
         else:
             raise ValueError(f'Unknown group_type: {group_type}')
-        overall_rating['total'].append(exp_score)
-        level_rating[f'level_{int(level)}'].append(exp_score)
-        second_head_rating.setdefault(second_head, []).append(exp_score)
-        third_head_rating.setdefault(third_head, []).append(exp_score)
+        overall_rating['total'].append(rating)
+        level_rating[f'level_{int(level)}'].append(rating)
+        second_head_rating.setdefault(second_head, []).append(rating)
+        third_head_rating.setdefault(third_head, []).append(rating)
 
     overall_rating['total'] = sum(overall_rating['total']) / len(overall_rating['total'])
-    group_rating = {k: (sum(v)/len(v)) if v else 0.0 for k, v in group_rating.items()}
+    group_type_rating = {k: (sum(v)/len(v)) if v else 0.0 for k, v in group_type_rating.items()}
     level_rating = {k: (sum(v)/len(v)) if v else 0.0 for k, v in level_rating.items()}
     second_head_rating = {k: (sum(v)/len(v)) if v else 0.0 for k, v in second_head_rating.items()}
     third_head_rating = {k: (sum(v)/len(v)) if v else 0.0 for k, v in third_head_rating.items()}
     return {
         'overall_rating': overall_rating,
-        'group_rating': group_rating,
+        'group_type_rating': group_type_rating,
         'level_rating': level_rating,
         'second_head_rating': second_head_rating,
         'third_head_rating': third_head_rating,
@@ -112,17 +112,17 @@ def get_final_acc(score_file):
     data['score'] = data['score'].apply(lambda x: 1 if x == 1 else 0)
 
     overall_acc = {'total': float(data['score'].mean())}
-    group_acc = {key: float(group['score'].mean())
-                 for key, group in data.groupby('group_type')}
-    level_acc = {f'level_{int(key)}': float(group['score'].mean())
-                 for key, group in data.groupby('level')}
-    second_head_acc = {key: float(group['score'].mean())
-                       for key, group in data.groupby('second_head')}
-    third_head_acc = {key: float(group['score'].mean())
-                      for key, group in data.groupby('third_head')}
+    group_type_acc = {key: float(items['score'].mean())
+                 for key, items in data.groupby('group_type')}
+    level_acc = {f'level_{int(key)}': float(items['score'].mean())
+                 for key, items in data.groupby('level')}
+    second_head_acc = {key: float(items['score'].mean())
+                       for key, items in data.groupby('second_head')}
+    third_head_acc = {key: float(items['score'].mean())
+                      for key, items in data.groupby('third_head')}
     return {
         'overall_acc': overall_acc,
-        'group_acc': group_acc,
+        'group_type_acc': group_type_acc,
         'level_acc': level_acc,
         'second_head_acc': second_head_acc,
         'third_head_acc': third_head_acc,
@@ -165,7 +165,7 @@ def subtitle_between_timestamps(entries, start_time, end_time):
 
 class VideoMMEv2(VideoBaseDataset):
 
-    MD5 = '4fb96afb1258f9ccf134b953b5e1b76d'
+    MD5 = '5ae94e4543a45eb32b21146d045ca9b2'
 
     # --- Text prompts (frame description) ---
     WO_SUB_PROMPT = 'These are the frames of a video.'
