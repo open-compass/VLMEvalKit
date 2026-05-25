@@ -4,7 +4,7 @@ import os
 import os.path as osp
 
 import pandas as pd
-from PIL import Image
+from PIL import Image, ImageFile
 
 Image.MAX_IMAGE_PIXELS = 1e9
 
@@ -153,9 +153,33 @@ def encode_image_file_to_base64(image_path, target_size=-1, fmt='JPEG', max_file
         image, target_size=target_size, fmt=fmt, max_file_size=max_file_size)
 
 
+def _open_loaded_image(image_data):
+    image = Image.open(io.BytesIO(image_data))
+    try:
+        image.load()
+    except Exception:
+        image.close()
+        raise
+    return image
+
+
 def decode_base64_to_image(base64_string, target_size=-1):
     image_data = base64.b64decode(base64_string)
-    image = Image.open(io.BytesIO(image_data))
+    try:
+        image = _open_loaded_image(image_data)
+    except OSError as err:
+        if 'truncated' not in str(err).lower():
+            raise
+
+        # Pillow exposes truncated-image recovery as a process-wide flag. Enable
+        # it only for the retry and restore the previous state immediately.
+        previous_setting = ImageFile.LOAD_TRUNCATED_IMAGES
+        try:
+            ImageFile.LOAD_TRUNCATED_IMAGES = True
+            image = _open_loaded_image(image_data)
+        finally:
+            ImageFile.LOAD_TRUNCATED_IMAGES = previous_setting
+
     if image.mode in ('RGBA', 'P', 'LA'):
         image = image.convert('RGB')
     if target_size > 0:
