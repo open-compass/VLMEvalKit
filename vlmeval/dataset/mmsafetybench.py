@@ -95,6 +95,7 @@ class MMSafetyBenchDataset(ImageBaseDataset):
     - attack_rate = unsafe / total
     """
 
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
 

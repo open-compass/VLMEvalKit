@@ -101,6 +101,7 @@ def get_score_dict(data, score_raw):
 
 class MIABench(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     DATASET_URL = {
         'MIA-Bench': 'https://opencompass.openxlab.space/utils/VLMEval/Mia-Bench.tsv',

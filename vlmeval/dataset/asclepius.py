@@ -24,6 +24,7 @@ class Asclepius(ImageVQADataset):
     """
 
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     MODALITY = 'IMAGE'
 
     DATASET_URL = {

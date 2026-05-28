@@ -419,6 +419,7 @@ def _judge_one_item(item):
 
 class ChartMimic(ImageBaseDataset):
     TYPE = "VQA"
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     # TODO: add dataset url and md5
     DATASET_URL = {

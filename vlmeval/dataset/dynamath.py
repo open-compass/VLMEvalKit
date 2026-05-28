@@ -112,6 +112,7 @@ def DynaMath_auxeval(model, line):
 class Dynamath(ImageBaseDataset):
 
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     DATASET_URL = {
         'DynaMath': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath.tsv',
         'DynaMath_noprompt': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath.tsv',

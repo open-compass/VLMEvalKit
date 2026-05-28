@@ -51,6 +51,7 @@ def DUDE_acc(result_file):
 class DUDE(ImageBaseDataset):
 
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     DATASET_URL = {
         'DUDE': 'https://opencompass.openxlab.space/utils/VLMEval/DUDE.tsv',

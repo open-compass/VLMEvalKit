@@ -332,6 +332,7 @@ def judge_one_item(item, retry=3):
 
 class MMIFEval(ImageBaseDataset):
     TYPE = "VQA"
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     # TODO: add dataset url and md5
     DATASET_URL = {"MM-IFEval": 'https://opencompass.openxlab.space/utils/VLMEval/MM-IFEval.tsv'}

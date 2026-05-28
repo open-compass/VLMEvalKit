@@ -17,6 +17,7 @@ from vlmeval.config import (api_models, cambrian_series, chameleon_series, deeps
                             supported_VLM, vila_series, wemm_series, xcomposer_series,
                             xtuner_series, yivl_series)
 from vlmeval.dataset import SUPPORTED_DATASETS
+from vlmeval.judge import get_default_judge_model
 from vlmeval.smp import (dump, get_logger, get_pred_file_format, listinstr, load, load_env,
                          localize_df, ls, md5, mrlines, mwlines)
 
@@ -446,16 +447,9 @@ def EVAL(dataset_name, data_file, **kwargs):
     # Set the judge kwargs first before evaluation or dumping
     judge_kwargs = {'nproc': 4, 'verbose': True}
     if 'model' not in kwargs:
-        if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro']:
-            judge_kwargs['model'] = 'chatgpt-0125'
-        elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4-turbo'
-        elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['DynaMath', 'MathVerse', 'MathVista', 'MathVision'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['SFE'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-1120'
+        judge_model = get_default_judge_model(dataset, dataset.TYPE, judge_kwargs)
+        if judge_model is not None:
+            judge_kwargs['model'] = judge_model
     else:
         judge_kwargs['model'] = kwargs['model']
     judge_kwargs['nproc'] = kwargs.get('nproc', 4)

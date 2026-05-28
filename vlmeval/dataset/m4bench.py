@@ -16,6 +16,7 @@ class M4Bench(ImageBaseDataset):
     Dataset class for M4Bench, handling single and dual image inputs.
     """
     TYPE = 'M4Bench'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     DATASET_URL = {
         "State_Invariance": "https://huggingface.co/datasets/Anonymous8976/M4Bench/resolve/main/State_Invariance.tsv",  # noqa: E501

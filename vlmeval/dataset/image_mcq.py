@@ -1688,6 +1688,7 @@ class LEGO(ImageMCQDataset):
 
 class VisualPuzzles(ImageMCQDataset):
     TYPE = "MCQ"
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
     DATASET_URL = {
         'VisualPuzzles': 'https://opencompass.openxlab.space/utils/VLMEval/VisualPuzzles.tsv'
     }
@@ -1785,6 +1786,7 @@ class VisualPuzzles(ImageMCQDataset):
 
 class PuzzleVQA(ImageMCQDataset):
     TYPE = "MCQ"
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
     DATASET_URL = {
         'PuzzleVQA': 'https://opencompass.openxlab.space/utils/VLMEval/PuzzleVQA.tsv'
     }
@@ -1856,6 +1858,7 @@ class PuzzleVQA(ImageMCQDataset):
 
 class VisuLogic(ImageMCQDataset):
     TYPE = "MCQ"
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
     DATASET_URL = {
         'VisuLogic': 'https://opencompass.openxlab.space/utils/VLMEval/VisuLogic.tsv'
     }
@@ -3058,6 +3061,7 @@ class TreeBench(ImageMCQDataset):
 
 
 class CVQA(ImageMCQDataset):
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
 
     @classmethod
     def supported_datasets(cls):

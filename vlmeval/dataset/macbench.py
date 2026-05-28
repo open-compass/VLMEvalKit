@@ -140,6 +140,7 @@ def macbench_auxeval(model, line):
 
 class MaCBench(ImageBaseDataset):
     TYPE = 'MaCBench'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     DATASET_URL = {'MaCBench': ''}
     DATASET_MD5 = {'MaCBench': '0e163396dd28886fd828e101f24afdf6'}
 
