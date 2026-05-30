@@ -185,6 +185,20 @@ def build_dataset_from_config(cfg, dataset_name):
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.dataset`')
 
 
+def apply_supported_vlm_cli_overrides(args):
+    """Apply CLI overrides (retry/verbose/stream) to supported_VLM entries."""
+    for k, v in supported_VLM.items():
+        if not hasattr(v, 'keywords'):
+            continue
+        if 'retry' in v.keywords and args.retry is not None:
+            v.keywords['retry'] = args.retry
+        if 'verbose' in v.keywords and args.verbose is not None:
+            v.keywords['verbose'] = args.verbose
+        if args.stream and getattr(v.func, '__module__', '').startswith('vlmeval.api'):
+            v.keywords['stream'] = True
+        supported_VLM[k] = v
+
+
 def build_model_from_base_url(args):
     """Build LMDeployAPI model kwargs from command-line arguments.
 
@@ -206,6 +220,7 @@ def build_model_from_base_url(args):
         verbose=args.verbose,
         video_llm=args.video_llm,
         local_media=args.local_media,
+        stream=args.stream,
     )
     model_args = {k: v for k, v in model_args.items() if v is not None}
     if args.thinker:
@@ -218,6 +233,9 @@ def build_model_from_base_url(args):
             raise ValueError(f'Unable to parse the --extra-body value `{args.extra_body}`') from e
         assert isinstance(extra, dict), '--extra-body must be a valid Python dict'
         model_args.update(extra)
+    if args.stream:
+        model_args['stream'] = True
+        logger.info('Streaming mode enabled (--stream)')
     return model_args
 
 
@@ -484,6 +502,8 @@ You can launch the evaluation by setting either --data and --model or --config.
                         help='Max time in seconds for a single inference request.')
     parser.add_argument('--custom-prompt', type=str, default=None,
                         help='Manually select a model adapter by name.')
+    parser.add_argument('--stream', action='store_true',
+                        help='Enable streaming responses for OpenAI-compatible API models.')
     parser.add_argument('--extra-body', type=str, default=None,
                         help='Extra inference parameters as json dict string')
     parser.add_argument('--video-llm', action='store_true',
@@ -545,13 +565,7 @@ def run_local_mode(args):
             logger.info(f'--reuse is set, reuse-aux={args.reuse_aux}')
 
     if not use_config:
-        for k, v in supported_VLM.items():
-            if hasattr(v, 'keywords') and 'retry' in v.keywords and args.retry is not None:
-                v.keywords['retry'] = args.retry
-                supported_VLM[k] = v
-            if hasattr(v, 'keywords') and 'verbose' in v.keywords and args.verbose is not None:
-                v.keywords['verbose'] = args.verbose
-                supported_VLM[k] = v
+        apply_supported_vlm_cli_overrides(args)
 
         # If FWD_API is set, will use class `GPT4V` for all API models in the config
         if os.environ.get('FWD_API', None) == '1':
@@ -987,6 +1001,8 @@ def run_api_mode(args):
     if WORLD_SIZE_LOCAL > 1:
         logger.error("API pipeline does not support multi-process mode (WORLD_SIZE > 1).")
         return
+
+    apply_supported_vlm_cli_overrides(args)
 
     # Build model args (shared across all datasets)
     if args.base_url is not None:

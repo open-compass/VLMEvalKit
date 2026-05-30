@@ -44,7 +44,6 @@ from .GUI.screenspot_v2 import ScreenSpotV2
 from .GUI.vbgd import VBGD
 from .GUI.venusbench import VenusBench_GD
 from .hipho import HiPhODataset
-from .hle import HLEDataset
 from .image_base import ImageBaseDataset, img_root_map
 from .image_caption import ImageCaptionDataset
 from .image_ccocr import CCOCRDataset
@@ -55,7 +54,7 @@ from .image_mcq import (CVQA, LEGO, SCAM, AffordanceDataset, CustomMCQDataset, C
                         TDBench, TopViewRS, TreeBench, VisualPuzzles, VisuLogic, VLMBlind,
                         VMCBenchDataset, WeMath, XLRSBench, _3DSRBench)
 from .image_mt import MMDUDataset
-from .image_shortqa import ImageShortQADataset, PathVQA_TEST, PathVQA_VAL
+from .image_shortqa import HLEDataset, ImageShortQADataset, PathVQA_TEST, PathVQA_VAL
 from .image_vqa import (BMMR, CRPE, LENS, MMNIAH, AyaVisionBench, CoreCognition, CountBenchQA,
                         CustomVQADataset, ImageVQADataset, LLaVABench, LLaVABench_KO, LogicVista,
                         MathCanvas, MathVerse, MathVision, MathVista, MME_CoT, MMEReasoning,
