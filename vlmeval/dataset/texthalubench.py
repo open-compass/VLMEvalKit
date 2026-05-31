@@ -16,7 +16,7 @@ class TextHaluBench(ImageBaseDataset):
         
     }
     DATASET_MD5 = {
-        'TextHaluBench':' aa80286957b252cb92975486abf1d18e '
+        'TextHaluBench':'dce971358e48ed61ec4e255a9c565606'
     }
 
     
