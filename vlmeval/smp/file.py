@@ -76,7 +76,7 @@ def LMUDataRoot():
 
 
 def HFCacheRoot():
-    cache_list = ['HUGGINGFACE_HUB_CACHE', 'HF_HOME']
+    cache_list = ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE', 'HF_HOME']
     for cache_name in cache_list:
         if cache_name in os.environ and osp.exists(os.environ[cache_name]):
             if os.environ[cache_name].split('/')[-1] == 'hub':
@@ -161,7 +161,13 @@ def dump(data, f, **kwargs):
 
     handlers = dict(pkl=dump_pkl, json=dump_json, jsonl=dump_jsonl, xlsx=dump_xlsx, csv=dump_csv, tsv=dump_tsv)
     suffix = f.split('.')[-1]
-    return handlers[suffix](data, f, **kwargs)
+    try:
+        return handlers[suffix](data, f, **kwargs)
+    except Exception:
+        # if dump failed, fallback to pkl format
+        pkl_file = f.rsplit('.', 1)[0] + '.pkl'
+        warnings.warn(f'Failed to dump to {suffix} format, falling back to pkl: {pkl_file}')
+        return dump_pkl(data, pkl_file, **kwargs)
 
 
 def get_pred_file_format():
@@ -456,12 +462,18 @@ def get_file_extension(file_path):
 def get_intermediate_file_path(eval_file, suffix, target_format=None):
     original_ext = get_file_extension(eval_file)
 
+    def ends_with_list(s, lst):
+        for item in lst:
+            if s.endswith(item):
+                return True
+        return False
+
     if target_format is None:
-        if suffix in ['_tmp', '_response', '_processed']:
+        if ends_with_list(suffix, ['_tmp', '_response', '_processed']):
             target_format = 'pkl'
-        elif suffix in ['_rating', '_config', '_meta']:
+        elif ends_with_list(suffix, ['_rating', '_config', '_meta']):
             target_format = 'json'
-        elif suffix in ['_acc', '_fine', '_metrics']:
+        elif ends_with_list(suffix, ['_acc', '_fine', '_metrics']):
             target_format = get_eval_file_format()
         else:
             target_format = get_pred_file_format()

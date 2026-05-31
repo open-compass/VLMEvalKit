@@ -25,7 +25,7 @@ class Logics_Thinking(BaseModel):
     INTERLEAVE = True
 
     def __init__(self,
-                 model_path: str = "Logics-MLLM/Logics-Thinking",
+                 model_path: str = "Logics-MLLM/Logics-Thinking-8B",
                  **kwargs):
         super().__init__()
 

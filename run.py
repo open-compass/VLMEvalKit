@@ -314,7 +314,7 @@ def main():
                 if model is None:
                     model = model_name  # which is only a name
 
-                if args.model != "eval":
+                if args.mode != "eval":
                     # Perform the Inference
                     if dataset.MODALITY == 'VIDEO':
                         model = infer_data_job_video(
@@ -378,7 +378,7 @@ def main():
                             judge_kwargs['model'] = 'gpt-4-turbo'
                     elif listinstr(['VGRPBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning'], dataset_name):  # noqa: E501
+                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'LENS','DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['OlympiadBench'], dataset_name):
                         use_api_judger = judge_kwargs.get("olympiad_use_api_judger", False)
@@ -399,6 +399,12 @@ def main():
                     elif listinstr(['M4Bench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['AyaVisionBench'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4.1'
+                    elif listinstr(['MathCanvas'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4.1-2025-04-14'
+                    elif listinstr(['MMReason'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4.1',
+                    elif listinstr(['CoreCognition'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4.1'
 
                 if args.use_verifier:

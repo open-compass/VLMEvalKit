@@ -2,6 +2,7 @@
 import re
 import os
 import sys
+from timeout_decorator import timeout
 
 from ..smp import *
 
@@ -307,21 +308,33 @@ def judge_one_item(item):
     # global pdf_tmp_dir
     # os.chdir(pdf_tmp_dir)
 
-    text_evaluator(
-        generation_code_file=generated_py_file, golden_code_file=original_py_file
-    )
+    try:
+        timeout(30.)(text_evaluator)(
+            generation_code_file=generated_py_file, golden_code_file=original_py_file
+        )
+    except Exception as e:
+        logger.info(f"Failed to evaluate text for {item['index']} because {repr(e)}")
 
-    chart_type_evaluator(
-        generation_code_file=generated_py_file, golden_code_file=original_py_file
-    )
+    try:
+        timeout(60.)(chart_type_evaluator)(
+            generation_code_file=generated_py_file, golden_code_file=original_py_file
+        )
+    except Exception as e:
+        logger.info(f"Failed to evaluate chart for {item['index']} because {repr(e)}")
 
-    color_evaluator(
-        generation_code_file=generated_py_file, golden_code_file=original_py_file
-    )
+    try:
+        timeout(30.)(color_evaluator)(
+            generation_code_file=generated_py_file, golden_code_file=original_py_file
+        )
+    except Exception as e:
+        logger.info(f"Failed to evaluate color for {item['index']} because {repr(e)}")
 
-    layout_evaluator(
-        generation_code_file=generated_py_file, golden_code_file=original_py_file
-    )
+    try:
+        timeout(30.)(layout_evaluator)(
+            generation_code_file=generated_py_file, golden_code_file=original_py_file
+        )
+    except Exception as e:
+        logger.info(f"Failed to evaluate layout for {item['index']} because {repr(e)}")
 
     low_level_score_dict = {
         "original_py_file": original_py_file,

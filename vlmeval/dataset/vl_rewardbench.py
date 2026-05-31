@@ -74,7 +74,7 @@ class VLRewardBench(ImageBaseDataset):
     DATASET_URL = {
         'VL-RewardBench': 'https://huggingface.co/datasets/MMInstruction/VL-RewardBench/resolve/main/vl_rewardbench.tsv'
     }
-    DATASET_MD5 = {'VL-RewardBench': '1d2676f4ab4a5f755019ec0af2b28189'}
+    DATASET_MD5 = {'VL-RewardBench': '4849259836bc143c43e8b77b9c84b398'}
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):

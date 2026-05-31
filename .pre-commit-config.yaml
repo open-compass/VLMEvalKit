@@ -35,7 +35,6 @@ repos:
       - id: trailing-whitespace
       - id: check-yaml
       - id: end-of-file-fixer
-      - id: requirements-txt-fixer
       - id: check-merge-conflict
       - id: fix-encoding-pragma
         args: ["--remove"]

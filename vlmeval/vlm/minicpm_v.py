@@ -31,7 +31,7 @@ class MiniCPM_V(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'MMAlignBench'], dataset):
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'MMAlignBench', 'ChartQAPro', 'ChartMuseum'], dataset):  # noqa: E501
             # For Multi-Turn we don't have custom prompt
             return False
         return False

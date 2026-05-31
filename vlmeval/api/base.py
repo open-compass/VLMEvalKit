@@ -247,6 +247,10 @@ class BaseAPI:
                 if ret_code == 0 and self.fail_msg not in answer and answer != '':
                     if self.verbose:
                         print(answer)
+                    # Return both answer and extra_records
+                    # Add for agent evaluation
+                    if isinstance(log, dict):
+                        return {"prediction": answer, "extra_records": log}
                     return answer
                 elif self.verbose:
                     if not isinstance(log, str):

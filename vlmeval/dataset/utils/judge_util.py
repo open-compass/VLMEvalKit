@@ -49,5 +49,5 @@ msgs = [dict(type='text', value='Hello!')]
 code, answer, resp = model.generate_inner(msgs)
 print(code, answer, resp)
 ```
-You cam see the specific error if the API call fails.
+You can see the specific error if the API call fails.
 """

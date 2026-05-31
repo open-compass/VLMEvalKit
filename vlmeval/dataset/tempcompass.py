@@ -59,6 +59,7 @@ class TempCompass_MCQ(VideoBaseDataset):
 
     MD5 = '7efbb9e6d9dabacd22daf274852691dd'
     TYPE = 'Video-MCQ'
+    DEFAULT_JUDGE = ['chatgpt-1106']
 
     def __init__(self, dataset='TempCompass_MCQ', nframe=0, fps=-1):
         self.type_data_list = {
@@ -205,7 +206,6 @@ class TempCompass_MCQ(VideoBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-1106', 'exact_matching']
         judge_kwargs.update({
             "max_tokens": 128,
             "temperature": 1.0,
@@ -257,6 +257,7 @@ class TempCompass_Captioning(VideoBaseDataset):
 
     MD5 = '35be9bf2581ea7767f02e9a8f37ae1ab'
     TYPE = 'Video-VQA'
+    DEFAULT_JUDGE = ['chatgpt-1106']
 
     def __init__(self, dataset='TempCompass_Captioning', nframe=0, fps=-1):
         self.type_data_list = {
@@ -402,7 +403,6 @@ class TempCompass_Captioning(VideoBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         model = judge_kwargs.setdefault('model', 'chatgpt-1106')
-        assert model in ['chatgpt-1106']
         judge_kwargs.update({
             "max_tokens": 128,
             "temperature": 1.0,
@@ -454,6 +454,7 @@ class TempCompass_YorN(VideoBaseDataset):
 
     MD5 = 'c72c046d7fa0e82c8cd7462f2e844ea8'
     TYPE = 'Video-Y/N'
+    DEFAULT_JUDGE = ['chatgpt-1106']
 
     def __init__(self, dataset='TempCompass_YorN', nframe=0, fps=-1):
         self.type_data_list = {
@@ -598,7 +599,6 @@ class TempCompass_YorN(VideoBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-1106', 'exact_matching']
         judge_kwargs.update({
             "max_tokens": 128,
             "temperature": 1.0,

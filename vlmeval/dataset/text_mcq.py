@@ -11,6 +11,8 @@ class TextMCQDataset(TextBaseDataset):
 
     DATASET_MD5 = {}
 
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
+
     def build_prompt(self, line):
 
         if isinstance(line, int):
@@ -54,21 +56,17 @@ class TextMCQDataset(TextBaseDataset):
 
         circular = False
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
         name_str = name_str_map[model] if model in name_str_map else model
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 

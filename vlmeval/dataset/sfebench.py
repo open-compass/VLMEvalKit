@@ -183,14 +183,11 @@ class SFE(ImageVQADataset):
             model = judge_kwargs.pop('model', 'gpt-4o-1120')
             if model == 'exact_matching':
                 model = None
-            elif gpt_key_set():
+            else:
                 model = build_judge(model=model, **judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                     model = None
-            else:
-                model = None
-                warnings.warn('OPENAI_API_KEY is not working properly, will use exact matching for evaluation')
 
             if model is not None:
                 if 'g_index' not in data:

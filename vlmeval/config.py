@@ -79,6 +79,7 @@ ungrouped = {
     ),
     "Pixtral-12B": partial(Pixtral, model_path="mistralai/Pixtral-12B-2409"),
     "Falcon2-VLM-11B": partial(Falcon2VLM, model_path="tiiuae/falcon-11B-vlm"),
+    "KVL": partial(InternVLChat, model_path="amoeba04/KVL", version="V2.0"),
 }
 
 o1_key = os.environ.get('O1_API_KEY', None)
@@ -279,6 +280,15 @@ api_models = {
         max_tokens=2**14,
         timeout=300,
     ),
+    "gpt-5.1-2025-11-13": partial(
+        GPT4V,
+        model="gpt-5.1-2025-11-13",
+        img_detail="high",
+        retry=3,
+        verbose=False,
+        max_tokens=2**14,
+        timeout=300,
+    ),
     # Gemini
     "GeminiPro1-0": partial(
         Gemini, model="gemini-1.0-pro", temperature=0, retry=10
@@ -461,11 +471,56 @@ api_models = {
     "BlueLM-2.5-3B": partial(BlueLM_API, model="BlueLM-2.5-3B", temperature=0, retry=3),
     # JiuTian-VL
     "JTVL": partial(JTVLChatAPI, model="jt-vl-chat", temperature=0, retry=10),
+    "JTVL-Mini": partial(JTVLChatAPI_Mini, model="jt-vl-chat-mini", temperature=0, retry=10),
+    "JTVL-2B": partial(JTVLChatAPI_2B, model="jt-vl-chat-2b", temperature=0, retry=10),
+    "VideoChatOnlineV2": partial(VideoChatOnlineV2API, model="videochatonline_v2", temperature=0, retry=10),
     "Taiyi": partial(TaiyiAPI, model="taiyi", temperature=0, retry=10),
     # TeleMM
     "TeleMM": partial(TeleMMAPI, model="TeleAI/TeleMM", temperature=0, retry=10),
+    "TeleMM2.0": partial(TeleMM2_API, model="TeleAI/TeleMM", retry=3, timeout=600),
+    "TeleMM2.0Thinking": partial(TeleMM2Thinking_API, model="TeleAI/TeleMM", retry=3, timeout=600),
     "Qwen2.5-VL-32B-Instruct-SiliconFlow": partial(
         SiliconFlowAPI, model="Qwen/Qwen2.5-VL-32B-Instruct", temperature=0, retry=10),
+    "Qwen3-VL-8B--crop--arm_thinker_prompt--sglang": partial(
+        ARM_thinker,
+        mode="agent",
+        agent_repo_root="/path/to/your/ARM-Thinker",
+        model="Qwen/Qwen3-VL-8B-Instruct",
+        retry=10,
+        timeout=300,
+        api_base="http://100.97.158.184:38888/v1/chat/completions",
+        key="EMPTY",
+        temperature=0.0,
+        max_tokens=4096,
+        # agent params
+        max_round=16,
+        max_tool_response_length=4096,
+        tool_config_path="/path/to/your/ARM-Thinker/examples/self/multiturn/config/tool_config/image_zoom_in_tool_config.yaml",
+        # special for sglang server
+        use_role_tool=False,
+        system_template_type="CommonSystemTemplate",
+        # extra prompt to adapt to the ARM-Thinker prompt template [CommonSystemTemplate]
+        extra_pt="\n\n**Important Requirement:**\nThe given image is `original_image`. You must output your reasoning inside `<think>...</think>`. After reasoning, either output the final answer within `<answer>...</answer>` or call a tool within `<tool_call>...</tool_call>`. You may call tools multiple times across turns to assist with judgment or verification, **but only one tool per turn**. If a tool call fails, you can retry or stop and give your final answer. Once no more tool calls are needed, provide your final answer or judgment within `<answer>...</answer>`.",
+    ),
+    "Qwen3-VL-8B--crop--official_prompt--vllm": partial(
+        ARM_thinker,
+        mode="agent",
+        agent_repo_root="/path/to/your/ARM-Thinker",
+        model="Qwen/Qwen3-VL-8B-Instruct",
+        retry=10,
+        timeout=300,
+        api_base="http://100.97.203.103:40001/v1/chat/completions",
+        key="EMPTY",
+        temperature=0.0,
+        max_tokens=4096,
+        extra_pt="",
+        # agent params
+        max_round=16,
+        max_tool_response_length=4096,
+        system_template_type="Qwen3VLSystemTemplateWithTools",
+        tool_config_path="/path/to/your/ARM-Thinker/examples/self/multiturn/config/tool_config/image_zoom_in_tool_qwen3vl_config.yaml",
+        use_role_tool=True,
+    ),
     # lmdeploy api
     "lmdeploy": partial(
         LMDeployAPI,
@@ -792,6 +847,12 @@ long_vita_series = {
     ),
 }
 
+interns1_mini = {
+    "Intern-S1-mini": partial(
+        InternS1Chat, model_path="/mnt/shared-storage-user/mllm/lijinsong/models/Intern-S1-mini/"
+    ),
+}
+
 internvl = {
     "InternVL-Chat-V1-1": partial(
         InternVLChat, model_path="OpenGVLab/InternVL-Chat-V1-1", version="V1.1"
@@ -1033,6 +1094,185 @@ internvl3_5 = {
     ),
 }
 
+qwen3vl_series = {
+    "Qwen3-VL-235B-A22B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-235B-A22B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+    ),
+    "Qwen3-VL-235B-A22B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-235B-A22B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
+    ),
+    "Qwen3-VL-30B-A3B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-30B-A3B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+    ),
+    "Qwen3-VL-30B-A3B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-30B-A3B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
+    ),
+    "Qwen3-VL-8B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-8B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
+    ),
+    "Qwen3-VL-4B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-4B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
+    ),
+    "Qwen3-VL-8B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-8B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+    ),
+    "Qwen3-VL-4B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-4B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+    ),
+    "Qwen3-VL-2B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-2B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+    ),
+    "Qwen3-VL-32B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-32B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+
+    ),
+    "Qwen3-VL-2B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-2B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
+    ),
+    "Qwen3-VL-32B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-32B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=False,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
+    ),
+    "Qwen3-Omni-30B-A3B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-Omni-30B-A3B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        max_new_tokens=16384,
+    ),
+    "Qwen3-Omni-30B-A3B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-Omni-30B-A3B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        max_new_tokens=16384,
+    ),
+    "Qwen3-Omni-30B-A3B-Captioner": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-Omni-30B-A3B-Captioner",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        max_new_tokens=16384,
+    ),
+    
+}
+
 sail_series = {
     "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B"),
     "SAIL-VL-1.5-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-2B", use_msac = True),
@@ -1086,6 +1326,10 @@ idefics_series = {
     "Idefics3-8B-Llama3": partial(
         IDEFICS2, model_path="HuggingFaceM4/Idefics3-8B-Llama3"
     ),
+    'granite-docling-258M': partial(
+        DOCLING, model_path="ibm-granite/granite-docling-258M"
+    )
+
 }
 
 smolvlm_series = {
@@ -1189,6 +1433,8 @@ ovis_series = {
     "Ovis2-16B": partial(Ovis2, model_path="AIDC-AI/Ovis2-16B"),
     "Ovis2-34B": partial(Ovis2, model_path="AIDC-AI/Ovis2-34B"),
     "Ovis-U1-3B": partial(OvisU1, model_path="AIDC-AI/Ovis-U1-3B"),
+    "Ovis2.5-2B": partial(Ovis2_5, model_path="AIDC-AI/Ovis2.5-2B"),
+    "Ovis2.5-9B": partial(Ovis2_5, model_path="AIDC-AI/Ovis2.5-9B")
 }
 
 mantis_series = {
@@ -1551,6 +1797,9 @@ valley_series = {
     "valley2_dpo": partial(
         Valley2Chat, model_path="bytedance-research/Valley2-DPO"
     ),
+    "valley3": partial(
+        Valley3Chat, use_gthinker_thinking=True, model_path="bytedance-research/Valley3"
+    ),
 }
 
 ola_series = {
@@ -1574,6 +1823,25 @@ gemma_series = {
     "paligemma-3b-mix-448": partial(
         PaliGemma, model_path="google/paligemma-3b-mix-448"
     ),
+    
+    # 3B
+    "paligemma2-3b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-3b-pt-224"),
+    "paligemma2-3b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-3b-pt-448"),
+    "paligemma2-3b-mix-224": partial(PaliGemma, model_path="google/paligemma2-3b-mix-224"),
+    "paligemma2-3b-mix-448": partial(PaliGemma, model_path="google/paligemma2-3b-mix-448"),
+
+    # 10B
+    "paligemma2-10b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-10b-pt-224"),
+    "paligemma2-10b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-10b-pt-448"),
+    "paligemma2-10b-mix-224": partial(PaliGemma, model_path="google/paligemma2-10b-mix-224"),
+    "paligemma2-10b-mix-448": partial(PaliGemma, model_path="google/paligemma2-10b-mix-448"),
+
+    # 28B
+    "paligemma2-28b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-28b-pt-224"),
+    "paligemma2-28b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-28b-pt-448"),
+    "paligemma2-28b-mix-224": partial(PaliGemma, model_path="google/paligemma2-28b-mix-224"),
+    "paligemma2-28b-mix-448": partial(PaliGemma, model_path="google/paligemma2-28b-mix-448"),
+
     'Gemma3-4B': partial(Gemma3, model_path='google/gemma-3-4b-it'),
     'Gemma3-12B': partial(Gemma3, model_path='google/gemma-3-12b-it'),
     'Gemma3-27B': partial(Gemma3, model_path='google/gemma-3-27b-it')
@@ -1654,10 +1922,100 @@ qtunevl_series = {
     ),
 }
 
-logics_series = {
-    "Logics-Thinking": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking'),
+# RbdashMM series via lmdeploy API
+rbdashmm_api_series_lmdeploy = {
+    "rbdashmm3_DPO_38B_api": partial(
+        RBdashMMChat3_API,
+        api_base="http://0.0.0.0:23333/v1/chat/completions",
+        temperature=0,
+        retry=3,
+        timeout=600
+    ),
+    "rbdashmm3_5_DPO_38B_api": partial(
+        RBdashChat3_5_API,
+        api_base="http://0.0.0.0:23333/v1/chat/completions",
+        temperature=0,
+        retry=3,
+        timeout=600
+    ),
+    "rbdashmm3_5_38B_api": partial(
+        RBdashMMChat3_5_38B_API,
+        api_base="http://0.0.0.0:23333/v1/chat/completions",
+        temperature=0,
+        retry=3,
+        timeout=600
+    ),
+    "rbdashmm3_78B_api": partial(
+        RBdashMMChat3_78B_API,
+        api_base="http://0.0.0.0:23333/v1/chat/completions",
+        temperature=0,
+        retry=3,
+        timeout=600
+    )
 }
 
+logics_series = {
+    "Logics-Thinking-8B": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking-8B'),
+    "Logics-Thinking-32B": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking-32B'),
+}
+
+insight_v_series = {
+    "insightv": partial(InsightV, pretrained_reason="THUdyh/Insight-V-Reason-LLaMA3", pretrained_summary="THUdyh/Insight-V-Summary-LLaMA3"),
+}
+
+cosmos_series = {
+    'Cosmos-Reason1-7B': partial(Cosmos, model_path='nvidia/Cosmos-Reason1-7B', use_vllm=True),
+}
+
+keye_series = {
+    "Keye-VL-1.5-8B-auto":partial(KeyeChat, model_path="Kwai-Keye/Keye-VL-1_5-8B"),
+    "Keye-VL-1.5-8B-think":partial(KeyeChat, model_path="Kwai-Keye/Keye-VL-1_5-8B", think=True),
+    "Keye-VL-1.5-8B-nothink":partial(KeyeChat, model_path="Kwai-Keye/Keye-VL-1_5-8B", no_think=True), 
+    "Keye-VL-8B-Preview-think":partial(KeyeChat, model_path="Kwai-Keye/Keye-VL-8B-Preview", think=True), 
+}
+
+qianfanvl_series = {
+    'Qianfan-VL-3B': partial(Qianfan_VL, model_path='baidu/Qianfan-VL-3B'),
+    'Qianfan-VL-8B': partial(Qianfan_VL, model_path='baidu/Qianfan-VL-8B'),
+    'Qianfan-VL-70B': partial(Qianfan_VL, model_path='baidu/Qianfan-VL-70B'),
+}
+
+lfm2vl_series = {
+    "LFM2-VL-450M": partial(LFM2VL, model_path="LiquidAI/LFM2-VL-450M"),
+    "LFM2-VL-1.6B": partial(LFM2VL, model_path="LiquidAI/LFM2-VL-1.6B"),
+    "LFM2-VL-3B": partial(LFM2VL, model_path="LiquidAI/LFM2-VL-3B"),
+}
+
+covt_series = {
+    "CoVT-7B-seg": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-seg",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "CoVT-7B-depth": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-depth",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "CoVT-7B-seg_depth_dino": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-seg_depth_dino",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "CoVT-7B-seg_depth_dino_edge": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-seg_depth_dino_edge",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+}
 
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
@@ -1667,6 +2025,13 @@ internvl_series = {}
 for group in internvl_groups:
     internvl_series.update(group)
 
+interns1_groups = [
+    interns1_mini
+]
+interns1_series = {}
+for group in interns1_groups:
+    interns1_series.update(group)
+    
 supported_VLM = {}
 
 model_groups = [
@@ -1675,13 +2040,15 @@ model_groups = [
     idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, 
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
     chameleon_series, video_models, ovis_series, vila_series, mantis_series,
-    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,
+    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,qwen3vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series, thyme_series,logics_series
+    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series,
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, 
+    xvl_series, thyme_series, logics_series, cosmos_series, keye_series, qianfanvl_series, 
+    lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series, insight_v_series, covt_series
 ]
 
 for grp in model_groups:

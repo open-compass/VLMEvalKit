@@ -776,9 +776,12 @@ def update_drawed_colors(drawed_obejcts):
 
     return drawed_colors
 
-
-_process_plot_var_args._makeline = log_function(
-    _process_plot_var_args._makeline)
+try:
+    _process_plot_var_args._makeline = log_function(
+        _process_plot_var_args._makeline)
+except:
+    _process_plot_var_args._make_line = log_function(
+        _process_plot_var_args._make_line)
 Axes.bar = log_function(Axes.bar)
 Axes.scatter = log_function(Axes.scatter)
 Axes.axhline = log_function(Axes.axhline)

@@ -26,10 +26,10 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 ## Recent Codebase Changes
 - **[2025-09-12]** **Major Update: Improved Handling for Models with Thinking Mode**
 
-    A new feature in [PR 1229](https://github.com/open-compass/VLMEvalKit/pull/1175) that improves support for models with thinking mode. VLMEvalKit now allows for the use of a custom `split_thinking` function. **We strongly recommend this for models with thinking mode to ensure the accuracy of evaluation**.  To use this new functionality, please enable the following settings: `SPLIT_THINK=True`. By default, the function will parse content within `<think>...</think>` tags and store it in the `thinking` key of the output. For more advanced customization, you can also create a `split_think` function for model. Please see the InternVL implementation for an example.
+    A new feature in [PR 1229](https://github.com/open-compass/VLMEvalKit/pull/1175) that improves support for models with thinking mode. VLMEvalKit now allows for the use of a custom `split_thinking` function. **We strongly recommend this for models with thinking mode to ensure the accuracy of evaluation**.  To use this new functionality, please enable the Environment Variable: `SPLIT_THINK=True`. By default, the function will parse content within `<think>...</think>` tags and store it in the `thinking` key of the output. For more advanced customization, you can also create a `split_think` function for model. Please see the InternVL implementation for an example.
 - **[2025-09-12]** **Major Update: Improved Handling for Long Response(More than 16k/32k)**
 
-    A new feature in [PR 1229](https://github.com/open-compass/VLMEvalKit/pull/1175) that improves support for models with long response outputs. VLMEvalKit can now save prediction files in TSV format. **Since individual cells in an `.xlsx` file are limited to 32,767 characters, we strongly recommend using this feature for models that generate long responses (e.g., exceeding 16k or 32k tokens) to prevent data truncation.**. To use this new functionality, please enable the following settings: `PRED_FORMAT=tsv`.
+    A new feature in [PR 1229](https://github.com/open-compass/VLMEvalKit/pull/1175) that improves support for models with long response outputs. VLMEvalKit can now save prediction files in TSV format. **Since individual cells in an `.xlsx` file are limited to 32,767 characters, we strongly recommend using this feature for models that generate long responses (e.g., exceeding 16k or 32k tokens) to prevent data truncation.** To use this new functionality, please enable the Environment Variable: `PRED_FORMAT=tsv`.
 - **[2025-08-04]** In [PR 1175](https://github.com/open-compass/VLMEvalKit/pull/1175), we refine the `can_infer_option` and `can_infer_text`, which increasingly route the evaluation to LLM choice extractors and empirically leads to slight performance improvement for MCQ benchmarks.
 
 ## 🆕 News
@@ -71,7 +71,9 @@ Note that some VLMs may not be able to run under certain transformer versions, w
 - **Please use** `transformers==4.42.0` **for**: `AKI`.
 - **Please use** `transformers==4.44.0` **for**: `Moondream2`, `H2OVL series`.
 - **Please use** `transformers==4.45.0` **for**: `Aria`.
-- **Please use** `transformers==latest` **for**: `LLaVA-Next series`, `PaliGemma-3B`, `Chameleon series`, `Video-LLaVA-7B-HF`, `Ovis series`, `Mantis series`, `MiniCPM-V2.6`, `OmChat-v2.0-13B-sinlge-beta`, `Idefics-3`, `GLM-4v-9B`, `VideoChat2-HD`, `RBDash_72b`, `Llama-3.2 series`, `Kosmos series`.
+- **Please use** `transformers==4.48.0` (or `4.46.0`) **for**: `LLaVA-Next series` (e.g., `llava-hf/llava-v1.6-vicuna-7b-hf`).
+- **Please use** `transformers==latest` **for**: `PaliGemma-3B`, `Chameleon series`, `Video-LLaVA-7B-HF`, `Ovis series`, `Mantis series`, `MiniCPM-V2.6`, `OmChat-v2.0-13B-sinlge-beta`, `Idefics-3`, `GLM-4v-9B`, `VideoChat2-HD`, `RBDash_72b`, `Llama-3.2 series`, `Kosmos series`.
+- **Please use** `transformers==4.50.3` (or `4.46.1` or `4.51` or `4.53`) **for**: `Molmo series`.
 
 **Torchvision Version Recommendation:**
 
