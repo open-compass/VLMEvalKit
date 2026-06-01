@@ -468,23 +468,16 @@ api_models = {
         retry=10,
     ),
     # MiniMax (set MINIMAX_API_KEY)
+    "MiniMax-M3": partial(
+        api.MiniMaxAPI,
+        model="MiniMax-M3",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
     "MiniMax-M2.7": partial(
         api.MiniMaxAPI,
         model="MiniMax-M2.7",
-        temperature=0,
-        max_tokens=2048,
-        retry=10,
-    ),
-    "MiniMax-M2.5": partial(
-        api.MiniMaxAPI,
-        model="MiniMax-M2.5",
-        temperature=0,
-        max_tokens=2048,
-        retry=10,
-    ),
-    "MiniMax-M2.5-highspeed": partial(
-        api.MiniMaxAPI,
-        model="MiniMax-M2.5-highspeed",
         temperature=0,
         max_tokens=2048,
         retry=10,
