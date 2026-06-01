@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, localize_df, toliststr
+from .almbench import ALMBenchDataset
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
 from .CGAVCounting.cg_av_counting import CGAVCounting
@@ -67,6 +68,7 @@ from .longvideobench import LongVideoBench
 from .m3oralbench import M3oralBenchDataset
 from .m4bench import M4Bench
 from .macbench import MaCBench
+from .marvl import MaRVL, MaRVL_id, MaRVL_sw, MaRVL_ta, MaRVL_tr, MaRVL_zh
 from .matbench import MATBench
 from .medq_deg_bench import MedQDEGBenchDataset
 from .medqbench_caption import MedqbenchCaptionDataset
@@ -159,6 +161,7 @@ from .wiki_vqa_bench import WikiVQABench
 from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
+from .xgqa import xGQA, xGQA_bn, xGQA_de, xGQA_en, xGQA_id, xGQA_ko, xGQA_pt, xGQA_ru, xGQA_zh
 from .xstest import XSTestDataset
 
 from .video_dataset_config import supported_video_datasets  # isort: skip
@@ -289,6 +292,9 @@ IMAGE_DATASET = [
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
+    MaRVL, MaRVL_id, MaRVL_sw, MaRVL_ta, MaRVL_tr, MaRVL_zh,
+    xGQA, xGQA_bn, xGQA_de, xGQA_en, xGQA_id, xGQA_ko, xGQA_pt, xGQA_ru, xGQA_zh,
+    ALMBenchDataset,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, MedQDEGBenchDataset,
     ChartMuseum, ChartQAPro, ReasonMap_Plus,
