@@ -1,0 +1,13 @@
+# Optional dependencies for the Rebellions NPU (RBLN) in-process backend.
+#
+# rebel-compiler and optimum-rbln are not on PyPI — they live on Rebellions'
+# package index and PyTorch's CPU wheel index respectively. Install with:
+#   pip install \
+#     --extra-index-url https://pypi.rbln.ai/simple \
+#     --extra-index-url https://download.pytorch.org/whl/cpu \
+#     -r requirements/rbln.txt
+--extra-index-url https://pypi.rbln.ai/simple
+--extra-index-url https://download.pytorch.org/whl/cpu
+optimum-rbln
+qwen-vl-utils  # only required for Qwen2-VL / Qwen2.5-VL / Qwen3-VL
+rebel-compiler
