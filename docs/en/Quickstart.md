@@ -182,6 +182,50 @@ CUDA_VISIBLE_DEVICES=1,2,3,4,5,6 torchrun --nproc-per-node=3 run.py --data MMBen
 
 PS: The feature is not compatible with `vllm` backend. When you evaluate a model with `vllm` backend, please use `python` to launch, and all visible GPU devices will be used.
 
+### Evaluate VLMs on Rebellions NPU
+
+VLMEvalKit can target Rebellions NPU hardware two ways:
+
+- **Mode 1 — `optimum-rbln` (in-process)**: HuggingFace-style local inference. Pass an HF model id or a compiled directory with `--device rbln`; the wrapper class is auto-selected from the model's `config.json` architectures, and compile defaults are seeded automatically. The wrapper auto-detects whether `model_path` already contains a compiled RBLN artifact and either loads it (`export=False`) or compiles it (`export=True`) accordingly.
+- **`vllm-rbln` serve (HTTP)**: `vllm-rbln` exposes the same OpenAI-compatible API as upstream `vllm serve` (`/v1/chat/completions`). Serve the model on the NPU host, then evaluate it with VLMEvalKit's standard `--base-url` flag — no RBLN-specific model registration is required.
+
+Install once on the NPU host:
+
+```bash
+pip install \
+  --extra-index-url https://pypi.rbln.ai/simple \
+  --extra-index-url https://download.pytorch.org/whl/cpu \
+  -r requirements/rbln.txt
+```
+
+#### Mode 1 example
+
+```bash
+python run.py \
+  --device rbln --model Qwen/Qwen2.5-VL-7B-Instruct \
+  --data MMBench_DEV_EN MMMU_DEV_VAL MMStar MathVista_MINI AI2D_TEST OCRBench DocVQA_VAL ChartQA_TEST
+```
+
+#### Serving via `vllm-rbln`
+
+```bash
+# (NPU host) install vllm-rbln, then serve — same OpenAI-compatible server as `vllm serve`
+pip install \
+  --extra-index-url https://wheels.vllm.ai/0.18.0/cpu \
+  --extra-index-url https://download.pytorch.org/whl/cpu \
+  vllm-rbln
+RBLN_CTX_STANDALONE=1 vllm serve Qwen/Qwen2-VL-7B-Instruct \
+    --dtype float32 --enable-chunked-prefill --no-enable-prefix-caching \
+    --host 0.0.0.0 --port 8000
+
+# (eval client) point VLMEvalKit at the served endpoint via the standard --base-url
+python run.py --model Qwen/Qwen2-VL-7B-Instruct \
+  --base-url http://<npu-host>:8000/v1 --key EMPTY \
+  --data MMBench_DEV_EN --api-nproc 8
+```
+
+Note: `MathVista_MINI` requires an LLM judge. Use either an external OpenAI key (`OPENAI_API_KEY=...`) or another OpenAI-compatible endpoint (`--judge-base-url http://<host>:<port>/v1 --judge-key EMPTY --judge <model-name>`).
+
 #### Performance Discrepancies
 
 Model performance may vary across different environments. As a result, you might observe discrepancies between your evaluation results and those listed on the official VLMEvalKit leaderboard. These differences could be attributed to variations in versions of libraries such as `transformers`, `cuda`, and `torch`.
