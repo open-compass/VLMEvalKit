@@ -446,6 +446,36 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--data', type=str, nargs='+', help='Names of Datasets')
     parser.add_argument('--model', type=str, nargs='+', help='Names of Models')
     parser.add_argument('--config', type=str, help='Path to the Config Json File')
+    parser.add_argument(
+        '--device', type=str, choices=['nvidia', 'rbln'], default='nvidia',
+        help=(
+            'Inference backend selector. "nvidia" (default) preserves the '
+            'upstream VLMEvalKit dispatch (CUDA / HF Transformers wrappers). '
+            '"rbln" routes --model values through the optimum-rbln backend: '
+            'pre-registered *-RBLN names are used as-is; HF model ids and '
+            'local compiled directories are auto-dispatched via '
+            'vlmeval/vlm/rbln/auto.py.'
+        ),
+    )
+    parser.add_argument(
+        '--limit', type=int, default=None,
+        help=(
+            'If set, truncate each dataset to the first N samples by row order '
+            'before inference. Useful for smoke-testing a model / config before '
+            'running a full benchmark. Applies to every --data entry uniformly.'
+        ),
+    )
+    parser.add_argument(
+        '--rbln-kwargs', type=str, default=None,
+        help=(
+            'JSON object forwarded to RBLN wrappers auto-registered for any '
+            '--model value that is not a pre-registered *-RBLN name. Top-level '
+            'keys are passed as wrapper __init__ kwargs, so both `rbln_config` '
+            '(compile-time) and `rbln_runtime_config` (load-time) can be '
+            'overridden. Example: --rbln-kwargs \'{"rbln_config": {"visual": '
+            '{"max_seq_lens": 6400}, "tensor_parallel_size": 8}}\'.'
+        ),
+    )
 
     # Work Dir & Mode
     parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
@@ -536,6 +566,37 @@ def run_local_mode(args):
         args.data = list(cfg['data'].keys())
     else:
         assert len(args.data), '--data should be a list of data files'
+
+    # --device rbln: route every --model value to the optimum-rbln backend.
+    # Pre-registered *-RBLN names are used as-is; HF ids and local compiled
+    # directories are auto-dispatched via vlmeval/vlm/rbln/auto.py, force-
+    # overwriting any colliding upstream entry that happens to share the
+    # same basename (e.g. upstream registers "Qwen2.5-VL-7B-Instruct" as
+    # Qwen2VLChat (CUDA); we replace it with our RBLN partial here). The
+    # original model name is kept as the wrapper's model_path kwarg so
+    # optimum-rbln still loads from the correct HF id / directory.
+    rbln_extra = json.loads(args.rbln_kwargs) if args.rbln_kwargs else None
+    if args.device == 'rbln' and args.model:
+        import functools as _ft
+
+        from vlmeval.vlm.rbln import RBLNVLMBase, register_rbln_auto
+
+        def _is_rbln_partial(v):
+            return (
+                isinstance(v, _ft.partial)
+                and isinstance(v.func, type)
+                and issubclass(v.func, RBLNVLMBase)
+            )
+
+        for i, m in enumerate(args.model):
+            if _is_rbln_partial(supported_VLM.get(m)):
+                continue  # already a pre-registered *-RBLN entry
+            alias = os.path.basename(m)
+            supported_VLM.pop(alias, None)  # drop any colliding upstream entry
+            register_rbln_auto(
+                m, supported_VLM, extra_kwargs=rbln_extra, register_as=alias,
+            )
+            args.model[i] = alias
 
     if 'MMEVAL_ROOT' in os.environ:
         args.work_dir = os.environ['MMEVAL_ROOT']
@@ -671,6 +732,15 @@ def run_local_mode(args):
                                 skip_reason='invalid_dataset',
                             )
                         continue
+
+                if args.limit is not None and args.limit > 0:
+                    original = len(dataset.data)
+                    dataset.data = dataset.data.head(args.limit).reset_index(drop=True)
+                    if RANK == 0:
+                        logger.info(
+                            f'--limit {args.limit}: truncated {dataset_name} '
+                            f'from {original} to {len(dataset.data)} samples'
+                        )
 
                 judge_kwargs = get_judge_kwargs(dataset_name, dataset.TYPE, args)
                 judge_model = judge_kwargs.get('model', '')
@@ -1059,6 +1129,14 @@ def run_api_mode(args):
             if 'MMT-Bench_ALL' in ds_name:
                 logger.info(f'{ds_name} requires special handling, skipped in pipeline.')
                 continue
+
+            if args.limit is not None and args.limit > 0:
+                original = len(dataset.data)
+                dataset.data = dataset.data.head(args.limit).reset_index(drop=True)
+                logger.info(
+                    f'--limit {args.limit}: truncated {ds_name} '
+                    f'from {original} to {len(dataset.data)} samples'
+                )
 
             judge_kwargs = get_judge_kwargs(ds_name, dataset.TYPE, args)
             judge_model = judge_kwargs.get('model', '')
