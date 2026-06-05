@@ -14,6 +14,7 @@ from PIL import Image
 
 from vlmeval.smp import (dump, get_cache_path, get_intermediate_file_path, load, md5,
                          modelscope_flag_set)
+from vlmeval.smp.status_report import is_number, to_number
 from vlmeval.utils import track_progress_rich
 from .video_base import VideoBaseDataset
 
@@ -707,6 +708,16 @@ class VideoMMMU(VideoBaseDataset):
         score_pth = get_intermediate_file_path(storage, '_score', 'csv')
         dump(score, score_pth)
         return score
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        value = metrics.get('Overall#acc')
+        if is_number(value):
+            return {'Overall Acc': to_number(value)}
+        return super().report_primary_metric(metrics)
 
     def doc_to_text_perception_comprehension(self, doc):
         post_prompt = self.PERCEPTION_AND_COMPREHENSION_PROMPT

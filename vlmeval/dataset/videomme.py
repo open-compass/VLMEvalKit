@@ -301,6 +301,6 @@ Respond with only the letter (A, B, C, or D) of the correct option.
             return {}
 
         if 'overall|overall' in metrics:
-            return {'Overall Score': metrics['overall|overall'] * 100}
+            return {'Overall Acc': metrics['overall|overall'] * 100}
         else:
             return super().report_primary_metric(metrics)

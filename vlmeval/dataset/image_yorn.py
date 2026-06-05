@@ -2,6 +2,7 @@ import os.path as osp
 import warnings
 
 from vlmeval.smp import dump, get_intermediate_file_path, listinstr, load
+from vlmeval.smp.status_report import is_number, to_number
 from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
@@ -107,3 +108,39 @@ class ImageYORNDataset(ImageBaseDataset):
         score_tgt = get_intermediate_file_path(eval_file, '_score', 'csv')
         dump(score, score_tgt)
         return score
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        def get_number(key):
+            value = metrics.get(key)
+            return to_number(value) if is_number(value) else None
+
+        mme_scores = [get_number(key) for key in ('perception', 'reasoning')]
+        if all(value is not None for value in mme_scores):
+            return {'Overall Score': sum(mme_scores)}
+
+        hallusion_keys = ('split=Overall|aAcc', 'split=Overall|fAcc', 'split=Overall|qAcc')
+        hallusion_scores = [get_number(key) for key in hallusion_keys]
+        if all(value is not None for value in hallusion_scores):
+            return {'Overall Acc': sum(hallusion_scores) / len(hallusion_scores)}
+
+        pope_f1 = get_number('split=Overall|Overall')
+        if pope_f1 is not None:
+            return {'Overall F1': pope_f1}
+
+        amber_acc = get_number('Avg ACC')
+        if amber_acc is not None:
+            return {'Avg ACC': amber_acc}
+
+        overall_acc = get_number('Overall')
+        if overall_acc is not None:
+            return {'Overall Acc': overall_acc}
+
+        acc = get_number('acc')
+        if acc is not None:
+            return {'Overall Acc': acc}
+
+        return super().report_primary_metric(metrics)
