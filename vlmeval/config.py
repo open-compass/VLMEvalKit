@@ -918,6 +918,19 @@ api_models = {
         frequency_penalty=0.0,
         retry=3,
     ),
+    "flyai-vl":
+    partial(
+        api.FlyAIVLAPI,
+        model="flyai-vl",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.1,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+        retry=10,
+    )
 }
 
 api_models['gpt-5'] = cp.deepcopy(api_models['gpt-5-2025-08-07'])

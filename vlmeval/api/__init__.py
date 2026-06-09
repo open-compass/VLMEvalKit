@@ -32,7 +32,7 @@ from .telemm import TeleMM2_API
 from .telemm_thinking import TeleMM2Thinking_API
 from .together import TogetherAPI
 from .video_chat_online_v2 import VideoChatOnlineV2API
-
+from .flyai_vl_api import FlyAIVLAPI
 __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V', 'Gemini', 'QwenVLWrapper',
     'QwenVLAPI', 'QwenAPI', 'Claude3V', 'Claude_Wrapper', 'Reka', 'GLMVisionAPI', 'CWWrapper',
@@ -42,5 +42,5 @@ __all__ = [
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
     'VideoChatOnlineV2API', 'TeleMM2_API', 'TeleMM2Thinking_API', 'TogetherAPI', 'GCPVertexAPI',
-    'BedrockAPI', 'SenseChatVisionV2API', 'MiniMaxAPI', 'LiteLLMAPI',
+    'BedrockAPI', 'SenseChatVisionV2API', 'MiniMaxAPI', 'LiteLLMAPI', 'FlyAIVLAPI'
 ]
