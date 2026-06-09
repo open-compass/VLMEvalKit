@@ -54,7 +54,7 @@ from .image_mcq import (CVQA, LEGO, SCAM, AffordanceDataset, CustomMCQDataset, C
                         TDBench, TopViewRS, TreeBench, VisualPuzzles, VisuLogic, VLMBlind,
                         VMCBenchDataset, WeMath, XLRSBench, _3DSRBench)
 from .image_mt import MMDUDataset
-from .image_shortqa import ImageShortQADataset, PathVQA_TEST, PathVQA_VAL
+from .image_shortqa import HLEDataset, ImageShortQADataset, PathVQA_TEST, PathVQA_VAL
 from .image_vqa import (BMMR, CRPE, LENS, MMNIAH, AyaVisionBench, CoreCognition, CountBenchQA,
                         CustomVQADataset, ImageVQADataset, LLaVABench, LLaVABench_KO, LogicVista,
                         MathCanvas, MathVerse, MathVision, MathVista, MME_CoT, MMEReasoning,
@@ -68,9 +68,11 @@ from .m3oralbench import M3oralBenchDataset
 from .m4bench import M4Bench
 from .macbench import MaCBench
 from .matbench import MATBench
+from .medq_deg_bench import MedQDEGBenchDataset
 from .medqbench_caption import MedqbenchCaptionDataset
 from .medqbench_mcq import MedqbenchMCQDataset
 from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
+# Add by EASI team
 from .megabench import MEGABench
 from .miabench import MIABench
 from .mindcubebench import MindCubeBench
@@ -85,6 +87,8 @@ from .mmlongbench import MMLongBench
 from .mmmath import MMMath
 from .mmoral_opg_closed import MMOral_OPG_CLOSED
 from .mmoral_opg_open import MMOral_OPG_OPEN
+from .mmrarebench import (MMRarebenchCrossmodal, MMRarebenchDiagnosis, MMRarebenchExamination,
+                          MMRarebenchTreatment)
 from .mmsafetybench import MMSafetyBenchDataset
 from .mmsibench import MMSIBench, MMSIVideoBench
 from .moat import MOAT
@@ -151,6 +155,7 @@ from .vlm2bench import VLM2Bench
 from .vlmbias import VLMBias
 from .vlrmbench import VLRMBench
 from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
+from .wiki_vqa_bench import WikiVQABench
 from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
@@ -275,7 +280,7 @@ IMAGE_DATASET = [
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
     OlympiadBench, SeePhys, WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,  # noqa: E501
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
-    CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
+    CreationMMBenchDataset, HLEDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
     LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot, VenusBench_GD,
     ScreenSpotV2, OSWorld_G, VBGD, MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
@@ -285,14 +290,16 @@ IMAGE_DATASET = [
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
-    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,  # noqa: E501
+    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, MedQDEGBenchDataset,
+    ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
-    ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
+    ERQADataset, SimpleVQA, HiPhODataset, MaCBench, WikiVQABench,
     UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,  # noqa: E501
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,  # noqa: E501
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench,
+    MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
 ]
 
 # add by EASI team

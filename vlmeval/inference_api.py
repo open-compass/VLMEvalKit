@@ -1,9 +1,10 @@
 import asyncio
 import json
 import math
+import multiprocessing as mp
 import threading
 import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass, field
 from enum import Enum
@@ -16,6 +17,8 @@ from tabulate import tabulate
 
 from vlmeval.smp import dump, get_logger, load, upsert_dataset_status
 from vlmeval.smp.log import setup_subprocess_logger
+from vlmeval.utils.mp_util import (async_recv_process_message, async_wait_process,
+                                   terminate_processes)
 
 logger = get_logger(__name__)
 
@@ -46,6 +49,51 @@ def _eval_subprocess_target(
         print(f"\n❌ EVALUATION ERROR: {error_msg}")
 
         return {'success': False, 'result': None, 'error': error_msg}
+
+
+def _eval_process_entry(
+    dataset_obj,
+    result_file: str,
+    judge_kwargs: dict,
+    log_file: str,
+    conn,
+    parent_conn=None,
+):
+    """Run evaluation in a standalone process and send the result to parent."""
+    if parent_conn is not None:
+        parent_conn.close()
+
+    try:
+        eval_result = _eval_subprocess_target(dataset_obj, result_file, judge_kwargs, log_file)
+        conn.send(eval_result)
+    finally:
+        conn.close()
+
+
+def _prompt_subprocess_target(dataset_obj, video_llm: bool, conn, parent_conn=None):
+    """Build video prompts sequentially in a subprocess main thread."""
+    if parent_conn is not None:
+        parent_conn.close()
+
+    try:
+        while True:
+            try:
+                index = conn.recv()
+            except EOFError:
+                break
+
+            if index is None:
+                break
+
+            try:
+                prompt_struct = dataset_obj.build_prompt(index, video_llm=video_llm)
+                conn.send({'success': True, 'result': prompt_struct, 'error': None})
+            except Exception as e:
+                import traceback
+                error_msg = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
+                conn.send({'success': False, 'result': None, 'error': error_msg})
+    finally:
+        conn.close()
 
 
 def chat_mt(model, messages: List[dict], dataset_name: str) -> List[str]:
@@ -169,8 +217,9 @@ class APIEvalPipeline:
         self.all_infer_done = False
 
         self.infer_executor = ThreadPoolExecutor(max_workers=concurrency)
-        self.eval_executor = ProcessPoolExecutor(max_workers=4)
-        self.producer_executor = ProcessPoolExecutor(max_workers=1)
+        self.eval_semaphore = asyncio.Semaphore(4)
+        self.eval_processes: Dict[str, mp.Process] = {}
+        self.producer_processes: Dict[str, mp.Process] = {}
         # The inference tasks queue (Prefetch 20% data).
         self.queue = asyncio.Queue(maxsize=int(concurrency * 1.2))
         self.states: Dict[str, DatasetConfig] = {
@@ -241,37 +290,24 @@ class APIEvalPipeline:
             self.infer_executor.shutdown(wait=False, cancel_futures=True)
             logger.debug("Shutdown infer_executor")
 
-            for name, executor in [
-                ("eval_executor", self.eval_executor),
-                ("producer_executor", self.producer_executor),
-            ]:
-                # 必须在 shutdown() 前获取进程引用。shutdown() 会唤醒管理线程
-                # 执行清理，可能将 _processes 置为 None，之后就无法访问了。
-                processes = getattr(executor, '_processes', None) or {}
-                alive = [p for p in processes.values() if p.is_alive()]
-                executor.shutdown(wait=False, cancel_futures=True)
-                self._terminate_workers(name, alive)
+            terminate_processes(
+                list(self.eval_processes.values()),
+                name="eval_process",
+                logger=logger,
+            )
+            self.eval_processes.clear()
+
+            terminate_processes(
+                list(self.producer_processes.values()),
+                name="producer_process",
+                logger=logger,
+            )
+            self.producer_processes.clear()
 
             logger.info("All executors shutdown")
 
         except Exception as e:
             logger.warning(f"Failed to shutdown executors: {e}")
-
-    @staticmethod
-    def _terminate_workers(name, alive, timeout=5):
-        """Terminate worker processes.
-
-        Sends SIGTERM first, waits up to *timeout* seconds, then SIGKILL
-        for any process that is still alive.
-        """
-        for p in alive:
-            logger.debug(f"Terminating {name} worker (pid={p.pid})")
-            p.terminate()
-        for p in alive:
-            p.join(timeout=timeout)
-            if p.is_alive():
-                logger.debug(f"Force killing {name} worker (pid={p.pid})")
-                p.kill()
 
     def _get_checkpoint_file(self, dataset_name: str) -> Path:
         cfg = self.states[dataset_name]
@@ -526,11 +562,11 @@ class APIEvalPipeline:
 
     async def _produce_video_tasks(self, cfg: DatasetConfig, existing_results: dict) -> int:
         """Produce video dataset inference task."""
-        loop = asyncio.get_running_loop()
-        model = cfg.model_obj
         dataset = cfg.dataset_obj
         dataset_name = cfg.dataset_name
+        process_name = f"{dataset_name} prompt process"
 
+        model = cfg.model_obj
         if cfg.video_llm is not None:
             video_llm = cfg.video_llm
         else:
@@ -538,39 +574,69 @@ class APIEvalPipeline:
 
         logger.info(f"   [{dataset_name}] Video mode: video_llm={video_llm}")
 
+        parent_conn, child_conn = mp.Pipe(duplex=True)
+        process = mp.Process(
+            target=_prompt_subprocess_target,
+            args=(dataset, video_llm, child_conn, parent_conn),
+        )
+        try:
+            process.start()
+        except Exception:
+            parent_conn.close()
+            child_conn.close()
+            raise
+        child_conn.close()
+        self.producer_processes[dataset_name] = process
+
         tasks_generated = 0
-        for i in range(len(dataset)):
-            item = dataset[i]
-            idx_str = str(item['index'])
+        try:
+            for i in range(len(dataset)):
+                item = dataset[i]
+                idx_str = str(item['index'])
 
-            if idx_str in existing_results:
-                continue
-
-            try:
-                # Use process executor to produce video sample since it's heavy.
-                prompt_struct = await loop.run_in_executor(
-                    self.producer_executor,
-                    partial(dataset.build_prompt, i, video_llm=video_llm),
-                )
-                if prompt_struct is None:
+                if idx_str in existing_results:
                     continue
-            except Exception as e:
-                import traceback
-                logger.error(f"   [{dataset_name}] Failed to build prompt "
-                             f"for sample {idx_str}: {repr(e)}")
-                logger.debug(traceback.format_exception(e))
-                # Skip dataset if has fatal sample.
-                return 0
 
-            task = InferenceTask(
-                dataset_name=dataset_name,
-                model_name=cfg.model_name,
-                sample_index=idx_str,
-                prompt_struct=prompt_struct,
-                dataset_type="video"
-            )
-            await self.queue.put(task)
-            tasks_generated += 1
+                try:
+                    parent_conn.send(i)
+                    reply = await async_recv_process_message(
+                        parent_conn,
+                        process,
+                        process_name,
+                    )
+                    if not reply['success']:
+                        raise RuntimeError(reply['error'])
+                    prompt_struct = reply['result']
+                    if prompt_struct is None:
+                        continue
+                except Exception as e:
+                    import traceback
+                    logger.error(f"   [{dataset_name}] Failed to build prompt "
+                                 f"for sample {idx_str}: {repr(e)}")
+                    logger.debug(traceback.format_exception(e))
+                    # Skip dataset if has fatal sample.
+                    return 0
+
+                task = InferenceTask(
+                    dataset_name=dataset_name,
+                    model_name=cfg.model_name,
+                    sample_index=idx_str,
+                    prompt_struct=prompt_struct,
+                    dataset_type="video"
+                )
+                await self.queue.put(task)
+                tasks_generated += 1
+        finally:
+            self.producer_processes.pop(dataset_name, None)
+            if process.is_alive():
+                try:
+                    parent_conn.send(None)
+                except Exception:
+                    pass
+                await async_wait_process(process, timeout=5)
+            if process.is_alive():
+                terminate_processes([process], name=process_name, logger=logger)
+            parent_conn.close()
 
         return tasks_generated
 
@@ -749,19 +815,44 @@ class APIEvalPipeline:
 
     async def _run_eval_in_subprocess(self, dataset_name: str, eval_log_path: str):
         cfg = self.states[dataset_name]
-
-        loop = asyncio.get_running_loop()
+        process = None
+        parent_conn = None
+        child_conn = None
 
         try:
-            eval_result = await loop.run_in_executor(
-                self.eval_executor,
-                _eval_subprocess_target,
-                cfg.dataset_obj,
-                cfg.result_file,
-                cfg.judge_kwargs,
-                eval_log_path,
-            )
-            self._handle_eval_result(dataset_name, eval_result, eval_log_path)
+            async with self.eval_semaphore:
+                parent_conn, child_conn = mp.Pipe(duplex=False)
+                process = mp.Process(
+                    target=_eval_process_entry,
+                    args=(
+                        cfg.dataset_obj,
+                        cfg.result_file,
+                        cfg.judge_kwargs,
+                        eval_log_path,
+                        child_conn,
+                        parent_conn,
+                    ),
+                )
+                try:
+                    process.start()
+                except Exception:
+                    parent_conn.close()
+                    child_conn.close()
+                    raise
+                child_conn.close()
+                self.eval_processes[dataset_name] = process
+
+                eval_result = await async_recv_process_message(
+                    parent_conn,
+                    process,
+                    f"{dataset_name} eval process",
+                )
+                await async_wait_process(process)
+                if process.exitcode != 0:
+                    raise RuntimeError(
+                        f"evaluation process exited with code {process.exitcode}"
+                    )
+                self._handle_eval_result(dataset_name, eval_result, eval_log_path)
 
         except Exception as e:
             cfg.eval_status = EvalStatus.Error
@@ -775,6 +866,16 @@ class APIEvalPipeline:
                 status='done',
                 error_message=str(e),
             )
+        finally:
+            self.eval_processes.pop(dataset_name, None)
+            if process is not None and process.is_alive():
+                terminate_processes(
+                    [process],
+                    name=f"{dataset_name} eval process",
+                    logger=logger,
+                )
+            if parent_conn is not None:
+                parent_conn.close()
 
     def _handle_eval_result(self,
                             dataset_name: str,

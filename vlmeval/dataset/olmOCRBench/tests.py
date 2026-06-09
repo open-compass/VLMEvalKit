@@ -991,7 +991,7 @@ class BaselineTest(BasePDFTest):
 
         for index, count in enumerate(repeats):
             if count > self.max_repeats:
-                return False, f"Text ends with {count} repeating {index+1}-grams, invalid"
+                return False, f"Text ends with {count} repeating {index + 1}-grams, invalid"
 
         pattern = re.compile(
             r"["

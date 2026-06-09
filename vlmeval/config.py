@@ -489,6 +489,65 @@ api_models = {
         max_tokens=2048,
         retry=10,
     ),
+    # LiteLLM — unified gateway to 100+ providers (pip install litellm)
+    # Use any litellm model string. Set provider-specific env vars for auth.
+    # Docs: https://docs.litellm.ai/docs/providers
+    "LiteLLM_GPT4o": partial(
+        api.LiteLLMAPI,
+        model="gpt-4o",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_GPT4o_Mini": partial(
+        api.LiteLLMAPI,
+        model="gpt-4o-mini",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_Claude_Sonnet4": partial(
+        api.LiteLLMAPI,
+        model="anthropic/claude-sonnet-4-20250514",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_Gemini_2.5_Flash": partial(
+        api.LiteLLMAPI,
+        model="gemini/gemini-2.5-flash-preview-04-17",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_Gemini_2.5_Pro": partial(
+        api.LiteLLMAPI,
+        model="gemini/gemini-2.5-pro",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_Bedrock_Claude": partial(
+        api.LiteLLMAPI,
+        model="bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_Llama_Vision": partial(
+        api.LiteLLMAPI,
+        model="together_ai/meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "LiteLLM_Groq_Llama4": partial(
+        api.LiteLLMAPI,
+        model="groq/meta-llama/llama-4-scout-17b-16e-instruct",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
     # Claude
     "Claude3V_Opus": partial(
         api.Claude3V, model="claude-3-opus-20240229", temperature=0, retry=10, verbose=False
@@ -1672,6 +1731,7 @@ smolvlm_series = {
         vlm.SmolVLM2, model_path="HuggingFaceTB/SmolVLM2-500M-Video-Instruct"
     ),
     "SmolVLM2": partial(vlm.SmolVLM2, model_path="HuggingFaceTB/SmolVLM2-2.2B-Instruct"),
+    "Solari": partial(vlm.SmolVLM2, model_path="Cubex11/Solari"),
 }
 
 instructblip_series = {
@@ -2213,7 +2273,12 @@ gemma_series = {
 
     'Gemma3-4B': partial(vlm.Gemma3, model_path='google/gemma-3-4b-it'),
     'Gemma3-12B': partial(vlm.Gemma3, model_path='google/gemma-3-12b-it'),
-    'Gemma3-27B': partial(vlm.Gemma3, model_path='google/gemma-3-27b-it')
+    'Gemma3-27B': partial(vlm.Gemma3, model_path='google/gemma-3-27b-it'),
+
+    'Gemma4-E2B-it': partial(vlm.Gemma4, model_path='google/gemma-4-E2B-it'),
+    'Gemma4-E4B-it': partial(vlm.Gemma4, model_path='google/gemma-4-E4B-it'),
+    'Gemma4-31B-it': partial(vlm.Gemma4, model_path='google/gemma-4-31B-it'),
+    'Gemma4-26B-A4B-it': partial(vlm.Gemma4, model_path='google/gemma-4-26B-A4B-it')
 }
 
 aguvis_series = {
@@ -2578,6 +2643,14 @@ model_groups = [
 
 # add by EASI team
 model_groups.extend([bagel_series, spatial_related_models, sensenova_si_series])
+
+
+nanovlm_series = {
+    "nanoVLM-460M-8k": partial(vlm.NanoVLM, model_path="lusxvr/nanoVLM-460M-8k"),
+    "nanoVLM-230M-8k": partial(vlm.NanoVLM, model_path="lusxvr/nanoVLM-230M-8k"),
+}
+
+model_groups.append(nanovlm_series)
 
 for grp in model_groups:
     supported_VLM.update(grp)
