@@ -11,3 +11,21 @@ pylatexenc
 qwen_vl_utils
 scipy
 torchvision
+
+# --- Additional deps for the OmniDocBench v1.6 pipeline (vendored under odb_v16_vendor/) ---
+loguru
+tabulate
+PyYAML
+matplotlib
+
+# --- Optional: CDM (Formula) metric system dependencies ---
+# The official Overall metric requires the CDM formula score, which renders LaTeX and
+# therefore needs system-level tools that CANNOT be installed via pip:
+#   - TeX Live (providing `pdflatex` and `kpsewhich`; plus CJK resources for Chinese formulas)
+#   - Ghostscript (`gs`)
+#   - ImageMagick (`magick`/`convert`) with PDF read/write enabled
+# Without them, VLMEvalKit auto-detects the missing toolchain and evaluates everything
+# except CDM (reporting an unofficial CDM-less reference). To reproduce the official
+# Overall, install the toolchain or use the official Docker image:
+#   docker pull ghcr.io/zeng-weijun/omnidocbench-eval:repro-ubuntu2204
+# Set OMNIDOCBENCH_DISABLE_CDM=1 to force-skip CDM even when the toolchain is present.
