@@ -81,6 +81,86 @@ def _safe_json_loads(s: str):
             return None
 
 
+def _strip_thinking_for_answer(prediction: str) -> str:
+    """Remove leaked thinking tags before answer-only scoring."""
+    text = str(prediction).strip()
+    if '</think>' in text:
+        return text.rsplit('</think>', 1)[1].strip()
+    return re.sub(r'(?is)<think>.*?</think>\s*', '', text).strip()
+
+
+def _parse_segments(raw):
+    if isinstance(raw, list):
+        return raw
+    if raw is None:
+        return []
+    if isinstance(raw, float) and pd.isna(raw):
+        return []
+    if not isinstance(raw, str):
+        return []
+
+    raw = raw.strip()
+    if not raw:
+        return []
+    try:
+        segments = json.loads(raw)
+    except Exception:
+        return []
+    return segments if isinstance(segments, list) else []
+
+
+def _segment_image_lookup(paths):
+    lookup = {}
+    for path in toliststr(paths):
+        basename = osp.basename(path)
+        stem = osp.splitext(basename)[0]
+        for key in (path, basename, stem):
+            lookup.setdefault(key, path)
+    return lookup
+
+
+def _add_segment_image_aliases(lookup, raw_paths, resolved_paths):
+    for raw_path, resolved_path in zip(toliststr(raw_paths), toliststr(resolved_paths)):
+        basename = osp.basename(raw_path)
+        stem = osp.splitext(basename)[0]
+        for key in (raw_path, basename, stem):
+            lookup.setdefault(key, resolved_path)
+    return lookup
+
+
+def _resolve_segment_image(image_name, lookup):
+    image_name = str(image_name)
+    basename = osp.basename(image_name)
+    stem = osp.splitext(basename)[0]
+    for key in (image_name, basename, stem):
+        if key in lookup:
+            return lookup[key]
+    return image_name
+
+
+def _json_safe_value(value):
+    if value is None:
+        return ''
+
+    try:
+        if pd.isna(value):
+            return ''
+    except (TypeError, ValueError):
+        pass
+
+    if hasattr(value, 'item'):
+        try:
+            return value.item()
+        except (AttributeError, ValueError):
+            pass
+
+    if isinstance(value, dict):
+        return {str(k): _json_safe_value(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe_value(v) for v in value]
+    return value
+
+
 # ── Evaluation methods ───────────────────────────────────────────────────────
 
 
@@ -328,7 +408,8 @@ def _eval_one_item(item_json):
     reasoning scores are independent axes and are NOT multiplied together.
     """
     item = json.loads(item_json)
-    prediction = str(item.get('prediction', ''))
+    raw_prediction = str(item.get('prediction', ''))
+    prediction = _strip_thinking_for_answer(raw_prediction)
     eval_method = item.get('eval_method', 'judge')
     category = str(item.get('category', '') or '')
 
@@ -356,7 +437,7 @@ def _eval_one_item(item_json):
         reasoning_score = None
         if category in REASONING_CATEGORIES and _judge_model is not None:
             reasoning_score, reason_note = eval_reasoning(
-                _judge_model, prediction, question)
+                _judge_model, raw_prediction, question)
             note = (f"answer={answer_score:.2f}, reasoning={reasoning_score:.2f}; "
                     f"{note}; reasoning: {reason_note}")
     except Exception as e:
@@ -412,10 +493,26 @@ class SciDocBench(ImageBaseDataset):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        if self.meta_only:
-            tgt_path = toliststr(line['image_path'])
-        else:
-            tgt_path = self.dump_image(line)
+        raw_image_path = line.get('image_path', None)
+        tgt_path = self.dump_image(line)
+
+        segments = _parse_segments(line.get('segments', ''))
+        if segments:
+            lookup = _segment_image_lookup(tgt_path)
+            if raw_image_path is not None:
+                _add_segment_image_aliases(lookup, raw_image_path, tgt_path)
+            msgs = []
+            for segment in segments:
+                if not isinstance(segment, dict):
+                    continue
+                if 'image' in segment:
+                    msgs.append(dict(
+                        type='image',
+                        value=_resolve_segment_image(segment['image'], lookup)))
+                elif 'text' in segment and str(segment['text']).strip():
+                    msgs.append(dict(type='text', value=str(segment['text'])))
+            if msgs:
+                return msgs
 
         question = line['question']
         msgs = []
@@ -431,7 +528,7 @@ class SciDocBench(ImageBaseDataset):
         global _judge_model
 
         nproc = judge_kwargs.pop('nproc', 4)
-        model_name = judge_kwargs.get('model', 'gpt-4o-mini')
+        model_name = judge_kwargs.get('model', 'gpt-5.4-mini')
 
         storage = get_intermediate_file_path(eval_file, f'_{model_name}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}', 'pkl')
@@ -451,10 +548,7 @@ class SciDocBench(ImageBaseDataset):
             for line in lines:
                 item = {}
                 for col in data.columns:
-                    val = line[col]
-                    if isinstance(val, float) and pd.isna(val):
-                        val = ''
-                    item[col] = val
+                    item[col] = _json_safe_value(line[col])
                 tups.append(json.dumps(item, ensure_ascii=False))
 
             # Load checkpoint and skip already-evaluated items
@@ -510,6 +604,10 @@ class SciDocBench(ImageBaseDataset):
             vals = series.dropna()
             return round(vals.mean() * 100, 2) if len(vals) else float('nan')
 
+        def _major_category(category):
+            match = re.match(r'^[A-G]', str(category))
+            return match.group(0) if match else None
+
         summary_rows = []
         summary_rows.append({
             'Category': 'Overall (answer)',
@@ -531,6 +629,15 @@ class SciDocBench(ImageBaseDataset):
             subset = result_df[result_df['eval_method'] == method]
             summary_rows.append({
                 'Category': f'method:{method}',
+                'Num': len(subset),
+                'Score': _mean_pct(subset['score']),
+            })
+
+        major_categories = result_df['category'].map(_major_category)
+        for major in sorted(x for x in major_categories.dropna().unique()):
+            subset = result_df[major_categories == major]
+            summary_rows.append({
+                'Category': major,
                 'Num': len(subset),
                 'Score': _mean_pct(subset['score']),
             })
