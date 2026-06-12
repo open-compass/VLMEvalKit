@@ -103,6 +103,7 @@ from .OmniDocBench.omnidocbench import OmniDocBench
 from .omnispatialbench import OmniSpatialBench
 from .omtgbench import OMTGBench
 from .ost_bench import OSTDataset
+from .parsebench import ParseBench
 from .plotqa import PlotQA
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 from .reasonmap_plus import ReasonMap_Plus
@@ -300,6 +301,7 @@ IMAGE_DATASET = [
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
+    ParseBench,
 ]
 
 # add by EASI team
