@@ -98,6 +98,7 @@ from .mvbench import MVBench, MVBench_MP4
 from .mvu_eval import MVUEval
 from .NPMM import NPMM
 from .oceanocr import OceanOCRBench
+from .olmocr import OLMOCRBench
 from .olmOCRBench.olmocrbench import olmOCRBench
 from .OmniDocBench.omnidocbench import OmniDocBench
 from .omnispatialbench import OmniSpatialBench
@@ -292,7 +293,7 @@ IMAGE_DATASET = [
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, MedQDEGBenchDataset,
     ChartMuseum, ChartQAPro, ReasonMap_Plus,
-    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
+    olmOCRBench, OLMOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
     ERQADataset, SimpleVQA, HiPhODataset, MaCBench, WikiVQABench,
     UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,  # noqa: E501
