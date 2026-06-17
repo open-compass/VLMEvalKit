@@ -146,9 +146,9 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_CN': '2e053ffc90ea598b1feae13c36dc13ee',    # Internal Only
         # MMBench v1.1
         'MMBench_DEV_EN_V11': '30c05be8f2f347a50be25aa067248184',
-        'MMBench_TEST_EN_V11': '26f0f15381a21720255091d3e0316ce6',
+        'MMBench_TEST_EN_V11': '8d1a704e791df6f5d9fb3ef782b65365',
         'MMBench_DEV_CN_V11': '593f9b5f6bea453d870a798b34ae4f37',
-        'MMBench_TEST_CN_V11': '74bbe4556dac745613c7cbe5ad787050',
+        'MMBench_TEST_CN_V11': '156e6569f9547afb16603eca16e85373',
         'MMBench_V11': 'b9276414f57af1308dcc4d0cd9b42e7c',  # Internal Only
         'MMBench_CN_V11': '95f6980dd1b4de38e3cbffe0305a3f25',    # Internal Only
         # SEEDBench
