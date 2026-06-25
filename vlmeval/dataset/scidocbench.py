@@ -4,6 +4,7 @@ import os.path as osp
 import re
 import subprocess
 import tempfile
+from collections import Counter
 
 import pandas as pd
 
@@ -63,15 +64,7 @@ def _repair_json_escapes(s: str) -> str:
     return re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', s)
 
 
-def _extract_json_block(s: str) -> str:
-    m = re.search(r'```(?:json)?\s*\n?(.*?)\n?\s*```', s, re.DOTALL)
-    if m:
-        return m.group(1).strip()
-    return s.strip()
-
-
-def _safe_json_loads(s: str):
-    s = _extract_json_block(s)
+def _json_loads_relaxed(s: str):
     try:
         return json.loads(s)
     except Exception:
@@ -79,6 +72,98 @@ def _safe_json_loads(s: str):
             return json.loads(_repair_json_escapes(s))
         except Exception:
             return None
+
+
+def _extract_json_block(s: str) -> str:
+    m = re.search(r'```(?:json)?\s*\n?(.*?)\n?\s*```', s, re.DOTALL)
+    if m:
+        return m.group(1).strip()
+    return s.strip()
+
+
+def _iter_json_object_spans(s: str):
+    """Yield balanced JSON object spans while respecting quoted strings."""
+    pos = 0
+    while pos < len(s):
+        start = s.find('{', pos)
+        if start < 0:
+            break
+
+        stack = []
+        in_str = False
+        escaped = False
+        end = None
+
+        for idx in range(start, len(s)):
+            ch = s[idx]
+            if in_str:
+                if escaped:
+                    escaped = False
+                elif ch == '\\':
+                    escaped = True
+                elif ch == '"':
+                    in_str = False
+                continue
+
+            if ch == '"':
+                in_str = True
+            elif ch in '{[':
+                stack.append(ch)
+            elif ch in '}]':
+                if not stack:
+                    break
+                top = stack.pop()
+                if (top == '{' and ch != '}') or (top == '[' and ch != ']'):
+                    break
+                if not stack:
+                    end = idx + 1
+                    break
+
+        if end is None:
+            pos = start + 1
+            continue
+
+        yield start, end
+        pos = end
+
+
+def _only_json_separators(s: str, spans) -> bool:
+    separators = ' \t\r\n,`[]{}'
+    pos = 0
+    for start, end in spans:
+        if s[pos:start].strip(separators):
+            return False
+        pos = end
+    return not s[pos:].strip(separators)
+
+
+def _safe_json_loads(s: str):
+    s = _extract_json_block(s)
+
+    obj = _json_loads_relaxed(s)
+    if obj is not None:
+        return obj
+
+    spans = []
+    objs = []
+    for start, end in _iter_json_object_spans(s):
+        obj = _json_loads_relaxed(s[start:end])
+        if isinstance(obj, dict):
+            spans.append((start, end))
+            objs.append(obj)
+
+    if not objs:
+        return None
+    if len(objs) == 1:
+        return objs[0]
+
+    if _only_json_separators(s, spans):
+        merged = {}
+        for obj in objs:
+            merged.update(obj)
+        return merged
+
+    return objs[-1]
 
 
 def _strip_thinking_for_answer(prediction: str) -> str:
@@ -164,33 +249,178 @@ def _json_safe_value(value):
 # ── Evaluation methods ───────────────────────────────────────────────────────
 
 
-def eval_json_match(prediction: str, answer: dict) -> tuple:
+def _merge_list_of_dicts(obj):
+    if isinstance(obj, list) and all(isinstance(x, dict) for x in obj):
+        merged = {}
+        for item in obj:
+            merged.update(item)
+        return merged
+    return obj
+
+
+def _coerce_json_list(obj):
+    if isinstance(obj, list):
+        return obj
+    if isinstance(obj, dict):
+        for key in ('answer_list', 'answers', 'answer', 'items', 'metrics'):
+            value = obj.get(key)
+            if isinstance(value, list):
+                return value
+        if len(obj) == 1:
+            value = next(iter(obj.values()))
+            if isinstance(value, list):
+                return value
+    return None
+
+
+def _normalize_list_item(value):
+    if isinstance(value, str):
+        text = re.sub(r'\s+', ' ', value.strip())
+    elif isinstance(value, (dict, list)):
+        text = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    else:
+        text = str(value).strip()
+
+    number = normalize_number(text)
+    if number is not None:
+        return f'num:{number}'
+    return text.casefold()
+
+
+def _lcs_len(a, b):
+    prev = [0] * (len(b) + 1)
+    for x in a:
+        cur = [0]
+        for j, y in enumerate(b, 1):
+            cur.append(prev[j - 1] + 1 if x == y else max(prev[j], cur[-1]))
+        prev = cur
+    return prev[-1]
+
+
+def _eval_json_list_match(pred_list, ans_list):
+    pred_norm = [_normalize_list_item(x) for x in pred_list]
+    ans_norm = [_normalize_list_item(x) for x in ans_list]
+
+    if not ans_norm:
+        score = 1.0 if not pred_norm else 0.0
+        return score, f"LCS-F1 list match: lcs=0, pred={len(pred_norm)}, answer=0"
+    if not pred_norm:
+        return 0.0, f"LCS-F1 list match: lcs=0, pred=0, answer={len(ans_norm)}"
+
+    matched = _lcs_len(pred_norm, ans_norm)
+    precision = matched / len(pred_norm)
+    recall = matched / len(ans_norm)
+    score = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    return score, f"LCS-F1 list match: lcs={matched}, pred={len(pred_norm)}, answer={len(ans_norm)}"
+
+
+def _eval_json_list_unordered_match(pred_list, ans_list):
+    pred_norm = [_normalize_list_item(x) for x in pred_list]
+    ans_norm = [_normalize_list_item(x) for x in ans_list]
+
+    if not ans_norm:
+        score = 1.0 if not pred_norm else 0.0
+        return score, f"unordered multiset-F1 list match: matched=0, pred={len(pred_norm)}, answer=0"
+    if not pred_norm:
+        return 0.0, f"unordered multiset-F1 list match: matched=0, pred=0, answer={len(ans_norm)}"
+
+    pred_counts = Counter(pred_norm)
+    ans_counts = Counter(ans_norm)
+    matched = sum(min(pred_counts[item], ans_counts[item]) for item in ans_counts)
+    precision = matched / len(pred_norm)
+    recall = matched / len(ans_norm)
+    score = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    return score, f"unordered multiset-F1 list match: matched={matched}, pred={len(pred_norm)}, answer={len(ans_norm)}"
+
+
+ORDERED_LIST_PATTERNS = (
+    r'\bin\s+the\s+order\b',
+    r'\bin\s+order\b',
+    r'\border\s+they\s+(?:are\s+)?(?:introduced|appear)\b',
+    r'\btop[-\s]+to[-\s]+bottom\b',
+    r'\bleft[-\s]+to[-\s]+right\b',
+    r'\bchronological(?:ly)?\b',
+    r'\bnums\s+is\s+this\s+json\s+array\b',
+    r'\bexact\s+integers\s+only\b',
+    r'顺序保持一致',
+    r'一一对应',
+    r'出现顺序',
+    r'引入顺序',
+    r'从上到下',
+    r'从左到右',
+)
+
+
+def _matches_any_pattern(text, patterns):
+    return any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in patterns)
+
+
+def _json_list_match_mode(question='', key=''):
+    """Choose ordered vs unordered list scoring from strong order cues.
+
+    Only prompts where order is part of the answer semantics use ordered LCS.
+    Other lists, including alphabetically sorted output lists, use unordered
+    multiset-F1 to avoid over-penalizing reference-specific sort conventions.
+    """
+    text = str(question or '')
+    if _matches_any_pattern(text, ORDERED_LIST_PATTERNS):
+        return 'ordered'
+    return 'unordered'
+
+
+def _eval_json_list_by_mode(pred_list, ans_list, question='', key=''):
+    mode = _json_list_match_mode(question, key)
+    if mode == 'unordered':
+        return _eval_json_list_unordered_match(pred_list, ans_list)
+    return _eval_json_list_match(pred_list, ans_list)
+
+
+def eval_json_match(prediction: str, answer: dict, question: str = '') -> tuple:
     pred = _safe_json_loads(prediction)
     if pred is None:
         return 0.0, "Failed to parse prediction as JSON"
+    pred = _merge_list_of_dicts(pred)
+    answer = _merge_list_of_dicts(answer)
+
+    if isinstance(answer, list):
+        pred_list = _coerce_json_list(pred)
+        if pred_list is None:
+            return 0.0, "Prediction is not a JSON list"
+        return _eval_json_list_by_mode(pred_list, answer, question, '<root>')
+
     if not isinstance(pred, dict):
         return 0.0, "Prediction is not a JSON object"
+    if not isinstance(answer, dict):
+        return 0.0, "Reference answer is not a JSON object"
 
-    def values_match(key, pred_val, ans_val):
+    def value_score(key, pred_val, ans_val):
+        ans_list = _coerce_json_list(ans_val)
+        if ans_list is not None:
+            pred_list = _coerce_json_list(pred_val)
+            if pred_list is None:
+                return 0.0
+            return _eval_json_list_by_mode(pred_list, ans_list, question, key)[0]
+
         p, a = str(pred_val).strip(), str(ans_val).strip()
         suffix = key.rsplit(".", 1)[-1] if "." in key else key
         if suffix == "location":
-            return normalize_location(p) == normalize_location(a)
+            return float(normalize_location(p) == normalize_location(a))
         if suffix in ("models", "tasks"):
-            return normalize_roles(p) == normalize_roles(a)
+            return float(normalize_roles(p) == normalize_roles(a))
         if key.startswith("["):
-            return normalize_roles(p) == normalize_roles(a)
+            return float(normalize_roles(p) == normalize_roles(a))
         if "\\" in key:
-            return normalize_equation(p) == normalize_equation(a)
+            return float(normalize_equation(p) == normalize_equation(a))
         pn, an = normalize_number(p), normalize_number(a)
         if pn is not None and an is not None:
-            return pn == an
-        return p == a
+            return float(pn == an)
+        return float(p == a)
 
-    matched = sum(1 for k, v in answer.items() if values_match(k, pred.get(k, ""), v))
+    matched = sum(value_score(k, pred.get(k, ""), v) for k, v in answer.items())
     total = len(answer)
     score = matched / total if total > 0 else 0.0
-    return score, f"{matched}/{total} keys matched"
+    matched_str = f"{matched:g}" if float(matched).is_integer() else f"{matched:.2f}"
+    return score, f"{matched_str}/{total} keys matched"
 
 
 def eval_exec_match(prediction: str, answer: dict) -> tuple:
@@ -265,26 +495,123 @@ def eval_exec_match(prediction: str, answer: dict) -> tuple:
                 pass
 
 
-def _parse_judge_response(raw: str) -> tuple:
+def _extract_score_denominator(prompt: str):
+    """Infer denominator from custom judge prompts that ask for count/N."""
+    if not prompt:
+        return None
+
+    patterns = [
+        r'score\s*=\s*[^/\n]+/\s*(\d+)',
+        r'each\s+worth\s+1\s*/\s*(\d+)',
+        r'(\d+)\s+operations?\s+total',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, prompt, flags=re.IGNORECASE)
+        if match:
+            denom = int(match.group(1))
+            if denom > 1:
+                return denom
+    return None
+
+
+def _sanitize_unit_score(score, note, denominator=None):
+    score = float(score)
+    if pd.isna(score):
+        return 0.0, f"[invalid score={score}] {note}"
+    if 0.0 <= score <= 1.0:
+        return score, note
+
+    if (denominator is not None and 1.0 < score <= denominator
+            and abs(score - round(score)) < 1e-8):
+        return score / denominator, f"[normalized score={score:g}/{denominator}] {note}"
+
+    clipped = min(max(score, 0.0), 1.0)
+    return clipped, f"[clipped out-of-range score={score:g}] {note}"
+
+
+def _sanitize_optional_unit_score(score, note, denominator=None):
+    if score is None:
+        return None, note
+    try:
+        if pd.isna(score):
+            return None, note
+    except Exception:
+        pass
+    try:
+        return _sanitize_unit_score(score, note, denominator)
+    except Exception:
+        return None, f"[invalid score={score}] {note}"
+
+
+def _score_values_equal(a, b):
+    try:
+        if pd.isna(a) and pd.isna(b):
+            return True
+    except Exception:
+        pass
+    return a == b
+
+
+def _sanitize_cached_result(cached, line=None):
+    """Normalize cached per-sample scores from older evaluator versions."""
+    if cached is None:
+        return cached, False
+
+    try:
+        cached_len = len(cached)
+    except TypeError:
+        return (0.0, None, f"Invalid cached result: {cached}"), True
+
+    if cached_len == 3:
+        answer_score, reasoning_score, note = cached
+    elif cached_len == 2:
+        answer_score, note = cached
+        reasoning_score = None
+    else:
+        return (0.0, None, f"Invalid cached result: {cached}"), True
+
+    denominator = None
+    if line is not None and str(line.get('eval_method', '')) == 'judge':
+        judge_prompt = line.get('judge_prompt', '')
+        if not isinstance(judge_prompt, float) or not pd.isna(judge_prompt):
+            denominator = _extract_score_denominator(str(judge_prompt))
+
+    try:
+        new_answer_score, new_note = _sanitize_unit_score(
+            answer_score, note, denominator)
+    except Exception:
+        new_answer_score, new_note = 0.0, f"[invalid score={answer_score}] {note}"
+    new_reasoning_score, new_note = _sanitize_optional_unit_score(
+        reasoning_score, new_note)
+    sanitized = (new_answer_score, new_reasoning_score, new_note)
+    changed = (
+        cached_len != 3
+        or not _score_values_equal(answer_score, new_answer_score)
+        or not _score_values_equal(reasoning_score, new_reasoning_score)
+        or note != new_note
+    )
+    return sanitized, changed
+
+
+def _parse_judge_response(raw: str, denominator=None) -> tuple:
     try:
         result = json.loads(raw)
-        return (
-            float(result.get("score", result.get("reasoning_score", 0))),
-            result.get("eval_note", result.get("reasoning_note", ""))
-        )
+        score = result.get("score", result.get("reasoning_score", 0))
+        note = result.get("eval_note", result.get("reasoning_note", ""))
+        return _sanitize_unit_score(score, note, denominator)
     except Exception:
         pass
     try:
         result = json.loads(_repair_json_escapes(raw))
-        return (
-            float(result.get("score", result.get("reasoning_score", 0))),
-            result.get("eval_note", result.get("reasoning_note", ""))
-        )
+        score = result.get("score", result.get("reasoning_score", 0))
+        note = result.get("eval_note", result.get("reasoning_note", ""))
+        return _sanitize_unit_score(score, note, denominator)
     except Exception:
         pass
     m = re.search(r'"(?:score|reasoning_score)"\s*:\s*([0-9.]+)', raw)
     if m:
-        return float(m.group(1)), f"[score extracted via regex] {raw}"
+        return _sanitize_unit_score(
+            float(m.group(1)), f"[score extracted via regex] {raw}", denominator)
     return 0.0, f"Failed to parse judge response: {raw}"
 
 
@@ -340,8 +667,9 @@ Respond with a JSON object only, no extra text:
 def eval_judge(judge_model, prediction, answer, prompt, judge_prompt=None):
     template = judge_prompt if judge_prompt else SCIDOC_JUDGE_PROMPT
     message = template.format(prompt=prompt, answer=answer, prediction=prediction)
+    denominator = _extract_score_denominator(template)
     raw = judge_model.generate(message, temperature=0)
-    return _parse_judge_response(raw)
+    return _parse_judge_response(raw, denominator=denominator)
 
 
 def _parse_reasoning_response(raw: str) -> tuple:
@@ -394,7 +722,7 @@ def _parse_field(raw, fallback):
             return json.loads(raw)
         except Exception:
             return fallback
-    return raw if isinstance(raw, dict) else fallback
+    return raw if isinstance(raw, (dict, list)) else fallback
 
 
 def _eval_one_item(item_json):
@@ -423,7 +751,7 @@ def _eval_one_item(item_json):
 
     try:
         if eval_method == 'json_match':
-            answer_score, note = eval_json_match(prediction, answer)
+            answer_score, note = eval_json_match(prediction, answer, question)
         elif eval_method == 'judge':
             answer_str = (json.dumps(answer, ensure_ascii=False)
                           if isinstance(answer, dict) else str(answer))
@@ -532,16 +860,16 @@ class SciDocBench(ImageBaseDataset):
 
         storage = get_intermediate_file_path(eval_file, f'_{model_name}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}', 'pkl')
+        data = load(eval_file)
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        indices = [str(line['index']) for line in lines]
+        line_by_index = {str(line['index']): line for line in lines}
 
         if osp.exists(storage):
             logger.info(f'Scoring file {storage} already exists, will reuse.')
         else:
-            data = load(eval_file)
             _judge_model = build_judge(max_tokens=1024, **judge_kwargs)
-
-            lt = len(data)
-            lines = [data.iloc[i] for i in range(lt)]
-            indices = [str(line['index']) for line in lines]
 
             # Serialize each row to JSON for the worker function
             tups = []
@@ -556,6 +884,16 @@ class SciDocBench(ImageBaseDataset):
             if osp.exists(tmp_file):
                 ans = load(tmp_file)
                 logger.info(f'Loaded {len(ans)} cached results from {tmp_file}')
+                cache_changed = False
+                for sid, cached in list(ans.items()):
+                    sanitized, changed = _sanitize_cached_result(
+                        cached, line_by_index.get(str(sid)))
+                    if changed:
+                        ans[sid] = sanitized
+                        cache_changed = True
+                if cache_changed:
+                    dump(ans, tmp_file)
+                    logger.info(f'Normalized cached scores in {tmp_file}')
 
             remaining_tups = [x for x, i in zip(tups, indices) if i not in ans]
             remaining_indices = [i for i in indices if i not in ans]
@@ -580,11 +918,9 @@ class SciDocBench(ImageBaseDataset):
                 cached = ans.get(sid)
                 if cached is None:
                     answer_score, reasoning_score, note = 0.0, None, 'Not evaluated'
-                elif len(cached) == 3:
-                    answer_score, reasoning_score, note = cached
                 else:
-                    answer_score, note = cached
-                    reasoning_score = None
+                    cached, _ = _sanitize_cached_result(cached, line)
+                    answer_score, reasoning_score, note = cached
                 results.append({
                     'index': sid,
                     'category': line.get('category', ''),
@@ -599,6 +935,26 @@ class SciDocBench(ImageBaseDataset):
 
         # Load from storage and aggregate
         result_df = load(storage)
+        sanitized_rows = []
+        storage_changed = False
+        for _, row in result_df.iterrows():
+            sid = str(row.get('index', ''))
+            cached = (row.get('score', 0.0), row.get('reasoning_score', None),
+                      row.get('eval_note', ''))
+            sanitized, changed = _sanitize_cached_result(
+                cached, line_by_index.get(sid))
+            answer_score, reasoning_score, note = sanitized
+            row = row.copy()
+            row['score'] = answer_score
+            row['reasoning_score'] = reasoning_score
+            row['eval_note'] = note
+            sanitized_rows.append(row)
+            storage_changed = storage_changed or changed
+        if sanitized_rows:
+            result_df = pd.DataFrame(sanitized_rows)
+        if storage_changed:
+            dump(result_df, storage)
+            logger.info(f'Normalized per-sample scoring file {storage}')
 
         def _mean_pct(series):
             vals = series.dropna()
@@ -656,3 +1012,13 @@ class SciDocBench(ImageBaseDataset):
         logger.info(f'SciDocBench evaluation finished. Results saved to {score_file}')
         logger.info(f'\n{summary.to_string(index=False)}')
         return summary
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        key = 'Category=Overall (answer)|Score'
+        if key in metrics:
+            return {'Overall Answer Score': metrics[key]}
+        return super().report_primary_metric(metrics)
