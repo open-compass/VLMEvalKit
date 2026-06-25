@@ -57,7 +57,7 @@ def can_infer_option(answer, choices):
     match = _VERBOSE_ANSWER_RE.search(answer or "")
     if match and match.group(1).upper() in choices:
         return match.group(1).upper()
-    
+
     return False
 
 
