@@ -102,6 +102,7 @@ from .NPMM import NPMM
 from .oceanocr import OceanOCRBench
 from .olmOCRBench.olmocrbench import olmOCRBench
 from .OmniDocBench.omnidocbench import OmniDocBench
+from .omnimat import OmniMat
 from .omnispatialbench import OmniSpatialBench
 from .omtgbench import OMTGBench
 from .ost_bench import OSTDataset
@@ -304,7 +305,7 @@ IMAGE_DATASET = [
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,  # noqa: E501
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,  # noqa: E501
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
-    SciDocBench,
+    SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
 ]
 
