@@ -374,6 +374,16 @@ dsr_variants = [
     ("1fps", dict(fps=1.0)),
 ]
 dsr_dataset = _build_video_variants(dsr_subsets, DSRBench, dsr_variants)
+lvomnibench_dataset = {
+    'LVOmniBench': partial(LVOmniBench, dataset='LVOmniBench'),
+    'LVOmniBench_8frame': partial(LVOmniBench, dataset='LVOmniBench', nframe=8),
+    'LVOmniBench_16frame': partial(LVOmniBench, dataset='LVOmniBench', nframe=16),
+    'LVOmniBench_64frame': partial(LVOmniBench, dataset='LVOmniBench', nframe=64),
+    'LVOmniBench_128frame': partial(LVOmniBench, dataset='LVOmniBench', nframe=128),
+    'LVOmniBench_0.5fps': partial(LVOmniBench, dataset='LVOmniBench', fps=0.5),
+    'LVOmniBench_1fps': partial(LVOmniBench, dataset='LVOmniBench', fps=1.0),
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
@@ -381,7 +391,8 @@ dataset_groups = [
     longvideobench_dataset, mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
-    video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset
+    video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset,
+    lvomnibench_dataset
 ]
 
 # add by EASI team
