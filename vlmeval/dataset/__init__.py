@@ -22,6 +22,7 @@ from .cmmmu import CMMMU
 from .creation import CreationMMBenchDataset
 from .da2k import DA2K
 from .design2code import Design2Code
+from .diffspot import DiffSpot
 from .dream import DREAM
 from .dsrbench import DSRBench
 from .dude import DUDE
@@ -299,7 +300,7 @@ IMAGE_DATASET = [
     UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,  # noqa: E501
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,  # noqa: E501
-    Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
+    Design2Code, DiffSpot, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
 ]
