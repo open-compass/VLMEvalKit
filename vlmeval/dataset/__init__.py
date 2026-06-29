@@ -33,6 +33,7 @@ from .eriq import ERIQBench
 from .erqa import ERQADataset
 from .erqabench import ERQABench
 from .flames import FlamesDataset
+from .finixdocbench import FinixDocBench
 from .foxbench import FoxBench
 from .gobench import GOBenchDataset
 from .groundingme import GroundingME
@@ -301,6 +302,7 @@ IMAGE_DATASET = [
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
+    FinixDocBench,
 ]
 
 # add by EASI team
