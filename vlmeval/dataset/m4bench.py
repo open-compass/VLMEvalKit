@@ -1,14 +1,29 @@
 import re
 from os import path as osp
 
-import pandas as pd
 from tqdm import tqdm
 
-from ..smp import decode_base64_to_image_file, dump, get_intermediate_file_path, load
+from ..smp import decode_base64_to_image_file, dump, load
+from ..utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
+from .utils.judge_cache import (get_judge_cache_file, get_judge_detail_file, get_judge_score_file,
+                                load_judge_cache)
 
 FAIL_MSG = 'Failed to obtain answer via API.'
+
+
+def m4bench_judge_extract(judge, prompt):
+    input_msg = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "value": prompt}
+            ]
+        }
+    ]
+    _, judge_output, _ = judge.generate_inner(input_msg)
+    return judge_output
 
 
 class M4Bench(ImageBaseDataset):
@@ -84,6 +99,8 @@ class M4Bench(ImageBaseDataset):
         Evaluates the model predictions against the ground truth.
         """
         results_df = load(eval_file)
+        judge_kwargs = judge_kwargs.copy()
+        judge_name = judge_kwargs.get('model', 'exact_matching')
 
         dataset_name = None
         for name in self.DATASET_URL:
@@ -101,94 +118,114 @@ class M4Bench(ImageBaseDataset):
 
         # # Merge predictions with ground truth
         df = results_df.copy()
+        detail_file = get_judge_detail_file(eval_file, 'extract', judge_name)
+        score_file = get_judge_score_file(eval_file, judge_name, 'json')
 
         def get_ans(s):
             s = str(s)
-            match = re.search(r'^\s*\(([A-Z])\)', s)
+            match = re.search(r'\(([A-Z])\)', s)
             if match:
                 return match.group(1)
-
-            options = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-            for op in options:
-                if s.startswith(op):
-                    return op
+            match = re.search(r'(?i)(?:answer|output)\s*[:：]\s*([A-Z])\b', s)
+            if match:
+                return match.group(1).upper()
+            match = re.search(r'^\s*([A-Z])\s*[\).:：]?', s)
+            if match and len(s.strip().split()) <= 3:
+                return match.group(1)
             return None
 
-        if judge_kwargs:
-            try:
-                # Use LLM as a judge to parse the prediction
-                judge = build_judge(**judge_kwargs)
+        if judge_kwargs and not osp.exists(detail_file):
+            nproc = judge_kwargs.pop('nproc', 4)
+            tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
+            indices = df['index'].tolist() if 'index' in df.columns else list(range(len(df)))
 
-                # Prepare data for the judge
-                def extract_question(q):
-                    return q.split('\n(')[0]
+            # Prepare data for the judge
+            def extract_question(q):
+                return q.split('\n(')[0]
 
-                def extract_options(q):
-                    parts = q.split('\n(')
-                    return '\n('.join(parts[1:]) if len(parts) > 1 else ''
+            def extract_options(q):
+                parts = q.split('\n(')
+                return '\n('.join(parts[1:]) if len(parts) > 1 else ''
 
-                df['question_text'] = df['query'].apply(extract_question)
-                df['options_text'] = df['query'].apply(extract_options)
+            df['question_text'] = df['query'].apply(extract_question)
+            df['options_text'] = df['query'].apply(extract_options)
 
-                prompt_tmpl = (
-                    'You are an AI assistant who will help me to match '
-                    'an answer with several options of a single-choice question. '    # noqa: E501
-                    'You are provided with a question, several options, and an answer, '    # noqa: E501
-                    'and you need to find which option is most similar to the answer. '    # noqa: E501
-                    'If the meaning of all options are significantly different from the answer, output Z. '   # noqa: E501
-                    'Your should output a single uppercase character in A, B, C, D (if they are valid options), and Z. \n'    # noqa: E501
-                    'Example 1: \n'
-                    'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'    # noqa: E501
-                    'Answer: a cute teddy bear\nYour output: A\n'
-                    'Example 2: \n'
-                    'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'    # noqa: E501
-                    'Answer: Spider\nYour output: Z\n'
-                    'Example 3: \n'
-                    'Question: {question}\nOptions: {options}\nAnswer: {prediction}\nYour output: '    # noqa: E501
+            prompt_tmpl = (
+                'You are an AI assistant who will help me to match '
+                'an answer with several options of a single-choice question. '    # noqa: E501
+                'You are provided with a question, several options, and an answer, '    # noqa: E501
+                'and you need to find which option is most similar to the answer. '    # noqa: E501
+                'If the meaning of all options are significantly different from the answer, output Z. '   # noqa: E501
+                'Your should output a single uppercase character in A, B, C, D (if they are valid options), and Z. \n'    # noqa: E501
+                'Example 1: \n'
+                'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'    # noqa: E501
+                'Answer: a cute teddy bear\nYour output: A\n'
+                'Example 2: \n'
+                'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'    # noqa: E501
+                'Answer: Spider\nYour output: Z\n'
+                'Example 3: \n'
+                'Question: {question}\nOptions: {options}\nAnswer: {prediction}\nYour output: '    # noqa: E501
+            )
+
+            prompts = [
+                prompt_tmpl.format(
+                    question=row['question_text'],
+                    options=row['options_text'],
+                    prediction=row['prediction']
                 )
+                for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing rows")
+            ]
+            cache = load_judge_cache(tmp_file)
+            pending_prompts = []
+            pending_indices = []
+            for idx, prompt in zip(indices, prompts):
+                if idx not in cache or get_ans(cache[idx]) is None:
+                    pending_prompts.append(prompt)
+                    pending_indices.append(idx)
 
-                prompts = [
-                    prompt_tmpl.format(
-                        question=row['question_text'],
-                        options=row['options_text'],
-                        prediction=row['prediction']
+            if pending_indices:
+                try:
+                    judge = build_judge(**judge_kwargs)
+                    assert judge.working(), 'M4Bench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+                    pending_tasks = [(judge, prompt) for prompt in pending_prompts]
+                    _ = track_progress_rich(
+                        m4bench_judge_extract,
+                        pending_tasks,
+                        nproc=nproc,
+                        chunksize=nproc,
+                        keys=pending_indices,
+                        save=tmp_file,
                     )
-                    for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing rows")
-                ]
-                parsed_pred = []
+                    cache = load_judge_cache(tmp_file)
+                except Exception as e:
+                    print(f"Error during judge evaluation: {e}")
+                    print(DEBUG_MESSAGE)
+                    prediction_map = dict(zip(indices, df['prediction']))
+                    cache.update({idx: prediction_map[idx] for idx in pending_indices})
+                    dump(cache, tmp_file)
 
-                for prompt in tqdm(prompts, desc="Calling judge"):
-                    input_msg = [
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "value": prompt}
-                            ]
-                        }
-                    ]
-
-                    _, judge_output, res = judge.generate_inner(input_msg)
-                    judge_ans = get_ans(judge_output)
-                    parsed_pred.append(judge_ans)
-                df['parsed_pred'] = pd.Series(parsed_pred)
-
-            except Exception as e:
-                print(f"Error during judge evaluation: {e}")
-                print(DEBUG_MESSAGE)
-                df['parsed_pred'] = df['prediction'].apply(get_ans)
+            df['judge_raw'] = [cache.get(idx, '') for idx in indices]
+            df['parsed_pred'] = [
+                get_ans(cache.get(idx, '')) or get_ans(pred)
+                for idx, pred in zip(indices, df['prediction'])
+            ]
         else:
             # Fallback to simple parsing if no judge is provided
-            df['parsed_pred'] = df['prediction'].apply(get_ans)
+            if osp.exists(detail_file):
+                df = load(detail_file)
+            else:
+                df['judge_raw'] = df['prediction']
+                df['parsed_pred'] = df['prediction'].apply(get_ans)
 
         # Calculate score
         df['score'] = (df['parsed_pred'] == df['response'])
 
         # Save detailed results
-        details_file = get_intermediate_file_path(eval_file, '_details')
-        dump(df, details_file)
+        dump(df, detail_file)
 
         # Calculate and return accuracy
         acc = df['score'].mean() * 100
-        results = {'acc': acc, 'details': details_file}
+        results = {'acc': acc, 'details': detail_file}
+        dump(results, score_file)
 
         return results

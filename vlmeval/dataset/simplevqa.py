@@ -1,7 +1,6 @@
 import json
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Any, Dict, List, Union
 
 import pandas as pd
@@ -9,9 +8,10 @@ from openai import OpenAI
 from tqdm import tqdm
 
 from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.dataset.utils.judge_cache import (get_judge_cache_file, get_judge_detail_file,
+                                               get_judge_score_file, load_judge_cache)
 from vlmeval.dataset.utils.simplevqa import SimpleVQAEval
 from vlmeval.smp import file, misc
-from vlmeval.smp.file import get_intermediate_file_path
 
 NUM_WORKERS = 16
 
@@ -95,6 +95,15 @@ COMPARE_ANSWER_PROMPT = """
             """.strip()
 
 
+def simplevqa_judge_failed(result):
+    if not isinstance(result, dict):
+        return True
+    judge_res = result.get('judge_res', {}).get('model_response')
+    if isinstance(judge_res, dict):
+        return judge_res.get('conclusion') == '答案解析失败'
+    return judge_res is None or '答案解析失败' in str(judge_res)
+
+
 class SimpleVQA(ImageBaseDataset):
     TYPE = "VQA"
     DATASET_URL = {
@@ -134,31 +143,31 @@ class SimpleVQA(ImageBaseDataset):
 
         return msgs
 
-    def get_scores(self, result_file: str, **judge_kwargs: Any) -> pd.DataFrame:
+    def get_scores(self, result_file: str, cache_file: str, **judge_kwargs: Any):
         data = file.load(result_file)
         model_keys = ['model_response']
-        fout = open(str(Path(result_file).parent) + '/gpt_eval.json', 'w', encoding='utf-8')
+        judge_kwargs = judge_kwargs.copy()
+        judge_model = judge_kwargs.get('model', 'gpt-4o')
 
         gpt4_key = os.environ.get('OPENAI_API_KEY', None)
         base_url = os.environ.get('OPENAI_API_BASE', None)
-        nproc = judge_kwargs.get('nproc', 16)
+        nproc = judge_kwargs.pop('nproc', 16)
 
-        client = OpenAI(
-            api_key=gpt4_key,
-            base_url=base_url
-        )
+        indices = data['index'].tolist() if 'index' in data.columns else list(range(len(data)))
+        cache = load_judge_cache(cache_file)
+        client = None
 
-        def process_one(idx):
-            question = data['question'][idx]
-            answer = data['answer'][idx]
-            model_response = data['prediction'][idx]
+        def process_one(row_idx, cache_key):
+            question = data['question'][row_idx]
+            answer = data['answer'][row_idx]
+            model_response = data['prediction'][row_idx]
             line = {'question': question, 'answer': answer, 'model_response': model_response}
             res_json = line.copy()
             candidates = "\n[预测答案0]：{}".format(model_response)
             prompt = COMPARE_ANSWER_PROMPT.format(question=question, answer=answer, candidates=candidates)
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o",
+                    model=judge_model,
                     messages=[{"role": "user", "content": prompt}],
                     temperature=1
                 )
@@ -175,20 +184,33 @@ class SimpleVQA(ImageBaseDataset):
                     break
                 new_res[model_keys[i]] = res[key]
             res_json["judge_res"] = new_res
-            return idx, res_json
+            return cache_key, res_json
 
-        results = [None] * len(data)
-        with ThreadPoolExecutor(max_workers=nproc) as executor:
-            futures = {executor.submit(process_one, i): i for i in range(len(data))}
+        pending = [
+            (row_idx, cache_key)
+            for row_idx, cache_key in enumerate(indices)
+            if cache_key not in cache or simplevqa_judge_failed(cache[cache_key])
+        ]
 
-            for future in tqdm(as_completed(futures), total=len(data)):
-                idx, res_json = future.result()
-                results[idx] = res_json
+        if pending:
+            client = OpenAI(
+                api_key=gpt4_key,
+                base_url=base_url
+            )
+            with ThreadPoolExecutor(max_workers=nproc) as executor:
+                futures = {
+                    executor.submit(process_one, row_idx, cache_key): cache_key
+                    for row_idx, cache_key in pending
+                }
 
-        json.dump(results, fout, ensure_ascii=False, indent=4)
-        fout.close()
+                for future in tqdm(as_completed(futures), total=len(pending)):
+                    cache_key, res_json = future.result()
+                    cache[cache_key] = res_json
+                    file.dump(cache, cache_file)
+
+        results = [cache[key] for key in indices]
         scores = SimpleVQAEval(results)
-        return pd.DataFrame(list(scores.items()))
+        return results, pd.DataFrame(list(scores.items()))
 
     def evaluate(self, eval_file: str, **judge_kwargs: Any) -> pd.DataFrame:
         """
@@ -201,7 +223,17 @@ class SimpleVQA(ImageBaseDataset):
         Returns:
             DataFrame with evaluation scores by category
         """
-        score = self.get_scores(eval_file, **judge_kwargs)
-        score_file = get_intermediate_file_path(eval_file, "_acc", "csv")
+        judge_name = judge_kwargs.get('model', 'gpt-4o')
+        tmp_file = get_judge_cache_file(eval_file, 'eval', judge_name)
+        detail_file = get_judge_detail_file(eval_file, 'eval', judge_name, 'json')
+        score_file = get_judge_score_file(eval_file, judge_name, 'csv')
+
+        if not os.path.exists(detail_file):
+            results, score = self.get_scores(eval_file, cache_file=tmp_file, **judge_kwargs)
+            file.dump(results, detail_file)
+        else:
+            results = file.load(detail_file)
+            score = pd.DataFrame(list(SimpleVQAEval(results).items()))
+
         file.dump(score, score_file)
         return score

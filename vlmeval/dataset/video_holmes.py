@@ -2,7 +2,6 @@ import json
 import os
 import os.path as osp
 import pickle
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -12,7 +11,8 @@ from PIL import Image
 
 from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
                          load, md5, modelscope_flag_set)
-from .utils import DEBUG_MESSAGE, build_judge
+from .utils.judge_cache import (get_judge_cache_file, get_judge_detail_file, get_judge_score_file,
+                                load_judge_cache)
 from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -219,23 +219,14 @@ class Video_Holmes(VideoBaseDataset):
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 
-        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
-        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
-        score_file = get_intermediate_file_path(eval_file, '_score')
+        judge_name = judge_kwargs.get('model', 'exact_matching')
+        tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
+        legacy_tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        detail_file = get_judge_detail_file(eval_file, 'extract', judge_name)
+        score_file = get_judge_score_file(eval_file, judge_name, 'json')
 
-        if not osp.exists(score_file):
-            model = judge_kwargs.get('model', 'exact_matching')
-
-            if model == 'exact_matching':
-                model = None
-            else:
-                model = build_judge(**judge_kwargs)
-                if not model.working():
-                    warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
-                    warnings.warn(DEBUG_MESSAGE)
-                    model = None
-            res = {} if not osp.exists(tmp_file) else load(tmp_file)
-            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+        if not osp.exists(detail_file):
+            res = load_judge_cache(tmp_file, legacy_files=[legacy_tmp_file])
 
             data = load(eval_file)
             data_un = data[~pd.isna(data['prediction'])]
@@ -244,9 +235,12 @@ class Video_Holmes(VideoBaseDataset):
                 ans = data.loc[data['index'] == idx, 'answer'].values[0]
                 pred = str(data.loc[data['index'] == idx, 'prediction'].values[0])
 
-                predicted_answer = extract_option(pred)
+                predicted_answer = res.get(idx, extract_option(pred))
+                res[idx] = predicted_answer
+                dump(res, tmp_file)
 
-                data.loc[idx, 'score'] = int(predicted_answer == ans)
+                data.loc[data['index'] == idx, 'judge_pred'] = predicted_answer
+                data.loc[data['index'] == idx, 'score'] = int(predicted_answer == ans)
 
             rejected = [x for x in data['score'] if x == -1]
 
@@ -256,8 +250,9 @@ class Video_Holmes(VideoBaseDataset):
                 f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
             )
 
-            dump(data, score_file)
+            dump(data, detail_file)
 
-        rating = get_dimension_rating(score_file)
-        dump(rating, tgt_file)
+        rating = load(score_file) if osp.exists(score_file) else get_dimension_rating(detail_file)
+        if not osp.exists(score_file):
+            dump(rating, score_file)
         return rating
