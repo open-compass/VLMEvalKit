@@ -38,7 +38,6 @@ openpyxl
 pandas
 pdf2image>=1.17.0
 pillow
-polygon3>=3.0.9.1
 portalocker
 protobuf
 pylatexenc==2.10

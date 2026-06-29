@@ -7,6 +7,5 @@ Levenshtein
 lxml
 nltk
 numpy
-Polygon3
 tqdm
 zss
