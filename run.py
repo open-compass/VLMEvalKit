@@ -185,6 +185,18 @@ def build_dataset_from_config(cfg, dataset_name, *, strict=False, extra_kwargs=N
             unknown = ', '.join(unknown_params)
             raise ValueError(f'Unsupported parameter(s) for dataset class {cls_name}: {unknown}')
         valid_params = {k: v for k, v in config.items() if k in sig.parameters}
+        dataset_id = valid_params.get('dataset')
+        generic_dataset_classes = {
+            'ImageMCQDataset',
+            'ImageVQADataset',
+            'ImageYORNDataset',
+            'OCRBench',
+        }
+        if dataset_id is not None and cls_name in generic_dataset_classes:
+            dataset_kwargs = {k: v for k, v in valid_params.items() if k != 'dataset'}
+            resolved = build_dataset(dataset_id, **dataset_kwargs)
+            if resolved is not None:
+                return resolved
         if getattr(cls, 'MODALITY', None) == 'VIDEO':
             if valid_params.get('fps', 0) > 0 and valid_params.get('nframe', 0) > 0:
                 raise ValueError('fps and nframe should not be set at the same time')
