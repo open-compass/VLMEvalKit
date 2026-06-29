@@ -233,15 +233,14 @@ def summarize_mathcanvas_results(all_results: List[Dict]):
             stats['overall']['completely_correct_count'] += 1
 
         # 2. Image Presence Stats
-        q_images = [p for p in item.get("question_interleave", []) if p['type'] == 'image']
+        q_images = item.get("image", [])
         image_presence_key = "Has Image" if len(q_images) > 0 else "No Image"
         _update_stats(stats['by_question_image_count'], image_presence_key, score)
 
         # 3. Knowledge Stats
         # Use the primary knowledge area for categorization.
-        knowledges = item.get("knowledges", [])
-        knowledge_key = knowledges[0] if knowledges else "Unknown"
-        _update_stats(stats['by_knowledge'], knowledge_key, score)
+        category = item.get("category", "Unknown")
+        _update_stats(stats['by_knowledge'], category, score)
 
     # --- Final Report Generation ---
     def calculate_accuracy(data_dict):
