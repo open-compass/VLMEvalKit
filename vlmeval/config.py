@@ -1658,6 +1658,68 @@ qwen3_5_series = {
     ),
 }
 
+qwen3_6_series = {
+    # 35B-total / 3B-active MoE multimodal model (Apache 2.0), released 2026-04-16.
+    # Requires vLLM >= 0.19.0. Supports both thinking and non-thinking modes.
+    "Qwen3.6-35B-A3B": partial(
+        vlm.Qwen3VLChat,
+        model_path="Qwen/Qwen3.6-35B-A3B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+    # vllm serve Qwen/Qwen3.6-35B-A3B --port 8000 --tensor-parallel-size 8 \
+    #   --max-model-len 262144 --reasoning-parser qwen3
+    "Qwen3.6-35B-A3B_api": partial(
+        api.LMDeployAPI,
+        model="Qwen/Qwen3.6-35B-A3B",
+        api_base="http://0.0.0.0:8000/v1/chat/completions",
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        repetition_penalty=1.0,
+        max_new_tokens=32768,
+        retry=6,
+        timeout=1800,
+    ),
+    # Thinking mode (served via vllm/lmdeploy; reasoning enabled by the chat template default).
+    "Qwen3.6-35B-A3B_ThinkMode_api": partial(
+        api.LMDeployAPI,
+        model="Qwen/Qwen3.6-35B-A3B",
+        api_base="http://0.0.0.0:8000/v1/chat/completions",
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        presence_penalty=1.5,
+        repetition_penalty=1.0,
+        max_tokens=81920,
+        retry=10,
+        timeout=900,
+    ),
+    # Non-thinking (instruct) mode: explicitly disable reasoning via the chat template.
+    "Qwen3.6-35B-A3B_InstructMode_api": partial(
+        api.LMDeployAPI,
+        model="Qwen/Qwen3.6-35B-A3B",
+        api_base="http://0.0.0.0:8000/v1/chat/completions",
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        presence_penalty=1.5,
+        repetition_penalty=1.0,
+        max_tokens=81920,
+        retry=10,
+        timeout=900,
+        chat_template_kwargs={"enable_thinking": False},
+    ),
+}
+
 sail_series = {
     "SAIL-VL-2B": partial(vlm.SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B"),
     "SAIL-VL-1.5-2B": partial(vlm.SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-2B", use_msac = True),
@@ -2630,6 +2692,7 @@ model_groups = [
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
     chameleon_series, video_models, ovis_series, vila_series, mantis_series,
     mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series, qwen3vl_series, qwen3_5_series,
+    qwen3_6_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,

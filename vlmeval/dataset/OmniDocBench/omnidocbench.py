@@ -2,6 +2,7 @@ import base64
 import copy
 import json
 import os
+import os.path as osp
 import tempfile
 
 import numpy as np
@@ -9,7 +10,7 @@ import pandas as pd
 import torch.distributed as dist
 from tqdm import tqdm
 
-from vlmeval.smp import dump, get_intermediate_file_path, load
+from vlmeval.smp import dump, file_size, get_intermediate_file_path, load
 from ..image_base import ImageBaseDataset
 
 # from ..utils import get_intermediate_file_path, load, dump
@@ -20,8 +21,20 @@ class OmniDocBench(ImageBaseDataset):
     MODALITY = 'IMAGE'
     TYPE = 'QA'
 
-    DATASET_URL = {'OmniDocBench':'https://huggingface.co/datasets/ouyanglinke/OmniDocBench_tsv/resolve/main/OmniDocBench.tsv'}
-    DATASET_MD5 = {'OmniDocBench': '0fa5ccf31e682e219cb9ca83da741a59'}
+    # NOTE: `OmniDocBench` points to the legacy v1.0 ground truth (981 pages) and keeps the
+    # original v1.0 evaluation logic for backward compatibility / historical reproduction.
+    # `OmniDocBench_v1.6` uses the official v1.6 evaluation pipeline (vendored under
+    # `odb_v16_vendor/`). Its TSV is NOT downloaded from HuggingFace; instead it is built
+    # locally from the official OmniDocBench.json + images via `build_v16_tsv.py` and read
+    # from `<VLMEvalKit>/OmniDocBench_v1.6.tsv` (the repo top level).
+    DATASET_URL = {
+        'OmniDocBench': 'https://huggingface.co/datasets/ouyanglinke/OmniDocBench_tsv/resolve/main/OmniDocBench.tsv',
+        'OmniDocBench_v1.6': '',  # built locally; see build_v16_tsv.py
+    }
+    DATASET_MD5 = {
+        'OmniDocBench': '0fa5ccf31e682e219cb9ca83da741a59',
+        'OmniDocBench_v1.6': '',  # optional: set after building to enable integrity checks
+    }
 
 
     system_prompt = r'''You are an AI assistant specialized in converting PDF images to Markdown format. Please follow these instructions for the conversion:
@@ -54,6 +67,32 @@ class OmniDocBench(ImageBaseDataset):
         super().__init__(dataset,**kwargs)
         print(f'self.img_root:{self.img_root}')
 
+    def load_data(self, dataset):
+        # v1.6 is built locally (no download). See build_v16_tsv.py.
+        if dataset == 'OmniDocBench_v1.6':
+            from .build_v16_tsv import default_v16_tsv_path
+            data_path = default_v16_tsv_path()
+            self.data_path = data_path
+            if not osp.exists(data_path):
+                raise FileNotFoundError(
+                    f'{data_path} not found. OmniDocBench_v1.6 is built locally (it is NOT '
+                    'downloaded from HuggingFace). Generate it first with the official '
+                    'OmniDocBench.json + images, e.g.:\n'
+                    '    python -m vlmeval.dataset.OmniDocBench.build_v16_tsv '
+                    '--json /path/to/OmniDocBench.json --image-dir /path/to/images\n'
+                    f'The TSV will be written to {data_path} (VLMEvalKit repo top level).'
+                )
+            # Mirror the base-class large-file localization so inference stays fast,
+            # while self.data_path keeps pointing at the full TSV (which holds `answer`).
+            if file_size(data_path, 'GB') > 1:
+                local_path = data_path.replace('.tsv', '_local.tsv')
+                if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None):
+                    from ...tools import LOCALIZE
+                    LOCALIZE(data_path, local_path)
+                data_path = local_path
+            return load(data_path)
+        return super().load_data(dataset)
+
     def build_prompt(self, line):
 
         image_path = self.dump_image(line)[0]
@@ -64,12 +103,19 @@ class OmniDocBench(ImageBaseDataset):
         return msg
 
     def evaluate(self, eval_file, **judge_kwargs):
-        tsv_path=self.data_path
-        End2end_evaluator=end2end_evaluator(eval_file,tsv_path)
-        Table_evalutor=table_evalutor(eval_file,tsv_path)
+        tsv_path = self.data_path
 
-        metrics_all=End2end_evaluator.score()
-        metircs_table=Table_evalutor.score()
+        # v1.6 routes to the official evaluation pipeline (MGAM matching + Python CDM + new Overall).
+        if self.dataset_name == 'OmniDocBench_v1.6':
+            from .omnidocbench_v16 import evaluate_v16
+            return evaluate_v16(eval_file, tsv_path, **judge_kwargs)
+
+        # Legacy v1.0 evaluation.
+        End2end_evaluator = end2end_evaluator(eval_file, tsv_path)
+        Table_evalutor = table_evalutor(eval_file, tsv_path)
+
+        metrics_all = End2end_evaluator.score()
+        metircs_table = Table_evalutor.score()
 
         return metrics_all
 
