@@ -400,6 +400,8 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
             judge_kwargs['model'] = 'gpt-4.1'
         elif listinstr(['WorldVQA'], dataset_name):
             judge_kwargs['model'] = 'gpt-4o-1120'
+        elif listinstr(['Video-MME-v2'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o-mini'
         elif listinstr(['Video-MME'], dataset_name):
             judge_kwargs['model'] = 'gpt-4o-mini'
         elif listinstr(['MaCBench'], dataset_name):
