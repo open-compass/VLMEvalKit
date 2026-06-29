@@ -4,9 +4,11 @@ import os
 import os.path as osp
 
 import pandas as pd
-from PIL import Image
+from PIL import Image, ImageFile
 
 Image.MAX_IMAGE_PIXELS = 1e9
+# Some benchmark TSVs include recoverable truncated image payloads.
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def rescale_img(img, tgt=None):
