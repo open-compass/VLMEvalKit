@@ -160,10 +160,10 @@ class ImageBaseDataset(metaclass=ABCMeta):
 
         # The image field can store the base64 encoded image or another question index (for saving space)
         if 'image' in data:
-            data['image'] = [str(x) for x in data['image']]
+            data['image'] = [str(x) if not pd.isna(x) else '' for x in data['image']]
             image_map = {x: y for x, y in zip(data['index'], data['image'])}
             for k in image_map:
-                if len(image_map[k]) <= 64:
+                if len(image_map[k]) <= 64 and len(image_map[k]) > 0:
                     idx = image_map[k]
                     assert idx in image_map and len(image_map[idx]) > 64
                     image_map[k] = image_map[idx]

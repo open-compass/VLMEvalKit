@@ -16,6 +16,46 @@ APIBASES = {
 }
 
 
+def _parse_stream_chunk(chunk: dict):
+    choices = chunk.get('choices', [])
+    if not choices:
+        return ''
+    delta = choices[0].get('delta', {})
+    if not isinstance(delta, dict):
+        return ''
+    return delta.get('content') or ''
+
+
+def _collect_streaming_content(response, verbose=False):
+    answer_parts = []
+    chunk_count = 0
+    for line in response.iter_lines(decode_unicode=True):
+        if not line:
+            continue
+        line = line.strip()
+        if not line.startswith('data:'):
+            continue
+        data = line[5:].strip()
+        if data == '[DONE]':
+            break
+        try:
+            chunk = json.loads(data)
+        except json.JSONDecodeError:
+            if verbose:
+                logger.warning(f'Invalid streaming chunk: {data[:120]}')
+            continue
+        part = _parse_stream_chunk(chunk)
+        if part:
+            answer_parts.append(part)
+            chunk_count += 1
+    answer = ''.join(answer_parts).strip()
+    if verbose:
+        logger.info(
+            f'Streaming finished: chunks={chunk_count}, chars={len(answer)}'
+        )
+    return answer
+
+
 def GPT_context_window(model):
     length_map = {
         'gpt-4': 8192,
@@ -56,6 +96,7 @@ class OpenAIWrapper(BaseAPI):
                  max_file_size: int = 1e9,
                  img_detail: str = 'low',
                  use_azure: bool = False,
+                 stream: bool = False,
                  **kwargs):
 
         self.model = model
@@ -125,6 +166,7 @@ class OpenAIWrapper(BaseAPI):
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
         self.timeout = timeout
+        self.stream = stream
         self.is_max_completion_tokens = ('o1' in model) or ('o3' in model) or ('o4' in model) or ('gpt-5' in model)
         self.is_o_model = ('o1' in model) or ('o3' in model) or ('o4' in model)
         super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
@@ -233,6 +275,7 @@ class OpenAIWrapper(BaseAPI):
             n=1,
             temperature=temperature,
             **kwargs)
+        stream = payload.pop('stream', self.stream)
 
         if self.is_max_completion_tokens:
             payload['max_completion_tokens'] = max_tokens
@@ -244,6 +287,11 @@ class OpenAIWrapper(BaseAPI):
             payload.pop('max_tokens')
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
+
+        if 'openai.com' not in self.api_base and payload.get('n') == 1:
+            payload.pop('n', None)
+        if stream:
+            payload['stream'] = True
 
         proxies = {}
         if os.getenv('http_proxy'):
@@ -258,13 +306,17 @@ class OpenAIWrapper(BaseAPI):
             data=json.dumps(payload),
             proxies=proxies,
             timeout=self.timeout * 1.1,
+            stream=stream,
         )
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
         answer = self.fail_msg
         try:
-            resp_struct = json.loads(response.text)
-            answer = resp_struct['choices'][0]['message']['content'].strip()
+            if stream and ret_code == 0:
+                answer = _collect_streaming_content(response, verbose=self.verbose)
+            else:
+                resp_struct = json.loads(response.text)
+                answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
             logger.error(f'{type(err)}: {err}')
             if self.verbose:

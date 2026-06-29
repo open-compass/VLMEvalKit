@@ -412,7 +412,7 @@ class DOCLING(BaseModel):
         if pam is not None:
             # Expect bool/long with 0/1 values
             assert pam.dtype in (torch.bool, torch.long), f"pixel_attention_mask must be bool or long {messages}"
-            assert pam.min().item() >= 0 and pam.max().item() <= 1, f"mask values must be in {0,1} {messages}"
+            assert pam.min().item() >= 0 and pam.max().item() <= 1, f"mask values must be in {(0, 1)} {messages}"
 
             # Allow (B,H,W) or (B,N,H,W) to match pixel_values
             if pv is not None and pv.ndim == 5:

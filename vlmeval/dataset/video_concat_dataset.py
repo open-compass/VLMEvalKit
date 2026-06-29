@@ -10,7 +10,10 @@ from .video_base import VideoBaseDataset
 class ConcatVideoDataset(VideoBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
     # Each single dataset should not have a field named `SUB_DATASET`
-
+    
+    def prepare_dataset(self, dataset):
+        pass
+        
     DATASET_SETS = {}
 
     def __init__(self, dataset, **kwargs):

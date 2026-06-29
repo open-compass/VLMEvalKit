@@ -409,6 +409,26 @@ class Video_MMLU_QA(VideoBaseDataset):
                     return False
             return True
 
+        def untar_video_data(archive_file, cache_dir):
+            import tarfile
+            with tarfile.open(archive_file, "r") as tar_ref:
+                tar_ref.extractall(cache_dir)
+                print(f"Extracted all files from {archive_file} to {cache_dir}")
+
+        def unzip_video_data(archive_file, cache_dir):
+            import zipfile
+            with zipfile.ZipFile(archive_file, 'r') as zip_ref:
+                zip_ref.extractall(cache_dir)
+                print(f"Extracted all files from {archive_file} to {cache_dir}")
+
+        def concat_archive_parts(parts, output_file):
+            with open(output_file, "wb") as out_file:
+                from tqdm import tqdm
+                for part in tqdm(sorted(parts)):
+                    with open(part, "rb") as part_file:
+                        out_file.write(part_file.read())
+            print(f"Concatenated parts {parts} into {output_file}")
+
         if os.path.exists(repo_id):
             dataset_path = repo_id
         else:
@@ -418,44 +438,50 @@ class Video_MMLU_QA(VideoBaseDataset):
             else:
                 cache_path = snapshot_download(repo_id=repo_id, repo_type="dataset")
                 if not glob(osp.join(cache_path, "youtube_videos")):
+                    # 查找所有的压缩文件
                     tar_files = glob(osp.join(cache_path, "**/*.tar*"), recursive=True)
+                    zip_files = glob(osp.join(cache_path, "**/*.zip*"), recursive=True)
 
-                    def untar_video_data(tar_file, cache_dir):
-                        import tarfile
-                        with tarfile.open(tar_file, "r") as tar_ref:
-                            tar_ref.extractall(cache_dir)
-                            print(f"Extracted all files from {tar_file} to {cache_dir}")
+                    parts_dict = {}
+                    # 分组处理tar文件
+                    for f in tar_files:
+                        base_name = f.split(".tar")[0]
+                        if base_name not in parts_dict:
+                            parts_dict[base_name] = {'type': 'tar', 'parts': []}
+                        parts_dict[base_name]['parts'].append(f)
 
-                    def concat_tar_parts(tar_parts, output_tar):
-                        with open(output_tar, "wb") as out_tar:
-                            from tqdm import tqdm
-                            for part in tqdm(sorted(tar_parts)):
-                                with open(part, "rb") as part_file:
-                                    out_tar.write(part_file.read())
-                        print(f"Concatenated parts {tar_parts} into {output_tar}")
 
-                    tar_parts_dict = {}
+                    for f in zip_files:
+                        base_name = f.split(".zip")[0]
+                        if base_name not in parts_dict:
+                            parts_dict[base_name] = {'type': 'zip', 'parts': []}
+                        parts_dict[base_name]['parts'].append(f)
 
-                    # Group tar parts together
-                    for tar_file in tar_files:
-                        base_name = tar_file.split(".tar")[0]
-                        if base_name not in tar_parts_dict:
-                            tar_parts_dict[base_name] = []
-                        tar_parts_dict[base_name].append(tar_file)
 
-                    # Concatenate and untar split parts
-                    for base_name, parts in tar_parts_dict.items():
-                        print(f"Extracting following tar files: {parts}")
-                        output_tar = base_name + ".tar"
-                        if not osp.exists(output_tar):
-                            print('Start concatenating tar files')
+                    for base_name, info in parts_dict.items():
+                        print(f"Processing archive: {base_name}")
+                        archive_type = info['type']
+                        parts = info['parts']
 
-                            concat_tar_parts(parts, output_tar)
-                            print('Finish concatenating tar files')
+
+                        output_file = base_name + (".tar" if archive_type == 'tar' else ".zip")
+
+
+                        if len(parts) > 1 and not osp.exists(output_file):
+                            print('Start concatenating archive parts')
+                            concat_archive_parts(parts, output_file)
+                        elif len(parts) == 1:
+                            output_file = parts[0]
+
 
                         if not osp.exists(osp.join(cache_path, osp.basename(base_name))):
-                            untar_video_data(output_tar, cache_path)
+                            if archive_type == 'tar':
+                                untar_video_data(output_file, cache_path)
+                            else:
+                                unzip_video_data(output_file, cache_path)
+
                 dataset_path = cache_path
+
         self.video_path = osp.join(dataset_path, 'youtube_videos/')
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
 

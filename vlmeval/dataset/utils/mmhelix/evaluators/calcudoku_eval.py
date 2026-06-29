@@ -48,7 +48,7 @@ class CalcudokuEvaluator(BaseEvaluator):
             display_op = '×' if operator == '*' else operator
 
             cell_str = ', '.join([f"({r},{c})" for r, c in cells])
-            prompt += f"Region {i+1}: Cells {cell_str}, Operation: {display_op}, Target: {target}\n"
+            prompt += f"Region {i + 1}: Cells {cell_str}, Operation: {display_op}, Target: {target}\n"
 
         prompt += (
             "\nPlease solve the puzzle and provide the solution as a two-dimensional array.\n"
