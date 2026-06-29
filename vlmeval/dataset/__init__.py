@@ -110,6 +110,7 @@ from .reasonmap_plus import ReasonMap_Plus
 from .refcoco import RefCOCODataset
 from .refspatial import RefSpatialDataset
 from .refspatialbench import RefSpatialBench
+from .revsi import ReVSI
 from .robospatialbench import RoboSpatialBench
 from .sarena import SArena
 from .scidocbench import SciDocBench
@@ -320,7 +321,7 @@ VIDEO_DATASET = [
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
-    VideoMMEv2
+    VideoMMEv2, ReVSI
 ]
 
 # add by EASI team

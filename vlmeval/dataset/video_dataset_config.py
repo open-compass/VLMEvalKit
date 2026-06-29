@@ -250,6 +250,13 @@ egoexobench_dataset = {
 
 }
 
+revsi_dataset = {
+    'revsi_16_frame': partial(ReVSI, dataset='ReVSI', nframe=16),
+    'revsi_32_frame': partial(ReVSI, dataset='ReVSI', nframe=32),
+    'revsi_64_frame': partial(ReVSI, dataset='ReVSI', nframe=64),
+    'revsi_all_frame': partial(ReVSI, dataset='ReVSI', nframe=None),
+}
+
 dream_1k_dataset = {
     'DREAM-1K_8frame': partial(DREAM, dataset='DREAM-1K', nframe=8),
     'DREAM-1K_64frame': partial(DREAM, dataset='DREAM-1K', nframe=64),
@@ -387,7 +394,7 @@ dataset_groups = [
 # add by EASI team
 dataset_groups += [
     sitebenchvideo_dataset, mmsi_video_dataset, vsisuper_recall_dataset, vsisuper_count_dataset,
-    sti_dataset, dsr_dataset
+    sti_dataset, dsr_dataset, revsi_dataset
 ]
 
 for grp in dataset_groups:
