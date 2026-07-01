@@ -633,15 +633,20 @@ class MMMUProDataset(MMMUDataset):
         lines = response.strip().split('\n')
         lines = [x.strip() for x in lines]
         cands = [x for x in lines if x.startswith('Answer:')]
-        if len(cands) == 1:
+        if len(cands) >= 1:
+            # Inspect only the text AFTER the last "Answer:" marker. Counting over the whole
+            # line included the capital "A" in "Answer", so the single-letter fast-path almost
+            # never fired; models that echo the "$LETTER" template literally (e.g. "Answer: $B")
+            # then fell through to returning raw text that the option matcher fails to parse.
+            tail = cands[-1][len('Answer:'):]
             counter = defaultdict(lambda: 0)
-            for ch in cands[0]:
+            for ch in tail:
                 if ch in string.ascii_uppercase:
                     counter[ch] += 1
             if len(counter) == 1:
                 return list(counter.keys())[0]
             else:
-                return cands[0][7:]
+                return tail
         return response
 
     def evaluate(self, eval_file, **judge_kwargs):
