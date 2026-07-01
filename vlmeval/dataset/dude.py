@@ -15,7 +15,7 @@ from vlmeval.smp import (LMUDataRoot, decode_base64_to_image_file, download_file
                          encode_image_to_base64, get_intermediate_file_path, get_logger, listinstr,
                          load, md5, read_ok, toliststr)
 from .image_base import ImageBaseDataset
-from .mmlongbench import MMLongBench_auxeval, anls_compute, concat_images
+from .mmlongbenchdoc import MMLongBench_auxeval, anls_compute, concat_images
 from .utils.judge_util import build_judge
 
 logger = get_logger(__name__)
