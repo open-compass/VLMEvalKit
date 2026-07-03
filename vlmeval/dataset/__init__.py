@@ -85,6 +85,7 @@ from .mmhelix import MMHELIX
 from .mmifeval import MMIFEval
 from .mmlongbench import MMLongBench
 from .longdocurl import LongDocURL
+from .mmlongbenchdoc import MMLongBenchDoc
 from .mmmath import MMMath
 from .mmoral_opg_closed import MMOral_OPG_CLOSED
 from .mmoral_opg_open import MMOral_OPG_OPEN
@@ -278,7 +279,7 @@ class ConcatDataset(ImageBaseDataset):
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
-    MTVQADataset, TableVQABench, MMLongBench, LongDocURL, VCRDataset, MMDUDataset, DUDE,
+    MTVQADataset, TableVQABench, MMLongBench, MMLongBenchDoc, VCRDataset, MMDUDataset, DUDE, LongDocURL,  # noqa: E501
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
     OlympiadBench, SeePhys, WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,  # noqa: E501

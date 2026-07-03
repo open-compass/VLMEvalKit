@@ -374,6 +374,10 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
             if use_api_judger:
                 judge_kwargs['model'] = 'gpt-4o-mini'
         elif listinstr(
+            ['MMLongBench_32K', 'MMLongBench_128K', 'MMLongBench_256K', 'MMLongBench_512K'], dataset_name
+        ):
+            judge_kwargs['model'] = 'gpt-5.5-2026-04-24'
+        elif listinstr(
             ['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench',
              'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name
         ):
