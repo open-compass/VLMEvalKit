@@ -15,13 +15,12 @@ v3 — thinking model robustness:
 
 import json
 import re
-import time
 import threading
-from pathlib import Path
+import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List, Any, Tuple, Optional
-
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 # ============================================================
 # MemLens parse_utils.py judge helpers
@@ -100,7 +99,7 @@ def detect_degenerate(text: str) -> Tuple[bool, Dict[str, Any]]:
     words = text_lower.split()
     n = 5
     if len(words) >= n:
-        ngrams = [tuple(words[i:i+n]) for i in range(len(words) - n + 1)]
+        ngrams = [tuple(words[i:i + n]) for i in range(len(words) - n + 1)]
         unique_ratio = len(set(ngrams)) / len(ngrams) if ngrams else 1.0
     else:
         unique_ratio = 1.0
@@ -606,8 +605,10 @@ def build_judge_prompt(
 
     return system_prompt + current_case + "[Scoring Rationale]:"
 
+
 # ── Question metadata ──
 _QUESTIONS_METADATA = None
+
 
 def _load_questions_metadata(questions_file: Optional[str] = None) -> Dict[str, Dict]:
     global _QUESTIONS_METADATA
@@ -640,6 +641,7 @@ def _load_questions_metadata(questions_file: Optional[str] = None) -> Dict[str, 
     print(f"[Judge] Loaded metadata for {len(all_qs)} questions")
     return _QUESTIONS_METADATA
 
+
 def enrich_item(item: Dict[str, Any]) -> Dict[str, Any]:
     if item.get("question_subtype") and item.get("old_answer") is not None:
         return item
@@ -651,7 +653,6 @@ def enrich_item(item: Dict[str, Any]) -> Dict[str, Any]:
     if not item.get("old_answer"):
         item["old_answer"] = meta.get("old_answer", "")
     return item
-
 
 
 # Prompts are in judge_prompts/ — see judge_prompts/__init__.py for API.
@@ -812,9 +813,9 @@ def evaluate(data: List[Dict[str, Any]],
             "question_type": item.get('question_type', ''),
             "question_subtype": item.get('question_subtype', ''),
             "task_key": get_task_key(item.get('question_type', ''),
-                                      item.get('question_subtype', ''),
-                                      item['reference_answer'],
-                                      item.get('question', '')),
+                                     item.get('question_subtype', ''),
+                                     item['reference_answer'],
+                                     item.get('question', '')),
             "judge_score": score,
             "judge_raw": diagnostics.get("judge_raw", ""),
             "original_len": diagnostics.get("original_len", 0),

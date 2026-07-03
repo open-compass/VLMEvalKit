@@ -74,6 +74,7 @@ from .medqbench_mcq import MedqbenchMCQDataset
 from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
 # Add by EASI team
 from .megabench import MEGABench
+from .memlens import MemLens
 from .miabench import MIABench
 from .mindcubebench import MindCubeBench
 from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
@@ -84,7 +85,6 @@ from .mmgenbench import MMGenBench
 from .mmhelix import MMHELIX
 from .mmifeval import MMIFEval
 from .mmlongbench import MMLongBench
-from .memlens import MemLens
 from .mmmath import MMMath
 from .mmoral_opg_closed import MMOral_OPG_CLOSED
 from .mmoral_opg_open import MMOral_OPG_OPEN

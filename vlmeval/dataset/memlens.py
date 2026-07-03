@@ -3,7 +3,6 @@
 Paper: https://arxiv.org/abs/2605.14906
 HF:    xiyuRenBill/MEMLENS
 """
-import json
 import os
 import os.path as osp
 import re
@@ -12,11 +11,11 @@ import tarfile
 import pandas as pd
 from huggingface_hub import hf_hub_download
 
+from ..smp import dump, get_logger, load, toliststr
+from ..smp.file import LMUDataRoot, get_intermediate_file_path
 from .image_base import ImageBaseDataset
 from .utils import build_judge
 from .utils.memlens_utils import evaluate as memlens_judge_eval
-from ..smp import dump, get_logger, load, toliststr
-from ..smp.file import get_intermediate_file_path, LMUDataRoot
 
 
 def _safe_extract(tar, path):

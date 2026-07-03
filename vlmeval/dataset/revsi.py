@@ -1,13 +1,15 @@
-from vlmeval.dataset.video_base import VideoBaseDataset
-from huggingface_hub import hf_hub_download
-from datasets import load_dataset
-from ..smp.file import load
-from PIL import Image
-import numpy as np
-import portalocker
-import zipfile
 import ast
 import os
+import zipfile
+
+import numpy as np
+import portalocker
+from datasets import load_dataset
+from huggingface_hub import hf_hub_download
+from PIL import Image
+
+from vlmeval.dataset.video_base import VideoBaseDataset
+from ..smp.file import load
 
 NQ_QUESTION_TYPES = [
     "object_counting_single",
