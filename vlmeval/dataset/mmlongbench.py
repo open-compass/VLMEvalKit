@@ -1,594 +1,408 @@
-import base64
-import io
-import logging
-import math
+import json
 import os
 import os.path as osp
 import re
-from urllib.request import urlopen
+import tarfile
 
 import pandas as pd
-import torchvision.transforms as transforms
-from PIL import Image, ImageDraw, ImageFont
-from tqdm import tqdm
 
-from vlmeval.dataset.utils import build_judge, levenshtein_distance
-from vlmeval.smp import (decode_base64_to_image_file, dump, encode_image_to_base64,
-                         get_intermediate_file_path, get_logger, listinstr, load, read_ok,
-                         toliststr)
 from .image_base import ImageBaseDataset
-
-logger = get_logger(__name__)
-
-FAIL_MSG = 'Failed to obtain answer via API.'
-
-
-def get_gpt4_ICE():
-    example_1 = """
----
-Question: List the primary questions asked about the services in this report.
-Analysis:  The primary questions asked about the services in the report for The Limes Residential Home are:\n\n
-1. Is the service safe?\n
-2. Is the service effective?\n
-3. Is the service caring?\n
-4. Is the service responsive?\n
-5. Is the service well-led?
-Extracted answer: [
-    'Is the servife safe?',
-    'Is the service effective',
-    'Is the serve caring?',
-    'Is the service responsive?',
-    'Is the service well-led?'
-]
-Answer format: List\n
-"""
-
-    example_2 = """
----
-Question: How many regulations of the HSCA 2008 are breached in all according to this report?
-Analysis: According to the report, the provider breached 10 Health and Social Care Act 2008 (Regulated Activities)
-Regulations in total. Here are the specifics:\n\n1. Regulation 13: Safeguarding service users from abuse and
-improper treatment\n2. Regulation 12: Safe care and treatment\n3. Regulation 18: Staffing\n4. Regulation 11:
-Need for consent\n5. Regulation 10: Dignity and respect\n6. Regulation 9: Person-centred care\n7. Regulation 17:
-Good governance\n8. Regulation 18 (CQC Registration Regulations 2009): Notification of other incidents\n9.
-Regulation 18: Failure to maintain an accurate and up-to-date care plan\n10. Regulation 11: Failure to implement
-the Mental Capacity Act 2005 code of practice effectively\n\nThese breaches involve issues concerning staffing,
-safeguarding, medicines management, dignity and respect, consent, care planning, governance, and failure to
-notify the CQC of incidents.
-Extracted answer: 10
-Answer format: Integer\n
-"""
-
-    example_3 = """
----
-Question: According to the survey that is the percentage of Chinese who are paying more or
-about the same attention to politics after Trump's election?
-Analysis: The survey provided does not specify the percentage of Chinese individuals specifically who are paying
-more or about the same attention to politics after Trump's election. The report focuses primarily on American
-demographics and does not include specific details about the Chinese population in relation to this question. If
-you need information about a different demographic or a summary of the findings from the American demographic,
-I can certainly help with that!
-Extracted answer: Not answerable
-Answer format: String\n
-"""
-
-    example_4 = """
----
-Question: How many quotations from male respondent over 50 years old are included in this report?
-Analysis: The image you've provided appears to be a screenshot of a document with multiple charts. However, the
-text is too small and blurry to read accurately. If you can provide a clearer image or more context, I might be
-able to help you with your question.
-Extracted answer: Fail to answer
-Answer format: String\n
-"""
-
-    return [example_1, example_2, example_3, example_4]
-
-
-def build_mmlongbench_gpt4_prompt(line):
-    task_description = """
-Given the question and analysis, you are tasked to extract answers with required formats from the free-form analysis.
-- Your extracted answers should be one of the following formats: (1) Integer, (2) Float, (3) String and (4) List.
-If you find the analysis the question can not be answered from the given documents, type "Not answerable".
-Exception: If the analysis only tells you that it can not read/understand the images or documents,
-type "Fail to answer".
-- Please make your response as concise as possible. Also note that your response should be formatted as below:
-```
-Extracted answer: [answer]
-Answer format: [answer format]
-```
-Please read the following example, then extract the answer from the model response
-and type it at the end of the prompt.\n
-"""
-    question = line['question']
-    prediction = str(line['prediction'])
-    prompt = task_description
-    examples = get_gpt4_ICE()
-    for example in examples:
-        prompt += example
-    prompt += '---\nQuestion:' + question + '\n'
-    prompt += 'Analysis: ' + prediction
-    return prompt
-
-
-def anls_compute(groundtruth, prediction, threshold=0.5):
-    dist = levenshtein_distance(groundtruth, prediction)
-    length = max(len(groundtruth.upper()), len(prediction.upper()))
-    value = 0.0 if length == 0 else float(dist) / float(length)
-    anls = 1.0 - value
-    if anls <= threshold:
-        anls = 0.0
-    return anls
-
-
-def is_float_equal(reference, prediction, include_percentage: bool = False, is_close: float = False) -> bool:
-    def get_precision(gt_ans: float) -> int:
-        precision = 3
-        if '.' in str(gt_ans):
-            precision = len(str(gt_ans).split('.')[-1])
-        return precision
-
-    reference = float(str(reference).strip().rstrip('%').strip())
-    try:
-        prediction = float(str(prediction).strip().rstrip('%').strip())
-    except Exception:
-        return False
-
-    if include_percentage:
-        gt_result = [reference / 100, reference, reference * 100]
-    else:
-        gt_result = [reference]
-    for item in gt_result:
-        try:
-            if is_close:
-                if math.isclose(item, prediction, rel_tol=0.01):
-                    return True
-            precision = max(min(get_precision(prediction), get_precision(item)), 2)
-            if round(prediction, precision) == round(item, precision):
-                return True
-        except Exception:
-            continue
-    return False
-
-
-def get_clean_string(s):
-    s = str(s).lower().strip()
-    if s.endswith('mile'):
-        s.rstrip('mile').strip()
-    if s.endswith('miles'):
-        s.rstrip('miles').strip()
-    if s.endswith('million'):
-        s.rstrip('million').strip()
-    # remove parenthesis
-    s = re.sub(r'\s*\([^)]*\)', '', s).strip()
-    # remove quotes
-    s = re.sub(r"^['\"]|['\"]$", '', s).strip()
-    s = s.strip().lstrip('$').strip()
-    s = s.strip().rstrip('%').strip()
-    return s
-
-
-def is_exact_match(s):
-    flag = False
-    # Website
-    if 'https://' in s:
-        flag = True
-    # code file
-    if s.endswith('.py') or s.endswith('ipynb'):
-        flag = True
-    if s.startswith('page'):
-        flag = True
-    # telephone number
-    if re.fullmatch(r'\b\d+(-\d+|\s\d+)?\b', s):
-        flag = True
-    # time
-    if 'a.m.' in s or 'p.m.' in s:
-        flag = True
-    # YYYY-MM-DD
-    if re.fullmatch(r'\b\d{4}[-\s]\d{2}[-\s]\d{2}\b', s):
-        flag = True
-    # YYYY-MM
-    if re.fullmatch(r'\b\d{4}[-\s]\d{2}\b', s):
-        flag = True
-    # Email address
-    if re.fullmatch(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', s):
-        flag = True
-    return flag
-
-
-def isfloat(num):
-    try:
-        float(num)
-        return True
-    except ValueError:
-        return False
-
-
-def get_font():
-    try:
-        truetype_url = "https://opencompass.openxlab.space/utils/Fonts/SimHei.ttf"
-        ff = urlopen(truetype_url)
-        font = ImageFont.truetype(ff, size=40)
-    except Exception as e:
-        logging.warning(f'{type(e)}: {e}')
-        logging.warning("Fail to download the font. Use the default one.")
-        font = ImageFont.load_default(size=40)
-    return font
-
-
-def frame2img(img_path_list, font, save_path=None, idx_start=0):
-    imgs = [Image.open(img_path) for img_path in img_path_list]
-
-    new_imgs = []
-    for img in imgs:
-        w, h = img.size
-        scale = w / h
-        if w > h:
-            new_w = 560 * 2
-            new_h = int(560 * 2 / scale)
-        else:
-            new_w = int(560 * 2 * scale)
-            new_h = 560 * 2
-        img = transforms.functional.resize(img, [new_h, new_w],)
-        new_imgs.append(img)
-    imgs = new_imgs
-    new_w = 0
-    new_h = 0
-    pad = 40
-    if w > h:
-        for im in imgs:
-            w, h = im.size
-            new_w = max(new_w, w)
-            new_h += h + 10 + pad
-        new_img = Image.new("RGB", (new_w, new_h), "white")
-        draw = ImageDraw.Draw(new_img)
-        curr_h = 0
-        for idx, im in enumerate(imgs):
-            w, h = im.size
-            new_img.paste(im, (0, pad + curr_h))
-            draw.text((0, curr_h), f"<IMAGE {idx + idx_start}>", font=font, fill="black")
-            if idx + 1 < len(imgs):
-                draw.line([(0, pad + curr_h + h + 5), (new_w, pad + curr_h + h + 5)], fill='black', width=2)
-            curr_h += h + 10 + pad
-    else:
-        for im in imgs:
-            w, h = im.size
-            new_w += w + 10
-            new_h = max(new_h, h)
-        new_h += pad
-        new_img = Image.new('RGB', (new_w, new_h), 'white')
-        draw = ImageDraw.Draw(new_img)
-        curr_w = 0
-        for idx, im in enumerate(imgs):
-            w, h = im.size
-            new_img.paste(im, (curr_w, pad))
-            draw.text((curr_w, 0), f"<IMAGE {idx + idx_start}>", font=font, fill='black')
-            if idx + 1 < len(imgs):
-                draw.line([(curr_w + w + 5, 0), (curr_w + w + 5, new_h)], fill='black', width=2)
-            curr_w += w + 10
-
-    if save_path is not None:
-        new_img.save(save_path)
-
-    return new_img
-
-
-def concat_images(image_list, max_concat=1, column_num=1):
-    concatenated_images = []
-    if column_num == -1:
-        MAX_COLUMN_NUM = 20
-        max_concat = 1
-        while len(image_list) / max_concat > MAX_COLUMN_NUM:
-            max_concat += 1
-        interval = max(math.ceil(len(image_list) / max_concat), 1)
-        for i in range(0, len(image_list), interval):
-            batch_images = image_list[i:i + interval]
-            concatenated_image = frame2img(batch_images, font=get_font(), idx_start=i)
-            concatenated_images.append(concatenated_image)
-    else:
-        interval = max(math.ceil(len(image_list) / max_concat), 1)
-        for i in range(0, len(image_list), interval):
-            batch_images = [Image.open(filename) for filename in image_list[i:i + interval]]
-            if column_num == 1:
-                total_height = batch_images[0].height * len(batch_images)
-            else:
-                total_height = batch_images[0].height * ((len(batch_images) - 1) // column_num + 1)
-            concatenated_image = Image.new('RGB', (batch_images[0].width * column_num, total_height), 'white')
-
-            x_offset, y_offset = 0, 0
-            for count, image in enumerate(batch_images):
-                concatenated_image.paste(image, (x_offset, y_offset))
-                x_offset += image.width
-                if (count + 1) % column_num == 0:
-                    y_offset += image.height
-                    x_offset = 0
-            concatenated_images.append(concatenated_image)
-    return concatenated_images
-
-
-def eval_score(gt, pred, answer_type):
-    if answer_type == 'Int':
-        try:
-            gt, pred = int(gt), int(float(pred))
-        except Exception:
-            pred = ''
-        score = (gt == pred)
-    elif answer_type == 'Float':
-        try:
-            gt = float(get_clean_string(str(gt)))
-            pred = float(get_clean_string(str(pred)))
-        except Exception:
-            pred = ''
-        score = is_float_equal(gt, pred, include_percentage=True, is_close=True)
-    elif answer_type == 'Str':
-        gt = get_clean_string(gt)
-        pred = get_clean_string(pred)
-        if is_exact_match(gt):
-            score = (gt == pred)
-        else:
-            score = anls_compute(gt, pred)
-    else:
-        if isinstance(gt, str) and gt.startswith('['):
-            gt = eval(gt)
-        if not isinstance(gt, list):
-            gt = [gt]
-        if isinstance(pred, str) and pred.startswith('['):
-            pred = eval(pred)
-        if not isinstance(pred, list):
-            pred = [pred]
-        print(len(gt), len(pred))
-        if len(gt) != len(pred):
-            score = 0.0
-        else:
-            gt = sorted([get_clean_string(a) for a in gt])
-            pred = sorted([get_clean_string(a) for a in pred])
-            print(gt, pred)
-            if isfloat(gt[0]) or is_exact_match(gt[0]):
-                score = ('-'.join(gt) == '-'.join(pred))
-            else:
-                score = min([anls_compute(gt_v, pred_v) for gt_v, pred_v in zip(gt, pred)])
-
-    return float(score)
-
-
-def MMLongBench_auxeval(model, line):
-    prompt = build_mmlongbench_gpt4_prompt(line)
-    log = ''
-    retry = 5
-
-    for i in range(retry):
-        prediction = line['prediction']
-        res = model.generate(prompt, temperature=i * 0.5)
-
-        if FAIL_MSG in res:
-            log += f'Try {i}: output is {prediction}, failed to parse.\n'
-        else:
-            log += 'Succeed'
-            try:
-                pred = res.split('Answer format:')[0].split('Extracted answer:')[1].strip()
-            except Exception:
-                pred = ''
-            return dict(log=log, res=res, pred=pred)
-    log += 'All 5 retries failed.\n'
-    return dict(log=log, res='', pred='')
-
-
-def get_f1(data):
-    gt_pos_data = data[data.apply(lambda k: k['answer'] != 'Not answerable', axis=1)]
-    pred_pos_data = data[data.apply(lambda k: k['pred'] != 'Not answerable', axis=1)]
-    recall = sum(gt_pos_data['score'].tolist()) / len(gt_pos_data)
-    precision = sum(pred_pos_data['score'].tolist()) / len(pred_pos_data)
-    return 2 * recall * precision / (recall + precision)
-
-
-def MMLongBench_acc(result_file):
-    data = load(result_file)
-    overall_score = 0.0
-    score_list = list()
-    for i in range(len(data)):
-        item = data.iloc[i]
-        try:
-            score = eval_score(item['answer'], item['pred'], item['answer_format'])
-        except Exception:
-            score = 0.0
-        score_list.append(score)
-        overall_score += score
-
-    data['score'] = score_list
-    dump(data, result_file)
-
-    data_chart = data[data.apply(lambda k: 'Chart' in eval(k['evidence_sources']), axis=1)]
-    data_table = data[data.apply(lambda k: 'Table' in eval(k['evidence_sources']), axis=1)]
-    data_image = data[data.apply(lambda k: 'Figure' in eval(k['evidence_sources']), axis=1)]
-    data_text = data[data.apply(lambda k: 'Pure-text (Plain-text)' in eval(k['evidence_sources']), axis=1)]
-    data_layout = data[data.apply(lambda k: 'Generalized-text (Layout)' in eval(k['evidence_sources']), axis=1)]
-
-    data_single = data[data.apply(lambda k: len(eval(k['evidence_pages'])) == 1, axis=1)]
-    data_multi = data[data.apply(lambda k: len(eval(k['evidence_pages'])) > 1, axis=1)]
-    data_unans = data[data.apply(lambda k: len(eval(k['evidence_pages'])) == 0, axis=1)]
-
-    res = dict()
-    res['category'] = [
-        'overall_f1', 'overall_acc', 'text', 'layout', 'table', 'chart',
-        'image', 'single-page', 'multi-page', 'unanswerable'
-    ]
-    res['num'] = [
-        len(data), len(data), len(data_text), len(data_layout), len(data_table),
-        len(data_chart), len(data_image), len(data_single), len(data_multi), len(data_unans)
-    ]
-    res['avg_score'] = [
-        get_f1(data),
-        overall_score / len(data),
-        sum(data_text['score'].tolist()) / len(data_text) if len(data_text) > 0 else 0.0,
-        sum(data_layout['score'].tolist()) / len(data_layout) if len(data_layout) > 0 else 0.0,
-        sum(data_table['score'].tolist()) / len(data_table) if len(data_table) > 0 else 0.0,
-        sum(data_chart['score'].tolist()) / len(data_chart) if len(data_chart) > 0 else 0.0,
-        sum(data_image['score'].tolist()) / len(data_image) if len(data_image) > 0 else 0.0,
-        sum(data_single['score'].tolist()) / len(data_single) if len(data_single) > 0 else 0.0,
-        sum(data_multi['score'].tolist()) / len(data_multi) if len(data_multi) > 0 else 0.0,
-        sum(data_unans['score'].tolist()) / len(data_unans) if len(data_unans) > 0 else 0.0,
-    ]
-    res = pd.DataFrame(res)
-    return res
+from .utils import build_judge
+from .utils.mmlongbench_metrics import calculate_metrics, parse_output
+from ..smp import dump, get_logger, load, toliststr
+from ..smp.file import get_intermediate_file_path
+from ..smp.file import LMUDataRoot
 
 
 class MMLongBench(ImageBaseDataset):
+    """MMLongBench full benchmark downsampled to selected context lengths."""
 
     TYPE = 'VQA'
-
+    MODALITY = 'IMAGE'
+    DEFAULT_JUDGE = 'gpt-5.5-2026-04-24'
+    JUDGE_FORMAT = None
+    RATING_FORMAT = '{model_name}_{dataset_name}_score.csv'
+    HF_REPO_ID = 'ZhaoweiWang/MMLongBench'
     DATASET_URL = {
-        'MMLongBench_DOC': 'https://opencompass.openxlab.space/utils/VLMEval/MMLongBench_DOC.tsv',
+        'MMLongBench_32K': 'https://huggingface.co/datasets/ZhaoweiWang/MMLongBench/resolve/main/vlmevalkit/MMLongBench_32K.tsv',  # noqa: E501
+        'MMLongBench_128K': 'https://huggingface.co/datasets/ZhaoweiWang/MMLongBench/resolve/main/vlmevalkit/MMLongBench_128K.tsv',  # noqa: E501
+        'MMLongBench_256K': 'https://huggingface.co/datasets/ZhaoweiWang/MMLongBench/resolve/main/vlmevalkit/MMLongBench_256K.tsv',  # noqa: E501
+        'MMLongBench_512K': 'https://huggingface.co/datasets/ZhaoweiWang/MMLongBench/resolve/main/vlmevalkit/MMLongBench_512K.tsv',  # noqa: E501
     }
-    DATASET_MD5 = {
-        'MMLongBench_DOC': '75f5d29965d0db68254993f6170da7c2',
-    }
+    DATASET_MD5 = {}
 
-    SUPPORTED_MODELS = {
-        'GPT4': (1, 1),
-        'GPT4V': (1, 1),
-        'GPT4V_HIGH': (1, 1),
-        'GPT4o': (1, 1),
-        'GPT4o_HIGH': (1, 1),
-        'GPT4o_MINI': (1, 1),
-        'MiniCPM-Llama3-V-2_5': (1, 5),
-        'InternVL-Chat-V1-5': (5, 2),
-        'XComposer2_4KHD': (1, 5),
-        'XComposer2d5': (1, -1),
+    DATASET_SETS = {
+        'MMLongBench_32K': ['vrag_32', 'NIAH_32', 'ICL_32', 'summ_32', 'documentQA_32'],
+        'MMLongBench_128K': ['vrag_128', 'NIAH_128', 'ICL_128', 'summ_128', 'documentQA_128'],
+        'MMLongBench_256K': ['vrag_256_sr50', 'NIAH_256_sr25', 'ICL_256_sr50', 'summ_256_sr50', 'documentQA_256_sr50'],  # noqa: E501
+        'MMLongBench_512K': ['vrag_512_sr50', 'NIAH_512_sr25', 'ICL_512_sr50', 'summ_512_sr50', 'documentQA_512_sr50'],  # noqa: E501
     }
 
-    def __init__(self, dataset, **kwargs):
-        self.model_list = list(self.SUPPORTED_MODELS.keys())
-        model_name = kwargs['model']
-        if not listinstr(self.model_list, model_name):
-            raise AssertionError("{} doesn't support the evaluation on MMLongBench_DOC.".format(model_name))
-        super(MMLongBench, self).__init__(dataset)
+    DEFAULT_ANSWER = [0, 1, 1, 0]
+    IMAGE_ARCHIVES = {
+        'MMLongBench_32K': ['vlmevalkit/MMLongBench_32K_images.tar.gz'],
+        'MMLongBench_128K': ['vlmevalkit/MMLongBench_128K_images.tar.gz'],
+        'MMLongBench_256K': ['vlmevalkit/MMLongBench_256K_images.tar.gz'],
+        'MMLongBench_512K': ['vlmevalkit/MMLongBench_512K_images.tar.gz'],
+    }
 
-        self.is_api = True if listinstr(['GPT4'], model_name) else False
-        self.max_pages = 120
-        concat_num, column_num = self.SUPPORTED_MODELS.get(model_name)
-        self.concat_num = concat_num
-        self.column_num = column_num
-
-    def dump_image(self, origin_line):
-        os.makedirs(self.img_root, exist_ok=True)
-        try:
-            import fitz
-        except Exception as e:
-            logging.critical(f'{type(e)}: {e}')
-            logging.critical('Please use `pip install pymupdf` to parse PDF files.')
-
-        line = origin_line.copy()
-        line['image_path'] = line['image_path'][:self.max_pages]
-        skip_pdf_parse = True
-        for im_name in line['image_path']:
-            path = osp.join(self.img_root, im_name)
-            if not read_ok(path):
-                skip_pdf_parse = False
-                break
-
-        # Just for being compatible with the zooped loop: zip(line['image'], line['image_path'])
-        if skip_pdf_parse:
-            line['image'] = line['image_path']
-        else:
-            pdf_data = base64.b64decode(line['image'])
-            pdf_file = io.BytesIO(pdf_data)
-            encoded_images = []
-            with fitz.open(stream=pdf_file, filetype='pdf') as doc:
-                doc = doc[:self.max_pages]
-                for page in doc:
-                    image = page.get_pixmap(dpi=144)
-                    image_file = io.BytesIO(image.tobytes(output='png'))
-                    image = Image.open(image_file)
-                    encoded_image = encode_image_to_base64(image)
-                    encoded_images.append(encoded_image)
-            line['image'] = encoded_images
-            print('process {}'.format(line['doc_id']))
-
-        if 'image' in line:
-            if isinstance(line['image'], list):
-                tgt_path = []
-                assert 'image_path' in line
-                for img, im_name in zip(line['image'], line['image_path']):
-                    path = osp.join(self.img_root, im_name)
-                    if not read_ok(path):
-                        decode_base64_to_image_file(img, path)
-                    tgt_path.append(path)
-            else:
-                tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
-                if not read_ok(tgt_path):
-                    decode_base64_to_image_file(line['image'], tgt_path)
-                tgt_path = [tgt_path]
-        else:
-            assert 'image_path' in line
-            tgt_path = toliststr(line['image_path'])
-
-        if self.concat_num > 0 and not self.is_api:
-            concatenated_images = concat_images(tgt_path, max_concat=self.concat_num, column_num=self.column_num)
-
-            old_tgt_path = tgt_path
-            assert isinstance(old_tgt_path, list)
-            if self.column_num != -1:
-                tgt_path = [
-                    '_'.join(old_tgt_path[0].split('_')[:-1]) + '_concat{}_{}.jpg'.format(self.concat_num, i)
-                    for i in range(len(concatenated_images))
-                ]
-            else:
-                tgt_path = [
-                    '_'.join(old_tgt_path[0].split('_')[:-1]) + '_concat_all_{}.jpg'.format(i)
-                    for i in range(len(concatenated_images))
-                ]
-
-            for path, concatenated_image in zip(tgt_path, concatenated_images):
-                if not read_ok(path):
-                    decode_base64_to_image_file(encode_image_to_base64(concatenated_image), path)
-                    num_images, image_size = len(old_tgt_path), concatenated_image.size
-                    print('concat {} images to a new one with size {}. save at {}'.format(num_images, image_size, path))
-        return tgt_path
+    def __init__(self, dataset='MMLongBench_32K', **kwargs):
+        super().__init__(dataset=dataset, skip_noimg=False)
+        if os.environ.get('MMLB_AUTO_DOWNLOAD_IMAGES', '1') == '1':
+            self.prepare_images()
 
     @classmethod
-    def evaluate(self, eval_file, **judge_kwargs):
-        model = judge_kwargs['model']
+    def supported_datasets(cls):
+        return list(cls.DATASET_SETS)
 
-        storage = get_intermediate_file_path(eval_file, f'_{model}')
-        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
+    @staticmethod
+    def _parse_extra_info(extra_info):
+        if isinstance(extra_info, dict):
+            return extra_info
+        if isinstance(extra_info, str) and extra_info.strip():
+            try:
+                return json.loads(extra_info)
+            except Exception:
+                return {}
+        return {}
 
-        if osp.exists(storage):
-            logger.warning(f'GPT scoring file {storage} already exists, will reuse it in MMLongBench_eval. ')
-        else:
-            data = load(eval_file)
-            model = build_judge(max_tokens=128, **judge_kwargs)
-            lt = len(data)
-            lines = [data.iloc[i] for i in range(lt)]
-            tups = [(model, line) for line in lines]
-            indices = [line['index'] for line in lines]
+    @staticmethod
+    def _json_dumps(value):
+        return json.dumps(value, ensure_ascii=False)
 
-            ans = {}
-            if osp.exists(tmp_file):
-                ans = load(tmp_file)
-            tups = [x for x, i in zip(tups, indices) if i not in ans]
-            indices = [i for i in indices if i not in ans]
+    @classmethod
+    def _standard_tsv_path(cls, dataset):
+        root = os.environ.get('MMLB_TSV_ROOT', LMUDataRoot())
+        return osp.join(root, f'{dataset}.tsv')
 
-            if len(indices):
-                new_results = list()
-                for model, line in tqdm(tups):
-                    res = MMLongBench_auxeval(model, line)
-                    new_results.append(res)
+    @classmethod
+    def _normalize_tsv_data(cls, data):
+        if 'image_path' in data:
+            data['image_path'] = [toliststr(x) for x in data['image_path']]
+        if 'extra_info' in data:
+            data['extra_info'] = [
+                cls._json_dumps(cls._parse_extra_info(x)) for x in data['extra_info']
+            ]
+        return data
 
-            log_map, res_map, pred_map = {}, {}, {}
-            all_inds = [line['index'] for line in lines]
-            for k, v in zip(all_inds, new_results):
-                log_map[k] = v['log']
-                res_map[k] = v['res']
-                pred_map[k] = v['pred']
-            data['res'] = [res_map[idx] for idx in data['index']]
-            data['log'] = [log_map[idx] for idx in data['index']]
-            data['pred'] = [pred_map[idx] for idx in data['index']]
-            dump(data, storage)
+    def load_data(self, dataset):
+        if dataset not in self.DATASET_SETS:
+            raise KeyError(f'Unsupported MMLongBench split: {dataset}')
 
-        score = MMLongBench_acc(storage)
-        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+        tsv_path = self._standard_tsv_path(dataset)
+        if osp.exists(tsv_path):
+            return self._normalize_tsv_data(load(tsv_path))
 
-        dump(score, score_pth)
-        logger.info(f'MMLongBench_eval successfully finished evaluating {eval_file}, results saved in {score_pth}')
-        logger.info('Score: ')
-        logger.info(score)
+        url = self.DATASET_URL.get(dataset, '')
+        if url:
+            file_md5 = self.DATASET_MD5.get(dataset, None)
+            return self._normalize_tsv_data(self.prepare_tsv(url, file_md5))
+
+        raise FileNotFoundError(
+            f'MMLongBench requires a standard TSV file for {dataset}. '
+            f'Expected local file: {tsv_path}. '
+            'Alternatively, publish the TSV and set MMLongBench.DATASET_URL/MD5.'
+        )
+
+    @staticmethod
+    def _safe_extract(tar, path):
+        root = osp.abspath(path)
+        for member in tar.getmembers():
+            target = osp.abspath(osp.join(root, member.name))
+            if not (target == root or target.startswith(root + os.sep)):
+                raise RuntimeError(f'Unsafe path in tar archive: {member.name}')
+        tar.extractall(root)
+
+    @staticmethod
+    def _tar_has_top_level_mmlb_image(tar_path):
+        with tarfile.open(tar_path, 'r:gz') as tar:
+            for member in tar.getmembers():
+                name = member.name.lstrip('./')
+                if not name:
+                    continue
+                return name.split('/', 1)[0] == 'mmlb_image'
+        return False
+
+    @classmethod
+    def _extract_image_archive(cls, tar_path, output_root):
+        has_root = cls._tar_has_top_level_mmlb_image(tar_path)
+        extract_root = output_root if has_root else osp.join(output_root, 'mmlb_image')
+        os.makedirs(extract_root, exist_ok=True)
+        with tarfile.open(tar_path, 'r:gz') as tar:
+            cls._safe_extract(tar, extract_root)
+
+    @classmethod
+    def _download_image_archive(cls, filename, download_dir):
+        try:
+            from huggingface_hub import hf_hub_download
+        except ImportError as err:
+            raise ImportError(
+                'huggingface_hub is required to auto-download MMLongBench images. '
+                'Install it with `pip install huggingface_hub`, or set '
+                'MMLB_AUTO_DOWNLOAD_IMAGES=0 and prepare $LMUData/images/mmlb_image manually.'
+            ) from err
+
+        return hf_hub_download(
+            repo_id=cls.HF_REPO_ID,
+            filename=filename,
+            repo_type='dataset',
+            local_dir=download_dir,
+            token=os.environ.get('HF_TOKEN'),
+        )
+
+    def _image_ready(self):
+        if 'image_path' not in self.data:
+            return True
+        checked = 0
+        for _, line in self.data.iterrows():
+            for image_path in toliststr(line['image_path']):
+                checked += 1
+                if not osp.exists(self._resolve_image_path(line, image_path)):
+                    return False
+                if checked >= 32:
+                    return True
+        return True
+
+    def prepare_images(self):
+        if self._image_ready():
+            return
+
+        logger = get_logger('MMLongBench')
+        output_root = osp.join(LMUDataRoot(), 'images')
+        download_dir = osp.join(output_root, 'mmlb_image_downloads')
+        os.makedirs(download_dir, exist_ok=True)
+        logger.warning(
+            'MMLongBench images are missing. Downloading official image archives from Hugging Face. '
+            'This can take a long time and requires substantial disk space.'
+        )
+        for archive in self.IMAGE_ARCHIVES.get(self.dataset_name, []):
+            tar_path = self._download_image_archive(archive, download_dir)
+            self._extract_image_archive(tar_path, output_root)
+
+        if not self._image_ready():
+            raise FileNotFoundError(
+                f'MMLongBench images are still missing after extraction. '
+                f'Expected images under {osp.join(output_root, "mmlb_image")}.'
+            )
+
+    def _resolve_image_path(self, line, image_path):
+        if osp.isabs(image_path):
+            return image_path
+        subset = line.get('mmlb_subset', '')
+        length = self.dataset_name.rsplit('_', 1)[-1]
+        env_img_root = os.environ.get('MMLB_IMAGE_ROOT', '')
+        candidates = [
+            osp.join(env_img_root, length, image_path) if env_img_root else '',
+            osp.join(env_img_root, image_path) if env_img_root else '',
+            osp.join(self.img_root, length, image_path),
+            osp.join(self.img_root, image_path),
+            osp.join(LMUDataRoot(), 'images', 'mmlb_image', length, image_path),
+            osp.join(LMUDataRoot(), 'images', 'mmlb_image', image_path),
+            osp.join(LMUDataRoot(), 'images', self.dataset_name, image_path),
+            osp.join(LMUDataRoot(), 'images', subset, image_path),
+            osp.join(LMUDataRoot(), 'images', 'MMLongBench', subset, image_path),
+            osp.join(LMUDataRoot(), 'images', 'MMLongBench', image_path),
+        ]
+        for candidate in candidates:
+            if candidate and osp.exists(candidate):
+                return candidate
+        return candidates[1]
+
+    def dump_image(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        images = toliststr(line['image_path']) if 'image_path' in line else []
+        return [self._resolve_image_path(line, p) for p in images]
+
+    @staticmethod
+    def _append_text(msgs, text):
+        if text:
+            msgs.append(dict(type='text', value=text))
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        images = self.dump_image(line)
+        text = str(line['question'])
+        token_pattern = r'(<image token>|<image>)'
+        parts = re.split(token_pattern, text)
+        msgs = []
+        image_idx = 0
+
+        for part in parts:
+            if part in ['<image token>', '<image>']:
+                if image_idx < len(images):
+                    msgs.append(dict(type='image', value=images[image_idx]))
+                    image_idx += 1
+            else:
+                self._append_text(msgs, part)
+
+        if image_idx == 0 and images:
+            msgs = [dict(type='image', value=p) for p in images] + msgs
+        elif image_idx < len(images):
+            msgs.extend(dict(type='image', value=p) for p in images[image_idx:])
+
+        return [m for m in msgs if m['value']]
+
+    @staticmethod
+    def _metric_for(row):
+        task = row['task']
+        source = row.get('source_dataset', '')
+        if task == 'vrag':
+            return 'sub_em'
+        if task == 'NIAH':
+            if source.startswith('vh_'):
+                return 'binary_acc'
+            if 'counting' in source:
+                return 'soft_acc'
+            if 'retrieval' in source or 'reasoning' in source:
+                # image variants are multiple-choice, text variants are open-ended
+                return 'mc_acc' if 'image' in source else 'sub_em'
+        if task == 'ICL':
+            return 'cls_acc'
+        if task == 'summ':
+            return 'rouge'
+        if task == 'documentQA':
+            return 'doc_qa_llm'
+        raise KeyError(f'Cannot infer MMLongBench metric for task={task}, source_dataset={source}')
+
+    @staticmethod
+    def _prefix_for(task):
+        if task == 'summ':
+            return 'Summary:'
+        if task == 'ICL':
+            return 'label:'
+        return 'Answer:'
+
+    @classmethod
+    def _score_one(cls, row, row_id, judge_model=None):
+        prediction = str(row.get('prediction', ''))
+        extra = cls._parse_extra_info(row.get('extra_info'))
+        # extra_info keeps the typed answer (int / list / str); the TSV column is stringified.
+        answer = extra.get('answer', row['answer'])
+        task = row['task']
+        prefix = cls._prefix_for(task)
+
+        # documentQA is always scored by the LLM judge (doc_qa_llm).
+        if task == 'documentQA':
+            if judge_model is None:
+                raise ValueError('documentQA requires an LLM judge for doc_qa_llm scoring.')
+            parsed = parse_output(prediction, prefix=prefix)
+            parsed_pred = parsed if parsed is not None else prediction
+            answer_format = extra.get('answer_format', 'String')
+            metric = 'doc_qa_llm'
+            extra_info = {
+                'llm_judge_client': judge_model,
+                'answer_format': answer_format,
+                'question': extra.get('question', ''),
+            }
+            try:
+                mets = calculate_metrics(parsed_pred, answer, 'doc_qa_llm', extra_info=extra_info)
+                judge_result = mets['doc_qa_llm']['judge_result']
+                mets = {
+                    'doc_qa_llm': float(mets['doc_qa_llm']['final_score']),
+                    'judge_raw': judge_result.get('raw_output', ''),
+                }
+            except Exception as err:
+                mets = {'doc_qa_llm': 0.0, 'metric_error': f'{type(err).__name__}: {err}'}
+
+            return metric, parsed_pred, mets
+
+        metric = cls._metric_for(row)
+
+        # binary_acc (visual haystack): uses the RAW prediction + a rotating default answer.
+        if metric == 'binary_acc':
+            default_answer = cls.DEFAULT_ANSWER[row_id % len(cls.DEFAULT_ANSWER)]
+            try:
+                mets = calculate_metrics((prediction, default_answer), answer, 'binary_acc')
+            except Exception as err:
+                mets = {'acc': 0, 'metric_error': f'{type(err).__name__}: {err}'}
+            return metric, prediction, mets
+
+        # default_post_process: score both the raw and parsed prediction, keep the max.
+        try:
+            mets = calculate_metrics(prediction, answer, metric)
+            parsed = parse_output(prediction, prefix=prefix)
+            if parsed is not None:
+                new_mets = calculate_metrics(parsed, answer, metric)
+                mets = {k: max(v, new_mets[k]) for k, v in mets.items()}
+            parsed_pred = parsed if parsed is not None else prediction
+        except Exception as err:
+            mets = {metric: 0.0, 'metric_error': f'{type(err).__name__}: {err}'}
+            parsed_pred = prediction
+        return metric, parsed_pred, mets
+
+    @staticmethod
+    def _mean(values):
+        return sum(values) / len(values) if values else 0.0
+
+    @staticmethod
+    def _score_key_for(metric):
+        if metric == 'rouge':
+            return 'rougeLsum_f1'
+        if metric == 'binary_acc':
+            return 'acc'
+        return metric
+
+    @classmethod
+    def evaluate(cls, eval_file, **judge_kwargs):
+        logger = get_logger('Evaluation')
+        data = load(eval_file)
+
+        # documentQA is scored only by an LLM judge (doc_qa_llm).
+        judge_model = None
+        has_docqa = 'task' in data.columns and (data['task'] == 'documentQA').any()
+        if has_docqa:
+            judge_name = judge_kwargs.get('model', None)
+            if judge_name is None:
+                raise ValueError('MMLongBench documentQA requires a judge model for doc_qa_llm scoring.')
+            else:
+                judge_model = build_judge(max_tokens=1024, **judge_kwargs)
+                if judge_model is None or (hasattr(judge_model, 'working') and not judge_model.working()):
+                    raise RuntimeError(f'Judge {judge_name} is not available for doc_qa_llm scoring.')
+
+        detail_rows = []
+        for row_id, (_, row) in enumerate(data.iterrows()):
+            jm = judge_model if row['task'] == 'documentQA' else None
+            metric, parsed_prediction, metric_res = cls._score_one(row, row_id, judge_model=jm)
+            detail = row.to_dict()
+            detail.pop('image_path', None)
+            detail['metric'] = metric
+            detail['parsed_prediction'] = parsed_prediction
+            for key, value in metric_res.items():
+                detail[key] = value
+            score_key = cls._score_key_for(metric)
+            detail['score'] = metric_res.get(score_key, 0.0)
+            detail_rows.append(detail)
+
+        detail = pd.DataFrame(detail_rows)
+        detail_file = get_intermediate_file_path(eval_file, '_mmlb_eval', 'tsv')
+        dump(detail, detail_file)
+
+        overall_scores = [float(x) for x in detail['score']]
+        overall_score = cls._mean(overall_scores)
+        rows = [{
+            'task': 'overall',
+            'metric': 'avg',
+            'num': len(overall_scores),
+            'score': overall_score,
+        }]
+        task_order = ['vrag', 'NIAH', 'ICL', 'summ', 'documentQA']
+        for task in task_order:
+            task_detail = detail[detail['task'] == task]
+            if len(task_detail) == 0:
+                continue
+            scores = [float(x) for x in task_detail['score']]
+            rows.append({
+                'task': task,
+                'metric': 'avg',
+                'num': len(scores),
+                'score': cls._mean(scores),
+            })
+
+        score = pd.DataFrame(rows)
+        score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
+        dump(score, score_file)
+        logger.info(f'MMLongBench evaluation finished for {eval_file}; scores saved to {score_file}')
+        return score
