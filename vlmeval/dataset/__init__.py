@@ -63,6 +63,7 @@ from .image_vqa import (BMMR, CRPE, LENS, MMNIAH, AyaVisionBench, CoreCognition,
                         QSpatial, SeePhys, TableVQABench, TallyQA, TDBenchGrounding, VGRPBench,
                         VizWiz, VLMsAreBiased, VTCBench, WildDocBenchmark, ZEROBench)
 from .image_yorn import ImageYORNDataset
+from .longdocurl import LongDocURL
 from .longvideobench import LongVideoBench
 from .m3oralbench import M3oralBenchDataset
 from .m4bench import M4Bench
@@ -84,7 +85,6 @@ from .mmgenbench import MMGenBench
 from .mmhelix import MMHELIX
 from .mmifeval import MMIFEval
 from .mmlongbench import MMLongBench
-from .longdocurl import LongDocURL
 from .mmlongbenchdoc import MMLongBenchDoc
 from .mmmath import MMMath
 from .mmoral_opg_closed import MMOral_OPG_CLOSED

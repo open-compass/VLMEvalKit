@@ -6,13 +6,12 @@ import warnings
 
 import pandas as pd
 
-from .image_base import ImageBaseDataset
-from .utils.judge_util import DEBUG_MESSAGE, build_judge
-from .utils.longdocurl import build_extraction_prompt, eval_score, parse_extracted_answer
 from ..smp import dump, get_intermediate_file_path, get_logger, load, toliststr
 from ..smp.file import LMUDataRoot
 from ..utils import track_progress_rich
-
+from .image_base import ImageBaseDataset
+from .utils.judge_util import DEBUG_MESSAGE, build_judge
+from .utils.longdocurl import build_extraction_prompt, eval_score, parse_extracted_answer
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -59,7 +58,10 @@ class LongDocURL(ImageBaseDataset):
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
     DEFAULT_JUDGE = 'gpt-5.4-2026-03-05'
-    SYSTEM_PROMPT = 'You are an expert in visual document question-answering, please answer our questions based on the given images.\n'
+    SYSTEM_PROMPT = (
+        'You are an expert in visual document question-answering, '
+        'please answer our questions based on the given images.\n'
+    )
 
     HF_REPO_ID = 'dengchao/LongDocURL'
     DATA_FILE = 'LongDocURL_public_with_subtask_category.jsonl'
@@ -330,7 +332,9 @@ class LongDocURL(ImageBaseDataset):
 
         judge = build_judge(model=model_name, max_tokens=4096, **judge_kwargs)
         if hasattr(judge, 'working') and not judge.working():
-            warnings.warn('Judge is not working. LongDocURL answer extraction requires a working judge.\n' + DEBUG_MESSAGE)
+            warnings.warn(
+                'Judge is not working. LongDocURL answer extraction requires a working judge.\n'
+                + DEBUG_MESSAGE)
 
         lines = [data.iloc[i] for i in range(len(data))]
         indices = [line['index'] for line in lines]

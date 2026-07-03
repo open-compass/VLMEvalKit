@@ -203,4 +203,3 @@ CURRENT_LIST_CASE_PROMPT = """[Current Case]
 <Student Answer>: {prediction}
 
 """
-

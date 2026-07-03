@@ -2,23 +2,22 @@ import ast
 import re
 from math import isclose
 
-
-EXTRACTOR_PROMPT = """Given the question and analysis, you are tasked to extract answers with required formats from the free-form analysis. 
-- Your extracted answers should be one of the following formats: (1) Integer, (2) Float, (3) String and (4) List. If you find the analysis the question can not be answered from the given documents, type "Not answerable". Exception: If the analysis only tells you that it can not read/understand the images or documents, type "Fail to answer". 
+EXTRACTOR_PROMPT = """Given the question and analysis, you are tasked to extract answers with required formats from the free-form analysis.
+- Your extracted answers should be one of the following formats: (1) Integer, (2) Float, (3) String and (4) List. If you find the analysis the question can not be answered from the given documents, type "Not answerable". Exception: If the analysis only tells you that it can not read/understand the images or documents, type "Fail to answer".
 - Answers may not meet visibility requirements within questions, such as, one question requires to find answers 'between 7-th to 20-th images' but invisible information in 'image 23' is included in analysis. So, these invisible components should be deprecated and removed from final answers.
 - Please use <concise_answer> and </concise_answer> tokens at the start and end of the extracted answer. For example, if the extracted answer is number 3, the format is <concise_answer>3</concise_answer>.
 - Please use <answer_format> and </answer_format> tokens at the start and end of the answer format. For example, if the answer format is List, the format is <answer_format>List</answer_format>.
-- Please make your response as concise as possible. Also note that your response should be formatted as below: 
+- Please make your response as concise as possible. Also note that your response should be formatted as below:
 ```
 Extracted answer: <concise_answer>[answer]</concise_answer>
 Answer format: <answer_format>[answer format]</answer_format>
 ```
 
-Please read the following example, then extract the answer from the model response and type it at the end of the prompt. 
+Please read the following example, then extract the answer from the model response and type it at the end of the prompt.
 
 ---
 Question: List the primary questions asked about the services in this report.
-Analysis: The primary questions asked about the services in the report for The Limes Residential Home are: \n\n1. Is the service safe? \n\n2. Is the service effective? \n\n3. Is the service caring? \n\n4. Is the service responsive? \n\n5. Is the service well-led? 
+Analysis: The primary questions asked about the services in the report for The Limes Residential Home are: \n\n1. Is the service safe? \n\n2. Is the service effective? \n\n3. Is the service caring? \n\n4. Is the service responsive? \n\n5. Is the service well-led?
 Extracted answer: <concise_answer>['Is the servife safe?', 'Is the service effective', 'Is the serve caring?', 'Is the service responsive?', 'Is the service well-led?']</concise_answer>
 Answer format: <answer_format>List</answer_format>
 

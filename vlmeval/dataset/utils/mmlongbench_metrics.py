@@ -2,19 +2,22 @@
 Adopted from https://github.com/princeton-nlp/DensePhrases/blob/main/densephrases/utils/eval_utils.py
 """
 
+import json
+import logging
+import math
 import re
 import string
-import json
-import math
 import unicodedata
-from math import isclose
 from collections import Counter
-from rouge_score import rouge_scorer
-from functools import partial
-from tqdm import tqdm
+from math import isclose
 
 import torch
-import logging
+from rouge_score import rouge_scorer
+from tqdm import tqdm
+
+from .mmlongbench_judge_prompt import (CURRENT_CASE_PROMPT, CURRENT_LIST_CASE_PROMPT,
+                                       DOC_QA_JUDGE_PROMPT, DOC_QA_LIST_F1_JUDGE_PROMPT)
+
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
                     datefmt='%m/%d/%Y %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -102,7 +105,7 @@ def drqa_metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
 
 def get_max_memory():
     """Get the maximum memory available for the current GPU for loading models."""
-    free_in_GB = int(torch.cuda.mem_get_info()[0]/1024**3)
+    free_in_GB = int(torch.cuda.mem_get_info()[0] / 1024**3)
     max_memory = f'{free_in_GB-6}GB'
     n_gpus = torch.cuda.device_count()
     max_memory = {i: max_memory for i in range(n_gpus)}
@@ -114,8 +117,8 @@ def get_top_tokens(logits, tokenizer, top_k=10):
     top_tokens = []
     for logit in logits:
         a, b = torch.topk(torch.softmax(logit, dim=-1), top_k, dim=-1)
-        l = [(y, f"{x*100:.02f}") for x, y in zip(a[0], tokenizer.convert_ids_to_tokens(b[0]))]
-        top_tokens.append(l)
+        token_scores = [(y, f"{x * 100:.02f}") for x, y in zip(a[0], tokenizer.convert_ids_to_tokens(b[0]))]
+        top_tokens.append(token_scores)
     return top_tokens
 
 
@@ -123,11 +126,13 @@ def parse_output(output, prefix="Answer:"):
     def lstrip_string(s, sub):
         return re.sub(f'^{re.escape(sub)}', '', s, flags=re.IGNORECASE)
     patterns = [re.compile(f"(?:{prefix})(.*)", flags=re.IGNORECASE | re.DOTALL),  # prefix + answer + sentence end
-                re.compile(r"(?:^)(.*)", flags=re.IGNORECASE | re.DOTALL)] # the beginning + answer + sentence end
+                re.compile(r"(?:^)(.*)", flags=re.IGNORECASE | re.DOTALL)]  # the beginning + answer + sentence end
     for pat in patterns:
         matches = pat.search(output)
         if matches is not None:
-            return lstrip_string(matches[1].strip(), prefix).strip() # 0 index includes the non-capturing group # lstrip again because for chat models sometimes it will repeat the prefix
+            # 0 index includes the non-capturing group.
+            # Strip again because chat models sometimes repeat the prefix.
+            return lstrip_string(matches[1].strip(), prefix).strip()
     # if still not found, return None, but should actually never get this case...
     return None
 
@@ -145,13 +150,14 @@ def extract_binary_label(prediction):
             return int(prediction.strip())
         return -1
 
+
 def turn_int_list(curr_list):
     new_list = []
     for item in curr_list:
         try:
             item = int(item)
             new_list.append(item)
-        except:
+        except (TypeError, ValueError):
             pass
     return new_list
 
@@ -159,7 +165,7 @@ def turn_int_list(curr_list):
 def extract_cnt_list(prediction):
     prediction = normalize_answer_with_punc(prediction)
 
-    pattern1 = r'\[[\d\s,]+\]' # r'\[[\d\s,]+\](?!.*\[[\d\s,]+\])'
+    pattern1 = r'\[[\d\s,]+\]'  # r'\[[\d\s,]+\](?!.*\[[\d\s,]+\])'
     match = re.findall(pattern1, prediction, re.IGNORECASE | re.DOTALL)
     if match:
         try:
@@ -167,7 +173,7 @@ def extract_cnt_list(prediction):
         except json.JSONDecodeError:
             pass
 
-    pattern2 = r'\[.*?\]' # r'\[.*?\](?!.*\[.*\])'
+    pattern2 = r'\[.*?\]'  # r'\[.*?\](?!.*\[.*\])'
     match = re.findall(pattern2, prediction, re.IGNORECASE | re.DOTALL)
     if match:
         try:
@@ -278,12 +284,13 @@ def need_exact_match_check(s):
 
 def extract_number_list(pred):
     pred_clean = pred.replace(',', '')
-    num_pattern = r'(-?\d+(\.\d*)?|-?\.\d+)' # r'-?(\d+(\.\d*)?|\.\d+)'
+    num_pattern = r'(-?\d+(\.\d*)?|-?\.\d+)'  # r'-?(\d+(\.\d*)?|\.\d+)'
     matches = re.findall(num_pattern, pred_clean)
     numbers = []
     for match_tuple in matches:
         match = match_tuple[0]
-        try: # TODO filter inf number. Note this is added at the end of the experiment. previous is numers.append(float(match))
+        # TODO: filter inf values; previous behavior was numbers.append(float(match)).
+        try:
             num = float(match)
             if math.isfinite(num):
                 numbers.append(num)
@@ -299,7 +306,7 @@ def get_str_type(num_str):
             return "Integer"
         else:
             return "Float"
-    except:
+    except (TypeError, ValueError):
         return "String"
 
 
@@ -326,21 +333,21 @@ def eval_docqa_score(gt, pred, answer_type):
         gt_list = json.loads(gt)
         # merge f1 score text to prevent low precision
         merge_flag = [True if isinstance(item, str) and get_str_type(item) == "String" and not
-                              need_exact_match_check(item)
-                      else False for item in gt_list] # we merge all answers that are string and don't need EM for better recall
+                      need_exact_match_check(item)
+                      else False for item in gt_list]
         merged_str = " ".join([item for item, m_flag in zip(gt_list, merge_flag) if m_flag]).strip()
         if merged_str:
             new_gt_list = [merged_str] + [item for item, m_flag in zip(gt_list, merge_flag) if not m_flag]
             gt_list = new_gt_list
 
-        gt_score_list = [] # This is the greedy score similar to that used in LongDocURL
+        gt_score_list = []  # This is the greedy score similar to that used in LongDocURL
         for gt in gt_list:
             assert not isinstance(gt, list)
             if isinstance(gt, int):
                 gt_type = "Integer"
             elif isinstance(gt, float):
                 gt_type = "Float"
-            else: # String answers can also represent int and float
+            else:  # String answers can also represent int and float
                 gt_type = get_str_type(gt)
             gt_score = eval_docqa_score(gt, pred, gt_type)
             gt_score_list.append(gt_score)
@@ -360,7 +367,7 @@ def parse_judge_output(model_output):
 
     try:
         rationale_match = re.search(r'\[Scoring Rationale\]:(.*?)(?=\[Score\]:|\[JSON\]:|$)',
-                                   model_output, re.DOTALL)
+                                    model_output, re.DOTALL)
         if rationale_match:
             result["scoring_rationale"] = rationale_match.group(1).strip()
     except Exception as e:
@@ -389,7 +396,7 @@ def parse_list_judge_output(model_output):
     }
     try:
         rationale_match = re.search(r'\[Rationale\]:(.*?)(?=\[JSON\]:|$)',
-                                   model_output, re.DOTALL)
+                                    model_output, re.DOTALL)
         if rationale_match:
             result["rationale"] = rationale_match.group(1).strip()
     except Exception as e:
@@ -398,6 +405,7 @@ def parse_list_judge_output(model_output):
 
     result["json_data"] = robust_json_extraction(model_output, ["student_answer_count", "covered_count"])
     return result
+
 
 def robust_json_extraction(text, key_list):
     try:
@@ -432,10 +440,6 @@ def cover_key(json_data, key_list):
     return True
 
 
-from .mmlongbench_judge_prompt import DOC_QA_JUDGE_PROMPT, CURRENT_CASE_PROMPT
-from .mmlongbench_judge_prompt import DOC_QA_LIST_F1_JUDGE_PROMPT, CURRENT_LIST_CASE_PROMPT
-
-
 def eval_docqa_score_with_llm_judge(gt, pred, extra_info):
     question = extra_info["question"]
     prompt = DOC_QA_JUDGE_PROMPT + CURRENT_CASE_PROMPT.format(question=question, reference=gt, prediction=pred)
@@ -457,13 +461,15 @@ def eval_docqa_score_with_llm_judge(gt, pred, extra_info):
 
 def eval_docqa_list_score_with_llm_judge(gt, pred, extra_info):
     question = extra_info["question"]
-    prompt = DOC_QA_LIST_F1_JUDGE_PROMPT + CURRENT_LIST_CASE_PROMPT.format(question=question, reference=gt, prediction=pred)
+    prompt = DOC_QA_LIST_F1_JUDGE_PROMPT + \
+        CURRENT_LIST_CASE_PROMPT.format(question=question, reference=gt, prediction=pred)
     llm_judge_client = extra_info["llm_judge_client"]
 
     response = llm_judge_client.generate(prompt)
 
     judge_result = parse_list_judge_output(response)
-    if judge_result["json_data"] is not None and cover_key(judge_result["json_data"], ["student_answer_count", "covered_count"]):
+    if judge_result["json_data"] is not None and cover_key(
+            judge_result["json_data"], ["student_answer_count", "covered_count"]):
         student_answer_count = judge_result["json_data"]["student_answer_count"]
         count = judge_result["json_data"]["covered_count"]
         if count > 0:
@@ -499,12 +505,14 @@ def anls_compute(prediction, groundtruth, threshold=-1):
     length = max(len(groundtruth.upper()), len(prediction.upper()))
     value = 0.0 if length == 0 else float(dist) / float(length)
     anls = 1.0 - value
-    if anls<=threshold:
+    if anls <= threshold:
         anls = 0.0
     return anls
 
 
 r_scorer = rouge_scorer.RougeScorer(['rougeL', 'rougeLsum'], use_stemmer=True)
+
+
 def calculate_metrics(prediction, answers, metrics, extra_info=None):
     metric_list = [m.strip() for m in metrics.split(",")]
     metric_res = {}
