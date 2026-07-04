@@ -8,6 +8,9 @@ exclude: |
       vlmeval/dataset/utils/megabench/ |
       vlmeval/dataset/utils/vgrpbench/ |
       vlmeval/dataset/utils/chartmimic/ |
+      vlmeval/dataset/MDPBench/dataset/ |
+      vlmeval/dataset/MDPBench/metrics/ |
+      vlmeval/dataset/MDPBench/utils/ |
       vlmeval/vlm/ola/ |
       vlmeval/vlm/ursa/ |
       vlmeval/vlm/ovis/ |
