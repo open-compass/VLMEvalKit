@@ -108,6 +108,7 @@ def SFE_auxeval(model, data):
 
 
 class SFE(ImageVQADataset):
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-1120'
 
     DATASET_URL = {
         'SFE': 'https://opencompass.openxlab.space/utils/VLMEval/SFE.tsv',

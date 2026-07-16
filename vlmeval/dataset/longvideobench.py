@@ -260,7 +260,7 @@ class LongVideoBench(VideoBaseDataset):
         if video_llm:
             message.append(dict(type='video', value=osp.join(self.data_root, line['video_path'])))
         else:
-            if not self.use_subtitle:
+            if self.use_subtitle:
                 with open(osp.join(self.data_root, "subtitles", line["subtitle_path"])) as f:
                     subtitles = json.load(f)
 

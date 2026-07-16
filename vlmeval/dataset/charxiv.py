@@ -24,7 +24,7 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
     Returns:
         Dict containing evaluation results with extract_answer and score
     """
-    failure_result = {"extract_answer": "Failed to parse response", "score": 0.0}
+    failure_result = {"extracted_answer": "Failed to parse response", "score": 0.0}
     prompt = line["grading_query"].replace("{PREDICTION}", line["prediction"])
 
     retry = kwargs.get("retry", 10)
@@ -45,7 +45,7 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
             content = json.loads(response)
             if not isinstance(content, dict):
                 return failure_result
-            if "score" not in content or "extract_answer" not in content:
+            if "score" not in content or "extracted_answer" not in content:
                 return failure_result
             return content
         except Exception:
@@ -110,7 +110,7 @@ class CharXiv(ImageBaseDataset):
     }
     DATASET_MD5 = {
         "CharXiv_descriptive_val": "e165037032f169a59dd09ea5d7ad3073",
-        "CharXiv_reasoning_val": "98eeff269b40726982627b19338ccd45",
+        "CharXiv_reasoning_val": "6fc1a522ad32c2e3d72a89857b8cf10b",
     }
 
     def build_prompt(self, line: Union[int, pd.Series]) -> List[Dict[str, str]]:
@@ -194,7 +194,7 @@ class CharXiv(ImageBaseDataset):
         if "LOCAL_LLM" in os.environ:
             judge_model = os.path.basename(os.environ.get("LOCAL_LLM"))
         else:
-            judge_model = judge_kwargs.get("model", "gpt-4o-mini")
+            judge_model = judge_kwargs.pop("model", "gpt-4o-mini")
 
         if judge_model != "gpt-4o-mini":
             warnings.warn(
@@ -218,8 +218,8 @@ class CharXiv(ImageBaseDataset):
         data = file.load(eval_file)
         if "score" not in data.columns:
             data["score"] = 0
-        if "extract_answer" not in data.columns:
-            data["extract_answer"] = ""
+        if "extracted_answer" not in data.columns:
+            data["extracted_answer"] = ""
 
         # Load intermediate results if available
         processed_results = {}
@@ -246,8 +246,8 @@ class CharXiv(ImageBaseDataset):
 
         # Update data with evaluation results
         data["score"] = data.apply(lambda x: processed_results[x.name]["score"], axis=1)
-        data["extract_answer"] = data.apply(
-            lambda x: processed_results[x.name]["extract_answer"], axis=1
+        data["extracted_answer"] = data.apply(
+            lambda x: processed_results[x.name]["extracted_answer"], axis=1
         )
 
         # Save results and return scores

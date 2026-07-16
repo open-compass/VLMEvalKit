@@ -21,6 +21,7 @@ jieba>=0.42.1
 json_repair
 latex2sympy2-extended
 levenshtein>=0.27.1
+litellm>=1.55,<1.85
 lpips
 lxml>=6.0.2
 math-verify

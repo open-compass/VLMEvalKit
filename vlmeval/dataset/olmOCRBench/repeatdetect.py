@@ -168,7 +168,7 @@ class BenchmarkRepeatDetect(unittest.TestCase):
 
         end = time.perf_counter()
 
-        print(f"testLargeRandom took {end-start:0.0001f} seconds")
+        print(f"testLargeRandom took {end - start:0.0001f} seconds")
 
 
 if __name__ == "__main__":

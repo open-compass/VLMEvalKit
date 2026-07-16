@@ -14,6 +14,7 @@ from .hunyuan import HunyuanVision
 from .jt_vl_chat import JTVLChatAPI
 from .jt_vl_chat_mini import JTVLChatAPI_2B, JTVLChatAPI_Mini
 from .kimivl_api import KimiVLAPI, KimiVLAPIWrapper
+from .litellm_api import LiteLLMAPI
 from .lmdeploy import LMDeployAPI, LMDeployWrapper
 from .minimax_api import MiniMaxAPI
 from .mug_u import MUGUAPI
@@ -41,5 +42,5 @@ __all__ = [
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
     'VideoChatOnlineV2API', 'TeleMM2_API', 'TeleMM2Thinking_API', 'TogetherAPI', 'GCPVertexAPI',
-    'BedrockAPI', 'SenseChatVisionV2API', 'MiniMaxAPI',
+    'BedrockAPI', 'SenseChatVisionV2API', 'MiniMaxAPI', 'LiteLLMAPI',
 ]

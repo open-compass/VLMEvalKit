@@ -364,10 +364,11 @@ class SmolVLM2(BaseModel):
         # Set resolution based on model
         if "SmolVLM2-2.2B" in model_path:
             self.resolution = 384
-        elif "SmolVLM2-256M" in model_path or "SmolVLM2-500M" in model_path:
+        elif "SmolVLM2-256M" in model_path or "SmolVLM2-500M" in model_path or "Solari" in model_path:
             self.resolution = 512
         else:
-            raise ValueError(f"Unknown model {model_path}, cannot determine resolution")
+            self.resolution = 512
+            warnings.warn(f"Unknown model {model_path}, defaulting to resolution 512")
 
         self.processor = AutoProcessor.from_pretrained(model_path)
         self.model = AutoModelForImageTextToText.from_pretrained(

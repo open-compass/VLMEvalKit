@@ -9,11 +9,11 @@
 [English](/README.md) | [简体中文](/docs/zh-CN/README_zh-CN.md) | 日本語
 
 <a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 OpenCompass Learderboard </a> •
-<a href="#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
-<a href="#%EF%B8%8F-quickstart">🏗️Quickstart </a> •
-<a href="#%EF%B8%8F-development-guide">🛠️Development </a> •
-<a href="#-the-goal-of-vlmevalkit">🎯Goal </a> •
-<a href="#%EF%B8%8F-citation">🖊️Citation </a>
+<a href="#-データセットモデルおよび評価結果">📊Datasets & Models </a> •
+<a href="#️-クイックスタート">🏗️Quickstart </a> •
+<a href="#️-開発ガイド">🛠️Development </a> •
+<a href="#-vlmevalkitの目標">🎯Goal </a> •
+<a href="#️-引用">🖊️Citation </a>
 
 <a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 HF Leaderboard</a> •
 <a href="https://huggingface.co/datasets/VLMEval/OpenVLMRecords">🤗 Evaluation Records</a> •

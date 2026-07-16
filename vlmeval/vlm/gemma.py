@@ -1,5 +1,6 @@
 import base64
 import logging
+import re
 from io import BytesIO
 from mimetypes import guess_type
 
@@ -228,3 +229,211 @@ class Gemma3(BaseModel):
             return self.generate_inner_vllm(message, dataset=dataset)
         else:
             return self.generate_inner_transformers(message, dataset=dataset)
+
+
+class Gemma4(BaseModel):
+
+    INSTALL_REQ = False
+    INTERLEAVE = True
+
+    def __init__(self, model_path='google/gemma-4-E2B-it', **kwargs):
+        self.use_vllm = kwargs.pop('use_vllm', False)
+        self.limit_mm_per_prompt = kwargs.pop('limit_mm_per_prompt', 24)
+        self.model_path = model_path
+
+        try:
+            from transformers import AutoProcessor
+
+            if not self.use_vllm:
+                try:
+                    from transformers import Gemma4ForConditionalGeneration
+                except ImportError:
+                    try:
+                        from transformers import \
+                            AutoModelForMultimodalLM as Gemma4ForConditionalGeneration
+                    except ImportError:
+                        from transformers import \
+                            AutoModelForImageTextToText as Gemma4ForConditionalGeneration
+        except Exception as e:
+            logging.critical('Please install torch and a recent transformers version.')
+            raise e
+
+        trust_remote_code = kwargs.pop('trust_remote_code', True)
+        if self.use_vllm:
+            from vllm import LLM
+
+            # Set tensor_parallel_size [8, 4, 2, 1] based on the number of available GPUs
+            gpu_count = torch.cuda.device_count()
+            if gpu_count >= 8:
+                tp_size = 8
+            elif gpu_count >= 4:
+                tp_size = 4
+            elif gpu_count >= 2:
+                tp_size = 2
+            else:
+                tp_size = 1
+            logging.info(
+                f'Using vLLM for Gemma4 inference with {tp_size} GPUs (available: {gpu_count})'
+            )
+            import os
+            if os.environ.get('VLLM_WORKER_MULTIPROC_METHOD') != 'spawn':
+                logging.warning(
+                    'VLLM_WORKER_MULTIPROC_METHOD is not set to spawn.'
+                    'Use \'export VLLM_WORKER_MULTIPROC_METHOD=spawn\' to avoid potential multi-process issues'
+                )
+            self.llm = LLM(
+                model=model_path,
+                max_num_seqs=4,
+                max_model_len=16384,
+                limit_mm_per_prompt={"image": self.limit_mm_per_prompt},
+                tensor_parallel_size=tp_size,
+                gpu_memory_utilization=kwargs.get("gpu_utils", 0.9),
+                trust_remote_code=trust_remote_code,
+            )
+            # export VLLM_WORKER_MULTIPROC_METHOD=spawn
+            self.device = 'cuda'
+        else:
+            model_kwargs = {
+                'device_map': kwargs.pop('device_map', 'cuda'),
+                'torch_dtype': kwargs.pop('torch_dtype', torch.bfloat16),
+                'trust_remote_code': trust_remote_code,
+            }
+            if attn_implementation := kwargs.pop('attn_implementation', None):
+                model_kwargs['attn_implementation'] = attn_implementation
+
+            self.model = Gemma4ForConditionalGeneration.from_pretrained(
+                model_path, **model_kwargs
+            ).eval()
+            self.device = getattr(self.model, 'device', None)
+            if self.device is None:
+                self.device = next(self.model.parameters()).device
+
+        self.processor = AutoProcessor.from_pretrained(
+            model_path, trust_remote_code=trust_remote_code
+        )
+
+        default_kwargs = {
+            'do_sample': False,
+            'max_new_tokens': 4096
+        }
+        default_kwargs.update(kwargs)
+        self.kwargs = default_kwargs
+        self.enable_thinking = self.kwargs.pop('enable_thinking', False)
+
+    @staticmethod
+    def _load_image(image_path):
+        with Image.open(image_path) as image:
+            return image.convert('RGB').copy()
+
+    def message2pipeline(self, message):
+        content = []
+        for m in message:
+            if m['type'] == 'text':
+                content.append(dict(type='text', text=m['value']))
+            elif m['type'] == 'image':
+                content.append(dict(type='image', image=self._load_image(m['value'])))
+        return [dict(role='user', content=content)]
+
+    def message_to_promptimg_vllm(self, message, dataset=None):
+        processed_message = []
+        images = []
+        num_images = 0
+        for item in message:
+            if item['type'] == 'text':
+                processed_message.append({
+                    "type": "text",
+                    "text": item['value']
+                })
+            elif item['type'] == 'image' and num_images < self.limit_mm_per_prompt:
+                processed_message.append({"type": "image"})
+                images.append(self._load_image(item['value']))
+                num_images += 1
+        if num_images >= self.limit_mm_per_prompt:
+            logging.warning(
+                f"Number of images exceeds the limit of {self.limit_mm_per_prompt}."
+                f"Only the first {self.limit_mm_per_prompt} images will be used."
+            )
+        return processed_message, images
+
+    @staticmethod
+    def extract_response_for_eval(response):
+        if not isinstance(response, str):
+            return response
+
+        if '</think>' in response:
+            response = response.split('</think>')[-1]
+        if '</thinking>' in response:
+            response = response.split('</thinking>')[-1]
+
+        response = re.sub(
+            r'<\|channel\>thought\n.*?<channel\|>',
+            '',
+            response,
+            flags=re.DOTALL
+        )
+        final_match = re.search(
+            r'<\|channel\>final\n(?P<answer>.*?)(?:<channel\|>|$)',
+            response,
+            flags=re.DOTALL
+        )
+        if final_match:
+            response = final_match.group('answer')
+
+        return response.strip()
+
+    def generate_inner_transformers(self, message, dataset=None):
+        messages = self.message2pipeline(message)
+        inputs = self.processor.apply_chat_template(
+            messages, add_generation_prompt=True, tokenize=True,
+            return_dict=True, return_tensors='pt',
+            enable_thinking=self.enable_thinking,
+        ).to(self.device, dtype=torch.bfloat16)
+
+        input_len = inputs['input_ids'].shape[-1]
+
+        with torch.inference_mode():
+            generation = self.model.generate(**inputs, **self.kwargs)
+            generation = generation[0][input_len:]
+
+        decoded = self.processor.decode(generation, skip_special_tokens=False)
+        if hasattr(self.processor, 'parse_response'):
+            decoded = self.processor.parse_response(decoded)
+            if isinstance(decoded, dict):
+                decoded = decoded.get('answer', decoded.get('response', str(decoded)))
+            elif isinstance(decoded, tuple):
+                decoded = decoded[-1]
+        return self.extract_response_for_eval(decoded)
+
+    def generate_inner_vllm(self, message, dataset=None):
+        from vllm import SamplingParams
+
+        prompt, images = self.message_to_promptimg_vllm(message, dataset=dataset)
+        messages = [
+            {'role': 'user', 'content': prompt}
+        ]
+        prompt = self.processor.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=self.enable_thinking,
+        )
+
+        sampling_params = SamplingParams(temperature=0.0,
+                                         max_tokens=self.kwargs['max_new_tokens'])
+        outputs = self.llm.generate(
+            {
+                "prompt": prompt,
+                "multi_modal_data": {
+                    "image": images
+                },
+            },
+            sampling_params=sampling_params
+        )
+        for o in outputs:
+            generated_text = o.outputs[0].text
+        return self.extract_response_for_eval(generated_text)
+
+    def generate_inner(self, message, dataset=None):
+        if self.use_vllm:
+            return self.generate_inner_vllm(message, dataset=dataset)
+        return self.generate_inner_transformers(message, dataset=dataset)

@@ -873,7 +873,7 @@ class MiniCPM_V_4(BaseModel):
         question = line['question']
 
         if not self.use_cot(dataset):
-            if DATASET_TYPE(dataset) == 'MCQ':
+            if listinstr(['MCQ'], DATASET_TYPE(dataset)):
                 options = {
                     cand: line[cand]
                     for cand in string.ascii_uppercase
@@ -914,7 +914,7 @@ class MiniCPM_V_4(BaseModel):
                 prompt = question
         else:
             has_options = True
-            if DATASET_TYPE(dataset) == 'MCQ':
+            if listinstr(['MCQ'], DATASET_TYPE(dataset)):
                 options = {
                     cand: line[cand]
                     for cand in string.ascii_uppercase
@@ -940,8 +940,8 @@ class MiniCPM_V_4(BaseModel):
             else:
                 prompt = question
 
-            if DATASET_TYPE(dataset) in ['MCQ', 'Y/N', 'VQA']:
-                if DATASET_TYPE(dataset) == 'MCQ':
+            if listinstr(['MCQ'], DATASET_TYPE(dataset)) or DATASET_TYPE(dataset) in ['Y/N', 'VQA']:
+                if listinstr(['MCQ'], DATASET_TYPE(dataset)):
                     if has_options:
                         prompt = self.multi_choice_cot_prompt + prompt
                     else:
@@ -963,7 +963,7 @@ class MiniCPM_V_4(BaseModel):
         msgs.append(dict(type='text', value=prompt))
 
         if dataset.startswith('MMMU_'):
-            from .. import MMMUDataset
+            from vlmeval.dataset import MMMUDataset
             msgs = MMMUDataset.split_MMMU(msgs)
 
         return msgs
@@ -1198,7 +1198,7 @@ class MiniCPM_V_4_5(MiniCPM_V_4):
         msgs.append(dict(type='text', value=prompt))
 
         if dataset.startswith('MMMU_'):
-            from .. import MMMUDataset
+            from vlmeval.dataset import MMMUDataset
             msgs = MMMUDataset.split_MMMU(msgs)
 
         return msgs
@@ -1423,3 +1423,198 @@ class MiniCPM_o_4_5(MiniCPM_V_4):
         res = self.extract_answer(res, dataset)
 
         return res
+
+
+class MiniCPM_V_4_6(MiniCPM_V_4):
+    INSTALL_REQ = False
+    INTERLEAVE = True
+
+    def __init__(self, model_path='openbmb/MiniCPM-V-4.6', use_upsize=False, **kwargs):
+        random.seed(0)
+        np.random.seed(0)
+        torch.manual_seed(0)
+        torch.cuda.manual_seed_all(0)
+        assert model_path is not None
+        self.model_path = model_path
+        print(f'load from path {self.model_path}')
+
+        from transformers import AutoModelForImageTextToText, AutoProcessor
+        self.model = AutoModelForImageTextToText.from_pretrained(
+            self.model_path,
+            torch_dtype=torch.bfloat16,
+        )
+        self.model.eval().cuda()
+        self.kwargs = kwargs
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
+        self.processor = AutoProcessor.from_pretrained(self.model_path, trust_remote_code=True)
+        torch.cuda.empty_cache()
+
+        self._use_upsize = use_upsize
+        self.num_beams = 3
+        self.max_new_tokens = 8192
+        self.max_slice_nums = 9
+        self.downsample_mode = '4x'
+
+        self.options_suffix_prompt = '''\nAnswer with the option's letter from the given choices directly.'''
+        self.wo_options_system_prompt = 'Carefully read the following question. Answer the question directly.'
+        self.detail_system_prompt = 'Answer this question in detail.'
+        self.vqa_prompt = 'Answer the question using a single word or phrase.'
+        self.multi_choice_cot_prompt = ('''Carefully read the following multichoice question, solve it step '''
+                                        '''by step and finally pick the option associated with the correct '''
+                                        '''answer in the format of "Answer: selected option\n\n''')
+        self.short_ans_cot_prompt = ('''Read the following question carefully, solve it step by step, and '''
+                                     '''then output the final answer in the format of "Answer: single number '''
+                                     '''or single word or phrase".\n\n''')
+        self.ocrbench_cot_prompt = 'Carefully observe the image and answer the OCR-related questions below. \n\n'
+
+    def use_long_cot(self, dataset=None):
+        return False
+
+    def use_cot(self, dataset=None):
+        if dataset is None:
+            return False
+        if listinstr([
+                'MMMU', 'MathVista', 'MMStar', 'OCRBench',
+                'MathVision', 'MathVerse_MINI', 'CharXiv_reasoning_val',
+                'DynaMath', 'LogicVista', 'WeMath', 'MUIRBench',
+                'MMBench', 'AI2D', 'MMVet'
+        ], dataset):
+            return True
+        elif listinstr([
+                'RealWorldQA', 'POPE', 'ScienceQA', 'TextVQA', 'DocVQA'
+        ], dataset):
+            return False
+        else:
+            return False
+
+    def use_upsize(self, dataset=None):
+        if not self._use_upsize or dataset is None:
+            return False
+        if listinstr([
+                'MMMU', 'MathVista', 'MMStar', 'OCRBench',
+                'ChartQA', 'TextVQA', 'DocVQA',
+                'AI2D', 'MMBench', 'MMVet',
+                'CharXiv_reasoning_val', 'WeMath', 'MUIRBench',
+                'MathVerse_MINI', 'MathVision', 'DynaMath', 'LogicVista',
+        ], dataset):
+            return True
+        else:
+            return False
+
+    def extract_answer(self, res, dataset=None):
+        if dataset is None:
+            return res
+        if '</think>' in res:
+            res = res.rsplit('</think>', 1)[-1].strip()
+        answer_match = re.search(r'<answer>(.*?)</answer>', res, re.DOTALL)
+        if answer_match:
+            return answer_match.group(1).strip()
+        if self.use_cot(dataset):
+            if listinstr(['MCQ'], DATASET_TYPE(dataset)):
+                matches = re.findall(
+                    r'(?:Answer(?:\s+is|:)|答案(?:是|为)?[:：]?)\s*([A-Ja-j])(?![A-Za-z])',
+                    res,
+                    re.DOTALL,
+                )
+                if matches:
+                    return matches[-1].strip()
+            elif DATASET_TYPE(dataset) == 'VQA' and not listinstr(['OCRBench', 'MMVet'], dataset):
+                match = re.search(r'Answer:\s*(.*)\s*$', res, re.DOTALL)
+                if match:
+                    return match.group(1)
+            elif DATASET_TYPE(dataset) == 'Y/N':
+                match = re.search(r'Answer:\s*(.*)\s*$', res, re.DOTALL)
+                if match:
+                    return match.group(1)
+        return res
+
+    def generate_inner(self, message, dataset=None):
+        content = []
+        for x in message:
+            if x['type'] == 'text':
+                content.append({'type': 'text', 'text': x['value']})
+            elif x['type'] == 'image':
+                image = Image.open(x['value']).convert('RGB')
+                if self.use_upsize(dataset):
+                    img_width, img_height = image.width, image.height
+                    if (img_width * img_height) < (1344 * 1344):
+                        ratio = math.sqrt((1344 * 1344) / (img_width * img_height))
+                        max_img_width = int(img_width * ratio)
+                        new_img_width = random.randint(img_width, max_img_width)
+                        new_img_height = int(new_img_width / img_width * img_height)
+                        image = image.resize((new_img_width, new_img_height))
+                content.append({'type': 'image', 'image': image})
+        messages = [{'role': 'user', 'content': content}]
+
+        enable_thinking = self.use_long_cot(dataset)
+        is_video = (dataset is not None and DATASET_MODALITY(dataset) == 'VIDEO')
+        max_slice_nums = 1 if is_video else self.max_slice_nums
+        use_image_id = not is_video
+
+        inputs = self.processor.apply_chat_template(
+            messages,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_dict=True,
+            return_tensors='pt',
+            downsample_mode=self.downsample_mode,
+            max_slice_nums=max_slice_nums,
+            use_image_id=use_image_id,
+            enable_thinking=enable_thinking,
+        ).to(self.model.device)
+
+        if enable_thinking:
+            gen_kwargs = dict(
+                max_new_tokens=self.max_new_tokens,
+                do_sample=True,
+                temperature=0.7,
+                top_p=1.0,
+                top_k=0,
+                repetition_penalty=1.0,
+                no_repeat_ngram_size=0,
+                num_beams=1,
+            )
+        else:
+            gen_kwargs = dict(
+                max_new_tokens=self.max_new_tokens,
+                do_sample=False,
+                num_beams=self.num_beams,
+                repetition_penalty=1.2,
+            )
+        gen_kwargs.update(self.kwargs)
+
+        generated_ids = self.model.generate(
+            **inputs,
+            downsample_mode=self.downsample_mode,
+            **gen_kwargs,
+        )
+        trimmed = [
+            out[len(inp):] for inp, out in zip(inputs['input_ids'], generated_ids)
+        ]
+        output_text = self.processor.batch_decode(
+            trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )
+        res = output_text[0] if output_text else ''
+        res = self.extract_answer(res, dataset)
+        return res
+
+
+class MiniCPM_V_4_6_Thinking(MiniCPM_V_4_6):
+    INSTALL_REQ = False
+    INTERLEAVE = True
+
+    def __init__(self, model_path='openbmb/MiniCPM-V-4.6-Thinking', **kwargs):
+        super().__init__(model_path, **kwargs)
+
+    def use_long_cot(self, dataset=None):
+        return True
+
+    def use_cot(self, dataset=None):
+        return dataset is not None and (
+            listinstr(['MCQ'], DATASET_TYPE(dataset)) or DATASET_TYPE(dataset) in ['VQA', 'Y/N']
+        )
+
+    def use_upsize(self, dataset=None):
+        return self._use_upsize and dataset is not None

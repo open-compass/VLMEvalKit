@@ -172,7 +172,7 @@ class NibblesEvaluator(BaseEvaluator):
             if move == opposites.get(direction):
                 return {
                     'success': False,
-                    'error': f"Invalid move at step {i+1}: Cannot reverse direction from {direction} to {move}",
+                    'error': f"Invalid move at step {i + 1}: Cannot reverse direction from {direction} to {move}",
                     'apples_eaten': apples_eaten,
                     'total_apples': total_apples
                 }
@@ -189,7 +189,7 @@ class NibblesEvaluator(BaseEvaluator):
             if not (0 <= new_head[0] < rows and 0 <= new_head[1] < cols):
                 return {
                     'success': False,
-                    'error': f"Hit boundary at step {i+1}: position {new_head} out of bounds ({rows}x{cols})",
+                    'error': f"Hit boundary at step {i + 1}: position {new_head} out of bounds ({rows}x{cols})",
                     'apples_eaten': apples_eaten,
                     'total_apples': total_apples
                 }
@@ -198,7 +198,7 @@ class NibblesEvaluator(BaseEvaluator):
             if new_head in snake:
                 return {
                     'success': False,
-                    'error': f"Self-collision at step {i+1}: position {new_head} already occupied by snake",
+                    'error': f"Self-collision at step {i + 1}: position {new_head} already occupied by snake",
                     'apples_eaten': apples_eaten,
                     'total_apples': total_apples
                 }

@@ -20,7 +20,7 @@ from .eagle_x import Eagle
 from .emu import Emu, Emu3_chat, Emu3_gen
 from .falcon_vlm import Falcon2VLM
 from .flash_vl import FlashVL
-from .gemma import Gemma3, PaliGemma
+from .gemma import Gemma3, Gemma4, PaliGemma
 from .granite_docling import DOCLING
 from .granite_vision import GraniteVision3
 from .h2ovl_mississippi import H2OVLChat
@@ -44,7 +44,7 @@ from .long_vita import LongVITA
 from .mantis import Mantis
 from .mgm import Mini_Gemini
 from .minicpm_v import (MiniCPM_Llama3_V, MiniCPM_o_2_6, MiniCPM_o_4_5, MiniCPM_V, MiniCPM_V_2_6,
-                        MiniCPM_V_4, MiniCPM_V_4_5)
+                        MiniCPM_V_4, MiniCPM_V_4_5, MiniCPM_V_4_6, MiniCPM_V_4_6_Thinking)
 from .minigpt4 import MiniGPT4
 from .minimonkey import MiniMonkey
 from .mixsense import LLama3Mixsense
@@ -54,6 +54,7 @@ from .monkey import Monkey, MonkeyChat
 from .moondream import Moondream1, Moondream2, Moondream3
 from .mplug_owl2 import mPLUG_Owl2
 from .mplug_owl3 import mPLUG_Owl3
+from .nanovlm import NanoVLM
 from .nvlm import NVLM
 from .ola import Ola
 from .omchat import OmChat

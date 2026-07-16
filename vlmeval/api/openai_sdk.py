@@ -8,6 +8,46 @@ from .base import BaseAPI
 logger = get_logger(__name__)
 
 
+def _parse_stream_chunk(chunk: dict):
+    choices = chunk.get('choices', [])
+    if not choices:
+        return ''
+    delta = choices[0].get('delta', {})
+    if not isinstance(delta, dict):
+        return ''
+    return delta.get('content') or ''
+
+
+def _collect_streaming_content(response, verbose=False):
+    answer_parts = []
+    chunk_count = 0
+    for line in response.iter_lines(decode_unicode=True):
+        if not line:
+            continue
+        line = line.strip()
+        if not line.startswith('data:'):
+            continue
+        data = line[5:].strip()
+        if data == '[DONE]':
+            break
+        try:
+            chunk = json.loads(data)
+        except json.JSONDecodeError:
+            if verbose:
+                logger.warning(f'Invalid streaming chunk: {data[:120]}')
+            continue
+        part = _parse_stream_chunk(chunk)
+        if part:
+            answer_parts.append(part)
+            chunk_count += 1
+    answer = ''.join(answer_parts).strip()
+    if verbose:
+        logger.info(
+            f'Streaming finished: chunks={chunk_count}, chars={len(answer)}'
+        )
+    return answer
+
+
 class OpenAISDKWrapper(BaseAPI):
     """Base class for OpenAI-compatible API wrappers.
 
@@ -36,6 +76,7 @@ class OpenAISDKWrapper(BaseAPI):
                  verbose=True,
                  system_prompt=None,
                  model_adapter=None,
+                 stream=False,
                  **kwargs):
         """
         Args:
@@ -43,6 +84,7 @@ class OpenAISDKWrapper(BaseAPI):
                 registered adapter name (``str``), or ``None``.
         """
         self.adapter = None
+        self.stream = stream
         if model_adapter is not None:
             if isinstance(model_adapter, str):
                 from .adapters import build_adapter
@@ -117,6 +159,9 @@ class OpenAISDKWrapper(BaseAPI):
             'Authorization': f'Bearer {self.key}',
         }
         payload = dict(model=self.model, messages=input_msgs, n=1, **kwargs)
+        stream = payload.pop('stream', self.stream)
+        if stream:
+            payload['stream'] = True
 
         if self.adapter is not None:
             payload = self.adapter.process_payload(payload, dataset=dataset)
@@ -126,13 +171,17 @@ class OpenAISDKWrapper(BaseAPI):
             headers=headers,
             data=json.dumps(payload),
             timeout=self.timeout * 1.1,
+            stream=stream,
         )
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
         answer = self.fail_msg
         try:
-            resp_struct = json.loads(response.text)
-            answer = resp_struct['choices'][0]['message']['content'].strip()
+            if stream and ret_code == 0:
+                answer = _collect_streaming_content(response, verbose=self.verbose)
+            else:
+                resp_struct = json.loads(response.text)
+                answer = resp_struct['choices'][0]['message']['content'].strip()
             if self.adapter is not None:
                 answer = self.adapter.postprocess(answer, dataset=dataset)
         except Exception as err:

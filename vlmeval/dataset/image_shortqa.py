@@ -75,11 +75,6 @@ class ImageShortQADataset(ImageBaseDataset):
         'LiveMMBench_Reasoning': '',
         'LiveMMBench_Reasoning_circular': '',
         'LiveMMBench_Spatial': '',
-        'hle': 'https://opencompass.openxlab.space/utils/VLMEval/hle.tsv',
-    }
-
-    DATASET_MD5 = {
-        'hle': 'a83cbdbea89f27c2aa5b8f34a8894b72',
     }
 
     def build_prompt(self, line):
@@ -164,3 +159,29 @@ class PathVQA_TEST(ImageShortQADataset):
     DATASET_MD5 = {
         'PathVQA_TEST': None,
     }
+
+
+class HLEDataset(ImageShortQADataset):
+    DATASET_URL = {
+        'hle': 'https://opencompass.openxlab.space/utils/VLMEval/hle.tsv',
+        'hle_verified': 'https://opencompass.openxlab.space/utils/VLMEval/hle-verified.tsv',
+    }
+
+    DATASET_MD5 = {
+        'hle': '6bb5beeec27d615ecb33d708a8bbac4f',
+        'hle_verified': '3a4503e0dfa01570405bddf0f1744cdb',
+    }
+
+    def __init__(self, dataset='hle', skip_noimg=False):
+        super().__init__(dataset=dataset, skip_noimg=skip_noimg)
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if not line['image']:
+            # Handle Text-Only samples
+            SHORT_PROMPT = '\nPlease directly provide a short answer to the question. '
+            return [dict(type='text', value=line['question'] + SHORT_PROMPT)]
+        else:
+            return super().build_prompt(line)
