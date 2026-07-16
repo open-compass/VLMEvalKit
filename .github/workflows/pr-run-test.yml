@@ -65,20 +65,20 @@ jobs:
           rjob submit --metadata-name=vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} --charged-group=llmeval_gpu --private-machine=group --namespace=ailab-llmeval --group=llmeval_gpu --gpu=1 --cpu=16 --memory=32568 --private-machine=group --image=registry.h.pjlab.org.cn/ailab-puyu-puyu_wsp_cpu/vlmevalkit:auto-v0.0.10 --env=HF_HUB_CACHE=/mnt/shared-storage-gpfs2/gpfs2-shared-public/huggingface/hub --env=HF_HUB_OFFLINE=1 --env=LMUData=/mnt/shared-storage-user/opencompass-shared/qa-llm-cicd/LMUData --mount=gpfs://gpfs1/qa-llm-cicd:/mnt/shared-storage-user/qa-llm-cicd --mount=gpfs://gpfs1/opencompass-shared:/mnt/shared-storage-user/opencompass-shared --mount=gpfs://gpfs1/auto-eval-pipeline:/mnt/shared-storage-user/auto-eval-pipeline --mount=gpfs://gpfs2/gpfs2-shared-public:/mnt/shared-storage-gpfs2/gpfs2-shared-public --mount=gpfs://gpfs1/mllm:/mnt/shared-storage-user/mllm -- bash -exc 'cd ${{github.workspace}}; source /mnt/shared-storage-user/opencompass-shared/qa-llm-cicd/miniconda3/bin/activate; conda activate ${{env.CONDA_ENV}}; python run.py --data ${{matrix.dataset}} --model ${{matrix.model}} --work-dir /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/${{matrix.model}} --reuse --judge exact_matching 2>&1'
 
           for i in {1..1200}; do
-            current_status=$(rjob get vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} | grep -oP 'rjob [^:]+: \K[^ ]+')
+            current_status=$(rjob get --namespace=ailab-llmeval vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} | grep -oP 'rjob [^:]+: \K[^ ]+')
             echo "Current status: $current_status, stop checking"
             if [[ $current_status == "Succeeded" ]]; then
               echo "Task succeeded"
-              rjob logs job vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} -n 100
+              rjob logs job --namespace=ailab-llmeval vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} -n 100
               exit 0
             elif [[ $current_status == "Failed" || $current_status == "Stopped" ]]; then
               echo "Task failed or stopped, fetching logs"
-              rjob logs job vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }}
+              rjob logs job --namespace=ailab-llmeval vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }}
               exit 1
             fi
             sleep 6
           done
-          rjob logs job vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} -n 100
+          rjob logs job --namespace=ailab-llmeval vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} -n 100
           echo "Task timeout"
           exit 1
       - name: assert_result
@@ -134,21 +134,21 @@ jobs:
 
 
           for i in {1..1200}; do
-            current_status=$(rjob get vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }} | grep -oP 'rjob [^:]+: \K[^ ]+')
+            current_status=$(rjob get --namespace=ailab-llmeval vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }} | grep -oP 'rjob [^:]+: \K[^ ]+')
             echo "Current status: $current_status, stop checking"
             if [[ $current_status == "Succeeded" ]]; then
               echo "Task succeeded"
-              rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }}  -n 100
+              rjob logs job --namespace=ailab-llmeval vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }}  -n 100
               exit 0
             elif [[ $current_status == "Failed" || $current_status == "Stopped" ]]; then
               echo "Task failed or stopped, fetching logs"
-              rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }}
+              rjob logs job --namespace=ailab-llmeval vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }}
               exit 1
             fi
             sleep 6
           done
 
-          rjob logs job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }} -n 100
+          rjob logs job --namespace=ailab-llmeval vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }} -n 100
           echo "Task timeout"
           exit 1
       - name: assert_result
@@ -161,4 +161,4 @@ jobs:
       - name: stop job
         if: always()
         run: |
-          rjob stop job vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }}
+          rjob stop job --namespace=ailab-llmeval vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }}
