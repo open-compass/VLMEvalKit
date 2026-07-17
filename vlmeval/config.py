@@ -2651,5 +2651,14 @@ nanovlm_series = {
 
 model_groups.append(nanovlm_series)
 
+visionpsy_series = {
+    "VisionPsy-Nano-460M": partial(vlm.VisionPsy, model_path="qvac/VisionPsy-Nano-460M"),
+    "VisionPsy-Nano-460M-Flash": partial(
+        vlm.VisionPsy, model_path="qvac/VisionPsy-Nano-460M-Flash"
+    ),
+}
+
+model_groups.append(visionpsy_series)
+
 for grp in model_groups:
     supported_VLM.update(grp)

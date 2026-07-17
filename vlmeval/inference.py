@@ -132,6 +132,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         'Llama-4' in model_name
         or 'Qwen2-VL' in model_name
         or 'Qwen2.5-VL' in model_name
+        or 'VisionPsy' in model_name
     ):
         kwargs = {'use_vllm': use_vllm}
 
