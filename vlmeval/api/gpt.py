@@ -1,5 +1,7 @@
+import base64
 import json
 import math
+import mimetypes
 import os
 
 import numpy as np
@@ -95,6 +97,7 @@ class OpenAIWrapper(BaseAPI):
                  total_img_size: int = -1,
                  max_file_size: int = 1e9,
                  img_detail: str = 'low',
+                 preserve_image_format: bool = False,
                  use_azure: bool = False,
                  stream: bool = False,
                  **kwargs):
@@ -165,6 +168,7 @@ class OpenAIWrapper(BaseAPI):
         self.max_file_size = max_file_size
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
+        self.preserve_image_format = preserve_image_format
         self.timeout = timeout
         self.stream = stream
         self.is_max_completion_tokens = ('o1' in model) or ('o3' in model) or ('o4' in model) or ('gpt-5' in model)
@@ -222,17 +226,23 @@ class OpenAIWrapper(BaseAPI):
                 if msg['type'] == 'text' and msg['value']:  # Skip empty string
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
-                    from PIL import Image
-                    img = Image.open(msg['value'])
-                    target_size = math.inf
-                    if self.img_size > 0:
-                        target_size = self.img_size
-                    if self.total_img_size > 0:
-                        target_size = min(target_size, int(self.img_size / (image_num**0.5)))
-                    target_size = -1 if math.isinf(target_size) else target_size
-                    b64 = encode_image_to_base64(
-                        img, target_size=target_size, max_file_size=self.max_file_size)
-                    img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
+                    if self.preserve_image_format:
+                        mime = mimetypes.guess_type(msg['value'])[0] or 'image/jpeg'
+                        with open(msg['value'], 'rb') as f:
+                            b64 = base64.b64encode(f.read()).decode('utf-8')
+                        img_struct = dict(url=f'data:{mime};base64,{b64}', detail=self.img_detail)
+                    else:
+                        from PIL import Image
+                        img = Image.open(msg['value'])
+                        target_size = math.inf
+                        if self.img_size > 0:
+                            target_size = self.img_size
+                        if self.total_img_size > 0:
+                            target_size = min(target_size, int(self.img_size / (image_num**0.5)))
+                        target_size = -1 if math.isinf(target_size) else target_size
+                        b64 = encode_image_to_base64(
+                            img, target_size=target_size, max_file_size=self.max_file_size)
+                        img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
                     content_list.append(dict(type='image_url', image_url=img_struct))
         else:
             assert all([x['type'] == 'text' for x in inputs])
