@@ -1,5 +1,4 @@
 import json
-import os
 import os.path as osp
 import zipfile
 from pathlib import Path
@@ -159,42 +158,21 @@ class BabyVision(ImageBaseDataset):
     force_use_dataset_prompt = True
 
     def __init__(self, dataset=BABYVISION_DATASET, data_root=None, meta_jsonl=None, **kwargs):
-        self.data_root = data_root
-        self.meta_jsonl = meta_jsonl
         super().__init__(dataset=dataset, skip_noimg=False)
 
     @classmethod
     def supported_datasets(cls):
         return [BABYVISION_DATASET]
 
+    @staticmethod
+    def _data_root():
+        return Path(LMUDataRoot()) / BABYVISION_DATASET
+
+    def _meta_path(self):
+        return self._data_root() / 'babyvision_data' / 'meta_data.jsonl'
+
     def _candidate_meta_paths(self):
-        paths = []
-        env_meta = os.environ.get('BABYVISION_META_JSONL')
-        if env_meta:
-            paths.append(Path(env_meta))
-        if self.meta_jsonl:
-            paths.append(Path(self.meta_jsonl))
-
-        roots = []
-        env_root = os.environ.get('BABYVISION_DATA_ROOT')
-        if env_root:
-            roots.append(Path(env_root))
-        if self.data_root:
-            roots.append(Path(self.data_root))
-
-        repo_root = Path(__file__).resolve().parents[2]
-        roots.extend([
-            Path(LMUDataRoot()) / 'BabyVision',
-            Path(LMUDataRoot()),
-            repo_root / 'BabyVision' / 'data',
-        ])
-
-        for root in roots:
-            paths.extend([
-                root / 'meta_data.jsonl',
-                root / 'babyvision_data' / 'meta_data.jsonl',
-            ])
-        return paths
+        return [self._meta_path()]
 
     def _find_meta_path(self):
         seen = set()
@@ -237,7 +215,7 @@ class BabyVision(ImageBaseDataset):
             zip_file.extractall(extract_root)
 
     def _download_official_data(self):
-        data_root = Path(LMUDataRoot()) / BABYVISION_DATASET
+        data_root = self._data_root()
         data_root.mkdir(parents=True, exist_ok=True)
 
         zip_path = data_root / 'babyvision_data.zip'
