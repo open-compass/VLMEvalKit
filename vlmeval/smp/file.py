@@ -163,7 +163,12 @@ def dump(data, f, **kwargs):
             fout.write('\n'.join(lines))
 
     def dump_xlsx(data, f, **kwargs):
-        data.to_excel(f, index=False, engine='xlsxwriter')
+        with pd.ExcelWriter(
+            f,
+            engine='xlsxwriter',
+            engine_kwargs={'options': {'strings_to_formulas': False}},
+        ) as writer:
+            data.to_excel(writer, index=False)
 
     def dump_csv(data, f, quoting=csv.QUOTE_ALL):
         data.to_csv(f, index=False, encoding='utf-8', quoting=quoting)
