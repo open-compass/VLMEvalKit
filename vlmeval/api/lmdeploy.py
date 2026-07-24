@@ -1,44 +1,14 @@
-import base64
+import mimetypes
 import os
 from pathlib import Path
 
 import numpy as np
 
-from ..smp import encode_image_to_base64, get_logger
+from ..smp import encode_file_to_base64, encode_image_to_base64, get_logger
 from .adapters import build_adapter
 from .openai_sdk import OpenAISDKWrapper
 
 logger = get_logger(__name__)
-
-
-MEDIA_URL_PREFIXES = ('http://', 'https://', 'file://', 'data:')
-
-AUDIO_MIME_MAP = {
-    '.wav': 'audio/wav',
-    '.mp3': 'audio/mpeg',
-    '.m4a': 'audio/mp4',
-    '.flac': 'audio/flac',
-    '.ogg': 'audio/ogg',
-    '.aac': 'audio/aac',
-}
-
-
-def is_media_url(value):
-    return isinstance(value, str) and value.startswith(MEDIA_URL_PREFIXES)
-
-
-def encode_file_to_base64(path):
-    with open(path, 'rb') as f:
-        return base64.b64encode(f.read()).decode('utf-8')
-
-
-def file_path_to_url(path):
-    return Path(path).resolve().as_uri()
-
-
-def audio_mime_type(path):
-    ext = Path(path).suffix.lower()
-    return AUDIO_MIME_MAP.get(ext, 'audio/wav')
 
 
 class LMDeployWrapper(OpenAISDKWrapper):
@@ -123,10 +93,8 @@ class LMDeployWrapper(OpenAISDKWrapper):
                 if msg['type'] == 'text':
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
-                    if is_media_url(msg['value']):
-                        image_data_url = msg['value']
-                    elif self.local_media:
-                        image_data_url = file_path_to_url(msg['value'])
+                    if self.local_media:
+                        image_data_url = f"file://{Path(msg['value']).resolve()}"
                     else:
                         from PIL import Image
                         img = Image.open(msg['value'])
@@ -136,10 +104,8 @@ class LMDeployWrapper(OpenAISDKWrapper):
                     img_struct = dict(url=image_data_url, **extra_args)
                     content_list.append(dict(type='image_url', image_url=img_struct))
                 elif msg['type'] == 'video':
-                    if is_media_url(msg['value']):
-                        video_data_url = msg['value']
-                    elif self.local_media:
-                        video_data_url = file_path_to_url(msg['value'])
+                    if self.local_media:
+                        video_data_url = f"file://{Path(msg['value']).resolve()}"
                     else:
                         video_b64 = encode_file_to_base64(msg['value'])
                         ext = Path(msg['value']).suffix.lower()
@@ -154,13 +120,12 @@ class LMDeployWrapper(OpenAISDKWrapper):
                     vid_struct = dict(url=video_data_url, **extra_args)
                     content_list.append(dict(type='video_url', video_url=vid_struct))
                 elif msg['type'] == 'audio':
-                    if is_media_url(msg['value']):
-                        audio_data_url = msg['value']
-                    elif self.local_media:
-                        audio_data_url = file_path_to_url(msg['value'])
+                    if self.local_media:
+                        audio_data_url = f"file://{Path(msg['value']).resolve()}"
                     else:
                         audio_b64 = encode_file_to_base64(msg['value'])
-                        mime = audio_mime_type(msg['value'])
+                        ext = Path(msg['value']).suffix.lower()
+                        mime = mimetypes.types_map.get(ext, 'audio/wav')
                         audio_data_url = f'data:{mime};base64,{audio_b64}'
                     extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
                     aud_struct = dict(url=audio_data_url, **extra_args)
