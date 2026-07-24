@@ -11,18 +11,50 @@ from .openai_sdk import OpenAISDKWrapper
 logger = get_logger(__name__)
 
 
+MEDIA_URL_PREFIXES = ('http://', 'https://', 'file://', 'data:')
+
+AUDIO_MIME_MAP = {
+    '.wav': 'audio/wav',
+    '.mp3': 'audio/mpeg',
+    '.m4a': 'audio/mp4',
+    '.flac': 'audio/flac',
+    '.ogg': 'audio/ogg',
+    '.aac': 'audio/aac',
+}
+
+
+def is_media_url(value):
+    return isinstance(value, str) and value.startswith(MEDIA_URL_PREFIXES)
+
+
+def encode_file_to_base64(path):
+    with open(path, 'rb') as f:
+        return base64.b64encode(f.read()).decode('utf-8')
+
+
+def file_path_to_url(path):
+    return Path(path).resolve().as_uri()
+
+
+def audio_mime_type(path):
+    ext = Path(path).suffix.lower()
+    return AUDIO_MIME_MAP.get(ext, 'audio/wav')
+
+
 class LMDeployWrapper(OpenAISDKWrapper):
     """OpenAI-compatible wrapper for lmdeploy-served models.
 
     Handles lmdeploy-specific details:
 
     * ``LMDEPLOY_API_KEY`` / ``LMDEPLOY_API_BASE`` environment variables
-    * lmdeploy image-encoding format via :meth:`prepare_itlist`
+    * lmdeploy image/video/audio encoding format via :meth:`prepare_itlist`
 
     Model-specific prompt building and payload post-processing are
     delegated to a :class:`~vlmeval.api.adapters.ModelAdapter` that is
     selected automatically or specified via ``custom_prompt``.
     """
+
+    allowed_types = ['text', 'image', 'video', 'audio']
 
     def __init__(self,
                  model,
@@ -51,7 +83,8 @@ class LMDeployWrapper(OpenAISDKWrapper):
         self.local_media = local_media or (os.getenv('VLMEVAL_LOCAL_MEDIA', '0') == '1')
         if self.local_media:
             logger.info(
-                f'lmdeploy: `local_media={self.local_media}`, pass local media file path directly.')
+                f'lmdeploy: `local_media={self.local_media}`, '
+                'pass local media file path directly.')
         else:
             logger.info(
                 f'lmdeploy: `local_media={self.local_media}`, pass media file base64.')
@@ -83,15 +116,17 @@ class LMDeployWrapper(OpenAISDKWrapper):
 
     def prepare_itlist(self, inputs):
         assert np.all([isinstance(x, dict) for x in inputs])
-        multimedia = sum(x['type'] in ('image', 'video') for x in inputs)
+        multimedia = sum(x['type'] in ('image', 'video', 'audio') for x in inputs)
         if multimedia:
             content_list = []
             for msg in inputs:
                 if msg['type'] == 'text':
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
-                    if self.local_media:
-                        image_data_url = f"file://{Path(msg['value']).resolve()}"
+                    if is_media_url(msg['value']):
+                        image_data_url = msg['value']
+                    elif self.local_media:
+                        image_data_url = file_path_to_url(msg['value'])
                     else:
                         from PIL import Image
                         img = Image.open(msg['value'])
@@ -101,21 +136,35 @@ class LMDeployWrapper(OpenAISDKWrapper):
                     img_struct = dict(url=image_data_url, **extra_args)
                     content_list.append(dict(type='image_url', image_url=img_struct))
                 elif msg['type'] == 'video':
-                    if self.local_media:
-                        video_data_url = f"file://{Path(msg['value']).resolve()}"
+                    if is_media_url(msg['value']):
+                        video_data_url = msg['value']
+                    elif self.local_media:
+                        video_data_url = file_path_to_url(msg['value'])
                     else:
-                        with open(msg['value'], 'rb') as f:
-                            video_b64 = base64.b64encode(f.read()).decode("utf-8")
-                        ext = Path(msg['value']).suffix
+                        video_b64 = encode_file_to_base64(msg['value'])
+                        ext = Path(msg['value']).suffix.lower()
                         mime_map = {
                             ".mp4": "video/mp4", ".avi": "video/avi", ".mkv": "video/x-matroska",
-                            ".mov": "video/quicktime", ".webm": "video/webm", ".flv": "video/x-flv",
+                            ".mov": "video/quicktime", ".webm": "video/webm",
+                            ".flv": "video/x-flv",
                         }
                         mime = mime_map.get(ext, "video/mp4")
                         video_data_url = f"data:{mime};base64,{video_b64}"
                     extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
                     vid_struct = dict(url=video_data_url, **extra_args)
                     content_list.append(dict(type='video_url', video_url=vid_struct))
+                elif msg['type'] == 'audio':
+                    if is_media_url(msg['value']):
+                        audio_data_url = msg['value']
+                    elif self.local_media:
+                        audio_data_url = file_path_to_url(msg['value'])
+                    else:
+                        audio_b64 = encode_file_to_base64(msg['value'])
+                        mime = audio_mime_type(msg['value'])
+                        audio_data_url = f'data:{mime};base64,{audio_b64}'
+                    extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
+                    aud_struct = dict(url=audio_data_url, **extra_args)
+                    content_list.append(dict(type='audio_url', audio_url=aud_struct))
         else:
             assert all(x['type'] == 'text' for x in inputs)
             text = '\n'.join(x['value'] for x in inputs)

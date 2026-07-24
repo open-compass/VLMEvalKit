@@ -56,6 +56,7 @@ from vlmeval.config import supported_VLM
 from vlmeval.dataset import build_dataset
 from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.inference import infer_data_job
+from vlmeval.inference_audio import infer_data_job_audio
 from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, collect_run_benchmark_report,
@@ -832,6 +833,16 @@ def run_local_mode(args):
                             api_nproc=args.api_nproc,
                             use_vllm=args.use_vllm,
                             retry_failed=not args.keep_failed)
+                    elif dataset.MODALITY == 'AUDIO':
+                        model = infer_data_job_audio(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            retry_failed=not args.keep_failed,
+                            use_vllm=args.use_vllm)
                     elif dataset.TYPE == 'MT':
                         model = infer_data_job_mt(
                             model,
@@ -1191,6 +1202,8 @@ def run_api_mode(args):
             # Complete the dataset config
             if dataset.MODALITY == 'VIDEO':
                 dataset_type = 'video'
+            elif dataset.MODALITY == 'AUDIO':
+                dataset_type = 'audio'
             elif dataset.TYPE == 'MT':
                 dataset_type = 'mt'
             else:

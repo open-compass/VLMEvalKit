@@ -7,6 +7,7 @@ import pandas as pd
 
 from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, localize_df, toliststr
 from .asclepius import Asclepius
+from .audio_base import AudioBaseDataset
 from .av_speakerbench import AVSpeakerBench
 from .CGAVCounting.cg_av_counting import CGAVCounting
 from .cgbench import (CGBench_MCQ_Grounding, CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded,
@@ -94,6 +95,7 @@ from .mmrarebench import (MMRarebenchCrossmodal, MMRarebenchDiagnosis, MMRareben
                           MMRarebenchTreatment)
 from .mmsafetybench import MMSafetyBenchDataset
 from .mmsibench import MMSIBench, MMSIVideoBench
+from .mmsu import MMSUDataset
 from .moat import MOAT
 from .moviechat1k import MovieChat1k
 from .mssbench import MSSBenchDataset
@@ -331,6 +333,8 @@ VIDEO_DATASET = [
 # add by EASI team
 VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench]  # noqa: E501
 
+AUDIO_DATASET = [MMSUDataset]
+
 TEXT_DATASET = [
     TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment,
     SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation, XSTestDataset, FlamesDataset
@@ -342,7 +346,7 @@ CUSTOM_DATASET = [
 
 DATASET_COLLECTION = [ConcatDataset, ConcatVideoDataset]
 
-DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + CUSTOM_DATASET + DATASET_COLLECTION  # noqa: E501
+DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + AUDIO_DATASET + TEXT_DATASET + CUSTOM_DATASET + DATASET_COLLECTION  # noqa: E501
 SUPPORTED_DATASETS = []
 for DATASET_CLS in DATASET_CLASSES:
     SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
@@ -381,9 +385,12 @@ def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
         assert np.all([x == MODALITIES[0] for x in MODALITIES]), (dataset_list, MODALITIES)
         return MODALITIES[0]
 
-    if 'VIDEO' in dataset.lower():
+    dataset_lower = dataset.lower()
+    if 'audio' in dataset_lower:
+        return 'AUDIO'
+    if 'video' in dataset_lower:
         return 'VIDEO'
-    elif 'IMAGE' in dataset.lower():
+    elif 'image' in dataset_lower:
         return 'IMAGE'
     warnings.warn(f'Dataset {dataset} is a custom one, will treat modality as {default}. ')
     return default
@@ -428,6 +435,7 @@ def infer_dataset_basename(dataset_name):
 
 
 __all__ = [
+    'AudioBaseDataset',
     'build_dataset',
     'img_root_map',
     'build_judge',
