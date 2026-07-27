@@ -484,11 +484,9 @@ class APIEvalPipeline:
             # 3. Dispatch according to dataset type.
             if dataset_type == "video":
                 tasks_generated = await self._produce_video_tasks(cfg, existing_results)
-            elif dataset_type == "audio":
-                tasks_generated = await self._produce_audio_tasks(cfg, existing_results)
             elif dataset_type == "mt":
                 tasks_generated = await self._produce_mt_tasks(cfg, existing_results)
-            else:  # image
+            else:  # image or audio
                 tasks_generated = await self._produce_image_tasks(cfg, existing_results)
 
             # Skip evaluation if no prompt is built.
@@ -514,12 +512,13 @@ class APIEvalPipeline:
         logger.info(f"🚀 Queue ready. Total pending tasks: {self.total_tasks_generated}")
 
     async def _produce_image_tasks(self, cfg: DatasetConfig, existing_results: dict) -> int:
-        """Produce image dataset inference task."""
+        """Produce image or audio dataset inference tasks."""
         model = cfg.model_obj
         dataset = cfg.dataset_obj
         dataset_name = cfg.dataset_name
+        dataset_type = cfg.dataset_type
 
-        if hasattr(model, 'set_dump_image'):
+        if dataset_type == "image" and hasattr(model, 'set_dump_image'):
             model.set_dump_image(dataset.dump_image)
 
         use_custom_prompt = (
@@ -557,54 +556,7 @@ class APIEvalPipeline:
                 model_name=cfg.model_name,
                 sample_index=idx_str,
                 prompt_struct=prompt_struct,
-                dataset_type="image"
-            )
-            await self.queue.put(task)
-            tasks_generated += 1
-
-        return tasks_generated
-
-    async def _produce_audio_tasks(self, cfg: DatasetConfig, existing_results: dict) -> int:
-        """Produce audio dataset inference task."""
-        model = cfg.model_obj
-        dataset = cfg.dataset_obj
-        dataset_name = cfg.dataset_name
-
-        use_custom_prompt = (
-            hasattr(model, 'use_custom_prompt')
-            and model.use_custom_prompt(dataset_name)
-        )
-        if use_custom_prompt:
-            logger.info(f"   [{dataset_name}] Using model custom prompt")
-        else:
-            logger.info(f"   [{dataset_name}] Using vanilla dataset prompt")
-
-        tasks_generated = 0
-        for i in range(len(dataset)):
-            item = dataset[i]
-            idx_str = str(item['index'])
-
-            if idx_str in existing_results:
-                continue
-
-            try:
-                if use_custom_prompt:
-                    prompt_struct = model.build_prompt(item, dataset=dataset_name)
-                else:
-                    prompt_struct = dataset.build_prompt(item)
-            except Exception as e:
-                import traceback
-                logger.error(f"   [{dataset_name}] Failed to build prompt "
-                             f"for sample {idx_str}: {repr(e)}")
-                logger.debug(traceback.format_exception(e))
-                return 0
-
-            task = InferenceTask(
-                dataset_name=dataset_name,
-                model_name=cfg.model_name,
-                sample_index=idx_str,
-                prompt_struct=prompt_struct,
-                dataset_type="audio"
+                dataset_type=dataset_type
             )
             await self.queue.put(task)
             tasks_generated += 1
