@@ -20,6 +20,42 @@ patterns = [
     r'\\noindent'
 ]
 
+TABLE_CELL_TAGS = {"td", "th"}
+FENCED_HTML_RE = re.compile(
+    r'```(?:html)?\s*(.*?)```',
+    flags=re.IGNORECASE | re.DOTALL,
+)
+TABLE_HTML_RE = re.compile(
+    r'<table\b.*?</table\s*>',
+    flags=re.IGNORECASE | re.DOTALL,
+)
+OPENING_FENCE_RE = re.compile(
+    r'^\s*```(?:html)?\s*',
+    flags=re.IGNORECASE,
+)
+
+
+def extract_table_html(response_text):
+    """Extract one HTML table without damaging valid tag attributes."""
+    response_text = response_text.strip()
+
+    fenced_match = FENCED_HTML_RE.search(response_text)
+    if fenced_match:
+        response_text = fenced_match.group(1).strip()
+    else:
+        response_text = OPENING_FENCE_RE.sub('', response_text)
+        response_text = response_text.replace('```', '').strip()
+
+    table_match = TABLE_HTML_RE.search(response_text)
+    if table_match:
+        return table_match.group(0)
+    return response_text
+
+
+def normalize_text_whitespace(text):
+    """Remove whitespace from text nodes while preserving HTML syntax."""
+    return re.sub(r'\s+', '', text or '')
+
 
 class TableTree(Tree):
     """
@@ -90,18 +126,19 @@ class TEDS(object):
         """Tokenizes table cells"""
         self.__tokens__.append("<%s>" % node.tag)
         if node.text is not None:
-            self.__tokens__ += list(node.text)
+            self.__tokens__ += list(normalize_text_whitespace(node.text))
         for n in node.getchildren():
             self.tokenize(n)
         if node.tag != "unk":
             self.__tokens__.append("</%s>" % node.tag)
-        if node.tag != "td" and node.tail is not None:
-            self.__tokens__ += list(node.tail)
+        if node.tag not in TABLE_CELL_TAGS and node.tail is not None:
+            self.__tokens__ += list(normalize_text_whitespace(node.tail))
 
     def load_html_tree(self, node, parent=None):
         """Converts HTML tree to the format required by apted"""
         global __tokens__
-        if node.tag == "td":
+        is_table_cell = node.tag in TABLE_CELL_TAGS
+        if is_table_cell:
             if self.structure_only:
                 cell = []
             else:
@@ -109,7 +146,7 @@ class TEDS(object):
                 self.tokenize(node)
                 cell = self.__tokens__[1:-1].copy()
             new_node = TableTree(
-                node.tag,
+                "td",
                 int(node.attrib.get("colspan", "1")),
                 int(node.attrib.get("rowspan", "1")),
                 cell,
@@ -119,7 +156,7 @@ class TEDS(object):
             new_node = TableTree(node.tag, None, None, None, *deque())
         if parent is not None:
             parent.children.append(new_node)
-        if node.tag != "td":
+        if not is_table_cell:
             for n in node.getchildren():
                 self.load_html_tree(n, new_node)
         if parent is None:
@@ -135,23 +172,29 @@ class TEDS(object):
             return 0.0
 
         parser = html.HTMLParser(remove_comments=True, encoding="utf-8")
-        pred = html.fromstring(pred, parser=parser)
-        true = html.fromstring(true, parser=parser)
-        if pred.xpath("body/table") and true.xpath("body/table"):
-            pred = pred.xpath("body/table")[0]
-            true = true.xpath("body/table")[0]
+        try:
+            pred = html.fromstring(pred, parser=parser)
+            true = html.fromstring(true, parser=parser)
+        except (etree.ParserError, ValueError):
+            return 0.0
+
+        pred_tables = pred.xpath("//table")
+        true_tables = true.xpath("//table")
+        if pred_tables and true_tables:
+            pred = pred_tables[0]
+            true = true_tables[0]
             if self.ignore_nodes:
                 etree.strip_tags(pred, *self.ignore_nodes)
                 etree.strip_tags(true, *self.ignore_nodes)
             n_nodes_pred = len(pred.xpath(".//*"))
             n_nodes_true = len(true.xpath(".//*"))
-            n_nodes = max(n_nodes_pred, n_nodes_true)
+            n_nodes = max(n_nodes_pred, n_nodes_true, 1)
             tree_pred = self.load_html_tree(pred)
             tree_true = self.load_html_tree(true)
             distance = APTED(
                 tree_pred, tree_true, CustomConfig()
             ).compute_edit_distance()
-            return 1.0 - (float(distance) / n_nodes)
+            return max(0.0, 1.0 - (float(distance) / n_nodes))
         else:
             return 0.0
 
@@ -215,14 +258,8 @@ class ParsingEvaluator(BaseMetric):
             for pattern in patterns:
                 pred = re.sub(pattern, '', pred)
 
-            try:
-                pred = pred.split('```html')[1]
-            except Exception:
-                pass
-
-            pred = pred.replace('```', '')
-            pred = pred.replace(' ', '').replace('\n', '').replace('，', ',')
-            gt = gt.replace(' ', '').replace('\n', '')
+            pred = extract_table_html(pred).replace('，', ',')
+            gt = extract_table_html(gt)
 
             pred_html = '<html><body>{}</body></html>'.format(pred)
             gt_html = '<html><body>{}</body></html>'.format(gt)
