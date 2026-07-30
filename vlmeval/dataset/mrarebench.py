@@ -1,26 +1,38 @@
-"""MMRareBench T1 Diagnosis — second-generation evaluation (ranked differential list).
+"""MRareBench — a multimodal rare-disease benchmark over PMC case reports.
 
-This is a from-scratch redesign of the T1 Diagnosis track that intentionally
-*departs* from the paper's original single-primary-diagnosis logic in
-``mmrarebench.py`` (the 3-dim weighted cascade ``S_T1`` + token F1, judged by
-Qwen3-VL-235B). The original narrative single-answer logic is removed here.
+Two tracks, one class each. Every track ships several **dataset names** that share
+one TSV, one ``evaluate()`` and one judge, and differ only in the *input condition*
+the model is shown; the name selects a row of that class's ``CONDITIONS`` register.
 
-New angle (inspired by RareBench Table 4 / Task-4 differential diagnosis):
-the model is asked to output a **ranked list of the 10 most likely diagnoses**
-(most -> least likely). We then score it with:
+T1 Diagnosis (``MRareBenchDiagnosis``) — ranked differential list.
+  A from-scratch redesign that intentionally *departs* from the original
+  single-primary-diagnosis logic in ``mmrarebench.py`` (the 3-dim weighted cascade
+  ``S_T1`` + token F1, judged by Qwen3-VL-235B). Inspired by RareBench Table 4 /
+  Task-4, the model outputs a **ranked list of the 10 most likely diagnoses**
+  (most -> least likely), scored with:
 
-1. Deterministic Recall / Position metrics (the HARD primary metrics, no judge):
-   Recall@{1,3,5,10}, MRR, MR (mean rank of the first hit, RareBench style),
-   plus hit_rate and parse_fail_rate.
-2. Optional rare-candidate ratio@10, enabled only when a rare judge is
-   explicitly provided. This measures rare-disease hypothesis tendency, not
-   correctness.
-3. A complementary GPT-4o-mini judge that rates 5 binary (YES/NO) dimensions and
-   averages them into a soft score (cross-validates + adds clinical plausibility
-   signal beyond keyword matching).
+  1. Deterministic Recall / Position metrics (the HARD primary metrics, no judge):
+     Recall@{1,3,5,10}, MRR, MR (mean rank of the first hit, RareBench style),
+     plus hit_rate and parse_fail_rate.
+  2. Optional rare-candidate ratio@10, enabled only when a rare judge is
+     explicitly provided. This measures rare-disease hypothesis tendency, not
+     correctness.
+  3. A complementary GPT-4o-mini judge that rates 5 binary (YES/NO) dimensions and
+     averages them into a soft score (cross-validates + adds clinical plausibility
+     signal beyond keyword matching).
+
+  Conditions: FD (findings text + images) / baseline (findings redacted, images) /
+  TO (findings redacted, no image). FD->baseline isolates textual leakage;
+  baseline->TO isolates visual necessity.
+
+T2 Evidence Verification (``MRareBenchEvidenceVerif``) — backward evidence check.
+  The diagnosis is GIVEN; the model must describe the visual evidence supporting
+  it, scored by a per-item binary rubric with deterministic (judge-free) recall
+  metrics alongside. Conditions: gold / TO (no image) / NoDx (label withheld).
 
 Design rationale is documented in
-``step2_evaluation_20260625/T1_DIAGNOSIS_V2_DESIGN.md``.
+``step2_evaluation_20260625/T1_DIAGNOSIS_V2_DESIGN.md`` and
+``T4_EVIDENCE_VERIFICATION_DESIGN.md``.
 """
 import json
 import os
@@ -407,25 +419,62 @@ def parse_ranked_list(prediction, topk=TOPK):
     return cleaned[:topk]
 
 
+# All three T1 conditions read this one file; they differ only in what the model
+# is shown. Local-first: place the finalized TSV at LMUData/MRareBench/diagnosis/.
+# HF fallback retained for portability.
+T1_TSV_URL = (
+    'https://huggingface.co/datasets/junzhin/MRareBench/resolve/main/'
+    'diagnosis/diagnosis_opened.tsv'
+)
+
+
 class MRareBenchDiagnosis(ImageBaseDataset):
-    """T1 Diagnosis (v2): ranked top-10 differential, Recall/Position + multi-dim judge."""
+    """T1 Diagnosis (v2): ranked top-10 differential, Recall/Position + multi-dim judge.
+
+    One class serves all three T1 input conditions. ``build_dataset()`` passes the
+    requested name through to ``self.dataset_name``, which selects a row of
+    ``CONDITIONS``; the TSV, the metrics and the judge are shared.
+    """
 
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
     DEFAULT_JUDGE = 'gpt-4o-mini'
-    # Local-first: place the finalized TSV at LMUData/MRareBench/diagnosis/.
-    # HF fallback retained for portability.
-    DATASET_URL = {
-        'MRareBench_Diagnosis': (
-            'https://huggingface.co/datasets/junzhin/MRareBench/resolve/main/'
-            'diagnosis/diagnosis_opened.tsv'
-        ),
+
+    # ----- input-condition register (visual-necessity ablation) ----------------
+    #   FD (Findings-Disclosed) : context + findings text + images
+    #   LC (baseline)           : context (findings redacted) + images
+    #   TO (Text-Only)          : context (findings redacted), NO image
+    # FD->LC isolates textual leakage; LC->TO isolates visual necessity.
+    #
+    # `basis` is stored verbatim per condition instead of being derived from
+    # `attach_images`: re-wording one condition's instruction must never be able
+    # to silently re-word another's. Do not collapse it into a conditional.
+    CONDITIONS = {
+        'MRareBench_Diagnosis': dict(
+            inject_findings=False, attach_images=True,
+            basis='the clinical presentation and the medical images'),
+        'MRareBench_Diagnosis_FD': dict(
+            inject_findings=True, attach_images=True,
+            basis='the clinical presentation and the medical images'),
+        'MRareBench_Diagnosis_TO': dict(
+            inject_findings=False, attach_images=False,
+            basis='the clinical presentation'),
     }
+
+    # Baseline first, so a caller taking supported_datasets()[0] gets the
+    # reference condition rather than an arbitrary variant.
+    DATASET_URL = {name: T1_TSV_URL for name in CONDITIONS}
     DATASET_MD5 = {}
 
-    @classmethod
-    def supported_datasets(cls):
-        return ['MRareBench_Diagnosis']
+    @property
+    def condition(self):
+        """The registered input condition for this instance's dataset name."""
+        cond = self.CONDITIONS.get(self.dataset_name)
+        assert cond is not None, (
+            f'{self.dataset_name!r} is not a registered MRareBench T1 input '
+            f'condition; expected one of {list(self.CONDITIONS)}'
+        )
+        return cond
 
     # ----- data loading (local-first) -----------------------------------------
     def load_data(self, dataset):
@@ -479,31 +528,68 @@ class MRareBenchDiagnosis(ImageBaseDataset):
                 warnings.warn(f'Image file not found: {p}')
         return abs_paths
 
+    @staticmethod
+    def _render_findings(line):
+        """Parse the 'image findings' JSON array and
+        return a markdown block of the findings, or '' if missing/empty."""
+        raw = line.get('image findings', '')
+        if not (pd.notna(raw) and str(raw).strip()):
+            return ''
+        try:
+            entries = json.loads(str(raw))
+        except (json.JSONDecodeError, TypeError):
+            return ''
+        if not isinstance(entries, list):
+            return ''
+        blocks, seen = [], set()
+        for e in entries:
+            if not isinstance(e, dict):
+                continue
+            # each entry's 'markdown' already carries its own '### Title' header;
+            # fall back to title + body if markdown is absent.
+            md = str(e.get('markdown', '') or '').strip()
+            if not md:
+                title = str(e.get('title', '') or '').strip()
+                body = str(e.get('body', '') or '').strip()
+                md = (f'### {title}\n{body}' if title else body).strip()
+            if md and md not in seen:
+                seen.add(md)
+                blocks.append(md)
+        return '\n\n'.join(blocks)
+
     # ----- prompt: ask for a ranked top-10 differential ------------------------
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
+        cond = self.condition
 
-        tgt_path = self.dump_image(line)
+        tgt_path = self.dump_image(line) if cond['attach_images'] else []
         question = str(line.get('question', '')) if pd.notna(line.get('question', '')) else ''
         context = str(line.get('context', '')) if pd.notna(line.get('context', '')) else ''
 
+        if cond['inject_findings']:
+            # FD: re-inject the imaging-findings text the baseline redacts.
+            findings = self._render_findings(line)
+            if findings:
+                context = (context + '\n\n' + findings).strip() if context else findings
+
         # figure_mapping -> per-image label (kept from v1 to preserve image grounding)
         basename_to_label = {}
-        fig_map_raw = line.get('figure_mapping', '')
-        if pd.notna(fig_map_raw) and str(fig_map_raw).strip():
-            try:
-                fm = json.loads(str(fig_map_raw))
-                if isinstance(fm, dict):
-                    for label, rel_path in fm.items():
-                        basename_to_label[osp.basename(rel_path)] = label
-            except (json.JSONDecodeError, TypeError):
-                pass
+        if cond['attach_images']:
+            fig_map_raw = line.get('figure_mapping', '')
+            if pd.notna(fig_map_raw) and str(fig_map_raw).strip():
+                try:
+                    fm = json.loads(str(fig_map_raw))
+                    if isinstance(fm, dict):
+                        for label, rel_path in fm.items():
+                            basename_to_label[osp.basename(rel_path)] = label
+                except (json.JSONDecodeError, TypeError):
+                    pass
 
         instruction = (
-            f'You are an expert physician. Based on the clinical presentation and the '
-            f'medical images, list the {TOPK} most likely diagnoses, ranked from MOST '
-            f'likely (1) to LEAST likely ({TOPK}). '
+            f'You are an expert physician. Based on {cond["basis"]}, list the {TOPK} '
+            f'most likely diagnoses, ranked from MOST likely (1) to LEAST likely '
+            f'({TOPK}). '
             f'Output ONLY a numbered list, one standard clinical disease name per line '
             f'(e.g. "1. Disease name"). Do not include explanations, reasoning, or extra text.'
         )
@@ -732,151 +818,6 @@ class MRareBenchDiagnosis(ImageBaseDataset):
 
 
 # =============================================================================
-# Input-condition variants (FD / TO) for the visual-necessity ablation.
-#
-# Identical TSV, identical evaluate()/judging — they ONLY differ in build_prompt:
-#   FD   (Findings-Disclosed)        : context + findings text + image.
-#   v2   (parent, baseline)          : context (findings redacted) + image.
-#   TO   (Text-Only)                 : context (findings redacted) + NO image.
-# =============================================================================
-class MRareBenchDiagnosis_FD(MRareBenchDiagnosis):
-    """FD: re-expose the imaging-findings text (from the 'image findings' column)
-    inside the context, while keeping the image attached. Upper-bound / leakage
-    condition where the model can answer from text alone."""
-
-    DATASET_URL = {
-        'MRareBench_Diagnosis_FD': (
-            'https://huggingface.co/datasets/junzhin/MRareBench/resolve/main/'
-            'diagnosis/diagnosis_opened.tsv'
-        ),
-    }
-
-    @classmethod
-    def supported_datasets(cls):
-        return ['MRareBench_Diagnosis_FD']
-
-    @staticmethod
-    def _render_findings(line):
-        """Parse the 'image findings' JSON array and
-        return a markdown block of the findings, or '' if missing/empty."""
-        raw = line.get('image findings', '')
-        if not (pd.notna(raw) and str(raw).strip()):
-            return ''
-        try:
-            entries = json.loads(str(raw))
-        except (json.JSONDecodeError, TypeError):
-            return ''
-        if not isinstance(entries, list):
-            return ''
-        blocks, seen = [], set()
-        for e in entries:
-            if not isinstance(e, dict):
-                continue
-            # each entry's 'markdown' already carries its own '### Title' header;
-            # fall back to title + body if markdown is absent.
-            md = str(e.get('markdown', '') or '').strip()
-            if not md:
-                title = str(e.get('title', '') or '').strip()
-                body = str(e.get('body', '') or '').strip()
-                md = (f'### {title}\n{body}' if title else body).strip()
-            if md and md not in seen:
-                seen.add(md)
-                blocks.append(md)
-        return '\n\n'.join(blocks)
-
-    def build_prompt(self, line):
-        if isinstance(line, int):
-            line = self.data.iloc[line]
-
-        tgt_path = self.dump_image(line)
-        question = str(line.get('question', '')) if pd.notna(line.get('question', '')) else ''
-        context = str(line.get('context', '')) if pd.notna(line.get('context', '')) else ''
-
-        # FD: re-inject the imaging-findings text that v2 deliberately redacts.
-        findings = self._render_findings(line)
-        if findings:
-            context = (context + '\n\n' + findings).strip() if context else findings
-
-        basename_to_label = {}
-        fig_map_raw = line.get('figure_mapping', '')
-        if pd.notna(fig_map_raw) and str(fig_map_raw).strip():
-            try:
-                fm = json.loads(str(fig_map_raw))
-                if isinstance(fm, dict):
-                    for label, rel_path in fm.items():
-                        basename_to_label[osp.basename(rel_path)] = label
-            except (json.JSONDecodeError, TypeError):
-                pass
-
-        instruction = (
-            f'You are an expert physician. Based on the clinical presentation and the '
-            f'medical images, list the {TOPK} most likely diagnoses, ranked from MOST '
-            f'likely (1) to LEAST likely ({TOPK}). '
-            f'Output ONLY a numbered list, one standard clinical disease name per line '
-            f'(e.g. "1. Disease name"). Do not include explanations, reasoning, or extra text.'
-        )
-
-        prompt_parts = []
-        if context:
-            prompt_parts.append(context)
-        if question:
-            prompt_parts.append(f'Question: {question}')
-        prompt_parts.append(instruction)
-        prompt = '\n\n'.join(prompt_parts)
-
-        msgs = []
-        for p in tgt_path:
-            label = basename_to_label.get(osp.basename(p), '')
-            if label:
-                msgs.append(dict(type='text', value=f'{label}:'))
-            msgs.append(dict(type='image', value=p))
-        msgs.append(dict(type='text', value=prompt))
-        return msgs
-
-
-class MRareBenchDiagnosis_TO(MRareBenchDiagnosis):
-    """TO (Text-Only): same redacted context as v2 but NO image attached.
-    Text-only floor for the visual-necessity ablation."""
-
-    DATASET_URL = {
-        'MRareBench_Diagnosis_TO': (
-            'https://huggingface.co/datasets/junzhin/MRareBench/resolve/main/'
-            'diagnosis/diagnosis_opened.tsv'
-        ),
-    }
-
-    @classmethod
-    def supported_datasets(cls):
-        return ['MRareBench_Diagnosis_TO']
-
-    def build_prompt(self, line):
-        if isinstance(line, int):
-            line = self.data.iloc[line]
-
-        # TO: do NOT call dump_image / attach any image.
-        question = str(line.get('question', '')) if pd.notna(line.get('question', '')) else ''
-        context = str(line.get('context', '')) if pd.notna(line.get('context', '')) else ''
-
-        instruction = (
-            f'You are an expert physician. Based on the clinical presentation, '
-            f'list the {TOPK} most likely diagnoses, ranked from MOST '
-            f'likely (1) to LEAST likely ({TOPK}). '
-            f'Output ONLY a numbered list, one standard clinical disease name per line '
-            f'(e.g. "1. Disease name"). Do not include explanations, reasoning, or extra text.'
-        )
-
-        prompt_parts = []
-        if context:
-            prompt_parts.append(context)
-        if question:
-            prompt_parts.append(f'Question: {question}')
-        prompt_parts.append(instruction)
-        prompt = '\n\n'.join(prompt_parts)
-
-        return [dict(type='text', value=prompt)]
-
-
-# =============================================================================
 # T2 — Evidence Verification
 #
 # Task: the final diagnosis is GIVEN; the model must identify/verify the visual
@@ -900,6 +841,11 @@ T2_TRACK = 'evidence_verification'
 #             Evaluable headline count is 608: 1 MCQ (t4ev_seed:190) is unrecoverable and dropped,
 #             so this FULL609 file physically holds 608 rows. Report T2 as 608 everywhere.
 T2_FULL_TSV_NAME = 'evidence_verification_opened_FULL609.tsv'
+# All three T2 conditions read this one file; they differ only in what is shown.
+T2_TSV_URL = (
+    'https://huggingface.co/datasets/junzhin/MRareBench/resolve/main/'
+    'evidence_verification/evidence_verification_opened_FULL609.tsv'
+)
 
 # per-row identifier columns carried into every T2 per-row output (Part D enabler)
 T2_ID_COLS = (
@@ -1185,13 +1131,72 @@ def _det_image_attribution_metrics(prediction, n_images, decisive_ids, supportin
     return res
 
 
-class _EvidenceVerifBase(ImageBaseDataset):
-    """Shared loading / image handling for the T2 Evidence-Verification family."""
+class MRareBenchEvidenceVerif(ImageBaseDataset):
+    """T2 (open-ended): free-text per-image evidence description, scored by a
+    per-item BINARY rubric over that row's own `acceptable_evidence_points`.
+    The judge runs ONLY when --judge is set, so the fleet can be inferred first
+    (cheap) and judged later (the costed step).
+
+    One class serves all three T2 input conditions; ``self.dataset_name`` selects
+    a row of ``CONDITIONS``. The TSV, the rubric and the metrics are shared.
+    """
 
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
     DEFAULT_JUDGE = 'gpt-4o-mini'
+
+    # ----- input-condition register -------------------------------------------
+    #   MRareBench_EvidenceVerif      : images attached, diagnosis given  <- gold
+    #   MRareBench_EvidenceVerif_TO   : NO image,        diagnosis given
+    #   MRareBench_EvidenceVerif_NoDx : images attached, diagnosis withheld
+    #
+    # Each variant flips exactly one input against gold, so each contrast is
+    # attributable. Both are opt-in probes (a few reference models), not part of
+    # the default fleet sweep.
+    #
+    # _TO withholds the image and yields two signals:
+    #   * required_recall(image) - required_recall(no-image) = genuine visual
+    #     contribution (high no-image recall = reciting findings from the
+    #     diagnosis prior rather than seeing them);
+    #   * groundedness / fabrication = whether the answer invents visual evidence
+    #     when the image channel is absent.
+    #
+    # _NoDx withholds the label and isolates its information gain:
+    #   Delta_dx(level) = required_recall(dx given) - required_recall(withheld).
+    # Level-1 (visible-finding) Delta_dx is the key signal: small = the model
+    # reads the visible evidence without the label; large = the backward score
+    # rode on the label.
+    #
+    # DELIBERATE, DO NOT "UNIFY": the instruction is byte-identical in all three
+    # conditions, including _TO, where it still says "The images are labelled
+    # Image 1, ...". That mismatch IS the fabrication probe -- a faithful model
+    # cannot describe visible evidence that is absent. Hence no per-condition
+    # instruction is registered here.
+    CONDITIONS = {
+        'MRareBench_EvidenceVerif': dict(attach_images=True, withhold_diagnosis=False),
+        'MRareBench_EvidenceVerif_TO': dict(attach_images=False, withhold_diagnosis=False),
+        'MRareBench_EvidenceVerif_NoDx': dict(attach_images=True, withhold_diagnosis=True),
+    }
+
+    DATASET_URL = {name: T2_TSV_URL for name in CONDITIONS}
     DATASET_MD5 = {}
+
+    # The gold name lives ONLY in the leading 'Established diagnosis: X.' context
+    # sentence (verified across all 608 rows: it appears nowhere else in context or
+    # question_open), so stripping that sentence fully withholds it. The residual
+    # phrase 'the established diagnosis' names no disease and is identical in both
+    # conditions, so it cancels in Delta_dx.
+    _DX_CTX_PREFIX = re.compile(r'^\s*Established diagnosis:\s*[^.]*\.\s*', re.I)
+
+    @property
+    def condition(self):
+        """The registered input condition for this instance's dataset name."""
+        cond = self.CONDITIONS.get(self.dataset_name)
+        assert cond is not None, (
+            f'{self.dataset_name!r} is not a registered MRareBench T2 input '
+            f'condition; expected one of {list(self.CONDITIONS)}'
+        )
+        return cond
 
     # ----- data loading (local-first, T2 track) -------------------------------
     def load_data(self, dataset):
@@ -1311,29 +1316,18 @@ class _EvidenceVerifBase(ImageBaseDataset):
             return 'diagnostic_attribution'
         return 'other'
 
-
-class MRareBenchEvidenceVerif(_EvidenceVerifBase):
-    """T2 SECONDARY (open-ended): free-text per-image evidence description, scored
-    by a per-item BINARY rubric over that row's own `acceptable_evidence_points`.
-    The judge runs ONLY when --judge is set, so the fleet can be inferred first
-    (cheap) and judged later (the costed step)."""
-
-    ATTACH_IMAGES = True
-
-    DATASET_URL = {
-        'MRareBench_EvidenceVerif': (
-            'https://huggingface.co/datasets/junzhin/MRareBench/resolve/main/'
-            'evidence_verification/evidence_verification_opened_FULL609.tsv'
-        ),
-    }
-
-    @classmethod
-    def supported_datasets(cls):
-        return ['MRareBench_EvidenceVerif']
-
+    # ----- prompt: describe the visual evidence supporting the given diagnosis --
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
+        cond = self.condition
+
+        if cond['withhold_diagnosis']:
+            # NoDx: the ONLY change vs gold. Copy first -- never mutate self.data.
+            line = line.copy()
+            ctx = str(line.get('context', '')) if pd.notna(line.get('context', '')) else ''
+            line['context'] = self._DX_CTX_PREFIX.sub('', ctx).strip()
+
         context = str(line.get('context', '')) if pd.notna(line.get('context', '')) else ''
         question = str(line.get('question_open', '')) if pd.notna(line.get('question_open', '')) else ''
         if not question:
@@ -1354,7 +1348,7 @@ class MRareBenchEvidenceVerif(_EvidenceVerifBase):
         prompt_parts.append(instruction)
         prompt = '\n\n'.join(prompt_parts)
 
-        msgs = self._image_messages(line) if self.ATTACH_IMAGES else []
+        msgs = self._image_messages(line) if cond['attach_images'] else []
         msgs.append(dict(type='text', value=prompt))
         return msgs
 
@@ -1724,78 +1718,3 @@ class MRareBenchEvidenceVerif(_EvidenceVerifBase):
         per_row_file = get_intermediate_file_path(eval_file, '_per_row', 'xlsx')
         dump(out_df, per_row_file)
         return results
-
-
-class MRareBenchEvidenceVerif_TO(MRareBenchEvidenceVerif):
-    """T2 open-ended, NO image (text-only) — an evidence-fabrication /
-    groundedness probe.
-
-    Same open-ended question and same rubric judge, but no image is attached. The
-    model is still asked to describe the 'visible' evidence; with no image a faithful
-    model cannot, so this isolates two signals against the image+text open variant:
-      * required_recall(image) - required_recall(no-image) = genuine visual contribution
-        (high no-image recall = reciting findings from the diagnosis prior, not seeing);
-      * groundedness / fabrication probe = whether the answer invents visual evidence
-        when the image channel is absent.
-    Opt-in (run on 1-2 reference models), not part of the default fleet sweep."""
-
-    ATTACH_IMAGES = False
-
-    DATASET_URL = {
-        'MRareBench_EvidenceVerif_TO': (
-            'https://huggingface.co/datasets/junzhin/MRareBench/resolve/main/'
-            'evidence_verification/evidence_verification_opened_FULL609.tsv'
-        ),
-    }
-
-    @classmethod
-    def supported_datasets(cls):
-        return ['MRareBench_EvidenceVerif_TO']
-
-
-class MRareBenchEvidenceVerif_NoDx(MRareBenchEvidenceVerif):
-    """T2 open-ended, single-variable ablation of MRareBenchEvidenceVerif.
-
-    Images are ALWAYS attached and every other prompt element (question_open,
-    instruction, image handling) is inherited VERBATIM from the gold class; the ONLY
-    change is that the gold diagnosis name is withheld from the context. This mirrors
-    the _TO variant's convention (inherit gold, flip exactly one variable -- there the
-    image, here the diagnosis name), so Delta_dx isolates the information gain of the
-    label:
-        Delta_dx(level) = required_recall(diagnosis given) - required_recall(withheld).
-    Level-1 (visible-finding) Delta_dx is the key signal: small = the model reads the
-    visible evidence without the label; large = the backward score rode on the label.
-
-    The gold name lives ONLY in the leading 'Established diagnosis: X.' context
-    sentence (verified across all 608 rows: the name appears nowhere else in context
-    or question_open), so stripping that sentence fully withholds it. The residual
-    phrase 'the established diagnosis' names no disease and is identical in both
-    conditions, so it cancels in Delta_dx.
-
-    Opt-in probe (run on a few reference models), not the default fleet sweep."""
-
-    ATTACH_IMAGES = True
-
-    DATASET_URL = {
-        'MRareBench_EvidenceVerif_NoDx': (
-            'https://huggingface.co/datasets/junzhin/MRareBench/resolve/main/'
-            'evidence_verification/evidence_verification_opened_FULL609.tsv'
-        ),
-    }
-
-    # The gold diagnosis lives only in this leading context sentence.
-    _DX_CTX_PREFIX = re.compile(r'^\s*Established diagnosis:\s*[^.]*\.\s*', re.I)
-
-    @classmethod
-    def supported_datasets(cls):
-        return ['MRareBench_EvidenceVerif_NoDx']
-
-    def build_prompt(self, line):
-        # Reuse gold's build_prompt VERBATIM; the ONLY change is withholding the gold
-        # diagnosis name from the context, so the ablation isolates a single variable.
-        if isinstance(line, int):
-            line = self.data.iloc[line]
-        line = line.copy()
-        ctx = str(line.get('context', '')) if pd.notna(line.get('context', '')) else ''
-        line['context'] = self._DX_CTX_PREFIX.sub('', ctx).strip()
-        return super().build_prompt(line)
