@@ -17,7 +17,7 @@ T1 Diagnosis (``MRareBenchDiagnosis``) — ranked differential list.
   2. Optional rare-candidate ratio@10, enabled only when a rare judge is
      explicitly provided. This measures rare-disease hypothesis tendency, not
      correctness.
-  3. A complementary GPT-4o-mini judge that rates 5 binary (YES/NO) dimensions and
+  3. A complementary gpt-5.4-mini judge that rates 5 binary (YES/NO) dimensions and
      averages them into a soft score (cross-validates + adds clinical plausibility
      signal beyond keyword matching).
 
@@ -438,7 +438,7 @@ class MRareBenchDiagnosis(ImageBaseDataset):
 
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DEFAULT_JUDGE = 'gpt-4o-mini'
+    DEFAULT_JUDGE = 'gpt-5.4-mini'
 
     # ----- input-condition register (visual-necessity ablation) ----------------
     #   FD (Findings-Disclosed) : context + findings text + images
@@ -679,7 +679,7 @@ class MRareBenchDiagnosis(ImageBaseDataset):
         for k in RECALL_KS:
             results[f'recall@{k}'] = recall_at[k]
 
-        # 3) optional GPT-4o-mini multi-binary-dim judge (soft, complementary) --
+        # 3) optional gpt-5.4-mini multi-binary-dim judge (soft, complementary) --
         standard_judge_kwargs = dict(judge_kwargs)
         judge_name = standard_judge_kwargs.get('model', None)
         if judge_name and judge_name != 'exact_matching':
@@ -1143,7 +1143,7 @@ class MRareBenchEvidenceVerif(ImageBaseDataset):
 
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DEFAULT_JUDGE = 'gpt-4o-mini'
+    DEFAULT_JUDGE = 'gpt-5.4-mini'
 
     # ----- input-condition register -------------------------------------------
     #   MRareBench_EvidenceVerif      : images attached, diagnosis given  <- gold
