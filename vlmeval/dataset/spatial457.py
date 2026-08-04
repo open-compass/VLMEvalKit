@@ -1,6 +1,6 @@
 import re
 
-import tqdm
+from tqdm import tqdm
 
 from vlmeval.smp import dump, get_intermediate_file_path, load
 from .image_base import ImageBaseDataset
