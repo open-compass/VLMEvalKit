@@ -7,7 +7,8 @@ import torch.distributed as dist
 from tqdm import tqdm
 
 from vlmeval.config import supported_VLM
-from vlmeval.smp import dump, get_pred_file_path, get_rank_and_world_size, load
+from vlmeval.smp import (dump, get_pred_file_path, get_rank_and_world_size, load,
+                         resolve_dataset_alias_name)
 from vlmeval.utils import track_progress_rich
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -43,10 +44,14 @@ def chat_mt(model, messages, dataset_name):
 
 
 # Only API model is accepted
-def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_nproc=4, retry_failed=True):
+def infer_data_api(
+    model, work_dir, model_name, dataset, index_set=None, api_nproc=4, retry_failed=True,
+    dataset_alias_name=None
+):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset_name = dataset.dataset_name
+    dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
     data = dataset.data
     if index_set is not None:
         data = data[data['index'].isin(index_set)]
@@ -60,7 +65,7 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
     index_str_to_orig = {str(i): i for i in indices}
     structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
 
-    out_file = f'{work_dir}/{model_name}_{dataset_name}_checkpoint.pkl'
+    out_file = f'{work_dir}/{model_name}_{dataset_alias_name}_checkpoint.pkl'
     res = {}
     if osp.exists(out_file):
         res = load(out_file)
@@ -86,10 +91,13 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
     return result
 
 
-def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False,
-               retry_failed=True):
+def infer_data(
+    model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False,
+    retry_failed=True, dataset_alias_name=None
+):
     dataset_name = dataset.dataset_name
-    prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
+    dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
+    prev_file = f'{work_dir}/{model_name}_{dataset_alias_name}_PREV.pkl'
     res = load(prev_file) if osp.exists(prev_file) else {}
     if osp.exists(out_file):
         res.update(load(out_file))
@@ -143,7 +151,8 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
             dataset=dataset,
             index_set=set(indices),
             api_nproc=api_nproc,
-            retry_failed=retry_failed)
+            retry_failed=retry_failed,
+            dataset_alias_name=dataset_alias_name)
         for idx in indices:
             assert idx in supp
         res.update(supp)
@@ -180,13 +189,16 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
 
 # A wrapper for infer_data, do the pre & post processing
 def infer_data_job_mt(
-    model, work_dir, model_name, dataset, verbose=False, api_nproc=4, retry_failed=True, use_vllm=False
+    model, work_dir, model_name, dataset, verbose=False, api_nproc=4, retry_failed=True, use_vllm=False,
+    result_file=None, dataset_alias_name=None
 ):
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset.dataset_name
-    result_file = get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True)
+    dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
+    if result_file is None:
+        result_file = get_pred_file_path(work_dir, model_name, dataset_alias_name, use_env_format=True)
 
-    prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
+    prev_file = f'{work_dir}/{model_name}_{dataset_alias_name}_PREV.pkl'
     if osp.exists(result_file):
         if rank == 0:
             data = load(result_file)
@@ -197,13 +209,13 @@ def infer_data_job_mt(
         if world_size > 1:
             dist.barrier()
 
-    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}.pkl')
+    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_alias_name}.pkl')
     out_file = tmpl.format(rank)
 
     model = infer_data(
         model=model, work_dir=work_dir, model_name=model_name, dataset=dataset,
         out_file=out_file, verbose=verbose, api_nproc=api_nproc, use_vllm=use_vllm,
-        retry_failed=retry_failed)
+        retry_failed=retry_failed, dataset_alias_name=dataset_alias_name)
     if world_size > 1:
         dist.barrier()
 
@@ -224,7 +236,7 @@ def infer_data_job_mt(
         for i in range(world_size):
             os.remove(tmpl.format(i))
         # Clean up API checkpoint file
-        checkpoint_file = f'{work_dir}/{model_name}_{dataset_name}_checkpoint.pkl'
+        checkpoint_file = f'{work_dir}/{model_name}_{dataset_alias_name}_checkpoint.pkl'
         if osp.exists(checkpoint_file):
             os.remove(checkpoint_file)
         # Clean up PREV file
