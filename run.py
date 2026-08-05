@@ -58,7 +58,7 @@ from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.inference_video import infer_data_job_video
-from vlmeval.judge import get_default_judge_model
+from vlmeval.judge import resolve_judge_config
 from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, collect_run_benchmark_report,
                          get_eval_file_format, get_logger, get_pred_file_format,
                          get_pred_file_path, githash, is_prediction_complete, load, load_env,
@@ -310,12 +310,7 @@ def build_model_from_base_url(args):
 
 
 def get_judge_kwargs(dataset_name, dataset_type, args, dataset=None):
-    """Determine judge kwargs based on dataset name and type.
-
-    Uses run.py's logic as the canonical source for dataset-specific judge model
-    assignments, with additional entries from run_api.py (Video-MME).
-    Supports both local and API modes with mode-specific fallbacks.
-    """
+    """Collect runtime judge kwargs shared by local and API modes."""
     # Determine nproc with mode-specific fallback
     if args.judge_api_nproc is not None:
         nproc = args.judge_api_nproc
@@ -343,10 +338,6 @@ def get_judge_kwargs(dataset_name, dataset_type, args, dataset=None):
 
     if args.judge is not None:
         judge_kwargs['model'] = args.judge
-    else:
-        judge_model = get_default_judge_model(dataset, dataset_type, judge_kwargs)
-        if judge_model is not None:
-            judge_kwargs['model'] = judge_model
 
     if args.use_verifier:
         judge_kwargs['use_verifier'] = True
@@ -693,7 +684,8 @@ def run_local_mode(args):
 
                 judge_dataset_name = get_judge_dataset_name(dataset_name, args.data_config)
                 judge_kwargs = get_judge_kwargs(judge_dataset_name, dataset.TYPE, args, dataset=dataset)
-                judge_model = judge_kwargs.get('model', '')
+                judge_kwargs, judge_model = resolve_judge_config(
+                    dataset, judge_kwargs, dataset_type=dataset.TYPE)
 
                 if RANK == 0:
                     reuse_ctx = prepare_reuse_files(
@@ -717,7 +709,9 @@ def run_local_mode(args):
                         judge_model=judge_model,
                         reuse_aux=args.reuse_aux,
                     )
-                    logger.info(judge_kwargs)
+                    logger.info(
+                        f'Judge kwargs: {judge_kwargs}; resolved judge model(s): {judge_model}'
+                    )
 
                 if WORLD_SIZE > 1:
                     dist.barrier()
@@ -1077,8 +1071,9 @@ def run_api_mode(args):
 
             judge_dataset_name = get_judge_dataset_name(ds_name, args.data_config)
             judge_kwargs = get_judge_kwargs(judge_dataset_name, dataset.TYPE, args, dataset=dataset)
-            judge_model = judge_kwargs.get('model', '')
-            logger.info(f'Judge kwargs: {judge_kwargs}')
+            judge_kwargs, judge_model = resolve_judge_config(
+                dataset, judge_kwargs, dataset_type=dataset.TYPE)
+            logger.info(f'Judge kwargs: {judge_kwargs}; resolved judge model(s): {judge_model}')
 
             reuse_ctx = prepare_reuse_files(
                 pred_root_meta=str(work_dir),

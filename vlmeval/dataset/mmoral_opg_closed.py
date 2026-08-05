@@ -5,6 +5,7 @@ from collections import defaultdict
 import pandas as pd
 from tqdm import tqdm
 
+from vlmeval.judge import DefaultJudgeModel
 from ..smp import decode_base64_to_image_file, dump, load, read_ok
 from .image_base import ImageBaseDataset
 
@@ -34,6 +35,7 @@ class MMOral_OPG_CLOSED(MMOralBase):
     """Closed-ended MMOral-OPG benchmark (4-option MCQ)."""
 
     TYPE = 'MCQ'
+    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.none()
 
     DATASET_URL = {
         'MMOral_OPG_CLOSED': 'https://huggingface.co/datasets/OralGPT/MMOral-OPG-Bench/resolve/main/MMOral-OPG-Bench-Closed-Ended.tsv'  # noqa: E501

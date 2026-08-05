@@ -3,6 +3,7 @@ import copy as cp
 import numpy as np
 import pandas as pd
 
+from vlmeval.judge import resolve_judge_kwargs, resolve_judge_policy
 from vlmeval.smp import dump, get_intermediate_file_path, load, toliststr
 from .video_base import VideoBaseDataset
 
@@ -67,6 +68,7 @@ class ConcatVideoDataset(VideoBaseDataset):
         return []  # list(cls.DATASET_SETS)
 
     def evaluate(self, eval_file, **judge_kwargs):
+        judge_policy, judge_kwargs = resolve_judge_policy(self, judge_kwargs)
         # First, split the eval_file by dataset
         data_all = load(eval_file)
         for dname in self.datasets:
@@ -80,7 +82,10 @@ class ConcatVideoDataset(VideoBaseDataset):
         results_all = {}
         for dname in self.datasets:
             tgt = eval_file.replace(self.dataset_name, dname)
-            res = self.dataset_map[dname].evaluate(tgt, **judge_kwargs)
+            child_kwargs = resolve_judge_kwargs(
+                self.dataset_map[dname], judge_kwargs, judge_policy.for_child(dname)
+            )
+            res = self.dataset_map[dname].evaluate(tgt, **child_kwargs)
             results_all.update(res)
 
         result = pd.DataFrame(results_all, index=['success', 'overall'])

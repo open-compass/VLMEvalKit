@@ -10,6 +10,7 @@ import portalocker
 from huggingface_hub import snapshot_download
 from PIL import Image
 
+from vlmeval.judge import DefaultJudgeModel, resolve_judge_kwargs
 from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
                          load, md5, modelscope_flag_set)
 from vlmeval.utils import track_progress_rich
@@ -63,6 +64,7 @@ class MLVU_MCQ(VideoBaseDataset):
     BASE_SYS = 'Carefully watch this video and pay attention to every detail. '
     SYS = BASE_SYS + 'Based on your observations, select the best option that accurately addresses the question.'
     TYPE = 'Video-MCQ'
+    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.fixed('chatgpt-0125')
     DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='MLVU_MCQ', nframe=0, fps=-1):
@@ -216,20 +218,22 @@ class MLVU_MCQ(VideoBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 
+        judge_kwargs = resolve_judge_kwargs(self, judge_kwargs)
         tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
         score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.setdefault('model', 'chatgpt-0125')
+            model = judge_kwargs['model']
 
             if model == 'exact_matching':
                 model = None
             else:
                 model = build_judge(**judge_kwargs)
                 if not model.working():
-                    warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
-                    warnings.warn(DEBUG_MESSAGE)
-                    model = None
+                    raise RuntimeError(
+                        'MLVU MCQ evaluation requires a working OPENAI API for '
+                        f"judge model '{judge_kwargs['model']}'.\n{DEBUG_MESSAGE}"
+                    )
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
@@ -280,6 +284,7 @@ class MLVU_OpenEnded(VideoBaseDataset):
     BASE_SYS = 'Carefully watch this video and pay attention to every detail. '
     SYS = BASE_SYS + 'Based on your observations, answer the given questions.'
     TYPE = 'Video-VQA'
+    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.fixed('gpt-4-0125')
 
     def __init__(self, dataset='MLVU_OpenEnded', nframe=0, fps=-1):
         self.type_data_list = {
@@ -416,11 +421,14 @@ class MLVU_OpenEnded(VideoBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-
-        model = judge_kwargs['model'] if 'model' in judge_kwargs else judge_kwargs.setdefault('model', 'gpt-4-0125')
-        if model != 'gpt-4-0125':
-            print('MLVU Open Ended default using gpt-4-0125! So judge model is changed to gpt-4-0125')
-            judge_kwargs['model'] = 'gpt-4-0125'
+        judge_kwargs = resolve_judge_kwargs(self, judge_kwargs)
+        model = judge_kwargs['model']
+        default_model = self.DEFAULT_JUDGE_MODEL.to_status_value()
+        if model != default_model:
+            warnings.warn(
+                f'MLVU Open Ended default judge is {default_model}; '
+                f'using explicitly selected judge {model}.'
+            )
 
         score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')

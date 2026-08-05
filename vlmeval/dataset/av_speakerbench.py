@@ -9,6 +9,7 @@ import portalocker
 from huggingface_hub import snapshot_download
 from PIL import Image
 
+from vlmeval.judge import DefaultJudgeModel
 from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
                          load, md5)
 from .video_base import VideoBaseDataset
@@ -83,6 +84,7 @@ Focus on the audio and respond with only the letter (A, B, C, or D).
 """
 
     TYPE = 'Video-MCQ'
+    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.none()
 
     def __init__(self, dataset='AV-SpeakerBench', use_audio=True, audio_only=False, nframe=0, fps=-1):
         self.use_audio = use_audio

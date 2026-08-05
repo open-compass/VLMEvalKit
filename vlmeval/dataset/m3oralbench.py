@@ -2,6 +2,7 @@ import re
 
 import pandas as pd
 
+from vlmeval.judge import DefaultJudgeModel
 from ..smp import d2df, dump, load, toliststr
 from ..smp.file import get_intermediate_file_path
 from .image_base import ImageBaseDataset
@@ -23,6 +24,7 @@ def _extract_option(pred):
 
 class M3oralBenchDataset(ImageBaseDataset):
     TYPE = 'MCQ'
+    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.none()
     MODALITY = 'IMAGE'
     DATASET_URL = {'M3oralBench': 'https://opencompass.openxlab.space/utils/VLMEval/M3oralBench.tsv'}
     DATASET_MD5 = {'M3oralBench': '0b8eacfdef15e1c1a510059910f3b2dc'}

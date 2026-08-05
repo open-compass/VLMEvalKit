@@ -2,6 +2,7 @@ import re
 
 import pandas as pd
 
+from vlmeval.judge import DefaultJudgeModel
 from vlmeval.smp import d2df, dump, get_intermediate_file_path, load, toliststr
 from .image_base import ImageBaseDataset
 
@@ -22,6 +23,7 @@ def _extract_option(pred):
 
 class SIUOMCQDataset(ImageBaseDataset):
     TYPE = 'MCQ'
+    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.none()
     MODALITY = 'IMAGE'
     DATASET_URL = {'SIUO_MCQ': 'https://opencompass.openxlab.space/utils/VLMEval/SIUO_MCQ.tsv'}
     DATASET_MD5 = {'SIUO_MCQ': 'a72a8a5789cbe8c83126890bb3a9a6e9'}

@@ -209,7 +209,7 @@ class VideoBaseDataset(metaclass=ABCMeta):
         return load(data_path)
 
     @classmethod
-    def get_judge_file(cls, eval_file: str | Path, judge_model: str | None = None) -> Path | None:
+    def get_judge_file(cls, eval_file: str | Path, judge_model: Any = None) -> Path | None:
         eval_path = Path(eval_file)
         aux_files = fetch_aux_files(str(eval_path))
         if not aux_files:
@@ -258,7 +258,7 @@ class VideoBaseDataset(metaclass=ABCMeta):
         prediction_file: str | Path | None,
         *,
         total_samples: int | None,
-        judge_model: str | None = None,
+        judge_model: Any = None,
         error_message: str | None = None,
     ) -> dict[str, int | None]:
         if total_samples is None or total_samples <= 0:

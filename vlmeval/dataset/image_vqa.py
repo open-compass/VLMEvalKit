@@ -16,6 +16,7 @@ from PIL import Image
 from tabulate import tabulate
 from tqdm import tqdm
 
+from vlmeval.judge import DefaultJudgeModel
 from vlmeval.smp import (LMUDataRoot, d2df, decode_base64_to_image_file, download_file, dump,
                          encode_image_to_base64, file_size, get_file_extension,
                          get_intermediate_file_path, listinstr, load, md5, read_ok, toliststr)
@@ -1277,7 +1278,9 @@ class Physics_yale(ImageBaseDataset):
 
 class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
-    DEFAULT_JUDGE_MODEL = {'olympiad_use_api_judger': 'gpt-4o-mini'}
+    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.when(
+        flag='olympiad_use_api_judger', model='gpt-4o-mini'
+    )
     DATASET_URL = {
         'OlympiadBench':
         'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench.tsv',

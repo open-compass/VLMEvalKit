@@ -79,12 +79,12 @@ def _count_markers_in_obj(obj: Any, markers: tuple[str, ...]) -> int:
     return int(any(marker in str(obj) for marker in markers))
 
 
-def _score_judge_file_candidate(candidate: Path, judge_model: str | None = None) -> tuple[int, str]:
+def _score_judge_file_candidate(candidate: Path, judge_model: Any = None) -> tuple[int, str]:
     name = candidate.name.lower()
     stem = candidate.stem.lower()
     score = 0
 
-    if judge_model and judge_model.lower() in name:
+    if isinstance(judge_model, str) and judge_model.lower() in name:
         score += 100
 
     if 'judge' in stem:
@@ -189,7 +189,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
         return dict(self.data.iloc[idx])
 
     @classmethod
-    def get_judge_file(cls, eval_file: str | Path, judge_model: str | None = None) -> Path | None:
+    def get_judge_file(cls, eval_file: str | Path, judge_model: Any = None) -> Path | None:
         eval_path = Path(eval_file)
         aux_files = fetch_aux_files(str(eval_path))
         if not aux_files:
@@ -364,7 +364,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
         prediction_file: str | Path | None,
         *,
         total_samples: int | None,
-        judge_model: str | None = None,
+        judge_model: Any = None,
         error_message: str | None = None,
     ) -> dict[str, int | None]:
         if total_samples is None or total_samples <= 0:
