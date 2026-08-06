@@ -1,11 +1,15 @@
 import base64
+import binascii
 import os
 import os.path as osp
+import re
 
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp import LMUDataRoot, istype, toliststr
+from vlmeval.smp import (LMUDataRoot, atomic_write_audio_file, is_valid_audio_file, istype,
+                         toliststr)
+from vlmeval.smp.audio import is_reusable_audio_file
 from .image_base import ImageBaseDataset
 
 
@@ -14,16 +18,25 @@ def audio_root_map(dataset):
 
 
 def audio_read_ok(audio_path):
-    return osp.isfile(audio_path) and osp.getsize(audio_path) > 0
+    return is_valid_audio_file(audio_path)
+
+
+def audio_reuse_ok(audio_path):
+    return is_reusable_audio_file(audio_path)
 
 
 def decode_base64_to_audio_file(audio_b64, audio_path):
-    audio_b64 = str(audio_b64)
-    if ',' in audio_b64 and audio_b64.strip().lower().startswith('data:'):
+    audio_b64 = str(audio_b64).strip()
+    if audio_b64.lower().startswith('data:'):
+        if ',' not in audio_b64:
+            raise ValueError('Invalid base64 audio data URI: missing comma.')
         audio_b64 = audio_b64.split(',', 1)[1]
-    os.makedirs(osp.dirname(audio_path), exist_ok=True)
-    with open(audio_path, 'wb') as f:
-        f.write(base64.b64decode(audio_b64))
+    try:
+        compact = re.sub(r'\s+', '', audio_b64)
+        audio_data = base64.b64decode(compact, validate=True)
+    except (binascii.Error, ValueError) as err:
+        raise ValueError('Invalid base64 audio payload.') from err
+    atomic_write_audio_file(audio_path, lambda f: f.write(audio_data))
 
 
 def has_audio_payload(audio):

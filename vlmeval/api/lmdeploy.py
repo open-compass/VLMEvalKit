@@ -126,7 +126,8 @@ class LMDeployWrapper(OpenAISDKWrapper):
                         audio_data_url = Path(msg['value']).resolve().as_uri()
                     else:
                         audio_b64 = encode_file_to_base64(msg['value'])
-                        mime = audio_mime_type(msg['value'])
+                        # Keep LMDeploy's historical data-URI fallback explicit.
+                        mime = audio_mime_type(msg['value'], default='audio/wav')
                         audio_data_url = f'data:{mime};base64,{audio_b64}'
                     extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
                     aud_struct = dict(url=audio_data_url, **extra_args)

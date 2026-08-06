@@ -8,7 +8,7 @@ from .doubao_vl_api import DoubaoVL
 from .gcp_vertex import GCPVertexAPI
 from .gemini import Gemini, GeminiWrapper
 from .glm_vision import GLMVisionAPI
-from .gpt import GPT4V, OpenAIWrapper
+from .gpt import GPT4V, GPTAudio, OpenAIWrapper
 from .hf_chat_model import HFChatModel
 from .hunyuan import HunyuanVision
 from .jt_vl_chat import JTVLChatAPI
@@ -34,7 +34,7 @@ from .together import TogetherAPI
 from .video_chat_online_v2 import VideoChatOnlineV2API
 
 __all__ = [
-    'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V', 'Gemini', 'QwenVLWrapper',
+    'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V', 'GPTAudio', 'Gemini', 'QwenVLWrapper',
     'QwenVLAPI', 'QwenAPI', 'Claude3V', 'Claude_Wrapper', 'Reka', 'GLMVisionAPI', 'CWWrapper',
     'SenseChatVisionAPI', 'HunyuanVision', 'Qwen2VLAPI', 'BlueLMWrapper', 'BlueLM_API',
     'JTVLChatAPI', 'JTVLChatAPI_Mini', 'JTVLChatAPI_2B', 'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI',
