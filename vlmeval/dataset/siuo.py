@@ -79,7 +79,7 @@ class SIUODataset(ImageBaseDataset):
         # Split unified prediction file into two subset prediction files.
         child_eval_files = {}
         for dname in self.SUB_DATASETS:
-            tgt = get_composite_child_eval_file(eval_file, self.dataset_name, dname)
+            tgt = get_composite_child_eval_file(eval_file, dname)
             child_eval_files[dname] = tgt
             sub = data_all[data_all['SUB_DATASET'] == dname].copy()
             sub.pop('index')

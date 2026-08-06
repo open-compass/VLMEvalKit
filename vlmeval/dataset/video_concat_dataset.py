@@ -72,7 +72,7 @@ class ConcatVideoDataset(VideoBaseDataset):
         data_all = load(eval_file)
         child_eval_files = {}
         for dname in self.datasets:
-            tgt = get_composite_child_eval_file(eval_file, self.dataset_name, dname)
+            tgt = get_composite_child_eval_file(eval_file, dname)
             child_eval_files[dname] = tgt
             data_sub = data_all[data_all['SUB_DATASET'] == dname].copy()
             data_sub.pop('index')

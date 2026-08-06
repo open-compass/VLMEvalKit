@@ -457,18 +457,17 @@ class TestDatasetAlias(unittest.TestCase):
             self.assertEqual(model.custom_prompt_datasets, ['LogicalDS'])
             self.assertEqual(model.generate_datasets, ['LogicalDS'])
 
-    def test_composite_child_eval_file_handles_direct_and_alias_names(self):
-        direct = get_composite_child_eval_file('/tmp/MockModel_SIUO.tsv', 'SIUO', 'SIUO_GEN')
-        alias = get_composite_child_eval_file('/tmp/MockModel_OutputAlias.tsv', 'SIUO', 'SIUO_GEN')
+    def test_composite_child_eval_file_uses_sub_marker_without_parent_replace(self):
+        direct = get_composite_child_eval_file('/tmp/MockModel_SIUO.tsv', 'SIUO_GEN')
+        alias = get_composite_child_eval_file('/tmp/MockModel_OutputAlias.tsv', 'SIUO_GEN')
         alias_with_parent = get_composite_child_eval_file(
             '/tmp/MockModel_CustomSIUOAlias.tsv',
-            'SIUO',
             'SIUO_GEN',
         )
 
-        self.assertEqual(direct, '/tmp/MockModel_SIUO_GEN.tsv')
-        self.assertEqual(alias, '/tmp/MockModel_OutputAlias_SIUO_GEN.tsv')
-        self.assertEqual(alias_with_parent, '/tmp/MockModel_CustomSIUOAlias_SIUO_GEN.tsv')
+        self.assertEqual(direct, '/tmp/_MockModel_SIUO_SUB_SIUO_GEN.tsv')
+        self.assertEqual(alias, '/tmp/_MockModel_OutputAlias_SUB_SIUO_GEN.tsv')
+        self.assertEqual(alias_with_parent, '/tmp/_MockModel_CustomSIUOAlias_SUB_SIUO_GEN.tsv')
 
     def test_siuo_composite_evaluate_uses_alias_safe_child_files(self):
         from vlmeval.dataset.siuo import SIUODataset
@@ -502,8 +501,8 @@ class TestDatasetAlias(unittest.TestCase):
             }
 
             score = dataset.evaluate(str(eval_file))
-            gen_file = tmpdir / 'MockModel_OutputAlias_SIUO_GEN.tsv'
-            mcq_file = tmpdir / 'MockModel_OutputAlias_SIUO_MCQ.tsv'
+            gen_file = tmpdir / '_MockModel_OutputAlias_SUB_SIUO_GEN.tsv'
+            mcq_file = tmpdir / '_MockModel_OutputAlias_SUB_SIUO_MCQ.tsv'
 
             self.assertTrue(eval_file.exists())
             self.assertTrue(gen_file.exists())
@@ -549,8 +548,8 @@ class TestDatasetAlias(unittest.TestCase):
             }
 
             result = dataset.evaluate(str(eval_file))
-            child_a_file = tmpdir / 'MockModel_ImageAlias_ChildImageA.tsv'
-            child_b_file = tmpdir / 'MockModel_ImageAlias_ChildImageB.tsv'
+            child_a_file = tmpdir / '_MockModel_ImageAlias_SUB_ChildImageA.tsv'
+            child_b_file = tmpdir / '_MockModel_ImageAlias_SUB_ChildImageB.tsv'
 
             self.assertEqual(result, {'ChildImageA:acc': 1, 'ChildImageB:acc': 2})
             self.assertEqual(dataset.dataset_map['ChildImageA'].calls, [str(child_a_file)])
@@ -593,8 +592,8 @@ class TestDatasetAlias(unittest.TestCase):
             }
 
             result = dataset.evaluate(str(eval_file))
-            child_a_file = tmpdir / 'MockModel_VideoAlias_ChildVideoA.tsv'
-            child_b_file = tmpdir / 'MockModel_VideoAlias_ChildVideoB.tsv'
+            child_a_file = tmpdir / '_MockModel_VideoAlias_SUB_ChildVideoA.tsv'
+            child_b_file = tmpdir / '_MockModel_VideoAlias_SUB_ChildVideoB.tsv'
 
             self.assertEqual(dataset.dataset_map['ChildVideoA'].calls, [str(child_a_file)])
             self.assertEqual(dataset.dataset_map['ChildVideoB'].calls, [str(child_b_file)])
