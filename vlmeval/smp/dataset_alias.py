@@ -14,13 +14,6 @@ class DatasetSpec:
     source: str
 
 
-@dataclass(frozen=True)
-class DatasetAliasContext:
-    dataset_name: str
-    dataset_alias_name: str
-    dataset_class_name: str | None = None
-
-
 def _non_empty_str(value, field_name, display_name):
     if not isinstance(value, str) or not value.strip():
         raise ValueError(
@@ -131,15 +124,6 @@ def resolve_dataset_spec(dataset_alias_name, data_config=None):
         dataset_class_name=None,
         build_config={'dataset': dataset_alias_name},
         source='direct_dataset',
-    )
-
-
-def resolve_dataset_alias(dataset_alias_name, data_config=None):
-    spec = resolve_dataset_spec(dataset_alias_name, data_config)
-    return DatasetAliasContext(
-        dataset_name=spec.dataset_name,
-        dataset_alias_name=spec.dataset_alias_name,
-        dataset_class_name=spec.dataset_class_name,
     )
 
 

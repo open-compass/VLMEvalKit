@@ -10,8 +10,7 @@ import pandas as pd
 from vlmeval.inference import infer_data_job
 from vlmeval.smp import dump, get_composite_child_eval_file, load, status_report
 from vlmeval.smp.dataset_alias import (DatasetSpec, get_predefined_dataset_spec,
-                                       resolve_dataset_alias, resolve_dataset_alias_name,
-                                       resolve_dataset_spec)
+                                       resolve_dataset_alias_name, resolve_dataset_spec)
 
 os.environ.setdefault('LMUData', '/tmp/vlmevalkit-test-lmudata')
 os.makedirs(os.environ['LMUData'], exist_ok=True)
@@ -91,15 +90,15 @@ class FakeModel:
 
 class TestDatasetAlias(unittest.TestCase):
 
-    def test_resolve_dataset_alias_uses_config_dataset_as_logical_name(self):
-        ctx = resolve_dataset_alias(
+    def test_resolve_dataset_spec_uses_config_dataset_as_logical_name(self):
+        spec = resolve_dataset_spec(
             'AnyAlias',
             {'AnyAlias': {'class': 'ImageMCQDataset', 'dataset': 'MMBench_DEV_EN_V11'}},
         )
 
-        self.assertEqual(ctx.dataset_alias_name, 'AnyAlias')
-        self.assertEqual(ctx.dataset_name, 'MMBench_DEV_EN_V11')
-        self.assertEqual(ctx.dataset_class_name, 'ImageMCQDataset')
+        self.assertEqual(spec.dataset_alias_name, 'AnyAlias')
+        self.assertEqual(spec.dataset_name, 'MMBench_DEV_EN_V11')
+        self.assertEqual(spec.dataset_class_name, 'ImageMCQDataset')
 
     def test_resolve_predefined_shortcut(self):
         spec = resolve_dataset_spec('MMBench_Video_8frame_nopack')
