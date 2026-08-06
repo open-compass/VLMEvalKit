@@ -303,16 +303,75 @@ class TestDatasetAlias(unittest.TestCase):
         repo_root = Path(__file__).parents[1]
         dataset_dir = repo_root / 'vlmeval' / 'dataset'
         offenders = []
+        legacy_patterns = [
+            'self.nframe > 0 and self.fps < 0',
+            'num_frames > 0 and fps < 0',
+        ]
         for path in dataset_dir.rglob('*.py'):
+            if path.relative_to(repo_root).as_posix() == 'vlmeval/dataset/utils/cgbench.py':
+                continue
             text = path.read_text(encoding='utf-8')
-            if 'self.nframe > 0 and self.fps < 0' in text:
-                offenders.append(str(path.relative_to(repo_root)))
+            for pattern in legacy_patterns:
+                if pattern in text:
+                    offenders.append(f'{path.relative_to(repo_root)}: {pattern}')
 
         mvbench_text = (dataset_dir / 'mvbench.py').read_text(encoding='utf-8')
         if 'if self.fps < 0:' in mvbench_text:
             offenders.append('vlmeval/dataset/mvbench.py')
 
         self.assertEqual(offenders, [])
+
+    def test_cgbench_local_fps_zero_sampling_uses_nframe_branch(self):
+        import numpy as np
+        from PIL import Image
+
+        from vlmeval.dataset.cgbench import CGBench_MCQ_Grounding_Mini
+
+        class FakeFrame:
+
+            def asnumpy(self):
+                return np.zeros((2, 2, 3), dtype=np.uint8)
+
+        class FakeVideoReader:
+
+            def __init__(self, path):
+                self.path = path
+
+            def __len__(self):
+                return 9
+
+            def __getitem__(self, idx):
+                return FakeFrame()
+
+            def get_avg_fps(self):
+                return 30
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+            dataset = CGBench_MCQ_Grounding_Mini.__new__(CGBench_MCQ_Grounding_Mini)
+            dataset.data_root = str(tmpdir)
+            dataset.frame_root = str(tmpdir / 'frames')
+            dataset.frame_tmpl = 'frame-{}-of-{}.jpg'
+            dataset.frame_tmpl_fps = 'frame-{}-of-{}-{}fps.jpg'
+            dataset.nframe = 2
+
+            frame_dir = tmpdir / 'frames' / 'sample'
+            frame_dir.mkdir(parents=True)
+            for idx in range(1, 3):
+                Image.new('RGB', (2, 2)).save(frame_dir / f'frame-{idx}-of-2.jpg')
+
+            fake_decord = types.SimpleNamespace(VideoReader=FakeVideoReader)
+            with mock.patch.dict('sys.modules', {'decord': fake_decord}):
+                paths, indices, vid_fps = dataset.save_video_frames(
+                    'video.mp4',
+                    uid='sample',
+                    num_frames=2,
+                    fps=0,
+                )
+
+        self.assertEqual(indices, [3, 6])
+        self.assertEqual(vid_fps, 30)
+        self.assertEqual(len(paths), 2)
 
     def test_supported_video_datasets_symbol_removed(self):
         import vlmeval.dataset.video_dataset_config as video_config
