@@ -345,6 +345,38 @@ class TestDatasetAlias(unittest.TestCase):
                 display_name='SiteBenchImageAlias',
             )
 
+    def test_model_dependent_doc_datasets_accept_model_extra_kwarg(self):
+        import run as runner
+        from vlmeval.dataset import DUDE, MMLongBenchDoc, SlideVQA
+
+        fake_data = pd.DataFrame([{
+            'index': 0,
+            'question': 'question',
+            'image_path': ['page_0.jpg'],
+        }])
+
+        cases = [
+            (DUDE, 'DUDE'),
+            (SlideVQA, 'SLIDEVQA'),
+            (MMLongBenchDoc, 'MMLongBench_DOC'),
+        ]
+        for dataset_cls, dataset_name in cases:
+            with self.subTest(dataset_name=dataset_name):
+                with mock.patch.object(dataset_cls, 'load_data', return_value=fake_data.copy()):
+                    dataset = runner.build_dataset_from_config_dict(
+                        {
+                            'class': dataset_cls.__name__,
+                            'dataset': dataset_name,
+                        },
+                        display_name=f'{dataset_name}Alias',
+                        extra_kwargs={'model': 'GPT4o'},
+                    )
+
+                self.assertIsInstance(dataset, dataset_cls)
+                self.assertEqual(dataset.dataset_name, dataset_name)
+                self.assertEqual(dataset.concat_num, 1)
+                self.assertEqual(dataset.column_num, 1)
+
     def test_videommev2_1fps_presets_clear_default_nframe(self):
         from vlmeval.dataset import VideoMMEv2
 

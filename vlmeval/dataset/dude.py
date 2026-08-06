@@ -74,9 +74,9 @@ class DUDE(ImageBaseDataset):
         'InternVL-Chat-V1-5': (5, 2),
     }
 
-    def __init__(self, dataset, **kwargs):
+    def __init__(self, dataset, model=None):
         self.model_list = list(self.SUPPORTED_MODELS.keys())
-        model_name = kwargs['model']
+        model_name = model
         if not listinstr(self.model_list, model_name):
             raise AssertionError("{} doesn't support the evaluation on DUDE.".format(model_name))
         super(DUDE, self).__init__(dataset)
