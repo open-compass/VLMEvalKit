@@ -153,7 +153,7 @@ class ReVSI(VideoBaseDataset):
         frame_key = os.path.join(self.frame_subset, os.path.splitext(video)[0])
         vid = decord.VideoReader(vid_path)
         video_fps = vid.get_avg_fps()
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
             step_size = len(vid) / (self.nframe + 1)
             indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
             frame_paths = self.frame_paths(frame_key)

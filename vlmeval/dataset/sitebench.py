@@ -370,7 +370,7 @@ class SiteBenchVideo(SiteBenchBase, VideoBaseDataset):
             'n_frames': video_nframes,
         }
 
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
             indices = np.linspace(0, video_nframes - 1, self.nframe, dtype=int).tolist()
             # Use os.path.relpath for robust relative path extraction
             frame_paths = self.frame_paths(rel_video_path)

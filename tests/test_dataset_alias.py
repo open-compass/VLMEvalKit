@@ -258,6 +258,12 @@ class TestDatasetAlias(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'fps and nframe'):
             VideoMMEv2.validate_build_config({'dataset': 'Video-MME-v2', 'fps': 1.0})
 
+        MMBenchVideo.validate_build_config({
+            'dataset': 'MMBench-Video',
+            'nframe': 8,
+            'fps': 0,
+        })
+
         VideoMMEv2.validate_build_config({
             'dataset': 'Video-MME-v2',
             'nframe': 0,
@@ -292,6 +298,21 @@ class TestDatasetAlias(unittest.TestCase):
                 self.assertEqual(spec.build_config['nframe'], 0)
                 self.assertEqual(spec.build_config['fps'], 1.0)
                 VideoMMEv2.validate_build_config(spec.build_config)
+
+    def test_video_sampling_branches_treat_fps_zero_as_unset(self):
+        repo_root = Path(__file__).parents[1]
+        dataset_dir = repo_root / 'vlmeval' / 'dataset'
+        offenders = []
+        for path in dataset_dir.rglob('*.py'):
+            text = path.read_text(encoding='utf-8')
+            if 'self.nframe > 0 and self.fps < 0' in text:
+                offenders.append(str(path.relative_to(repo_root)))
+
+        mvbench_text = (dataset_dir / 'mvbench.py').read_text(encoding='utf-8')
+        if 'if self.fps < 0:' in mvbench_text:
+            offenders.append('vlmeval/dataset/mvbench.py')
+
+        self.assertEqual(offenders, [])
 
     def test_supported_video_datasets_symbol_removed(self):
         import vlmeval.dataset.video_dataset_config as video_config

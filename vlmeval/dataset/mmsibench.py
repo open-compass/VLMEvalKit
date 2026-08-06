@@ -309,7 +309,7 @@ class MMSIVideoBench(VideoBaseDataset):
         # Sample in the global index space [0, total_frames - 1]
         indices_global = []
 
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
             n = min(self.nframe, total_frames)
             if n == total_frames:
                 indices_global = list(range(total_frames))
