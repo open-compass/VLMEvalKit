@@ -1,6 +1,5 @@
 import datetime
 import json
-from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -225,18 +224,44 @@ def flatten_summary_metrics(metrics_source: Any) -> dict[str, Any]:
     return out
 
 
-def _resolve_dataset_reporter(dataset_name: str, dataset_obj=None):
+def _resolve_dataset_reporter(
+    dataset_name: str,
+    dataset_class_name: str | None = None,
+    dataset_obj=None,
+    dataset_alias_name: str | None = None,
+):
     reporter = dataset_obj.__class__ if dataset_obj is not None else None
     if reporter is None:
         try:
             import vlmeval.dataset as dataset_module
-            from vlmeval.dataset.video_dataset_config import supported_video_datasets
 
-            if dataset_name in supported_video_datasets:
-                video_ds = supported_video_datasets[dataset_name]
-                if isinstance(video_ds, partial):
-                    reporter = video_ds.func
-            else:
+            if dataset_class_name:
+                reporter = getattr(dataset_module, dataset_class_name, None)
+                if reporter is None:
+                    for dataset_cls in dataset_module.DATASET_CLASSES:
+                        if dataset_cls.__name__ == dataset_class_name:
+                            reporter = dataset_cls
+                            break
+
+            if reporter is None:
+                try:
+                    from .dataset_alias import get_predefined_dataset_spec
+                    for name in (dataset_alias_name, dataset_name):
+                        if not name:
+                            continue
+                        spec = get_predefined_dataset_spec(name)
+                        if spec is not None and spec.dataset_class_name:
+                            reporter = getattr(dataset_module, spec.dataset_class_name, None)
+                            if reporter is None:
+                                for dataset_cls in dataset_module.DATASET_CLASSES:
+                                    if dataset_cls.__name__ == spec.dataset_class_name:
+                                        reporter = dataset_cls
+                                        break
+                            break
+                except Exception:
+                    reporter = None
+
+            if reporter is None:
                 for dataset_cls in dataset_module.DATASET_CLASSES:
                     if dataset_name in dataset_cls.supported_datasets():
                         reporter = dataset_cls
@@ -306,7 +331,10 @@ def upsert_dataset_status(
     skip_reason: str | None = _UNSET,
     error_message: str | None = _UNSET,
     dataset_obj=None,
+    resolved_dataset_name: str | None = _UNSET,
     logical_dataset_name: str | None = _UNSET,
+    dataset_alias_name: str | None = _UNSET,
+    dataset_class_name: str | None = _UNSET,
 ):
     if status is not None and status not in SUMMARY_STATUS_ORDER:
         raise ValueError(f'Invalid summary status: {status}. '
@@ -324,7 +352,31 @@ def upsert_dataset_status(
 
         datasets = run_status.setdefault('datasets', {})
         dataset_status = datasets.setdefault(dataset_name, {})
-        reporter = _resolve_dataset_reporter(dataset_name, dataset_obj=dataset_obj)
+        existing_alias_name = dataset_status.get('dataset_alias_name', dataset_name)
+        existing_logical_name = (
+            dataset_status.get('dataset_name')
+            or dataset_status.get('logical_dataset_name')
+            or dataset_name
+        )
+        next_dataset_alias_name = _merge_optional(
+            dataset_status, 'dataset_alias_name', dataset_alias_name
+        )
+        if next_dataset_alias_name is None:
+            next_dataset_alias_name = existing_alias_name
+        if resolved_dataset_name is _UNSET:
+            resolved_dataset_name = logical_dataset_name
+        next_dataset_name = _merge_optional(dataset_status, 'dataset_name', resolved_dataset_name)
+        if next_dataset_name is None:
+            next_dataset_name = existing_logical_name
+        next_dataset_class_name = _merge_optional(
+            dataset_status, 'dataset_class_name', dataset_class_name
+        )
+        reporter = _resolve_dataset_reporter(
+            next_dataset_name,
+            dataset_class_name=next_dataset_class_name,
+            dataset_obj=dataset_obj,
+            dataset_alias_name=next_dataset_alias_name,
+        )
 
         if status is not None and _status_rank(status) < _status_rank(
                 dataset_status.get('status')):
@@ -349,11 +401,6 @@ def upsert_dataset_status(
         next_judge_model = _merge_optional(dataset_status, 'judge_model', judge_model)
         next_source_run = _merge_optional(dataset_status, 'source_run', source_run)
         next_reuse_aux = _merge_optional(dataset_status, 'reuse_aux', reuse_aux)
-        next_logical_dataset_name = _merge_optional(
-            dataset_status,
-            'logical_dataset_name',
-            logical_dataset_name,
-        )
         has_metrics_update = metrics_source is not _UNSET and metrics_source is not None
         has_skip_reason_update = skip_reason is not _UNSET and skip_reason is not None
         has_error_update = error_message is not _UNSET and error_message is not None
@@ -379,7 +426,10 @@ def upsert_dataset_status(
         _set_or_pop(dataset_status, 'judge_model', next_judge_model)
         _set_or_pop(dataset_status, 'source_run', next_source_run)
         _set_or_pop(dataset_status, 'reuse_aux', next_reuse_aux)
-        _set_or_pop(dataset_status, 'logical_dataset_name', next_logical_dataset_name)
+        _set_or_pop(dataset_status, 'dataset_alias_name', next_dataset_alias_name)
+        _set_or_pop(dataset_status, 'dataset_name', next_dataset_name)
+        _set_or_pop(dataset_status, 'dataset_class_name', next_dataset_class_name)
+        dataset_status.pop('logical_dataset_name', None)
         _set_or_pop(dataset_status, 'skip_reason', next_skip_reason)
         _set_or_pop(dataset_status, 'error_message', next_error_message)
         _set_or_pop(dataset_status, 'primary_metric', primary_metric)
@@ -422,8 +472,16 @@ def collect_run_benchmark_report(run_dir):
             dataset_name=dataset_name,
             prediction_file=dataset_status.get('prediction_file'),
         )
-        logical_dataset_name = dataset_status.get('logical_dataset_name', dataset_name)
-        reporter = _resolve_dataset_reporter(logical_dataset_name)
+        logical_dataset_name = (
+            dataset_status.get('dataset_name')
+            or dataset_status.get('logical_dataset_name')
+            or dataset_name
+        )
+        reporter = _resolve_dataset_reporter(
+            logical_dataset_name,
+            dataset_class_name=dataset_status.get('dataset_class_name'),
+            dataset_alias_name=dataset_status.get('dataset_alias_name', dataset_name),
+        )
         infer_report = reporter.report_infer_err(pred_path)
         infer_failed = infer_report.get('failed', 0)
         infer_total = infer_report.get('total', 0)

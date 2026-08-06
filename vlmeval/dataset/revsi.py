@@ -95,6 +95,13 @@ class ReVSI(VideoBaseDataset):
 
     TYPE = 'Video-VQA'
 
+    @classmethod
+    def validate_build_config(cls, config: dict) -> None:
+        nframe = config.get('nframe', None)
+        if nframe in [None, "all", "all_frame"]:
+            return
+        super().validate_build_config(config)
+
     def __init__(self, dataset='ReVSI', pack=False, nframe=None, **kwargs):
         if nframe in [None, "all", "all_frame"]:
             self.frame_subset = "all_frame"

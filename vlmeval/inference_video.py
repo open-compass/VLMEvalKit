@@ -29,10 +29,10 @@ def parse_args():
 
 # Only API model is accepted
 def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_nproc=4, retry_failed=True,
-                   dataset_alias_name=None):
+                   dataset_name=None, dataset_alias_name=None):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
-    dataset_name = dataset.dataset_name
+    dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
     model = supported_VLM[model_name]() if isinstance(model, str) else model
     assert getattr(model, 'is_api', False)
@@ -99,8 +99,8 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
 
 
 def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False,
-               retry_failed=True, dataset_alias_name=None):
-    dataset_name = dataset.dataset_name
+               retry_failed=True, dataset_name=None, dataset_alias_name=None):
+    dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
     prev_file = f'{work_dir}/{model_name}_{dataset_alias_name}_PREV.pkl'
     res = load(prev_file) if osp.exists(prev_file) else {}
@@ -146,6 +146,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
             samples_dict={k: sample_map[k] for k in sample_indices_subrem},
             api_nproc=api_nproc,
             retry_failed=retry_failed,
+            dataset_name=dataset_name,
             dataset_alias_name=dataset_alias_name)
         for k in sample_indices_subrem:
             assert k in supp
@@ -238,13 +239,14 @@ def infer_data_job_video(model,
                          model_name,
                          dataset,
                          result_file=None,
+                         dataset_name=None,
                          dataset_alias_name=None,
                          verbose=False,
                          api_nproc=4,
                          use_vllm=False,
                          retry_failed=True):
 
-    dataset_name = dataset.dataset_name
+    dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
     rank, world_size = get_rank_and_world_size()
 
@@ -279,6 +281,7 @@ def infer_data_job_video(model,
         api_nproc=api_nproc,
         use_vllm=use_vllm,
         retry_failed=retry_failed,
+        dataset_name=dataset_name,
         dataset_alias_name=dataset_alias_name)
 
     if world_size > 1:

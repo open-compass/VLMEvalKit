@@ -706,6 +706,16 @@ def get_intermediate_file_path(eval_file, suffix, target_format=None):
     return eval_file.replace(f'.{original_ext}', f'{suffix}.{target_format}')
 
 
+def get_composite_child_eval_file(eval_file, parent_name, child_name):
+    path = Path(eval_file)
+    stem = path.stem
+    if parent_name and stem.endswith(parent_name):
+        child_stem = stem[:-len(parent_name)] + child_name
+    else:
+        child_stem = f'{stem}_{child_name}'
+    return str(path.with_name(f'{child_stem}{path.suffix}'))
+
+
 def prepare_reuse_files(
     pred_root_meta,
     eval_id,

@@ -50,9 +50,9 @@ Explanation of the config json:
     - Tip: The defined model in the `supported_VLM` of `vlmeval/config.py` can be used as a shortcut, for example, `GPT4o_20241120: {}` is equivalent to `GPT4o_20241120: {'class': 'GPT4V', 'model': 'gpt-4o-2024-11-20', 'temperature': 0, 'img_size': -1, 'img_detail': 'high', 'retry': 10, 'verbose': False}`
 3. For the dictionary `data`, the key is an output alias. It only affects output-side names such as prediction files, status entries, reused artifacts, and symlinks. Dataset construction, post-processing, judge settings, and evaluation logic use the `dataset` field in the value. For items in `data`, the value is a dictionary containing the following keys:
     - `class`: The class name of the dataset, which should be a class name defined in `vlmeval/dataset/__init__.py`.
-    - `dataset`: The logical dataset name passed to the dataset class constructor. If omitted, the `data` key is used as the fallback.
+    - `dataset`: The logical dataset name passed to the dataset class constructor. It is required when `class` is set.
     - Other kwargs: Other kwargs are dataset-specific parameters, please refer to the definition of the dataset class for detailed usage. Typically, the `dataset` argument is required by most dataset classes. It's noteworthy that the `nframe` argument or `fps` argument is required by most video dataset classes.
-    - Tip: The defined dataset in the `supported_video_datasets` of `vlmeval/dataset/video_dataset_config.py` can be used as a shortcut, for example, `MMBench_Video_8frame_nopack: {}` is equivalent to `MMBench_Video_8frame_nopack: {'class': 'MMBenchVideo', 'dataset': 'MMBench-Video', 'nframe': 8, 'pack': False}`.
+    - Tip: Predefined video shortcuts can be launched directly with `--data MMBench_Video_8frame_nopack`. To reuse a shortcut under an output alias in config, write `my_alias: {'preset': 'MMBench_Video_8frame_nopack'}`. Empty dict shortcut configs such as `MMBench_Video_8frame_nopack: {}` are not supported.
 Saving the example config json to `config.json`, you can launch the evaluation by:
 
 ```bash

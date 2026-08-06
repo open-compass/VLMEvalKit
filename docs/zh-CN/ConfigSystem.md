@@ -51,9 +51,9 @@
     - Tip：在位于`vlmeval/config.py`的变量`supported_VLM`中的已经被定义的模型可以作为`model`的键，而不需要填对应的值即可启动。例如，`GPT4o_20240806_T00_HIGH: {}`是等价于`GPT4o_20240806_T00_HIGH: {'class': 'GPT4V', 'model': 'gpt-4o-2024-08-06', 'temperature': 0, 'img_size': -1, 'img_detail': 'high', 'retry': 10, 'verbose': False}`。
 3. 对于字典`data`，key 是输出别名，只影响预测文件、状态文件、复用产物和软链接等输出侧命名；数据集构造、后处理、判断设置和评测逻辑使用 value 中的 `dataset` 字段。对于`data`中的项目，值是一个包含以下键的字典：
     - `class`：数据集的类名，应该是`vlmeval/dataset/__init__.py`中定义的类名。
-    - `dataset`：真实数据集名称，也就是传给数据集类构造函数的名称。如果省略，则回退使用 `data` 的 key。
+    - `dataset`：真实数据集名称，也就是传给数据集类构造函数的名称。设置 `class` 时必须同时提供 `dataset`。
     - 其他kwargs：其他kwargs是数据集特定的参数，请参考数据集类的定义以获取详细用法。通常，大多数数据集类都需要`dataset`参数。大多数视频数据集类都需要 `nframe` 或 `fps` 参数。
-    - Tip：在位于`vlmeval/dataset/video_dataset_config.py`的变量`supported_video_dataset`中的已经被定义的数据集可以作为`data`的键，而不需要填对应的值即可启动。例如，`MMBench_Video_8frame_nopack: {}`是等价于`MMBench_Video_8frame_nopack: {'class': 'MMBenchVideo', 'dataset': 'MMBench-Video', 'nframe': 8, 'pack': False}`。
+    - Tip：预定义视频 shortcut 可以直接通过 `--data MMBench_Video_8frame_nopack` 启动。如果想在 config 中使用自定义输出别名复用 shortcut，应写成 `my_alias: {'preset': 'MMBench_Video_8frame_nopack'}`。不再支持 `MMBench_Video_8frame_nopack: {}` 这种空字典 shortcut config。
 
 将示例配置json保存为`config.json`，您可以通过以下命令启动评估：
 

@@ -46,11 +46,11 @@ def chat_mt(model, messages, dataset_name):
 # Only API model is accepted
 def infer_data_api(
     model, work_dir, model_name, dataset, index_set=None, api_nproc=4, retry_failed=True,
-    dataset_alias_name=None
+    dataset_name=None, dataset_alias_name=None
 ):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
-    dataset_name = dataset.dataset_name
+    dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
     data = dataset.data
     if index_set is not None:
@@ -93,9 +93,9 @@ def infer_data_api(
 
 def infer_data(
     model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False,
-    retry_failed=True, dataset_alias_name=None
+    retry_failed=True, dataset_name=None, dataset_alias_name=None
 ):
-    dataset_name = dataset.dataset_name
+    dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
     prev_file = f'{work_dir}/{model_name}_{dataset_alias_name}_PREV.pkl'
     res = load(prev_file) if osp.exists(prev_file) else {}
@@ -152,6 +152,7 @@ def infer_data(
             index_set=set(indices),
             api_nproc=api_nproc,
             retry_failed=retry_failed,
+            dataset_name=dataset_name,
             dataset_alias_name=dataset_alias_name)
         for idx in indices:
             assert idx in supp
@@ -190,10 +191,10 @@ def infer_data(
 # A wrapper for infer_data, do the pre & post processing
 def infer_data_job_mt(
     model, work_dir, model_name, dataset, verbose=False, api_nproc=4, retry_failed=True, use_vllm=False,
-    result_file=None, dataset_alias_name=None
+    result_file=None, dataset_name=None, dataset_alias_name=None
 ):
     rank, world_size = get_rank_and_world_size()
-    dataset_name = dataset.dataset_name
+    dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
     if result_file is None:
         result_file = get_pred_file_path(work_dir, model_name, dataset_alias_name, use_env_format=True)
@@ -215,7 +216,7 @@ def infer_data_job_mt(
     model = infer_data(
         model=model, work_dir=work_dir, model_name=model_name, dataset=dataset,
         out_file=out_file, verbose=verbose, api_nproc=api_nproc, use_vllm=use_vllm,
-        retry_failed=retry_failed, dataset_alias_name=dataset_alias_name)
+        retry_failed=retry_failed, dataset_name=dataset_name, dataset_alias_name=dataset_alias_name)
     if world_size > 1:
         dist.barrier()
 

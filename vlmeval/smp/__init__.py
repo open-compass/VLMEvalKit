@@ -1,5 +1,6 @@
-from .dataset_alias import (DatasetAliasContext, resolve_dataset_alias,  # noqa: F401
-                            resolve_dataset_alias_name)
+from .dataset_alias import (DatasetAliasContext, DatasetSpec,  # noqa: F401
+                            get_predefined_dataset_spec, resolve_dataset_alias,
+                            resolve_dataset_alias_name, resolve_dataset_spec)
 from .file import *  # noqa: F401, F403
 from .log import *  # noqa: F401, F403
 from .misc import *  # noqa: F401, F403

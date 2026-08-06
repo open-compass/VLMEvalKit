@@ -1,0 +1,2206 @@
+{
+  "AV-SpeakerBench_16frame": {
+    "build_config": {
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "nframe": 16,
+      "use_audio": true
+    },
+    "dataset_alias_name": "AV-SpeakerBench_16frame",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "AV-SpeakerBench_1fps": {
+    "build_config": {
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "fps": 1.0,
+      "use_audio": true
+    },
+    "dataset_alias_name": "AV-SpeakerBench_1fps",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "AV-SpeakerBench_8frame": {
+    "build_config": {
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "nframe": 8,
+      "use_audio": true
+    },
+    "dataset_alias_name": "AV-SpeakerBench_8frame",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "AV-SpeakerBench_audio_only_16frame": {
+    "build_config": {
+      "audio_only": true,
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "nframe": 16,
+      "use_audio": true
+    },
+    "dataset_alias_name": "AV-SpeakerBench_audio_only_16frame",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "AV-SpeakerBench_audio_only_1fps": {
+    "build_config": {
+      "audio_only": true,
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "fps": 1.0,
+      "use_audio": true
+    },
+    "dataset_alias_name": "AV-SpeakerBench_audio_only_1fps",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "AV-SpeakerBench_audio_only_8frame": {
+    "build_config": {
+      "audio_only": true,
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "nframe": 8,
+      "use_audio": true
+    },
+    "dataset_alias_name": "AV-SpeakerBench_audio_only_8frame",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "AV-SpeakerBench_audiovisual_16frame": {
+    "build_config": {
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "nframe": 16,
+      "use_audio": true
+    },
+    "dataset_alias_name": "AV-SpeakerBench_audiovisual_16frame",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "AV-SpeakerBench_audiovisual_1fps": {
+    "build_config": {
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "fps": 1.0,
+      "use_audio": true
+    },
+    "dataset_alias_name": "AV-SpeakerBench_audiovisual_1fps",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "AV-SpeakerBench_audiovisual_8frame": {
+    "build_config": {
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "nframe": 8,
+      "use_audio": true
+    },
+    "dataset_alias_name": "AV-SpeakerBench_audiovisual_8frame",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "AV-SpeakerBench_visual_16frame": {
+    "build_config": {
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "nframe": 16,
+      "use_audio": false
+    },
+    "dataset_alias_name": "AV-SpeakerBench_visual_16frame",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "AV-SpeakerBench_visual_1fps": {
+    "build_config": {
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "fps": 1.0,
+      "use_audio": false
+    },
+    "dataset_alias_name": "AV-SpeakerBench_visual_1fps",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "AV-SpeakerBench_visual_8frame": {
+    "build_config": {
+      "class": "AVSpeakerBench",
+      "dataset": "AV-SpeakerBench",
+      "nframe": 8,
+      "use_audio": false
+    },
+    "dataset_alias_name": "AV-SpeakerBench_visual_8frame",
+    "dataset_class_name": "AVSpeakerBench",
+    "dataset_name": "AV-SpeakerBench"
+  },
+  "CG-AV-Counting_32frame": {
+    "build_config": {
+      "class": "CGAVCounting",
+      "dataset": "CG-AV-Counting",
+      "nframe": 32,
+      "use_frame_time": false
+    },
+    "dataset_alias_name": "CG-AV-Counting_32frame",
+    "dataset_class_name": "CGAVCounting",
+    "dataset_name": "CG-AV-Counting"
+  },
+  "CG-AV-Counting_64frame": {
+    "build_config": {
+      "class": "CGAVCounting",
+      "dataset": "CG-AV-Counting",
+      "nframe": 64,
+      "use_frame_time": false
+    },
+    "dataset_alias_name": "CG-AV-Counting_64frame",
+    "dataset_class_name": "CGAVCounting",
+    "dataset_name": "CG-AV-Counting"
+  },
+  "CGBench_MCQ_Grounding_16frame_subs_subt_ft": {
+    "build_config": {
+      "class": "CGBench_MCQ_Grounding",
+      "dataset": "CG-Bench_MCQ_Grounding",
+      "nframe": 16,
+      "use_frame_time": true,
+      "use_subtitle": true,
+      "use_subtitle_time": true
+    },
+    "dataset_alias_name": "CGBench_MCQ_Grounding_16frame_subs_subt_ft",
+    "dataset_class_name": "CGBench_MCQ_Grounding",
+    "dataset_name": "CG-Bench_MCQ_Grounding"
+  },
+  "CGBench_MCQ_Grounding_32frame_subs": {
+    "build_config": {
+      "class": "CGBench_MCQ_Grounding",
+      "dataset": "CG-Bench_MCQ_Grounding",
+      "nframe": 32,
+      "use_subtitle": true
+    },
+    "dataset_alias_name": "CGBench_MCQ_Grounding_32frame_subs",
+    "dataset_class_name": "CGBench_MCQ_Grounding",
+    "dataset_name": "CG-Bench_MCQ_Grounding"
+  },
+  "CGBench_MCQ_Grounding_Mini_8frame_subs_subt": {
+    "build_config": {
+      "class": "CGBench_MCQ_Grounding_Mini",
+      "dataset": "CG-Bench_MCQ_Grounding_Mini",
+      "nframe": 8,
+      "use_subtitle": true,
+      "use_subtitle_time": true
+    },
+    "dataset_alias_name": "CGBench_MCQ_Grounding_Mini_8frame_subs_subt",
+    "dataset_class_name": "CGBench_MCQ_Grounding_Mini",
+    "dataset_name": "CG-Bench_MCQ_Grounding_Mini"
+  },
+  "CGBench_OpenEnded_16frame_subs_subt_ft": {
+    "build_config": {
+      "class": "CGBench_OpenEnded",
+      "dataset": "CG-Bench_OpenEnded",
+      "nframe": 16,
+      "use_frame_time": true,
+      "use_subtitle": true,
+      "use_subtitle_time": true
+    },
+    "dataset_alias_name": "CGBench_OpenEnded_16frame_subs_subt_ft",
+    "dataset_class_name": "CGBench_OpenEnded",
+    "dataset_name": "CG-Bench_OpenEnded"
+  },
+  "CGBench_OpenEnded_8frame": {
+    "build_config": {
+      "class": "CGBench_OpenEnded",
+      "dataset": "CG-Bench_OpenEnded",
+      "nframe": 8
+    },
+    "dataset_alias_name": "CGBench_OpenEnded_8frame",
+    "dataset_class_name": "CGBench_OpenEnded",
+    "dataset_name": "CG-Bench_OpenEnded"
+  },
+  "CGBench_OpenEnded_Mini_8frame_subs_subt_ft": {
+    "build_config": {
+      "class": "CGBench_OpenEnded_Mini",
+      "dataset": "CG-Bench_OpenEnded_Mini",
+      "nframe": 8,
+      "use_frame_time": true,
+      "use_subtitle": true,
+      "use_subtitle_time": true
+    },
+    "dataset_alias_name": "CGBench_OpenEnded_Mini_8frame_subs_subt_ft",
+    "dataset_class_name": "CGBench_OpenEnded_Mini",
+    "dataset_name": "CG-Bench_OpenEnded_Mini"
+  },
+  "DREAM-1K_0.5fps": {
+    "build_config": {
+      "class": "DREAM",
+      "dataset": "DREAM-1K",
+      "fps": 0.5
+    },
+    "dataset_alias_name": "DREAM-1K_0.5fps",
+    "dataset_class_name": "DREAM",
+    "dataset_name": "DREAM-1K"
+  },
+  "DREAM-1K_1fps": {
+    "build_config": {
+      "class": "DREAM",
+      "dataset": "DREAM-1K",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "DREAM-1K_1fps",
+    "dataset_class_name": "DREAM",
+    "dataset_name": "DREAM-1K"
+  },
+  "DREAM-1K_2fps": {
+    "build_config": {
+      "class": "DREAM",
+      "dataset": "DREAM-1K",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "DREAM-1K_2fps",
+    "dataset_class_name": "DREAM",
+    "dataset_name": "DREAM-1K"
+  },
+  "DREAM-1K_64frame": {
+    "build_config": {
+      "class": "DREAM",
+      "dataset": "DREAM-1K",
+      "nframe": 64
+    },
+    "dataset_alias_name": "DREAM-1K_64frame",
+    "dataset_class_name": "DREAM",
+    "dataset_name": "DREAM-1K"
+  },
+  "DREAM-1K_8frame": {
+    "build_config": {
+      "class": "DREAM",
+      "dataset": "DREAM-1K",
+      "nframe": 8
+    },
+    "dataset_alias_name": "DREAM-1K_8frame",
+    "dataset_class_name": "DREAM",
+    "dataset_name": "DREAM-1K"
+  },
+  "DSRBench_1fps": {
+    "build_config": {
+      "class": "DSRBench",
+      "dataset": "DSRBench",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "DSRBench_1fps",
+    "dataset_class_name": "DSRBench",
+    "dataset_name": "DSRBench"
+  },
+  "DSRBench_30frame": {
+    "build_config": {
+      "class": "DSRBench",
+      "dataset": "DSRBench",
+      "nframe": 30
+    },
+    "dataset_alias_name": "DSRBench_30frame",
+    "dataset_class_name": "DSRBench",
+    "dataset_name": "DSRBench"
+  },
+  "DSRBench_32frame": {
+    "build_config": {
+      "class": "DSRBench",
+      "dataset": "DSRBench",
+      "nframe": 32
+    },
+    "dataset_alias_name": "DSRBench_32frame",
+    "dataset_class_name": "DSRBench",
+    "dataset_name": "DSRBench"
+  },
+  "DSRBench_64frame": {
+    "build_config": {
+      "class": "DSRBench",
+      "dataset": "DSRBench",
+      "nframe": 64
+    },
+    "dataset_alias_name": "DSRBench_64frame",
+    "dataset_class_name": "DSRBench",
+    "dataset_name": "DSRBench"
+  },
+  "EgoExoBench_64frame": {
+    "build_config": {
+      "class": "EgoExoBench_MCQ",
+      "dataset": "EgoExoBench_MCQ",
+      "nframe": 64,
+      "skip_EgoExo4D": false
+    },
+    "dataset_alias_name": "EgoExoBench_64frame",
+    "dataset_class_name": "EgoExoBench_MCQ",
+    "dataset_name": "EgoExoBench_MCQ"
+  },
+  "EgoExoBench_64frame_skip_EgoExo4D": {
+    "build_config": {
+      "class": "EgoExoBench_MCQ",
+      "dataset": "EgoExoBench_MCQ",
+      "nframe": 64,
+      "skip_EgoExo4D": true
+    },
+    "dataset_alias_name": "EgoExoBench_64frame_skip_EgoExo4D",
+    "dataset_class_name": "EgoExoBench_MCQ",
+    "dataset_name": "EgoExoBench_MCQ"
+  },
+  "LongVideoBench_0.5fps": {
+    "build_config": {
+      "class": "LongVideoBench",
+      "dataset": "LongVideoBench",
+      "fps": 0.5
+    },
+    "dataset_alias_name": "LongVideoBench_0.5fps",
+    "dataset_class_name": "LongVideoBench",
+    "dataset_name": "LongVideoBench"
+  },
+  "LongVideoBench_0.5fps_subs": {
+    "build_config": {
+      "class": "LongVideoBench",
+      "dataset": "LongVideoBench",
+      "fps": 0.5,
+      "use_subtitle": true
+    },
+    "dataset_alias_name": "LongVideoBench_0.5fps_subs",
+    "dataset_class_name": "LongVideoBench",
+    "dataset_name": "LongVideoBench"
+  },
+  "LongVideoBench_1fps": {
+    "build_config": {
+      "class": "LongVideoBench",
+      "dataset": "LongVideoBench",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "LongVideoBench_1fps",
+    "dataset_class_name": "LongVideoBench",
+    "dataset_name": "LongVideoBench"
+  },
+  "LongVideoBench_64frame": {
+    "build_config": {
+      "class": "LongVideoBench",
+      "dataset": "LongVideoBench",
+      "nframe": 64
+    },
+    "dataset_alias_name": "LongVideoBench_64frame",
+    "dataset_class_name": "LongVideoBench",
+    "dataset_name": "LongVideoBench"
+  },
+  "LongVideoBench_8frame": {
+    "build_config": {
+      "class": "LongVideoBench",
+      "dataset": "LongVideoBench",
+      "nframe": 8
+    },
+    "dataset_alias_name": "LongVideoBench_8frame",
+    "dataset_class_name": "LongVideoBench",
+    "dataset_name": "LongVideoBench"
+  },
+  "LongVideoBench_8frame_subs": {
+    "build_config": {
+      "class": "LongVideoBench",
+      "dataset": "LongVideoBench",
+      "nframe": 8,
+      "use_subtitle": true
+    },
+    "dataset_alias_name": "LongVideoBench_8frame_subs",
+    "dataset_class_name": "LongVideoBench",
+    "dataset_name": "LongVideoBench"
+  },
+  "MEGABench_core_16frame": {
+    "build_config": {
+      "class": "MEGABench",
+      "dataset": "MEGABench",
+      "nframe": 16,
+      "subset_name": "core"
+    },
+    "dataset_alias_name": "MEGABench_core_16frame",
+    "dataset_class_name": "MEGABench",
+    "dataset_name": "MEGABench"
+  },
+  "MEGABench_core_64frame": {
+    "build_config": {
+      "class": "MEGABench",
+      "dataset": "MEGABench",
+      "nframe": 64,
+      "subset_name": "core"
+    },
+    "dataset_alias_name": "MEGABench_core_64frame",
+    "dataset_class_name": "MEGABench",
+    "dataset_name": "MEGABench"
+  },
+  "MEGABench_open_16frame": {
+    "build_config": {
+      "class": "MEGABench",
+      "dataset": "MEGABench",
+      "nframe": 16,
+      "subset_name": "open"
+    },
+    "dataset_alias_name": "MEGABench_open_16frame",
+    "dataset_class_name": "MEGABench",
+    "dataset_name": "MEGABench"
+  },
+  "MEGABench_open_64frame": {
+    "build_config": {
+      "class": "MEGABench",
+      "dataset": "MEGABench",
+      "nframe": 64,
+      "subset_name": "open"
+    },
+    "dataset_alias_name": "MEGABench_open_64frame",
+    "dataset_class_name": "MEGABench",
+    "dataset_name": "MEGABench"
+  },
+  "MLVU_1fps": {
+    "build_config": {
+      "class": "MLVU",
+      "dataset": "MLVU",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "MLVU_1fps",
+    "dataset_class_name": "MLVU",
+    "dataset_name": "MLVU"
+  },
+  "MLVU_64frame": {
+    "build_config": {
+      "class": "MLVU",
+      "dataset": "MLVU",
+      "nframe": 64
+    },
+    "dataset_alias_name": "MLVU_64frame",
+    "dataset_class_name": "MLVU",
+    "dataset_name": "MLVU"
+  },
+  "MLVU_8frame": {
+    "build_config": {
+      "class": "MLVU",
+      "dataset": "MLVU",
+      "nframe": 8
+    },
+    "dataset_alias_name": "MLVU_8frame",
+    "dataset_class_name": "MLVU",
+    "dataset_name": "MLVU"
+  },
+  "MMBench_Video_16frame_nopack": {
+    "build_config": {
+      "class": "MMBenchVideo",
+      "dataset": "MMBench-Video",
+      "nframe": 16,
+      "pack": false
+    },
+    "dataset_alias_name": "MMBench_Video_16frame_nopack",
+    "dataset_class_name": "MMBenchVideo",
+    "dataset_name": "MMBench-Video"
+  },
+  "MMBench_Video_1fps_nopack": {
+    "build_config": {
+      "class": "MMBenchVideo",
+      "dataset": "MMBench-Video",
+      "fps": 1.0,
+      "pack": false
+    },
+    "dataset_alias_name": "MMBench_Video_1fps_nopack",
+    "dataset_class_name": "MMBenchVideo",
+    "dataset_name": "MMBench-Video"
+  },
+  "MMBench_Video_1fps_pack": {
+    "build_config": {
+      "class": "MMBenchVideo",
+      "dataset": "MMBench-Video",
+      "fps": 1.0,
+      "pack": true
+    },
+    "dataset_alias_name": "MMBench_Video_1fps_pack",
+    "dataset_class_name": "MMBenchVideo",
+    "dataset_name": "MMBench-Video"
+  },
+  "MMBench_Video_64frame_nopack": {
+    "build_config": {
+      "class": "MMBenchVideo",
+      "dataset": "MMBench-Video",
+      "nframe": 64,
+      "pack": false
+    },
+    "dataset_alias_name": "MMBench_Video_64frame_nopack",
+    "dataset_class_name": "MMBenchVideo",
+    "dataset_name": "MMBench-Video"
+  },
+  "MMBench_Video_64frame_pack": {
+    "build_config": {
+      "class": "MMBenchVideo",
+      "dataset": "MMBench-Video",
+      "nframe": 64,
+      "pack": true
+    },
+    "dataset_alias_name": "MMBench_Video_64frame_pack",
+    "dataset_class_name": "MMBenchVideo",
+    "dataset_name": "MMBench-Video"
+  },
+  "MMBench_Video_8frame_nopack": {
+    "build_config": {
+      "class": "MMBenchVideo",
+      "dataset": "MMBench-Video",
+      "nframe": 8,
+      "pack": false
+    },
+    "dataset_alias_name": "MMBench_Video_8frame_nopack",
+    "dataset_class_name": "MMBenchVideo",
+    "dataset_name": "MMBench-Video"
+  },
+  "MMBench_Video_8frame_pack": {
+    "build_config": {
+      "class": "MMBenchVideo",
+      "dataset": "MMBench-Video",
+      "nframe": 8,
+      "pack": true
+    },
+    "dataset_alias_name": "MMBench_Video_8frame_pack",
+    "dataset_class_name": "MMBenchVideo",
+    "dataset_name": "MMBench-Video"
+  },
+  "MMSIVideoBench_1fps": {
+    "build_config": {
+      "class": "MMSIVideoBench",
+      "dataset": "MMSIVideoBench",
+      "fps": 1
+    },
+    "dataset_alias_name": "MMSIVideoBench_1fps",
+    "dataset_class_name": "MMSIVideoBench",
+    "dataset_name": "MMSIVideoBench"
+  },
+  "MMSIVideoBench_300frame": {
+    "build_config": {
+      "class": "MMSIVideoBench",
+      "dataset": "MMSIVideoBench",
+      "nframe": 300
+    },
+    "dataset_alias_name": "MMSIVideoBench_300frame",
+    "dataset_class_name": "MMSIVideoBench",
+    "dataset_name": "MMSIVideoBench"
+  },
+  "MMSIVideoBench_32frame": {
+    "build_config": {
+      "class": "MMSIVideoBench",
+      "dataset": "MMSIVideoBench",
+      "nframe": 32
+    },
+    "dataset_alias_name": "MMSIVideoBench_32frame",
+    "dataset_class_name": "MMSIVideoBench",
+    "dataset_name": "MMSIVideoBench"
+  },
+  "MMSIVideoBench_50frame": {
+    "build_config": {
+      "class": "MMSIVideoBench",
+      "dataset": "MMSIVideoBench",
+      "nframe": 50
+    },
+    "dataset_alias_name": "MMSIVideoBench_50frame",
+    "dataset_class_name": "MMSIVideoBench",
+    "dataset_name": "MMSIVideoBench"
+  },
+  "MMSIVideoBench_64frame": {
+    "build_config": {
+      "class": "MMSIVideoBench",
+      "dataset": "MMSIVideoBench",
+      "nframe": 64
+    },
+    "dataset_alias_name": "MMSIVideoBench_64frame",
+    "dataset_class_name": "MMSIVideoBench",
+    "dataset_name": "MMSIVideoBench"
+  },
+  "MVBench_64frame": {
+    "build_config": {
+      "class": "MVBench",
+      "dataset": "MVBench",
+      "nframe": 64
+    },
+    "dataset_alias_name": "MVBench_64frame",
+    "dataset_class_name": "MVBench",
+    "dataset_name": "MVBench"
+  },
+  "MVBench_8frame": {
+    "build_config": {
+      "class": "MVBench",
+      "dataset": "MVBench",
+      "nframe": 8
+    },
+    "dataset_alias_name": "MVBench_8frame",
+    "dataset_class_name": "MVBench",
+    "dataset_name": "MVBench"
+  },
+  "MVBench_MP4_1fps": {
+    "build_config": {
+      "class": "MVBench_MP4",
+      "dataset": "MVBench_MP4",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "MVBench_MP4_1fps",
+    "dataset_class_name": "MVBench_MP4",
+    "dataset_name": "MVBench_MP4"
+  },
+  "MVBench_MP4_8frame": {
+    "build_config": {
+      "class": "MVBench_MP4",
+      "dataset": "MVBench_MP4",
+      "nframe": 8
+    },
+    "dataset_alias_name": "MVBench_MP4_8frame",
+    "dataset_class_name": "MVBench_MP4",
+    "dataset_name": "MVBench_MP4"
+  },
+  "MVTamperBenchEnd_8frame": {
+    "build_config": {
+      "class": "MVTamperBench",
+      "dataset": "MVTamperBenchEnd",
+      "nframe": 8
+    },
+    "dataset_alias_name": "MVTamperBenchEnd_8frame",
+    "dataset_class_name": "MVTamperBench",
+    "dataset_name": "MVTamperBenchEnd"
+  },
+  "MVTamperBenchStart_8frame": {
+    "build_config": {
+      "class": "MVTamperBench",
+      "dataset": "MVTamperBenchStart",
+      "nframe": 8
+    },
+    "dataset_alias_name": "MVTamperBenchStart_8frame",
+    "dataset_class_name": "MVTamperBench",
+    "dataset_name": "MVTamperBenchStart"
+  },
+  "MVTamperBench_8frame": {
+    "build_config": {
+      "class": "MVTamperBench",
+      "dataset": "MVTamperBench",
+      "nframe": 8
+    },
+    "dataset_alias_name": "MVTamperBench_8frame",
+    "dataset_class_name": "MVTamperBench",
+    "dataset_name": "MVTamperBench"
+  },
+  "MVU-Eval_16frame": {
+    "build_config": {
+      "class": "MVUEval",
+      "dataset": "MVU-Eval",
+      "nframe": 16
+    },
+    "dataset_alias_name": "MVU-Eval_16frame",
+    "dataset_class_name": "MVUEval",
+    "dataset_name": "MVU-Eval"
+  },
+  "MVU-Eval_8frame": {
+    "build_config": {
+      "class": "MVUEval",
+      "dataset": "MVU-Eval",
+      "nframe": 8
+    },
+    "dataset_alias_name": "MVU-Eval_8frame",
+    "dataset_class_name": "MVUEval",
+    "dataset_name": "MVU-Eval"
+  },
+  "OMTGBench_1fps": {
+    "build_config": {
+      "class": "OMTGBench",
+      "dataset": "OMTGBench",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "OMTGBench_1fps",
+    "dataset_class_name": "OMTGBench",
+    "dataset_name": "OMTGBench"
+  },
+  "OMTGBench_2fps": {
+    "build_config": {
+      "class": "OMTGBench",
+      "dataset": "OMTGBench",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "OMTGBench_2fps",
+    "dataset_class_name": "OMTGBench",
+    "dataset_name": "OMTGBench"
+  },
+  "QBench_Video_16frame": {
+    "build_config": {
+      "class": "QBench_Video",
+      "dataset": "QBench_Video",
+      "nframe": 16
+    },
+    "dataset_alias_name": "QBench_Video_16frame",
+    "dataset_class_name": "QBench_Video",
+    "dataset_name": "QBench_Video"
+  },
+  "QBench_Video_8frame": {
+    "build_config": {
+      "class": "QBench_Video",
+      "dataset": "QBench_Video",
+      "nframe": 8
+    },
+    "dataset_alias_name": "QBench_Video_8frame",
+    "dataset_class_name": "QBench_Video",
+    "dataset_name": "QBench_Video"
+  },
+  "STI-Bench_1fps": {
+    "build_config": {
+      "class": "STIBench",
+      "dataset": "STI-Bench",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "STI-Bench_1fps",
+    "dataset_class_name": "STIBench",
+    "dataset_name": "STI-Bench"
+  },
+  "STI-Bench_30frame": {
+    "build_config": {
+      "class": "STIBench",
+      "dataset": "STI-Bench",
+      "nframe": 30
+    },
+    "dataset_alias_name": "STI-Bench_30frame",
+    "dataset_class_name": "STIBench",
+    "dataset_name": "STI-Bench"
+  },
+  "STI-Bench_32frame": {
+    "build_config": {
+      "class": "STIBench",
+      "dataset": "STI-Bench",
+      "nframe": 32
+    },
+    "dataset_alias_name": "STI-Bench_32frame",
+    "dataset_class_name": "STIBench",
+    "dataset_name": "STI-Bench"
+  },
+  "STI-Bench_64frame": {
+    "build_config": {
+      "class": "STIBench",
+      "dataset": "STI-Bench",
+      "nframe": 64
+    },
+    "dataset_alias_name": "STI-Bench_64frame",
+    "dataset_class_name": "STIBench",
+    "dataset_name": "STI-Bench"
+  },
+  "SiteBenchVideo_1fps": {
+    "build_config": {
+      "class": "SiteBenchVideo",
+      "dataset": "SiteBenchVideo",
+      "fps": 1
+    },
+    "dataset_alias_name": "SiteBenchVideo_1fps",
+    "dataset_class_name": "SiteBenchVideo",
+    "dataset_name": "SiteBenchVideo"
+  },
+  "SiteBenchVideo_32frame": {
+    "build_config": {
+      "class": "SiteBenchVideo",
+      "dataset": "SiteBenchVideo",
+      "nframe": 32
+    },
+    "dataset_alias_name": "SiteBenchVideo_32frame",
+    "dataset_class_name": "SiteBenchVideo",
+    "dataset_name": "SiteBenchVideo"
+  },
+  "SiteBenchVideo_64frame": {
+    "build_config": {
+      "class": "SiteBenchVideo",
+      "dataset": "SiteBenchVideo",
+      "nframe": 64
+    },
+    "dataset_alias_name": "SiteBenchVideo_64frame",
+    "dataset_class_name": "SiteBenchVideo",
+    "dataset_name": "SiteBenchVideo"
+  },
+  "TempCompass_0.5fps": {
+    "build_config": {
+      "class": "TempCompass",
+      "dataset": "TempCompass",
+      "fps": 0.5
+    },
+    "dataset_alias_name": "TempCompass_0.5fps",
+    "dataset_class_name": "TempCompass",
+    "dataset_name": "TempCompass"
+  },
+  "TempCompass_1fps": {
+    "build_config": {
+      "class": "TempCompass",
+      "dataset": "TempCompass",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "TempCompass_1fps",
+    "dataset_class_name": "TempCompass",
+    "dataset_name": "TempCompass"
+  },
+  "TempCompass_64frame": {
+    "build_config": {
+      "class": "TempCompass",
+      "dataset": "TempCompass",
+      "nframe": 64
+    },
+    "dataset_alias_name": "TempCompass_64frame",
+    "dataset_class_name": "TempCompass",
+    "dataset_name": "TempCompass"
+  },
+  "TempCompass_8frame": {
+    "build_config": {
+      "class": "TempCompass",
+      "dataset": "TempCompass",
+      "nframe": 8
+    },
+    "dataset_alias_name": "TempCompass_8frame",
+    "dataset_class_name": "TempCompass",
+    "dataset_name": "TempCompass"
+  },
+  "V2PBench_128frame_nopack": {
+    "build_config": {
+      "class": "V2PBench",
+      "dataset": "V2P-Bench",
+      "nframe": 128,
+      "pack": false
+    },
+    "dataset_alias_name": "V2PBench_128frame_nopack",
+    "dataset_class_name": "V2PBench",
+    "dataset_name": "V2P-Bench"
+  },
+  "V2PBench_16frame_nopack": {
+    "build_config": {
+      "class": "V2PBench",
+      "dataset": "V2P-Bench",
+      "nframe": 16,
+      "pack": false
+    },
+    "dataset_alias_name": "V2PBench_16frame_nopack",
+    "dataset_class_name": "V2PBench",
+    "dataset_name": "V2P-Bench"
+  },
+  "V2PBench_1fps_nopack": {
+    "build_config": {
+      "class": "V2PBench",
+      "dataset": "V2P-Bench",
+      "fps": 1.0,
+      "pack": false
+    },
+    "dataset_alias_name": "V2PBench_1fps_nopack",
+    "dataset_class_name": "V2PBench",
+    "dataset_name": "V2P-Bench"
+  },
+  "V2PBench_2frame_nopack": {
+    "build_config": {
+      "class": "V2PBench",
+      "dataset": "V2P-Bench",
+      "nframe": 2,
+      "pack": false
+    },
+    "dataset_alias_name": "V2PBench_2frame_nopack",
+    "dataset_class_name": "V2PBench",
+    "dataset_name": "V2P-Bench"
+  },
+  "V2PBench_64frame_nopack": {
+    "build_config": {
+      "class": "V2PBench",
+      "dataset": "V2P-Bench",
+      "nframe": 64,
+      "pack": false
+    },
+    "dataset_alias_name": "V2PBench_64frame_nopack",
+    "dataset_class_name": "V2PBench",
+    "dataset_name": "V2P-Bench"
+  },
+  "V2PBench_8frame_nopack": {
+    "build_config": {
+      "class": "V2PBench",
+      "dataset": "V2P-Bench",
+      "nframe": 8,
+      "pack": false
+    },
+    "dataset_alias_name": "V2PBench_8frame_nopack",
+    "dataset_class_name": "V2PBench",
+    "dataset_name": "V2P-Bench"
+  },
+  "VCRBench_16frame_nopack": {
+    "build_config": {
+      "class": "VCRBench",
+      "dataset": "VCR-Bench",
+      "nframe": 16,
+      "pack": false
+    },
+    "dataset_alias_name": "VCRBench_16frame_nopack",
+    "dataset_class_name": "VCRBench",
+    "dataset_name": "VCR-Bench"
+  },
+  "VCRBench_1fps_nopack": {
+    "build_config": {
+      "class": "VCRBench",
+      "dataset": "VCR-Bench",
+      "fps": 1.0,
+      "pack": false
+    },
+    "dataset_alias_name": "VCRBench_1fps_nopack",
+    "dataset_class_name": "VCRBench",
+    "dataset_name": "VCR-Bench"
+  },
+  "VCRBench_32frame_nopack": {
+    "build_config": {
+      "class": "VCRBench",
+      "dataset": "VCR-Bench",
+      "nframe": 32,
+      "pack": false
+    },
+    "dataset_alias_name": "VCRBench_32frame_nopack",
+    "dataset_class_name": "VCRBench",
+    "dataset_name": "VCR-Bench"
+  },
+  "VCRBench_64frame_nopack": {
+    "build_config": {
+      "class": "VCRBench",
+      "dataset": "VCR-Bench",
+      "nframe": 64,
+      "pack": false
+    },
+    "dataset_alias_name": "VCRBench_64frame_nopack",
+    "dataset_class_name": "VCRBench",
+    "dataset_name": "VCR-Bench"
+  },
+  "VCRBench_8frame_nopack": {
+    "build_config": {
+      "class": "VCRBench",
+      "dataset": "VCR-Bench",
+      "nframe": 8,
+      "pack": false
+    },
+    "dataset_alias_name": "VCRBench_8frame_nopack",
+    "dataset_class_name": "VCRBench",
+    "dataset_name": "VCR-Bench"
+  },
+  "VDC_1fps": {
+    "build_config": {
+      "class": "VDC",
+      "dataset": "VDC",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VDC_1fps",
+    "dataset_class_name": "VDC",
+    "dataset_name": "VDC"
+  },
+  "VDC_8frame": {
+    "build_config": {
+      "class": "VDC",
+      "dataset": "VDC",
+      "nframe": 8
+    },
+    "dataset_alias_name": "VDC_8frame",
+    "dataset_class_name": "VDC",
+    "dataset_name": "VDC"
+  },
+  "VSI-Bench-Debiased_128frame": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench-Debiased",
+      "nframe": 128
+    },
+    "dataset_alias_name": "VSI-Bench-Debiased_128frame",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench-Debiased"
+  },
+  "VSI-Bench-Debiased_16frame": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench-Debiased",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VSI-Bench-Debiased_16frame",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench-Debiased"
+  },
+  "VSI-Bench-Debiased_1fps": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench-Debiased",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VSI-Bench-Debiased_1fps",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench-Debiased"
+  },
+  "VSI-Bench-Debiased_2fps": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench-Debiased",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "VSI-Bench-Debiased_2fps",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench-Debiased"
+  },
+  "VSI-Bench-Debiased_32frame": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench-Debiased",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VSI-Bench-Debiased_32frame",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench-Debiased"
+  },
+  "VSI-Bench-Debiased_64frame": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench-Debiased",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VSI-Bench-Debiased_64frame",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench-Debiased"
+  },
+  "VSI-Bench_128frame": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench",
+      "nframe": 128
+    },
+    "dataset_alias_name": "VSI-Bench_128frame",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench"
+  },
+  "VSI-Bench_16frame": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VSI-Bench_16frame",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench"
+  },
+  "VSI-Bench_1fps": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VSI-Bench_1fps",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench"
+  },
+  "VSI-Bench_2fps": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "VSI-Bench_2fps",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench"
+  },
+  "VSI-Bench_32frame": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VSI-Bench_32frame",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench"
+  },
+  "VSI-Bench_64frame": {
+    "build_config": {
+      "class": "VsiBench",
+      "dataset": "VSI-Bench",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VSI-Bench_64frame",
+    "dataset_class_name": "VsiBench",
+    "dataset_name": "VSI-Bench"
+  },
+  "Video-MME-v2_1fps": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "fps": 1.0,
+      "nframe": 0
+    },
+    "dataset_alias_name": "Video-MME-v2_1fps",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_1fps_resize": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "fps": 1.0,
+      "nframe": 0,
+      "resize_target_area": 200704
+    },
+    "dataset_alias_name": "Video-MME-v2_1fps_resize",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_1fps_subs": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "fps": 1.0,
+      "nframe": 0,
+      "with_subtitle": true
+    },
+    "dataset_alias_name": "Video-MME-v2_1fps_subs",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_1fps_subs_interleave": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "fps": 1.0,
+      "nframe": 0,
+      "subtitle_interleave": true,
+      "with_subtitle": true
+    },
+    "dataset_alias_name": "Video-MME-v2_1fps_subs_interleave",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_64frame": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "nframe": 64
+    },
+    "dataset_alias_name": "Video-MME-v2_64frame",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_64frame_reasoning": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "nframe": 64,
+      "reasoning": true
+    },
+    "dataset_alias_name": "Video-MME-v2_64frame_reasoning",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_64frame_reasoning_subs": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "nframe": 64,
+      "reasoning": true,
+      "with_subtitle": true
+    },
+    "dataset_alias_name": "Video-MME-v2_64frame_reasoning_subs",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_64frame_reasoning_subs_interleave": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "nframe": 64,
+      "reasoning": true,
+      "subtitle_interleave": true,
+      "with_subtitle": true
+    },
+    "dataset_alias_name": "Video-MME-v2_64frame_reasoning_subs_interleave",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_64frame_resize": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "nframe": 64,
+      "resize_target_area": 200704
+    },
+    "dataset_alias_name": "Video-MME-v2_64frame_resize",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_64frame_resize_reasoning": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "nframe": 64,
+      "reasoning": true,
+      "resize_target_area": 200704
+    },
+    "dataset_alias_name": "Video-MME-v2_64frame_resize_reasoning",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_64frame_resize_subs": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "nframe": 64,
+      "resize_target_area": 200704,
+      "with_subtitle": true
+    },
+    "dataset_alias_name": "Video-MME-v2_64frame_resize_subs",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_64frame_resize_subs_interleave": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "nframe": 64,
+      "resize_target_area": 200704,
+      "subtitle_interleave": true,
+      "with_subtitle": true
+    },
+    "dataset_alias_name": "Video-MME-v2_64frame_resize_subs_interleave",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_64frame_subs": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "nframe": 64,
+      "with_subtitle": true
+    },
+    "dataset_alias_name": "Video-MME-v2_64frame_subs",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME-v2_64frame_subs_interleave": {
+    "build_config": {
+      "class": "VideoMMEv2",
+      "dataset": "Video-MME-v2",
+      "nframe": 64,
+      "subtitle_interleave": true,
+      "with_subtitle": true
+    },
+    "dataset_alias_name": "Video-MME-v2_64frame_subs_interleave",
+    "dataset_class_name": "VideoMMEv2",
+    "dataset_name": "Video-MME-v2"
+  },
+  "Video-MME_0.5fps": {
+    "build_config": {
+      "class": "VideoMME",
+      "dataset": "Video-MME",
+      "fps": 0.5
+    },
+    "dataset_alias_name": "Video-MME_0.5fps",
+    "dataset_class_name": "VideoMME",
+    "dataset_name": "Video-MME"
+  },
+  "Video-MME_0.5fps_subs": {
+    "build_config": {
+      "class": "VideoMME",
+      "dataset": "Video-MME",
+      "fps": 0.5,
+      "use_subtitle": true
+    },
+    "dataset_alias_name": "Video-MME_0.5fps_subs",
+    "dataset_class_name": "VideoMME",
+    "dataset_name": "Video-MME"
+  },
+  "Video-MME_1fps": {
+    "build_config": {
+      "class": "VideoMME",
+      "dataset": "Video-MME",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "Video-MME_1fps",
+    "dataset_class_name": "VideoMME",
+    "dataset_name": "Video-MME"
+  },
+  "Video-MME_64frame": {
+    "build_config": {
+      "class": "VideoMME",
+      "dataset": "Video-MME",
+      "nframe": 64
+    },
+    "dataset_alias_name": "Video-MME_64frame",
+    "dataset_class_name": "VideoMME",
+    "dataset_name": "Video-MME"
+  },
+  "Video-MME_8frame": {
+    "build_config": {
+      "class": "VideoMME",
+      "dataset": "Video-MME",
+      "nframe": 8
+    },
+    "dataset_alias_name": "Video-MME_8frame",
+    "dataset_class_name": "VideoMME",
+    "dataset_name": "Video-MME"
+  },
+  "Video-MME_8frame_subs": {
+    "build_config": {
+      "class": "VideoMME",
+      "dataset": "Video-MME",
+      "nframe": 8,
+      "use_subtitle": true
+    },
+    "dataset_alias_name": "Video-MME_8frame_subs",
+    "dataset_class_name": "VideoMME",
+    "dataset_name": "Video-MME"
+  },
+  "VideoMMMU_0.5fps": {
+    "build_config": {
+      "class": "VideoMMMU",
+      "dataset": "VideoMMMU",
+      "fps": 0.5
+    },
+    "dataset_alias_name": "VideoMMMU_0.5fps",
+    "dataset_class_name": "VideoMMMU",
+    "dataset_name": "VideoMMMU"
+  },
+  "VideoMMMU_1fps": {
+    "build_config": {
+      "class": "VideoMMMU",
+      "dataset": "VideoMMMU",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VideoMMMU_1fps",
+    "dataset_class_name": "VideoMMMU",
+    "dataset_name": "VideoMMMU"
+  },
+  "VideoMMMU_64frame": {
+    "build_config": {
+      "class": "VideoMMMU",
+      "dataset": "VideoMMMU",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VideoMMMU_64frame",
+    "dataset_class_name": "VideoMMMU",
+    "dataset_name": "VideoMMMU"
+  },
+  "VideoMMMU_8frame": {
+    "build_config": {
+      "class": "VideoMMMU",
+      "dataset": "VideoMMMU",
+      "nframe": 8
+    },
+    "dataset_alias_name": "VideoMMMU_8frame",
+    "dataset_class_name": "VideoMMMU",
+    "dataset_name": "VideoMMMU"
+  },
+  "Video_Holmes_32frame": {
+    "build_config": {
+      "class": "Video_Holmes",
+      "dataset": "Video_Holmes",
+      "nframe": 32
+    },
+    "dataset_alias_name": "Video_Holmes_32frame",
+    "dataset_class_name": "Video_Holmes",
+    "dataset_name": "Video_Holmes"
+  },
+  "Video_Holmes_64frame": {
+    "build_config": {
+      "class": "Video_Holmes",
+      "dataset": "Video_Holmes",
+      "nframe": 64
+    },
+    "dataset_alias_name": "Video_Holmes_64frame",
+    "dataset_class_name": "Video_Holmes",
+    "dataset_name": "Video_Holmes"
+  },
+  "Video_MMLU_CAP_16frame": {
+    "build_config": {
+      "class": "Video_MMLU_CAP",
+      "dataset": "Video_MMLU_CAP",
+      "nframe": 16
+    },
+    "dataset_alias_name": "Video_MMLU_CAP_16frame",
+    "dataset_class_name": "Video_MMLU_CAP",
+    "dataset_name": "Video_MMLU_CAP"
+  },
+  "Video_MMLU_CAP_64frame": {
+    "build_config": {
+      "class": "Video_MMLU_CAP",
+      "dataset": "Video_MMLU_CAP",
+      "nframe": 64
+    },
+    "dataset_alias_name": "Video_MMLU_CAP_64frame",
+    "dataset_class_name": "Video_MMLU_CAP",
+    "dataset_name": "Video_MMLU_CAP"
+  },
+  "Video_MMLU_QA_16frame": {
+    "build_config": {
+      "class": "Video_MMLU_QA",
+      "dataset": "Video_MMLU_QA",
+      "nframe": 16
+    },
+    "dataset_alias_name": "Video_MMLU_QA_16frame",
+    "dataset_class_name": "Video_MMLU_QA",
+    "dataset_name": "Video_MMLU_QA"
+  },
+  "Video_MMLU_QA_64frame": {
+    "build_config": {
+      "class": "Video_MMLU_QA",
+      "dataset": "Video_MMLU_QA",
+      "nframe": 64
+    },
+    "dataset_alias_name": "Video_MMLU_QA_64frame",
+    "dataset_class_name": "Video_MMLU_QA",
+    "dataset_name": "Video_MMLU_QA"
+  },
+  "Video_TT_16frame": {
+    "build_config": {
+      "class": "VideoTT",
+      "dataset": "Video-TT",
+      "nframe": 16
+    },
+    "dataset_alias_name": "Video_TT_16frame",
+    "dataset_class_name": "VideoTT",
+    "dataset_name": "Video-TT"
+  },
+  "Video_TT_32frame": {
+    "build_config": {
+      "class": "VideoTT",
+      "dataset": "Video-TT",
+      "nframe": 32
+    },
+    "dataset_alias_name": "Video_TT_32frame",
+    "dataset_class_name": "VideoTT",
+    "dataset_name": "Video-TT"
+  },
+  "Video_TT_64frame": {
+    "build_config": {
+      "class": "VideoTT",
+      "dataset": "Video-TT",
+      "nframe": 64
+    },
+    "dataset_alias_name": "Video_TT_64frame",
+    "dataset_class_name": "VideoTT",
+    "dataset_name": "Video-TT"
+  },
+  "VsiSuperCount_10mins_128frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_10mins",
+      "nframe": 128
+    },
+    "dataset_alias_name": "VsiSuperCount_10mins_128frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_10mins"
+  },
+  "VsiSuperCount_10mins_16frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_10mins",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VsiSuperCount_10mins_16frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_10mins"
+  },
+  "VsiSuperCount_10mins_1fps": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_10mins",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VsiSuperCount_10mins_1fps",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_10mins"
+  },
+  "VsiSuperCount_10mins_2fps": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_10mins",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "VsiSuperCount_10mins_2fps",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_10mins"
+  },
+  "VsiSuperCount_10mins_32frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_10mins",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VsiSuperCount_10mins_32frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_10mins"
+  },
+  "VsiSuperCount_10mins_64frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_10mins",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VsiSuperCount_10mins_64frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_10mins"
+  },
+  "VsiSuperCount_120mins_128frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_120mins",
+      "nframe": 128
+    },
+    "dataset_alias_name": "VsiSuperCount_120mins_128frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_120mins"
+  },
+  "VsiSuperCount_120mins_16frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_120mins",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VsiSuperCount_120mins_16frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_120mins"
+  },
+  "VsiSuperCount_120mins_1fps": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_120mins",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VsiSuperCount_120mins_1fps",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_120mins"
+  },
+  "VsiSuperCount_120mins_2fps": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_120mins",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "VsiSuperCount_120mins_2fps",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_120mins"
+  },
+  "VsiSuperCount_120mins_32frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_120mins",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VsiSuperCount_120mins_32frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_120mins"
+  },
+  "VsiSuperCount_120mins_64frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_120mins",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VsiSuperCount_120mins_64frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_120mins"
+  },
+  "VsiSuperCount_30mins_128frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_30mins",
+      "nframe": 128
+    },
+    "dataset_alias_name": "VsiSuperCount_30mins_128frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_30mins"
+  },
+  "VsiSuperCount_30mins_16frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_30mins",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VsiSuperCount_30mins_16frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_30mins"
+  },
+  "VsiSuperCount_30mins_1fps": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_30mins",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VsiSuperCount_30mins_1fps",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_30mins"
+  },
+  "VsiSuperCount_30mins_2fps": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_30mins",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "VsiSuperCount_30mins_2fps",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_30mins"
+  },
+  "VsiSuperCount_30mins_32frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_30mins",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VsiSuperCount_30mins_32frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_30mins"
+  },
+  "VsiSuperCount_30mins_64frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_30mins",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VsiSuperCount_30mins_64frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_30mins"
+  },
+  "VsiSuperCount_60mins_128frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_60mins",
+      "nframe": 128
+    },
+    "dataset_alias_name": "VsiSuperCount_60mins_128frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_60mins"
+  },
+  "VsiSuperCount_60mins_16frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_60mins",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VsiSuperCount_60mins_16frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_60mins"
+  },
+  "VsiSuperCount_60mins_1fps": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_60mins",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VsiSuperCount_60mins_1fps",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_60mins"
+  },
+  "VsiSuperCount_60mins_2fps": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_60mins",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "VsiSuperCount_60mins_2fps",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_60mins"
+  },
+  "VsiSuperCount_60mins_32frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_60mins",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VsiSuperCount_60mins_32frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_60mins"
+  },
+  "VsiSuperCount_60mins_64frame": {
+    "build_config": {
+      "class": "VsiSuperCount",
+      "dataset": "VsiSuperCount_60mins",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VsiSuperCount_60mins_64frame",
+    "dataset_class_name": "VsiSuperCount",
+    "dataset_name": "VsiSuperCount_60mins"
+  },
+  "VsiSuperRecall_10mins_128frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_10mins",
+      "nframe": 128
+    },
+    "dataset_alias_name": "VsiSuperRecall_10mins_128frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_10mins"
+  },
+  "VsiSuperRecall_10mins_16frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_10mins",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VsiSuperRecall_10mins_16frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_10mins"
+  },
+  "VsiSuperRecall_10mins_1fps": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_10mins",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VsiSuperRecall_10mins_1fps",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_10mins"
+  },
+  "VsiSuperRecall_10mins_2fps": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_10mins",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "VsiSuperRecall_10mins_2fps",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_10mins"
+  },
+  "VsiSuperRecall_10mins_32frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_10mins",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VsiSuperRecall_10mins_32frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_10mins"
+  },
+  "VsiSuperRecall_10mins_64frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_10mins",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VsiSuperRecall_10mins_64frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_10mins"
+  },
+  "VsiSuperRecall_120mins_128frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_120mins",
+      "nframe": 128
+    },
+    "dataset_alias_name": "VsiSuperRecall_120mins_128frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_120mins"
+  },
+  "VsiSuperRecall_120mins_16frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_120mins",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VsiSuperRecall_120mins_16frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_120mins"
+  },
+  "VsiSuperRecall_120mins_1fps": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_120mins",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VsiSuperRecall_120mins_1fps",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_120mins"
+  },
+  "VsiSuperRecall_120mins_2fps": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_120mins",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "VsiSuperRecall_120mins_2fps",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_120mins"
+  },
+  "VsiSuperRecall_120mins_32frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_120mins",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VsiSuperRecall_120mins_32frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_120mins"
+  },
+  "VsiSuperRecall_120mins_64frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_120mins",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VsiSuperRecall_120mins_64frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_120mins"
+  },
+  "VsiSuperRecall_240mins_128frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_240mins",
+      "nframe": 128
+    },
+    "dataset_alias_name": "VsiSuperRecall_240mins_128frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_240mins"
+  },
+  "VsiSuperRecall_240mins_16frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_240mins",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VsiSuperRecall_240mins_16frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_240mins"
+  },
+  "VsiSuperRecall_240mins_1fps": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_240mins",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VsiSuperRecall_240mins_1fps",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_240mins"
+  },
+  "VsiSuperRecall_240mins_2fps": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_240mins",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "VsiSuperRecall_240mins_2fps",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_240mins"
+  },
+  "VsiSuperRecall_240mins_32frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_240mins",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VsiSuperRecall_240mins_32frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_240mins"
+  },
+  "VsiSuperRecall_240mins_64frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_240mins",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VsiSuperRecall_240mins_64frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_240mins"
+  },
+  "VsiSuperRecall_30mins_128frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_30mins",
+      "nframe": 128
+    },
+    "dataset_alias_name": "VsiSuperRecall_30mins_128frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_30mins"
+  },
+  "VsiSuperRecall_30mins_16frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_30mins",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VsiSuperRecall_30mins_16frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_30mins"
+  },
+  "VsiSuperRecall_30mins_1fps": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_30mins",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VsiSuperRecall_30mins_1fps",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_30mins"
+  },
+  "VsiSuperRecall_30mins_2fps": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_30mins",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "VsiSuperRecall_30mins_2fps",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_30mins"
+  },
+  "VsiSuperRecall_30mins_32frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_30mins",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VsiSuperRecall_30mins_32frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_30mins"
+  },
+  "VsiSuperRecall_30mins_64frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_30mins",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VsiSuperRecall_30mins_64frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_30mins"
+  },
+  "VsiSuperRecall_60mins_128frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_60mins",
+      "nframe": 128
+    },
+    "dataset_alias_name": "VsiSuperRecall_60mins_128frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_60mins"
+  },
+  "VsiSuperRecall_60mins_16frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_60mins",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VsiSuperRecall_60mins_16frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_60mins"
+  },
+  "VsiSuperRecall_60mins_1fps": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_60mins",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VsiSuperRecall_60mins_1fps",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_60mins"
+  },
+  "VsiSuperRecall_60mins_2fps": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_60mins",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "VsiSuperRecall_60mins_2fps",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_60mins"
+  },
+  "VsiSuperRecall_60mins_32frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_60mins",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VsiSuperRecall_60mins_32frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_60mins"
+  },
+  "VsiSuperRecall_60mins_64frame": {
+    "build_config": {
+      "class": "VsiSuperRecall",
+      "dataset": "VsiSuperRecall_60mins",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VsiSuperRecall_60mins_64frame",
+    "dataset_class_name": "VsiSuperRecall",
+    "dataset_name": "VsiSuperRecall_60mins"
+  },
+  "WorldSense_0.5fps": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "fps": 0.5
+    },
+    "dataset_alias_name": "WorldSense_0.5fps",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "WorldSense_0.5fps_audio": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "fps": 0.5,
+      "use_audio": true
+    },
+    "dataset_alias_name": "WorldSense_0.5fps_audio",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "WorldSense_0.5fps_subs": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "fps": 0.5,
+      "use_subtitle": true
+    },
+    "dataset_alias_name": "WorldSense_0.5fps_subs",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "WorldSense_1fps": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "WorldSense_1fps",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "WorldSense_1fps_audio": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "fps": 1.0,
+      "use_audio": true
+    },
+    "dataset_alias_name": "WorldSense_1fps_audio",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "WorldSense_1fps_subs": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "fps": 1.0,
+      "use_subtitle": true
+    },
+    "dataset_alias_name": "WorldSense_1fps_subs",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "WorldSense_32frame": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "nframe": 32
+    },
+    "dataset_alias_name": "WorldSense_32frame",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "WorldSense_32frame_audio": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "nframe": 32,
+      "use_audio": true
+    },
+    "dataset_alias_name": "WorldSense_32frame_audio",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "WorldSense_32frame_subs": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "nframe": 32,
+      "use_subtitle": true
+    },
+    "dataset_alias_name": "WorldSense_32frame_subs",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "WorldSense_8frame": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "nframe": 8
+    },
+    "dataset_alias_name": "WorldSense_8frame",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "WorldSense_8frame_audio": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "nframe": 8,
+      "use_audio": true
+    },
+    "dataset_alias_name": "WorldSense_8frame_audio",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "WorldSense_8frame_subs": {
+    "build_config": {
+      "class": "WorldSense",
+      "dataset": "WorldSense",
+      "nframe": 8,
+      "use_subtitle": true
+    },
+    "dataset_alias_name": "WorldSense_8frame_subs",
+    "dataset_class_name": "WorldSense",
+    "dataset_name": "WorldSense"
+  },
+  "moviechat1k_breakpoint_8frame": {
+    "build_config": {
+      "class": "MovieChat1k",
+      "dataset": "MovieChat1k",
+      "nframe": 8,
+      "subset": "breakpoint"
+    },
+    "dataset_alias_name": "moviechat1k_breakpoint_8frame",
+    "dataset_class_name": "MovieChat1k",
+    "dataset_name": "MovieChat1k"
+  },
+  "moviechat1k_global_14frame": {
+    "build_config": {
+      "class": "MovieChat1k",
+      "dataset": "MovieChat1k",
+      "nframe": 14,
+      "subset": "global"
+    },
+    "dataset_alias_name": "moviechat1k_global_14frame",
+    "dataset_class_name": "MovieChat1k",
+    "dataset_name": "MovieChat1k"
+  },
+  "moviechat1k_global_8frame_limit0.01": {
+    "build_config": {
+      "class": "MovieChat1k",
+      "dataset": "MovieChat1k",
+      "limit": 0.01,
+      "nframe": 8,
+      "subset": "global"
+    },
+    "dataset_alias_name": "moviechat1k_global_8frame_limit0.01",
+    "dataset_class_name": "MovieChat1k",
+    "dataset_name": "MovieChat1k"
+  },
+  "revsi_16_frame": {
+    "build_config": {
+      "class": "ReVSI",
+      "dataset": "ReVSI",
+      "nframe": 16
+    },
+    "dataset_alias_name": "revsi_16_frame",
+    "dataset_class_name": "ReVSI",
+    "dataset_name": "ReVSI"
+  },
+  "revsi_32_frame": {
+    "build_config": {
+      "class": "ReVSI",
+      "dataset": "ReVSI",
+      "nframe": 32
+    },
+    "dataset_alias_name": "revsi_32_frame",
+    "dataset_class_name": "ReVSI",
+    "dataset_name": "ReVSI"
+  },
+  "revsi_64_frame": {
+    "build_config": {
+      "class": "ReVSI",
+      "dataset": "ReVSI",
+      "nframe": 64
+    },
+    "dataset_alias_name": "revsi_64_frame",
+    "dataset_class_name": "ReVSI",
+    "dataset_name": "ReVSI"
+  },
+  "revsi_all_frame": {
+    "build_config": {
+      "class": "ReVSI",
+      "dataset": "ReVSI",
+      "nframe": null
+    },
+    "dataset_alias_name": "revsi_all_frame",
+    "dataset_class_name": "ReVSI",
+    "dataset_name": "ReVSI"
+  }
+}

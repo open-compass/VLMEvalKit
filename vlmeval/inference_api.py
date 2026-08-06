@@ -154,6 +154,7 @@ class DatasetConfig:
     result_file: str
     judge_kwargs: dict  # judge model parameters.
     dataset_alias_name: str | None = None
+    dataset_class_name: str | None = None
     verbose: bool = False
 
     dataset_type: DatasetType = "image"
@@ -260,7 +261,9 @@ class APIEvalPipeline:
                 run_dir=cfg.work_dir,
                 model_name=cfg.model_name,
                 dataset_name=dataset_alias_name,
-                logical_dataset_name=cfg.dataset_name,
+                resolved_dataset_name=cfg.dataset_name,
+                dataset_alias_name=dataset_alias_name,
+                dataset_class_name=cfg.dataset_class_name,
                 status=status,
             )
             if metrics_source is not None:
