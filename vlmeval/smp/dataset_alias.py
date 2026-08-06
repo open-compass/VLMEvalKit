@@ -1,5 +1,8 @@
 import copy as cp
+import re
 from dataclasses import dataclass
+
+SAFE_DATASET_ALIAS_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]*$')
 
 PRESET_OVERRIDE_ALLOWLIST = {
     'nframe',
@@ -43,6 +46,17 @@ def _non_empty_str(value, field_name, display_name):
             f'`{field_name}` must be a non-empty string for dataset config {display_name}'
         )
     return value
+
+
+def validate_dataset_alias_name(dataset_alias_name):
+    if not isinstance(dataset_alias_name, str) or not dataset_alias_name.strip():
+        raise ValueError('Dataset alias must be a non-empty string')
+    if not SAFE_DATASET_ALIAS_RE.fullmatch(dataset_alias_name):
+        raise ValueError(
+            f'Dataset alias {dataset_alias_name} is not a safe filename component. '
+            'Use only letters, digits, ".", "_", and "-", and start with a letter or digit.'
+        )
+    return dataset_alias_name
 
 
 def _copy_spec(spec, *, dataset_alias_name=None, source=None):
@@ -124,6 +138,7 @@ def _resolve_explicit_config(dataset_alias_name, value):
 
 
 def resolve_dataset_spec(dataset_alias_name, data_config=None):
+    dataset_alias_name = validate_dataset_alias_name(dataset_alias_name)
     config = data_config or {}
     if dataset_alias_name in config:
         value = config[dataset_alias_name]
@@ -156,4 +171,7 @@ def resolve_dataset_alias(dataset_alias_name, data_config=None):
 
 
 def resolve_dataset_alias_name(dataset_name, dataset_alias_name=None):
-    return dataset_alias_name or dataset_name
+    resolved_name = dataset_alias_name or dataset_name
+    if resolved_name is None:
+        return None
+    return validate_dataset_alias_name(resolved_name)

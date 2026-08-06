@@ -30,7 +30,9 @@ To address this, VLMEvalKit provides a more flexible config system. The user can
             "class": "ImageMCQDataset",
             "dataset": "MMBench_DEV_EN_V11"
         },
-        "MMBench_Video_8frame_nopack":{},
+        "MMBench_Video_8frame_nopack": {
+            "preset": "MMBench_Video_8frame_nopack"
+        },
         "Video-MME_16frame_subs": {
             "class": "VideoMME",
             "dataset": "Video-MME",
@@ -43,7 +45,7 @@ To address this, VLMEvalKit provides a more flexible config system. The user can
 
 Explanation of the config json:
 
-1. Now we support two fields: `model` and `data`, each of which is a dictionary. The key of the `model` dictionary is the model name. The key of the `data` dictionary is an output alias.
+1. Now we support two fields: `model` and `data`, each of which is a dictionary. The key of the `model` dictionary is the model name. The key of the `data` dictionary is an output alias. Output aliases must be safe filename components: use only letters, digits, `.`, `_`, and `-`, and start with a letter or digit.
 2. For items in `model`, the value is a dictionary containing the following keys:
     - `class`: The class name of the model, which should be a class name defined in `vlmeval/vlm/__init__.py` (open-source models) or `vlmeval/api/__init__.py` (API models).
     - Other kwargs: Other kwargs are model-specific parameters, please refer to the definition of the model class for detailed usage. For example, `model`, `temperature`, `img_detail` are arguments of the `GPT4V` class. It's noteworthy that the `model` argument is required by most model classes.

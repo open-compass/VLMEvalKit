@@ -468,6 +468,7 @@ You can launch the evaluation by setting either --data and --model or --config.
         --data-config '{"Video-MME-custom": {"class": "VideoMME", "dataset": "Video-MME", "nframe": 16}}'
     The value of --data-config must be a JSON dict string so evaluation parameters are recorded in argv.
     The custom name is only used for output artifacts; dataset logic uses the `dataset` field.
+    Output aliases must use only letters, digits, ".", "_", and "-", and start with a letter or digit.
 
 --config:
     Launch the evaluation by specifying the path to the config json file. Sample Json Content:
@@ -497,7 +498,9 @@ You can launch the evaluation by setting either --data and --model or --config.
                 "class": "ImageMCQDataset",
                 "dataset": "MMBench_DEV_EN_V11"
             },
-            "MMBench_Video_8frame_nopack": {},
+            "MMBench_Video_8frame_nopack": {
+                "preset": "MMBench_Video_8frame_nopack"
+            },
             "Video-MME_16frame_subs": {
                 "class": "VideoMME",
                 "dataset": "Video-MME",
@@ -512,7 +515,8 @@ You can launch the evaluation by setting either --data and --model or --config.
     - `class`: The class name of the model, which should be a class in `vlmeval.vlm` or `vlmeval.api`.
     - Other keys are specific to the model, please refer to the corresponding class.
     - Tip: The defined model in the `supported_VLM` of `vlmeval/config.py` can be used as a shortcut.
-    For `data`, the key is an output alias. It is used for prediction files, status entries, reuse artifacts, \
+    For `data`, the key is an output alias. It must use only letters, digits, ".", "_", and "-", and start with \
+        a letter or digit. It is used for prediction files, status entries, reuse artifacts, \
         and symlinks. Dataset logic uses the `dataset` field in the value, or the referenced predefined `preset`.
         The value is a dictionary containing the following keys:
     - `class`: The class name of the dataset, which should be a class in `vlmeval.dataset`.

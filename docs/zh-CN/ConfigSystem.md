@@ -31,7 +31,9 @@
             "class": "ImageMCQDataset",
             "dataset": "MMBench_DEV_EN_V11"
         },
-        "MMBench_Video_8frame_nopack":{},
+        "MMBench_Video_8frame_nopack": {
+            "preset": "MMBench_Video_8frame_nopack"
+        },
         "Video-MME_16frame_subs": {
             "class": "VideoMME",
             "dataset": "Video-MME",
@@ -44,7 +46,7 @@
 
 配置json的解释：
 
-1. 现在我们支持两个字段：`model`和`data`，每个字段都是一个字典。`model` 字典的 key 是模型名称；`data` 字典的 key 是输出别名。
+1. 现在我们支持两个字段：`model`和`data`，每个字段都是一个字典。`model` 字典的 key 是模型名称；`data` 字典的 key 是输出别名。输出别名必须是安全的文件名组件：只能使用字母、数字、`.`、`_`、`-`，并且必须以字母或数字开头。
 2. 对于`model`中的项目，值是一个包含以下键的字典：
     - `class`：模型的类名，应该是`vlmeval/vlm/__init__.py`（开源模型）或`vlmeval/api/__init__.py`（API模型）中定义的类名。
     - 其他kwargs：其他kwargs是模型特定的参数，请参考模型类的定义以获取详细用法。例如，`model`、`temperature`、`img_detail`是`GPT4V`类的参数。值得注意的是，大多数模型类都需要`model`参数。

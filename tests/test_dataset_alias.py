@@ -10,7 +10,8 @@ import pandas as pd
 from vlmeval.inference import infer_data_job
 from vlmeval.smp import dump, get_composite_child_eval_file, load, status_report
 from vlmeval.smp.dataset_alias import (DatasetSpec, get_predefined_dataset_spec,
-                                       resolve_dataset_alias, resolve_dataset_spec)
+                                       resolve_dataset_alias, resolve_dataset_alias_name,
+                                       resolve_dataset_spec)
 
 os.environ.setdefault('LMUData', '/tmp/vlmevalkit-test-lmudata')
 os.makedirs(os.environ['LMUData'], exist_ok=True)
@@ -131,6 +132,35 @@ class TestDatasetAlias(unittest.TestCase):
         self.assertIsNone(spec.dataset_class_name)
         self.assertEqual(spec.build_config, {'dataset': 'MMBench_DEV_EN_V11'})
         self.assertEqual(spec.source, 'direct_dataset')
+
+    def test_dataset_alias_name_must_be_safe_filename_component(self):
+        bad_names = [
+            '',
+            '   ',
+            '.HiddenAlias',
+            '../MMBench',
+            'MMBench/Video',
+            r'MMBench\Video',
+            'MMBench Video',
+            'MMBench:Video',
+        ]
+        for name in bad_names:
+            with self.subTest(name=name):
+                with self.assertRaises(ValueError):
+                    resolve_dataset_spec(name)
+
+    def test_resolve_dataset_alias_name_validates_filename_component(self):
+        self.assertEqual(
+            resolve_dataset_alias_name('MMBench_DEV_EN_V11'),
+            'MMBench_DEV_EN_V11',
+        )
+        self.assertEqual(
+            resolve_dataset_alias_name('Video-MME', 'Video-MME_0.5fps'),
+            'Video-MME_0.5fps',
+        )
+
+        with self.assertRaisesRegex(ValueError, 'safe filename component'):
+            resolve_dataset_alias_name('Video-MME', '../Video-MME')
 
     def test_empty_dict_config_is_not_predefined_shortcut(self):
         with self.assertRaisesRegex(ValueError, 'Empty dataset config'):
