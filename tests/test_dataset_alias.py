@@ -253,7 +253,7 @@ class TestDatasetAlias(unittest.TestCase):
                 self.assertTrue(spec.build_config['dataset'].strip())
 
     def test_video_build_config_validation_uses_class_defaults_and_rejects_none(self):
-        from vlmeval.dataset import MMBenchVideo, VideoMMEv2
+        from vlmeval.dataset import DREAM, MMBenchVideo, MVUEval, VideoMMEv2
 
         with self.assertRaisesRegex(ValueError, 'fps and nframe'):
             VideoMMEv2.validate_build_config({'dataset': 'Video-MME-v2', 'fps': 1.0})
@@ -270,6 +270,23 @@ class TestDatasetAlias(unittest.TestCase):
             'fps': 1.0,
         })
 
+        for dataset_cls, dataset_name in [
+            (DREAM, 'DREAM-1K'),
+            (MVUEval, 'MVU-Eval'),
+        ]:
+            with self.subTest(dataset_name=dataset_name):
+                dataset_cls.validate_build_config({'dataset': dataset_name})
+                dataset_cls.validate_build_config({
+                    'dataset': dataset_name,
+                    'nframe': 0,
+                    'fps': -1,
+                })
+                with self.assertRaisesRegex(ValueError, 'fps and nframe'):
+                    dataset_cls.validate_build_config({
+                        'dataset': dataset_name,
+                        'fps': 0,
+                    })
+
         with self.assertRaisesRegex(ValueError, 'fps should not be None'):
             MMBenchVideo.validate_build_config({
                 'dataset': 'MMBench-Video',
@@ -282,6 +299,42 @@ class TestDatasetAlias(unittest.TestCase):
                 'nframe': None,
                 'fps': 1.0,
             })
+
+    def test_sitebench_image_strict_config_uses_explicit_init_signature(self):
+        import run as runner
+        from vlmeval.dataset import SiteBenchImage
+
+        fake_data = pd.DataFrame([{
+            'index': 0,
+            'question': 'question',
+            'options': '["A", "B"]',
+            'image_path': '/tmp/sitebench.jpg',
+        }])
+
+        with mock.patch.object(SiteBenchImage, 'load_data', return_value=fake_data):
+            dataset = runner.build_dataset_from_config_dict(
+                {
+                    'class': 'SiteBenchImage',
+                    'dataset': 'SiteBenchImage',
+                    'skip_noimg': False,
+                },
+                display_name='SiteBenchImageAlias',
+            )
+
+        self.assertIsInstance(dataset, SiteBenchImage)
+        self.assertEqual(dataset.dataset_name, 'SiteBenchImage')
+        self.assertFalse(dataset.skip_noimg)
+        self.assertEqual(dataset.repo_id, 'franky-veteran/SITE-Bench')
+
+        with self.assertRaisesRegex(ValueError, 'Unsupported parameter'):
+            runner.build_dataset_from_config_dict(
+                {
+                    'class': 'SiteBenchImage',
+                    'dataset': 'SiteBenchImage',
+                    'unknown': 1,
+                },
+                display_name='SiteBenchImageAlias',
+            )
 
     def test_videommev2_1fps_presets_clear_default_nframe(self):
         from vlmeval.dataset import VideoMMEv2

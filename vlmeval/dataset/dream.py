@@ -56,10 +56,20 @@ class DREAM(VideoBaseDataset):
 
     TYPE = 'DREAM-1K'
     MD5 = 'e8f0a486429bb6c27806bc0669e0d8b2'
+    DEFAULT_NFRAME = 8
+
+    @classmethod
+    def validate_build_config(cls, config: dict) -> None:
+        config = dict(config)
+        nframe = config.get('nframe', 0)
+        fps = config.get('fps', -1)
+        if nframe == 0 and fps == -1:
+            config['nframe'] = cls.DEFAULT_NFRAME
+        super().validate_build_config(config)
 
     def __init__(self, dataset='DREAM-1K', pack=False, nframe=0, fps=-1):
         if nframe == 0 and fps == -1:
-            nframe = 8
+            nframe = self.DEFAULT_NFRAME
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
     def prepare_dataset(self, dataset):
