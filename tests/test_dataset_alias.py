@@ -123,6 +123,15 @@ class TestDatasetAlias(unittest.TestCase):
         self.assertEqual(spec.build_config['nframe'], 16)
         self.assertFalse(spec.build_config['pack'])
 
+    def test_resolve_direct_dataset_spec_does_not_build_dataset_class_name(self):
+        spec = resolve_dataset_spec('MMBench_DEV_EN_V11')
+
+        self.assertEqual(spec.dataset_alias_name, 'MMBench_DEV_EN_V11')
+        self.assertEqual(spec.dataset_name, 'MMBench_DEV_EN_V11')
+        self.assertIsNone(spec.dataset_class_name)
+        self.assertEqual(spec.build_config, {'dataset': 'MMBench_DEV_EN_V11'})
+        self.assertEqual(spec.source, 'direct_dataset')
+
     def test_empty_dict_config_is_not_predefined_shortcut(self):
         with self.assertRaisesRegex(ValueError, 'Empty dataset config'):
             resolve_dataset_spec(
@@ -634,10 +643,16 @@ class TestDatasetAlias(unittest.TestCase):
 
             pred_file = Path(tmpdir) / 'MockModel' / 'TENTRY' / 'MockModel_PlainAlias.tsv'
             build_calls = []
+            status_calls = []
 
             def fake_build_dataset_from_spec(spec, extra_kwargs=None):
-                build_calls.append((spec.dataset_alias_name, spec.dataset_name, extra_kwargs))
+                build_calls.append(
+                    (spec.dataset_alias_name, spec.dataset_name, spec.dataset_class_name, extra_kwargs)
+                )
                 return FakeEntryDataset()
+
+            def fake_upsert_dataset_status(**kwargs):
+                status_calls.append(kwargs)
 
             judge_kwargs = {'model': 'mock-judge'}
             reuse_ctx = {'source_eval_id': None, 'prediction_complete': False}
@@ -649,7 +664,8 @@ class TestDatasetAlias(unittest.TestCase):
                     mock.patch.object(runner, 'setup_logger'), \
                     mock.patch.object(runner, 'apply_supported_vlm_cli_overrides'), \
                     mock.patch.object(runner, 'upsert_run_status'), \
-                    mock.patch.object(runner, 'upsert_dataset_status'), \
+                    mock.patch.object(runner, 'upsert_dataset_status',
+                                      side_effect=fake_upsert_dataset_status), \
                     mock.patch.object(runner, 'get_pred_file_path', return_value=str(pred_file)), \
                     mock.patch.object(runner, 'build_dataset_from_spec',
                                       side_effect=fake_build_dataset_from_spec), \
@@ -660,7 +676,11 @@ class TestDatasetAlias(unittest.TestCase):
                     mock.patch.object(runner, 'log_run_benchmark_report'):
                 runner.run_local_mode(args)
 
-            self.assertEqual(build_calls, [('PlainAlias', 'PlainAlias', {})])
+            self.assertEqual(build_calls, [('PlainAlias', 'PlainAlias', None, {})])
+            self.assertTrue(any(
+                call.get('dataset_class_name') == 'FakeEntryDataset'
+                for call in status_calls
+            ))
 
     def test_run_api_mode_non_config_data_allows_missing_data_config(self):
         import run as runner
@@ -706,7 +726,9 @@ class TestDatasetAlias(unittest.TestCase):
             build_calls = []
 
             def fake_build_dataset_from_spec(spec, extra_kwargs=None):
-                build_calls.append((spec.dataset_alias_name, spec.dataset_name, extra_kwargs))
+                build_calls.append(
+                    (spec.dataset_alias_name, spec.dataset_name, spec.dataset_class_name, extra_kwargs)
+                )
                 return FakeEntryDataset()
 
             def fake_pred_file(work_dir, model_name, dataset_name, use_env_format=True):
@@ -731,11 +753,11 @@ class TestDatasetAlias(unittest.TestCase):
                     mock.patch.object(inference_api, 'APIEvalPipeline', FakePipeline):
                 runner.run_api_mode(args)
 
-            self.assertEqual(build_calls, [('PlainAlias', 'PlainAlias', {})])
+            self.assertEqual(build_calls, [('PlainAlias', 'PlainAlias', None, {})])
             self.assertEqual(len(captured_configs), 1)
             self.assertEqual(captured_configs[0].dataset_name, 'PlainAlias')
             self.assertEqual(captured_configs[0].dataset_alias_name, 'PlainAlias')
-            self.assertIsNone(captured_configs[0].dataset_class_name)
+            self.assertEqual(captured_configs[0].dataset_class_name, 'FakeEntryDataset')
 
 
 if __name__ == '__main__':

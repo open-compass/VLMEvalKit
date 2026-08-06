@@ -220,6 +220,12 @@ def build_dataset_from_spec(spec, extra_kwargs=None):
     return build_dataset(spec.dataset_name, **(extra_kwargs or {}))
 
 
+def get_effective_dataset_class_name(spec, dataset):
+    if dataset is not None:
+        return dataset.__class__.__name__
+    return spec.dataset_class_name
+
+
 def apply_supported_vlm_cli_overrides(args):
     """Apply CLI overrides (retry/verbose/stream) to supported_VLM entries."""
     for k, v in supported_VLM.items():
@@ -743,6 +749,7 @@ def run_local_mode(args):
                     dist.barrier()
 
                 dataset = build_dataset_from_spec(spec, extra_kwargs=dataset_kwargs)
+                dataset_class_name = get_effective_dataset_class_name(spec, dataset)
                 if dataset is None:
                     logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                     if RANK == 0:
@@ -780,6 +787,8 @@ def run_local_mode(args):
                         model_name=model_name,
                         dataset_name=dataset_alias_name,
                         resolved_dataset_name=dataset_name,
+                        dataset_alias_name=dataset_alias_name,
+                        dataset_class_name=dataset_class_name,
                         source_run=reuse_ctx['source_eval_id'],
                         judge_model=judge_model,
                         reuse_aux=args.reuse_aux,
@@ -1047,6 +1056,8 @@ def run_local_mode(args):
                         model_name=model_name,
                         dataset_name=dataset_alias_name,
                         resolved_dataset_name=dataset_name,
+                        dataset_alias_name=dataset_alias_name,
+                        dataset_class_name=dataset_class_name,
                         status='done',
                         error_message=str(e),
                     )
@@ -1154,6 +1165,7 @@ def run_api_mode(args):
         try:
             dataset_kwargs = get_dataset_build_kwargs(ds_name, model_name)
             dataset = build_dataset_from_spec(spec, extra_kwargs=dataset_kwargs)
+            dataset_class_name = get_effective_dataset_class_name(spec, dataset)
 
             if dataset is None:
                 logger.error(f'Dataset {ds_name} is not valid, will be skipped.')
