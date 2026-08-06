@@ -4,25 +4,6 @@ from dataclasses import dataclass
 
 SAFE_DATASET_ALIAS_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]*$')
 
-PRESET_OVERRIDE_ALLOWLIST = {
-    'nframe',
-    'fps',
-    'pack',
-    'use_subtitle',
-    'with_subtitle',
-    'subtitle_interleave',
-    'use_audio',
-    'audio_only',
-    'subset',
-    'subset_name',
-    'limit',
-    'reasoning',
-    'resize_target_area',
-    'skip_EgoExo4D',
-    'use_frame_time',
-    'use_subtitle_time',
-}
-
 
 @dataclass(frozen=True)
 class DatasetSpec:
@@ -100,16 +81,8 @@ def _resolve_preset_config(dataset_alias_name, value):
             f'Unknown dataset preset {preset_name} for dataset config {dataset_alias_name}'
         )
 
-    overrides = {k: v for k, v in value.items() if k != 'preset'}
-    unknown = sorted(k for k in overrides if k not in PRESET_OVERRIDE_ALLOWLIST)
-    if unknown:
-        raise ValueError(
-            f'Unsupported preset override(s) for dataset config {dataset_alias_name}: '
-            f'{", ".join(unknown)}'
-        )
-
     build_config = cp.deepcopy(preset_spec.build_config)
-    build_config.update(overrides)
+    build_config.update({k: v for k, v in value.items() if k != 'preset'})
     return DatasetSpec(
         dataset_alias_name=dataset_alias_name,
         dataset_name=preset_spec.dataset_name,

@@ -115,14 +115,31 @@ class TestDatasetAlias(unittest.TestCase):
     def test_resolve_preset_alias(self):
         spec = resolve_dataset_spec(
             'AliasVideo',
-            {'AliasVideo': {'preset': 'MMBench_Video_8frame_nopack', 'nframe': 16}},
+            {
+                'AliasVideo': {
+                    'preset': 'MMBench_Video_8frame_nopack',
+                    'nframe': 16,
+                    'future_dataset_arg': 'kept-for-strict-build',
+                }
+            },
         )
 
         self.assertEqual(spec.dataset_alias_name, 'AliasVideo')
         self.assertEqual(spec.dataset_name, 'MMBench-Video')
         self.assertEqual(spec.dataset_class_name, 'MMBenchVideo')
         self.assertEqual(spec.build_config['nframe'], 16)
+        self.assertEqual(spec.build_config['future_dataset_arg'], 'kept-for-strict-build')
         self.assertFalse(spec.build_config['pack'])
+
+    def test_preset_alias_rejects_identity_overrides(self):
+        bad_configs = [
+            {'preset': 'MMBench_Video_8frame_nopack', 'class': 'VideoMME'},
+            {'preset': 'MMBench_Video_8frame_nopack', 'dataset': 'Video-MME'},
+        ]
+        for cfg in bad_configs:
+            with self.subTest(cfg=cfg):
+                with self.assertRaises(ValueError):
+                    resolve_dataset_spec('AliasVideo', {'AliasVideo': cfg})
 
     def test_resolve_direct_dataset_spec_does_not_build_dataset_class_name(self):
         spec = resolve_dataset_spec('MMBench_DEV_EN_V11')
