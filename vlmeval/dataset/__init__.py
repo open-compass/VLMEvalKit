@@ -97,6 +97,7 @@ from .mmsafetybench import MMSafetyBenchDataset
 from .mmsibench import MMSIBench, MMSIVideoBench
 from .moat import MOAT
 from .moviechat1k import MovieChat1k
+from .mrarebench import MRareBenchDiagnosis, MRareBenchEvidenceVerif
 from .mssbench import MSSBenchDataset
 from .mvbench import MVBench, MVBench_MP4
 from .mvu_eval import MVUEval
@@ -308,6 +309,7 @@ IMAGE_DATASET = [
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
+    MRareBenchDiagnosis, MRareBenchEvidenceVerif,
     BabyVision, SUPERChemDataset,
 ]
 
