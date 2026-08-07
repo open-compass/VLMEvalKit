@@ -138,6 +138,7 @@ from .spbench import SPBench
 from .ssi_bench import SSIBenchDataset
 from .starebench import StareBench
 from .stibench import STIBench
+from .superchem import SUPERChemDataset
 from .tamperbench import MVTamperBench
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
@@ -307,7 +308,7 @@ IMAGE_DATASET = [
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
-    BabyVision,
+    BabyVision, SUPERChemDataset,
 ]
 
 # add by EASI team
