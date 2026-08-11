@@ -489,7 +489,12 @@ class LLaVA_OneVision(BaseModel):
     DEFAULT_IMAGE_TOKEN = "<image>"
     IMAGE_TOKEN_INDEX = -200
 
-    def __init__(self, model_path="lmms-lab/llava-onevision-qwen2-7b-si", **kwargs):
+    def __init__(
+        self,
+        model_path="lmms-lab/llava-onevision-qwen2-7b-si",
+        model_name=None,
+        **kwargs,
+    ):
         assert model_path is not None
         try:
             from llava.conversation import SeparatorStyle, conv_templates
@@ -508,15 +513,17 @@ class LLaVA_OneVision(BaseModel):
         video_kwargs_default.update(kwargs)
         self.video_kwargs = video_kwargs_default
 
-        overwrite_config = None
+        resolved_overwrite_config = {}
         if "video" in model_path.lower():
             if self.video_kwargs["overwrite"]:
-                overwrite_config = {}
-                overwrite_config["mm_spatial_pool_mode"] = self.video_kwargs[
+                resolved_overwrite_config["mm_spatial_pool_mode"] = self.video_kwargs[
                     "mm_spatial_pool_mode"
                 ]
+        resolved_overwrite_config.update(self._get_model_overwrite_config())
+        if not resolved_overwrite_config:
+            resolved_overwrite_config = None
 
-        model_name = get_model_name_from_path(model_path)
+        model_name = model_name or get_model_name_from_path(model_path)
         import warnings
 
         # filter warning align with official code
@@ -526,7 +533,7 @@ class LLaVA_OneVision(BaseModel):
             None,
             model_name,
             device_map="auto",
-            overwrite_config=overwrite_config,
+            overwrite_config=resolved_overwrite_config,
         )
         model.eval()
         model.tie_weights()
@@ -556,6 +563,10 @@ class LLaVA_OneVision(BaseModel):
         )
         self.KeywordStoppingCriteria = KeywordsStoppingCriteria
         self.SeparatorStyle = SeparatorStyle
+
+    def _get_model_overwrite_config(self):
+        """Return model-specific config overrides for subclasses."""
+        return {}
 
     def generate_inner_image(self, message, dataset=None):
         content, images = "", []
@@ -628,7 +639,7 @@ class LLaVA_OneVision(BaseModel):
 
         time_instruciton = (
             f"The video lasts for {video_time:.2f} seconds,"
-            f"and {len(video_frames[0])} frames are uniformly sampled from it."
+            f"and {len(video_frames)} frames are uniformly sampled from it."
             f"These frames are located at {frame_time}."
             f"Please answer the following questions related to this video.\n"
         )
@@ -657,8 +668,8 @@ class LLaVA_OneVision(BaseModel):
             prompt_question, self.tokenizer, self.IMAGE_TOKEN_INDEX, return_tensors="pt"
         )
         input_ids = input_ids.unsqueeze(0).cuda()
-        image_sizes = [frame.size for frame in video_frames]
-        modalities = ["video"] * len(video_frames)
+        image_sizes = [(int(video_frames.shape[2]), int(video_frames.shape[1]))]
+        modalities = ["video"]
 
         stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
@@ -669,6 +680,7 @@ class LLaVA_OneVision(BaseModel):
         # Pass image sizes along with other parameters
         cont = self.model.generate(
             input_ids,
+            attention_mask=torch.ones_like(input_ids),
             images=image_tensors,
             image_sizes=image_sizes,  # Pass the image sizes here
             do_sample=False,
@@ -704,10 +716,11 @@ class LLaVA_OneVision(BaseModel):
         return spare_frames, frame_time, video_time
 
     def generate_inner(self, message, dataset=None):
-        if DATASET_MODALITY(dataset) == 'VIDEO' and 'megabench' not in dataset.lower():
+        if any(msg.get('type') == 'video' for msg in message):
             return self.generate_inner_video(message, dataset)
-        else:
-            return self.generate_inner_image(message, dataset)
+        if dataset is not None and DATASET_MODALITY(dataset) == 'VIDEO' and 'megabench' not in dataset.lower():
+            return self.generate_inner_video(message, dataset)
+        return self.generate_inner_image(message, dataset)
 
 
 class LLaVA_OneVision_HF(BaseModel):

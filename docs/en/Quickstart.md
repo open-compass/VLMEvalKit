@@ -14,6 +14,20 @@ cd VLMEvalKit
 pip install -e .
 ```
 
+The optional VQToken adapter requires Python 3.10 or 3.11 and its public
+LLaVA-OneVision runtime:
+
+```bash
+pip install "llava[runtime] @ git+https://github.com/Hai-chao-Zhang/VQToken.git@a8e3e13e8415b575556dd779e890b77a74ecf52a"
+hf auth login
+# Loader/image sanity check; use a video dataset command to exercise VQToken.
+vlmutil check VQToken-LLaVA-OneVision-0.5B
+python run.py --data MVBench_8frame --model VQToken-LLaVA-OneVision-0.5B --mode infer
+```
+
+The released paper checkpoint uses Hugging Face's access-request flow, so
+accept its terms before running the check or an evaluation.
+
 **Setup Keys.**
 
 To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **judge or choice extractor**, you need to first setup API keys. VLMEvalKit will use an judge **LLM** to extract answer from the output if you set the key, otherwise it uses the **exact matching** mode (find "Yes", "No", "A", "B", "C"... in the output strings). **The exact matching can only be applied to the Yes-or-No tasks and the Multi-choice tasks.**
