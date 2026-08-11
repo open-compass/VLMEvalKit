@@ -6,7 +6,7 @@ from .llava import LLaVA_OneVision
 
 SUPPORTED_SELECTION_METHODS = frozenset({'fixed', 'elbow', 'silhouette'})
 RUNTIME_INSTALL = ('llava[runtime] @ git+https://github.com/Hai-chao-Zhang/'
-                   'VQToken.git@a8e3e13e8415b575556dd779e890b77a74ecf52a')
+                   'VQToken.git@fe6c28fa5907ec97b4ac3f6fe0aaef80affbd9fd')
 
 
 def validate_cluster_config(selection_method, min_clusters, max_clusters):
