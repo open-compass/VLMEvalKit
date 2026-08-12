@@ -46,7 +46,8 @@ def load_llava_module():
         packages[package_name] = package
 
     dataset_module = ModuleType('vlmeval.dataset')
-    dataset_module.DATASET_MODALITY = lambda dataset: 'VIDEO' if dataset == 'video-dataset' else 'IMAGE'
+    dataset_module.DATASET_MODALITY = (
+        lambda dataset: 'VIDEO' if dataset == 'video-dataset' else 'IMAGE')
     dataset_module.DATASET_TYPE = lambda dataset: 'VQA'
     packages['vlmeval.dataset'] = dataset_module
 
@@ -129,19 +130,21 @@ class TestVQToken(unittest.TestCase):
     def setUpClass(cls):
         cls.vqtoken = load_vqtoken_module()
 
-    def test_wrapper_passes_public_centroid_config(self):
-        runtime = SimpleNamespace(VQTOKEN_CAPABILITIES={
-            'modes': ('centroids', ),
-            'selection_methods': ('fixed', 'elbow', 'silhouette'),
-        })
+    def test_wrapper_passes_public_learned_attention_config(self):
+        runtime = SimpleNamespace(
+            VQTOKEN_CAPABILITIES={
+                'modes': ('attention', 'centroids'),
+                'selection_methods': ('fixed', 'elbow', 'silhouette'),
+            })
         parent_class = self.vqtoken.LLaVA_OneVision
-        with mock.patch.object(self.vqtoken, 'import_module',
-                               return_value=runtime), mock.patch.object(parent_class, '__init__',
-                                                                        return_value=None) as parent_init:
+        with mock.patch.object(
+                self.vqtoken, 'import_module', return_value=runtime), mock.patch.object(
+                    parent_class, '__init__', return_value=None) as parent_init:
             model = self.vqtoken.LLaVA_OneVision_VQToken(
                 vqtoken_selection_method='elbow',
                 vqtoken_min_clusters=12,
                 vqtoken_max_clusters=32,
+                max_frames_num=12,
             )
 
         kwargs = parent_init.call_args.kwargs
@@ -151,7 +154,7 @@ class TestVQToken(unittest.TestCase):
             model._get_model_overwrite_config(),
             {
                 'use_vqtoken': True,
-                'vqtoken_mode': 'centroids',
+                'vqtoken_mode': 'attention',
                 'vqtoken_selection_method': 'elbow',
                 'vqtoken_min_clusters': 12,
                 'vqtoken_max_clusters': 32,
@@ -160,21 +163,24 @@ class TestVQToken(unittest.TestCase):
                 'mm_spatial_pool_mode': 'bilinear',
             },
         )
-        self.assertEqual(model.nframe, 32)
+        self.assertEqual(model.nframe, 12)
         self.assertFalse(model.force_sample)
 
     def test_wrapper_forces_uniform_sampling_without_timestamp_prompt(self):
-        runtime = SimpleNamespace(VQTOKEN_CAPABILITIES={
-            'modes': ('centroids', ),
-            'selection_methods': ('fixed', 'elbow', 'silhouette'),
-        })
+        runtime = SimpleNamespace(
+            VQTOKEN_CAPABILITIES={
+                'modes': ('attention', 'centroids'),
+                'selection_methods': ('fixed', 'elbow', 'silhouette'),
+            })
         parent_class = self.vqtoken.LLaVA_OneVision
-        with mock.patch.object(self.vqtoken, 'import_module',
-                               return_value=runtime), mock.patch.object(parent_class, '__init__', return_value=None):
+        with mock.patch.object(
+                self.vqtoken, 'import_module', return_value=runtime), mock.patch.object(
+                    parent_class, '__init__', return_value=None):
             model = self.vqtoken.LLaVA_OneVision_VQToken()
 
-        with mock.patch.object(parent_class, 'load_video', create=True,
-                               return_value=('frames', 'times', 1.0)) as parent_load:
+        with mock.patch.object(
+                parent_class, 'load_video', create=True,
+                return_value=('frames', 'times', 1.0)) as parent_load:
             result = model.load_video('demo.mp4', 32, fps=1, force_sample=False)
 
         self.assertEqual(result, ('frames', 'times', 1.0))
@@ -182,7 +188,7 @@ class TestVQToken(unittest.TestCase):
 
     def test_invalid_or_non_public_configuration_is_rejected(self):
         invalid = [
-            ('attention', 12, 32),
+            ('random', 12, 32),
             ('fixed', 0, 32),
             ('elbow', 33, 32),
             ('fixed', True, 32),
@@ -200,10 +206,13 @@ class TestVQToken(unittest.TestCase):
             'selection_methods': ('fixed', 'elbow', 'silhouette'),
         })
         parent_class = self.vqtoken.LLaVA_OneVision
-        with mock.patch.object(self.vqtoken, 'import_module',
-                               return_value=runtime), mock.patch.object(parent_class, '__init__', return_value=None):
-            inferred = self.vqtoken.LLaVA_OneVision_VQToken(model_path='local/custom')
-            explicit = self.vqtoken.LLaVA_OneVision_VQToken(model_path='local/custom', use_embedded_vision=True)
+        with mock.patch.object(
+                self.vqtoken, 'import_module', return_value=runtime), mock.patch.object(
+                    parent_class, '__init__', return_value=None):
+            inferred = self.vqtoken.LLaVA_OneVision_VQToken(
+                model_path='local/custom', vqtoken_mode='centroids')
+            explicit = self.vqtoken.LLaVA_OneVision_VQToken(
+                model_path='local/custom', vqtoken_mode='centroids', use_embedded_vision=True)
 
         self.assertFalse(inferred._get_model_overwrite_config()['use_embedded_vision'])
         self.assertTrue(explicit._get_model_overwrite_config()['use_embedded_vision'])
@@ -218,9 +227,11 @@ class TestVQToken(unittest.TestCase):
             has_embedded_vision_weights=detector,
         )
         parent_class = self.vqtoken.LLaVA_OneVision
-        with mock.patch.object(self.vqtoken, 'import_module',
-                               return_value=runtime), mock.patch.object(parent_class, '__init__', return_value=None):
-            model = self.vqtoken.LLaVA_OneVision_VQToken(model_path='local/checkpoint')
+        with mock.patch.object(
+                self.vqtoken, 'import_module', return_value=runtime), mock.patch.object(
+                    parent_class, '__init__', return_value=None):
+            model = self.vqtoken.LLaVA_OneVision_VQToken(
+                model_path='local/checkpoint', vqtoken_mode='centroids')
 
         detector.assert_called_once_with('local/checkpoint')
         self.assertTrue(model._get_model_overwrite_config()['use_embedded_vision'])
@@ -230,20 +241,102 @@ class TestVQToken(unittest.TestCase):
             'modes': ('centroids', ),
             'selection_methods': ('fixed', 'elbow', 'silhouette'),
         })
-        with mock.patch.object(self.vqtoken, 'import_module',
-                               return_value=runtime), self.assertRaisesRegex(ValueError, 'max_frames_num'):
+        with mock.patch.object(
+                self.vqtoken, 'import_module',
+                return_value=runtime), self.assertRaisesRegex(ValueError, 'max_frames_num'):
             self.vqtoken.LLaVA_OneVision_VQToken(max_frames_num=0)
 
     def test_missing_runtime_has_actionable_error(self):
-        with mock.patch.object(self.vqtoken, 'import_module',
-                               side_effect=ImportError), self.assertRaisesRegex(ImportError, 'Hai-chao-Zhang/VQToken'):
+        with mock.patch.object(
+                self.vqtoken, 'import_module',
+                side_effect=ImportError), self.assertRaisesRegex(ImportError,
+                                                                 'Hai-chao-Zhang/VQToken'):
             self.vqtoken.require_vqtoken_runtime()
 
     def test_old_runtime_is_rejected(self):
         runtime = SimpleNamespace(VQTOKEN_CAPABILITIES={'modes': (), 'selection_methods': ()})
-        with mock.patch.object(self.vqtoken, 'import_module',
-                               return_value=runtime), self.assertRaisesRegex(ImportError, 'too old'):
+        with mock.patch.object(
+                self.vqtoken, 'import_module',
+                return_value=runtime), self.assertRaisesRegex(ImportError, 'too old'):
             self.vqtoken.require_vqtoken_runtime()
+
+    def test_centroid_only_runtime_is_rejected_for_default_attention(self):
+        runtime = SimpleNamespace(VQTOKEN_CAPABILITIES={
+            'modes': ('centroids', ),
+            'selection_methods': ('fixed', 'elbow', 'silhouette'),
+        })
+        with mock.patch.object(
+                self.vqtoken, 'import_module',
+                return_value=runtime), self.assertRaisesRegex(ImportError, 'too old'):
+            self.vqtoken.require_vqtoken_runtime()
+        with mock.patch.object(self.vqtoken, 'import_module', return_value=runtime):
+            self.assertIs(self.vqtoken.require_vqtoken_runtime('centroids'), runtime)
+
+    def test_attention_frame_budget_is_validated_before_loading(self):
+        parent_class = self.vqtoken.LLaVA_OneVision
+        invalid = [
+            {
+                'max_frames_num': 33,
+                'vqtoken_max_clusters': 32
+            },
+            {
+                'max_frames_num': 13,
+                'vqtoken_selection_method': 'silhouette',
+                'vqtoken_min_clusters': 12,
+                'vqtoken_max_clusters': 32,
+            },
+        ]
+        for kwargs in invalid:
+            with self.subTest(kwargs=kwargs), mock.patch.object(
+                    self.vqtoken, 'import_module') as runtime_import, mock.patch.object(
+                        parent_class, '__init__',
+                        return_value=None) as parent_init, self.assertRaisesRegex(
+                            ValueError, 'max_frames_num'):
+                self.vqtoken.LLaVA_OneVision_VQToken(**kwargs)
+            runtime_import.assert_not_called()
+            parent_init.assert_not_called()
+
+    def test_unknown_checkpoint_cannot_silently_use_random_attention(self):
+        detector = mock.MagicMock(return_value=False)
+        runtime = SimpleNamespace(
+            VQTOKEN_CAPABILITIES={
+                'modes': ('attention', 'centroids'),
+                'selection_methods': ('fixed', 'elbow', 'silhouette'),
+            },
+            has_released_vq_attention_weights=detector,
+        )
+        parent_class = self.vqtoken.LLaVA_OneVision
+        with mock.patch.object(
+                self.vqtoken, 'import_module', return_value=runtime), mock.patch.object(
+                    parent_class, '__init__',
+                    return_value=None) as parent_init, self.assertRaisesRegex(
+                        ValueError, 'released checkpoint'):
+            self.vqtoken.LLaVA_OneVision_VQToken(model_path='local/base-only')
+
+        detector.assert_called_once_with('local/base-only')
+        parent_init.assert_not_called()
+
+    def test_verified_local_checkpoint_can_use_attention(self):
+        attention_detector = mock.MagicMock(return_value=True)
+        runtime = SimpleNamespace(
+            VQTOKEN_CAPABILITIES={
+                'modes': ('attention', 'centroids'),
+                'selection_methods': ('fixed', 'elbow', 'silhouette'),
+            },
+            has_released_vq_attention_weights=attention_detector,
+        )
+        parent_class = self.vqtoken.LLaVA_OneVision
+        with mock.patch.object(
+                self.vqtoken, 'import_module', return_value=runtime), mock.patch.object(
+                    parent_class, '__init__', return_value=None):
+            model = self.vqtoken.LLaVA_OneVision_VQToken(
+                model_path='local/released-snapshot', use_embedded_vision=False)
+
+        attention_detector.assert_called_once_with('local/released-snapshot')
+        self.assertEqual(model._get_model_overwrite_config()['vqtoken_mode'], 'attention')
+
+    def test_runtime_dependency_is_pinned_to_attention_compatible_commit(self):
+        self.assertIn('0314eb9989a7ea843f31bfe0984113529e3f9140', self.vqtoken.RUNTIME_INSTALL)
 
 
 class TestOneVisionVideoBoundary(unittest.TestCase):
@@ -260,7 +353,8 @@ class TestOneVisionVideoBoundary(unittest.TestCase):
         model.force_sample = True
         model.DEFAULT_IMAGE_TOKEN = '<image>'
         model.IMAGE_TOKEN_INDEX = -200
-        model.image_processor = SimpleNamespace(preprocess=lambda *args, **kwargs: {'pixel_values': FakeTensor()})
+        model.image_processor = SimpleNamespace(
+            preprocess=lambda *args, **kwargs: {'pixel_values': FakeTensor()})
         model.conv_template = 'qwen_1_5'
         model.conv_templates = {'qwen_1_5': FakeConversation()}
         model.tokenizer = object()
@@ -310,7 +404,11 @@ class TestOneVisionVideoBoundary(unittest.TestCase):
         model.generate_inner_video = mock.MagicMock(return_value='video-answer')
         model.generate_inner_image = mock.MagicMock(return_value='image-answer')
 
-        result = model.generate_inner([{'type': 'video', 'value': 'demo.mp4'}], dataset='MEGABench')
+        result = model.generate_inner(
+            [{
+                'type': 'video',
+                'value': 'demo.mp4'
+            }], dataset='MEGABench')
 
         self.assertEqual(result, 'video-answer')
         model.generate_inner_video.assert_called_once()
@@ -349,7 +447,7 @@ class TestOneVisionVideoBoundary(unittest.TestCase):
 
             def __init__(self):
                 self.settings = {'use_vqtoken': True}
-                super().__init__(model_path='org/llava-model', model_name='llava_qwen')
+                super().__init__(model_path='local/checkpoint', model_name='llava_qwen')
 
             def _get_model_overwrite_config(self):
                 return dict(self.settings)

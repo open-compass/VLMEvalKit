@@ -18,7 +18,7 @@ The optional VQToken adapter requires Python 3.10 or 3.11 and its public
 LLaVA-OneVision runtime:
 
 ```bash
-pip install "llava[runtime] @ git+https://github.com/Hai-chao-Zhang/VQToken.git@fe6c28fa5907ec97b4ac3f6fe0aaef80affbd9fd"
+pip install "llava[runtime] @ git+https://github.com/Hai-chao-Zhang/VQToken.git@0314eb9989a7ea843f31bfe0984113529e3f9140"
 hf auth login
 # Loader/image sanity check; use a video dataset command to exercise VQToken.
 vlmutil check VQToken-LLaVA-OneVision-0.5B
@@ -27,6 +27,10 @@ python run.py --data MVBench_8frame --model VQToken-LLaVA-OneVision-0.5B --mode 
 
 The released paper checkpoint uses Hugging Face's access-request flow, so
 accept its terms before running the check or an evaluation.
+`VQToken-LLaVA-OneVision-0.5B` enables the checkpoint's learned VQ-Attention
+path by default. The centroid-only path remains available as an explicit
+ablation via `vqtoken_mode='centroids'`. For learned attention, sampled frames
+must not exceed K; with adaptive selection they must not exceed the minimum K.
 
 **Setup Keys.**
 
