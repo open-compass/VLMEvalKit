@@ -359,7 +359,7 @@ class TestDatasetAlias(unittest.TestCase):
                     'nframe': 0,
                     'fps': -1,
                 })
-                with self.assertRaisesRegex(ValueError, 'fps and nframe'):
+                with self.assertWarnsRegex(UserWarning, 'disable frame split'):
                     dataset_cls.validate_build_config({
                         'dataset': dataset_name,
                         'fps': 0,

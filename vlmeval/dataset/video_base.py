@@ -48,7 +48,7 @@ class VideoBaseDataset(metaclass=ABCMeta):
         if fps > 0 and nframe > 0:
             raise ValueError('fps and nframe should not be set at the same time')
         if fps <= 0 and nframe <= 0:
-            raise ValueError('fps and nframe should be set at least one valid value')
+            warnings.warn('fps and nframe is not set, disable frame split (Use video file directly.)', stacklevel=2)
 
     def __init__(self,
                  dataset='MMBench-Video',
