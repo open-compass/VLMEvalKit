@@ -367,7 +367,7 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
                 judge_kwargs['model'] = 'exact_matching'
             else:
                 judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
+        elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video', 'MMBench-Video'], dataset_name):
             if listinstr(['LLaVABench_KO'], dataset_name):
                 judge_kwargs['model'] = 'gpt-4o-0806'
             else:

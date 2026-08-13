@@ -111,6 +111,29 @@ class TestDatasetAlias(unittest.TestCase):
         self.assertEqual(spec.build_config['nframe'], 8)
         self.assertFalse(spec.build_config['pack'])
 
+    def test_get_judge_kwargs_matches_mmb_video_logical_and_legacy_names(self):
+        import run as runner
+
+        args = types.SimpleNamespace(
+            judge_api_nproc=None,
+            api_nproc=1,
+            judge_retry=None,
+            retry=1,
+            verbose=False,
+            judge_timeout=600,
+            judge_args=None,
+            judge_base_url=None,
+            judge_key=None,
+            judge=None,
+            use_verifier=False,
+            use_vllm=False,
+        )
+
+        for dataset_name in ['MMBench-Video', 'MMBench_Video']:
+            with self.subTest(dataset_name=dataset_name):
+                judge_kwargs = runner.get_judge_kwargs(dataset_name, 'Video-VQA', args)
+                self.assertEqual(judge_kwargs['model'], 'gpt-4-turbo')
+
     def test_resolve_preset_alias(self):
         spec = resolve_dataset_spec(
             'AliasVideo',
