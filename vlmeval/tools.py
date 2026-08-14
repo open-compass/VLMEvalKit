@@ -448,8 +448,7 @@ def EVAL(dataset_name, data_file, **kwargs):
     judge_kwargs = dict(kwargs)
     judge_kwargs.setdefault('nproc', 4)
     judge_kwargs.setdefault('verbose', True)
-    judge_kwargs, judge_model = resolve_judge_config(
-        dataset, judge_kwargs, dataset_type=dataset.TYPE)
+    judge_kwargs, judge_model = resolve_judge_config(dataset, judge_kwargs)
     logger.info(f'Judge kwargs: {judge_kwargs}; resolved judge model(s): {judge_model}')
     eval_results = dataset.evaluate(data_file, **judge_kwargs)
     if eval_results is not None:

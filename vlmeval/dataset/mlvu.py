@@ -423,7 +423,7 @@ class MLVU_OpenEnded(VideoBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         judge_kwargs = resolve_judge_kwargs(self, judge_kwargs)
         model = judge_kwargs['model']
-        default_model = self.DEFAULT_JUDGE_MODEL.to_status_value()
+        default_model = self.DEFAULT_JUDGE_MODEL.model
         if model != default_model:
             warnings.warn(
                 f'MLVU Open Ended default judge is {default_model}; '

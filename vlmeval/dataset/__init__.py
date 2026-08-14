@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from vlmeval.judge import resolve_judge_kwargs, resolve_judge_policy
+from vlmeval.judge import resolve_judge_kwargs
 from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, localize_df, toliststr
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
@@ -242,7 +242,6 @@ class ConcatDataset(ImageBaseDataset):
         return list(cls.DATASET_SETS)
 
     def evaluate(self, eval_file, **judge_kwargs):
-        judge_policy, judge_kwargs = resolve_judge_policy(self, judge_kwargs)
         # First, split the eval_file by dataset
         data_all = load(eval_file)
         for dname in self.datasets:
@@ -258,9 +257,7 @@ class ConcatDataset(ImageBaseDataset):
         # One of the vars will be used to aggregate results
         for dname in self.datasets:
             tgt = eval_file.replace(self.dataset_name, dname)
-            child_kwargs = resolve_judge_kwargs(
-                self.dataset_map[dname], judge_kwargs, judge_policy.for_child(dname)
-            )
+            child_kwargs = resolve_judge_kwargs(self.dataset_map[dname], judge_kwargs)
             res = self.dataset_map[dname].evaluate(tgt, **child_kwargs)
             if isinstance(res, pd.DataFrame):
                 res['DATASET'] = [dname] * len(res)

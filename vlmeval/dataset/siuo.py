@@ -2,7 +2,7 @@ import copy as cp
 
 import pandas as pd
 
-from vlmeval.judge import resolve_judge_kwargs, resolve_judge_policy
+from vlmeval.judge import resolve_judge_kwargs
 from ..smp import d2df, dump, load
 from ..smp.file import get_intermediate_file_path
 from .image_base import ImageBaseDataset
@@ -75,7 +75,6 @@ class SIUODataset(ImageBaseDataset):
         return None
 
     def evaluate(self, eval_file, **judge_kwargs):
-        judge_policy, judge_kwargs = resolve_judge_policy(self, judge_kwargs)
         data_all = load(eval_file)
 
         # Split unified prediction file into two subset prediction files.
@@ -91,12 +90,8 @@ class SIUODataset(ImageBaseDataset):
         gen_file = eval_file.replace(self.dataset_name, 'SIUO_GEN')
         mcq_file = eval_file.replace(self.dataset_name, 'SIUO_MCQ')
 
-        gen_kwargs = resolve_judge_kwargs(
-            self.dataset_map['SIUO_GEN'], judge_kwargs, judge_policy.for_child('SIUO_GEN')
-        )
-        mcq_kwargs = resolve_judge_kwargs(
-            self.dataset_map['SIUO_MCQ'], judge_kwargs, judge_policy.for_child('SIUO_MCQ')
-        )
+        gen_kwargs = resolve_judge_kwargs(self.dataset_map['SIUO_GEN'], judge_kwargs)
+        mcq_kwargs = resolve_judge_kwargs(self.dataset_map['SIUO_MCQ'], judge_kwargs)
         gen_score_obj = self.dataset_map['SIUO_GEN'].evaluate(gen_file, **gen_kwargs)
         mcq_score_obj = self.dataset_map['SIUO_MCQ'].evaluate(mcq_file, **mcq_kwargs)
 

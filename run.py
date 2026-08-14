@@ -684,8 +684,7 @@ def run_local_mode(args):
 
                 judge_dataset_name = get_judge_dataset_name(dataset_name, args.data_config)
                 judge_kwargs = get_judge_kwargs(judge_dataset_name, dataset.TYPE, args, dataset=dataset)
-                judge_kwargs, judge_model = resolve_judge_config(
-                    dataset, judge_kwargs, dataset_type=dataset.TYPE)
+                judge_kwargs, judge_model = resolve_judge_config(dataset, judge_kwargs)
 
                 if RANK == 0:
                     reuse_ctx = prepare_reuse_files(
@@ -1071,8 +1070,7 @@ def run_api_mode(args):
 
             judge_dataset_name = get_judge_dataset_name(ds_name, args.data_config)
             judge_kwargs = get_judge_kwargs(judge_dataset_name, dataset.TYPE, args, dataset=dataset)
-            judge_kwargs, judge_model = resolve_judge_config(
-                dataset, judge_kwargs, dataset_type=dataset.TYPE)
+            judge_kwargs, judge_model = resolve_judge_config(dataset, judge_kwargs)
             logger.info(f'Judge kwargs: {judge_kwargs}; resolved judge model(s): {judge_model}')
 
             reuse_ctx = prepare_reuse_files(
