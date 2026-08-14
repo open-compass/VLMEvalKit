@@ -1159,8 +1159,8 @@ class Physics_yale(ImageBaseDataset):
 
         # The image field can store the base64 encoded image or another question index (for saving space)
         if 'image' in data:
-            images = [toliststr(x) for x in data['image']]
-            data['image'] = [x[0] if len(x) == 1 else x for x in images]
+            images = [toliststr(x) if not pd.isna(x) else None for x in data['image']]
+            data['image'] = [x[0] if x is not None and len(x) == 1 else x for x in images]
             self.meta_only = False
 
         if 'image_path' in data:
@@ -1183,6 +1183,8 @@ class Physics_yale(ImageBaseDataset):
 
         if self.meta_only:
             tgt_path = toliststr(line['image_path'])
+        elif pd.isna(line['image']):
+            tgt_path = None
         else:
             tgt_path = self.dump_image(line)
 
