@@ -78,6 +78,7 @@ We use `run.py` for evaluation. To use the script, you can use `$VLMEvalKit/run.
 **Arguments**
 
 - `--data (list[str])`: Set the dataset names that are supported in VLMEvalKit (names can be found in the codebase README).
+- `--data-indices (JSON object)`: Run only selected sample indices for each dataset. Dataset names must match `--data` (or the keys in `--config`).
 - `--model (list[str])`: Set the VLM names that are supported in VLMEvalKit (defined in `supported_VLM` in `vlmeval/config.py`).
 - `--mode (str, default to 'all', choices are ['all', 'infer'])`: When `mode` set to "all", will perform both inference and evaluation; when set to "infer", will only perform the inference.
 - `--api-nproc (int, default to 4)`: The number of threads for OpenAI API calling.
@@ -104,6 +105,17 @@ torchrun --nproc-per-node=8 run.py --data MMBench_DEV_EN MME SEEDBench_IMG --mod
 # Qwen-VL-Chat on MME. On a node with 2 GPU. Inference and Evaluation.
 torchrun --nproc-per-node=2 run.py --data MME --model qwen_chat --verbose
 ```
+
+To rerun only specific samples, pass their `index` values with `--data-indices`. The option works with local, distributed, and `--api-mode` inference. It also limits evaluation to those samples. Indices may be JSON integers or strings; the dataset name must exactly match the name passed to `--data`.
+
+```bash
+python run.py \
+  --data MMBench_DEV_EN \
+  --data-indices '{"MMBench_DEV_EN": [1203, 63384]}' \
+  --model qwen_chat
+```
+
+When using multiple datasets, add a mapping entry for each dataset that should be filtered. Datasets omitted from the mapping run in full. A missing index is reported as an error instead of being silently skipped.
 
 **Command for Evaluating Video Benchmarks**
 

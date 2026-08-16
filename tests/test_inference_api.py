@@ -6,10 +6,13 @@ import os
 import pickle
 import sys
 import tempfile
+import threading
 import types
 import unittest
 from pathlib import Path
 from unittest import mock
+
+import pandas as pd
 
 
 def _dump(obj, path):
@@ -91,7 +94,47 @@ class FakeCrashEvalDataset:
         os._exit(1)
 
 
+class FakeSubsetDataset:
+    data = pd.DataFrame({'index': [2, 3]})
+
+
 class TestInferenceApiProcessHelpers(unittest.TestCase):
+
+    def test_load_checkpoint_ignores_results_outside_dataset_subset(self):
+        inference_api = _load_inference_api()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result_file = str(Path(tmpdir) / 'mock_Subset.xlsx')
+            cfg = inference_api.DatasetConfig(
+                dataset_name='Subset',
+                dataset_obj=FakeSubsetDataset(),
+                model_name='mock',
+                model_obj=None,
+                work_dir=tmpdir,
+                result_file=result_file,
+                judge_kwargs={},
+            )
+            checkpoint_file = Path(tmpdir) / 'mock_Subset_checkpoint.pkl'
+            _dump({'1': 'old-1', '2': 'old-2'}, checkpoint_file)
+            _dump(
+                pd.DataFrame({
+                    'index': [1, 2, 3],
+                    'prediction': ['result-1', 'result-2', 'result-3'],
+                }),
+                result_file,
+            )
+
+            pipeline = inference_api.APIEvalPipeline.__new__(inference_api.APIEvalPipeline)
+            pipeline.states = {'Subset': cfg}
+            pipeline.retry_failed = True
+            pipeline.file_locks = {'Subset': threading.Lock()}
+
+            self.assertEqual(
+                pipeline._load_checkpoint('Subset'),
+                {'2': 'result-2', '3': 'result-3'},
+            )
+            pipeline._save_checkpoint('Subset', {'index': '3', 'prediction': 'new-3'})
+            self.assertEqual(_load(checkpoint_file), {'2': 'old-2', '3': 'new-3'})
 
     def test_async_wait_process_observes_abrupt_exit(self):
         inference_api = _load_inference_api()
