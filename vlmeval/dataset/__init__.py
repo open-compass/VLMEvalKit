@@ -44,6 +44,7 @@ from .GUI.screenspot_pro import ScreenSpot_Pro
 from .GUI.screenspot_v2 import ScreenSpotV2
 from .GUI.vbgd import VBGD
 from .GUI.venusbench import VenusBench_GD
+from .heron_bench import HeronBench
 from .hipho import HiPhODataset
 from .image_base import ImageBaseDataset, img_root_map
 from .image_caption import ImageCaptionDataset
@@ -312,7 +313,7 @@ IMAGE_DATASET = [
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif,
-    BabyVision, WildprobeDataset, PerceptionBench, SUPERChemDataset,
+    BabyVision, WildprobeDataset, HeronBench, PerceptionBench, SUPERChemDataset,
 ]
 
 # add by EASI team
