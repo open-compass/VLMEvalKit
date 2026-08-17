@@ -166,6 +166,7 @@ from .vlmbias import VLMBias
 from .vlrmbench import VLRMBench
 from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
 from .wiki_vqa_bench import WikiVQABench
+from .wildprobe import WildprobeDataset
 from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
@@ -311,7 +312,7 @@ IMAGE_DATASET = [
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif,
-    BabyVision, PerceptionBench, SUPERChemDataset,
+    BabyVision, WildprobeDataset, PerceptionBench, SUPERChemDataset,
 ]
 
 # add by EASI team
