@@ -10,6 +10,7 @@ import pandas as pd
 import portalocker
 from huggingface_hub import snapshot_download
 from PIL import Image
+from tqdm import tqdm
 
 from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
                          gpt_key_set, load, md5, modelscope_flag_set)
@@ -22,15 +23,14 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 # ──────────────────────────────────────────────
 # Scoring helpers
 # ──────────────────────────────────────────────
-def cal_relevance(scores):
+def cal_relevance_rating(scores):
     score_map_exponential = {0: 0.0, 1: 100.0 / 16, 2: 100.0 * 4 / 16, 3: 100.0 * 9 / 16, 4: 100.0}
     correct_count = sum(scores)
-    exp_score = score_map_exponential.get(correct_count, 0.0)
-    linear_score = correct_count * 25.0
-    return exp_score, linear_score
+    rating = score_map_exponential.get(correct_count, 0.0)
+    return rating
 
 
-def cal_logic(scores, group_structure):
+def cal_logic_rating(scores, group_structure):
     group_structure_list = ast.literal_eval(group_structure)
     last_correct_idx = -1
     for idx, val in enumerate(scores):
@@ -50,75 +50,82 @@ def cal_logic(scores, group_structure):
             last_correct_idx += 1
     else:
         raise ValueError(f'Unknown group_structure_list: {group_structure_list}')
-    logic_score = score_map.get(last_correct_idx + 1, 0.0)
-    return logic_score
+    rating = score_map.get(last_correct_idx + 1, 0.0)
+    return rating
 
 
 def get_final_rating(score_file):
     data = load(score_file)
-    all_groups = [[] for _ in range((len(data) + 1) // 4)]
-    final_rating = {
-        'level_1': [],
-        'level_2': [],
-        'level_3': [],
-        'relevance_score': [],
-        'relevance_linear_score': [],
-        'logic_score': [],
-        'total': [],
-    }
+
+    overall_rating = {'total': []}
+    group_type_rating = {'relevance': [], 'logic': []}
+    level_rating = {'level_1': [], 'level_2': [], 'level_3': []}
     second_head_rating = {}
     third_head_rating = {}
+
+    all_groups = [[] for _ in range(len(data) // 4)]
     for i in range(len(data)):
-        level, group_type, group_structure, score, second_head, third_head = (
-            data.loc[i, 'level'],
+        group_type, group_structure, level, second_head, third_head, score = (
             data.loc[i, 'group_type'],
             data.loc[i, 'group_structure'],
-            data.loc[i, 'score'],
+            data.loc[i, 'level'],
             data.loc[i, 'second_head'],
             data.loc[i, 'third_head'],
+            data.loc[i, 'score'],
         )
-        all_groups[i // 4].append((level, group_type, group_structure, score, second_head, third_head))
+        all_groups[i // 4].append((group_type, group_structure, level, second_head, third_head, score))
+
     for group in all_groups:
-        level = group[-1][0]
-        group_type = group[-1][1]
-        group_structure = group[-1][2]
-        second_head = group[-1][4]
-        third_head = group[-1][5]
-        scores = [item[3] for item in group]
+        group_type, group_structure = group[-1][0], group[-1][1]
+        level, second_head, third_head = group[-1][2], group[-1][3], group[-1][4]
+        scores = [item[5] for item in group]
         if group_type == 'relevance':
-            exp_score, linear_score = cal_relevance(scores)
-            final_rating['relevance_score'].append(exp_score)
-            final_rating['relevance_linear_score'].append(linear_score)
+            rating = cal_relevance_rating(scores)
+            group_type_rating['relevance'].append(rating)
         elif group_type == 'logic':
-            exp_score = cal_logic(scores, group_structure)
-            final_rating['logic_score'].append(exp_score)
+            rating = cal_logic_rating(scores, group_structure)
+            group_type_rating['logic'].append(rating)
         else:
             raise ValueError(f'Unknown group_type: {group_type}')
-        if level is not None and str(level) != 'None':
-            final_rating[f'level_{int(level)}'].append(exp_score)
-        final_rating['total'].append(exp_score)
-        if second_head not in second_head_rating:
-            second_head_rating[second_head] = []
-        second_head_rating[second_head].append(exp_score)
-        if third_head not in third_head_rating:
-            third_head_rating[third_head] = []
-        third_head_rating[third_head].append(exp_score)
-    for key in final_rating:
-        final_rating[key] = sum(final_rating[key]) / len(final_rating[key]) if len(final_rating[key]) > 0 else 0.0
-    for key in second_head_rating:
-        second_head_rating[key] = (
-            sum(second_head_rating[key]) / len(second_head_rating[key])
-            if len(second_head_rating[key]) > 0 else 0.0
-        )
-    for key in third_head_rating:
-        third_head_rating[key] = (
-            sum(third_head_rating[key]) / len(third_head_rating[key])
-            if len(third_head_rating[key]) > 0 else 0.0
-        )
+        overall_rating['total'].append(rating)
+        level_rating[f'level_{int(level)}'].append(rating)
+        second_head_rating.setdefault(second_head, []).append(rating)
+        third_head_rating.setdefault(third_head, []).append(rating)
+
+    overall_rating['total'] = sum(overall_rating['total']) / len(overall_rating['total'])
+    group_type_rating = {k: (sum(v)/len(v)) if v else 0.0 for k, v in group_type_rating.items()}
+    level_rating = {k: (sum(v)/len(v)) if v else 0.0 for k, v in level_rating.items()}
+    second_head_rating = {k: (sum(v)/len(v)) if v else 0.0 for k, v in second_head_rating.items()}
+    third_head_rating = {k: (sum(v)/len(v)) if v else 0.0 for k, v in third_head_rating.items()}
     return {
-        'final_rating': final_rating,
+        'overall_rating': overall_rating,
+        'group_type_rating': group_type_rating,
+        'level_rating': level_rating,
         'second_head_rating': second_head_rating,
         'third_head_rating': third_head_rating,
+    }
+
+
+def get_final_acc(score_file):
+    data = load(score_file)
+    data = data.copy()
+    data['score'] = data['score'].apply(lambda x: 1 if x == 1 else 0)
+
+    overall_acc = {'total': float(data['score'].mean())}
+    group_type_acc = {key: float(items['score'].mean())
+                 for key, items in data.groupby('group_type')}
+    level_acc = {f'level_{int(key)}': float(items['score'].mean())
+                 for key, items in data.groupby('level')}
+    second_head_acc = {key: float(items['score'].mean())
+                       for key, items in data.groupby('second_head')}
+    third_head_acc = {key: float(items['score'].mean())
+                      for key, items in data.groupby('third_head')}
+    return {
+        'overall_acc': overall_acc,
+        'group_type_acc': group_type_acc,
+        'level_acc': level_acc,
+        'second_head_acc': second_head_acc,
+        'third_head_acc': third_head_acc,
     }
 
 
@@ -158,7 +165,7 @@ def subtitle_between_timestamps(entries, start_time, end_time):
 
 class VideoMMEv2(VideoBaseDataset):
 
-    MD5 = '27826ea282386ee20d4b0054a58608db'
+    MD5 = '5ae94e4543a45eb32b21146d045ca9b2'
 
     # --- Text prompts (frame description) ---
     WO_SUB_PROMPT = 'These are the frames of a video.'
@@ -213,10 +220,39 @@ class VideoMMEv2(VideoBaseDataset):
             if md5(data_file) != self.MD5:
                 return False
             data = load(data_file)
+            size_map = expected_video_size_map(pth)
             for video_pth in data['video_path']:
-                if not osp.exists(osp.join(pth, video_pth)):
+                video_file = osp.join(pth, video_pth)
+                video_name = osp.basename(video_pth)
+                if not osp.exists(video_file):
+                    return False
+                if video_name in size_map and osp.getsize(video_file) != size_map[video_name]:
                     return False
             return True
+
+        def expected_video_names(pth):
+            data = pd.read_parquet(osp.join(pth, 'test.parquet'))
+            return {f'{int(video_id):03d}.mp4' for video_id in data['video_id'].unique()}
+
+        def expected_video_size_map(pth):
+            import zipfile
+
+            video_zip_dir = osp.join(pth, 'videos')
+            if not osp.exists(video_zip_dir):
+                return {}
+            expected_names = expected_video_names(pth)
+            size_map = {}
+            zip_files = sorted([
+                osp.join(video_zip_dir, f) for f in os.listdir(video_zip_dir)
+                if f.endswith('.zip')
+            ])
+            for zip_file in zip_files:
+                with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                    for info in zip_ref.infolist():
+                        video_name = osp.basename(info.filename)
+                        if not info.is_dir() and video_name in expected_names:
+                            size_map[video_name] = info.file_size
+            return size_map
 
         cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
@@ -224,28 +260,55 @@ class VideoMMEv2(VideoBaseDataset):
         else:
 
             def unzip_hf_zip(pth):
+                import shutil
                 import zipfile
+
                 base_dir = pth
                 video_zip_dir = osp.join(base_dir, 'videos')
                 target_dir = osp.join(base_dir, 'video')
 
-                if not osp.exists(target_dir):
-                    os.makedirs(target_dir, exist_ok=True)
-                    zip_files = sorted([
-                        osp.join(video_zip_dir, f) for f in os.listdir(video_zip_dir)
-                        if f.endswith('.zip')
-                    ])
-                    for zip_file in zip_files:
-                        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                            for member in zip_ref.namelist():
-                                if not member.endswith('/'):
-                                    source = zip_ref.open(member)
-                                    target = open(osp.join(target_dir, osp.basename(member)), 'wb')
-                                    with source, target:
-                                        target.write(source.read())
-                    print('The video files have been extracted from zip files.')
-                else:
-                    print('The video directory already exists.')
+                os.makedirs(target_dir, exist_ok=True)
+                zip_files = sorted([
+                    osp.join(video_zip_dir, f) for f in os.listdir(video_zip_dir)
+                    if f.endswith('.zip')
+                ])
+                expected_names = expected_video_names(pth)
+                size_map = expected_video_size_map(pth)
+                zip_members = []
+                for zip_file in zip_files:
+                    with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                        infos = [
+                            info for info in zip_ref.infolist()
+                            if not info.is_dir() and osp.basename(info.filename) in expected_names
+                        ]
+                        zip_members.extend((zip_file, info) for info in infos)
+
+                added, skipped, repaired = 0, 0, 0
+                pbar = tqdm(zip_members, desc=f'Preparing {dataset_name} videos', unit='video')
+                for zip_file, info in pbar:
+                    video_name = osp.basename(info.filename)
+                    target_path = osp.join(target_dir, video_name)
+                    tmp_path = target_path + '.tmp'
+                    expected_size = size_map[video_name]
+
+                    if osp.exists(target_path):
+                        if osp.getsize(target_path) == expected_size:
+                            skipped += 1
+                            pbar.set_postfix(added=added, skipped=skipped, repaired=repaired)
+                            continue
+                        repaired += 1
+                    else:
+                        added += 1
+
+                    if osp.exists(tmp_path):
+                        os.remove(tmp_path)
+
+                    with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                        with zip_ref.open(info, 'r') as source, open(tmp_path, 'wb') as target:
+                            shutil.copyfileobj(source, target)
+                    os.replace(tmp_path, target_path)
+                    pbar.set_postfix(added=added, skipped=skipped, repaired=repaired)
+                print(f'{dataset_name} videos ready: {skipped} skipped, {added} added, {repaired} repaired.')
 
             def generate_tsv(pth):
                 data_file = osp.join(pth, f'{dataset_name}.tsv')
@@ -456,12 +519,12 @@ class VideoMMEv2(VideoBaseDataset):
             'data file should be a supported format (xlsx/json/tsv) file'
 
         tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
-        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        tgt_file_rating = get_intermediate_file_path(eval_file, '_rating', 'json')
+        tgt_file_acc = get_intermediate_file_path(eval_file, '_acc', 'json')
         score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')
-            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None
@@ -508,5 +571,8 @@ class VideoMMEv2(VideoBaseDataset):
             dump(data, score_file)
 
         rating = get_final_rating(score_file)
-        dump(rating, tgt_file)
-        return rating
+        acc = get_final_acc(score_file)
+        result = {'rating': rating, 'acc': acc}
+        dump(rating, tgt_file_rating)
+        dump(acc, tgt_file_acc)
+        return result
