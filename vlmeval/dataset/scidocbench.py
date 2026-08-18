@@ -780,7 +780,12 @@ def _eval_one_item(item_json):
 class SciDocBench(ImageBaseDataset):
 
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('SciDocBench',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
 
     DATASET_URL = {
         'SciDocBench': 'https://opencompass.openxlab.space/utils/VLMEval/SciDocBench.tsv',

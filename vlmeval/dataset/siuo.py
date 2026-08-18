@@ -2,7 +2,6 @@ import copy as cp
 
 import pandas as pd
 
-from vlmeval.judge import resolve_judge_kwargs
 from ..smp import d2df, dump, load
 from ..smp.file import get_intermediate_file_path
 from .image_base import ImageBaseDataset
@@ -21,6 +20,12 @@ class SIUODataset(ImageBaseDataset):
     """
 
     TYPE = 'VQA'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('SIUO',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
     MODALITY = 'IMAGE'
     SUB_DATASETS = ['SIUO_GEN', 'SIUO_MCQ']
 
@@ -90,10 +95,8 @@ class SIUODataset(ImageBaseDataset):
         gen_file = eval_file.replace(self.dataset_name, 'SIUO_GEN')
         mcq_file = eval_file.replace(self.dataset_name, 'SIUO_MCQ')
 
-        gen_kwargs = resolve_judge_kwargs(self.dataset_map['SIUO_GEN'], judge_kwargs)
-        mcq_kwargs = resolve_judge_kwargs(self.dataset_map['SIUO_MCQ'], judge_kwargs)
-        gen_score_obj = self.dataset_map['SIUO_GEN'].evaluate(gen_file, **gen_kwargs)
-        mcq_score_obj = self.dataset_map['SIUO_MCQ'].evaluate(mcq_file, **mcq_kwargs)
+        gen_score_obj = self.dataset_map['SIUO_GEN'].evaluate(gen_file, **judge_kwargs)
+        mcq_score_obj = self.dataset_map['SIUO_MCQ'].evaluate(mcq_file, **judge_kwargs)
 
         gen_score = self._extract_single_metric(gen_score_obj, 'overall_avg_combined')
         if gen_score is None:

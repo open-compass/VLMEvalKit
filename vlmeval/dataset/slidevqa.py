@@ -65,7 +65,12 @@ def SlideVQA_acc(result_file):
 class SlideVQA(ImageBaseDataset):
 
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('SLIDEVQA',)):
+            return 'gpt-4o'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
 
     DATASET_URL = {
         'SLIDEVQA_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/SLIDEVQA_MINI.tsv',

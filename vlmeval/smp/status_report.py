@@ -299,7 +299,7 @@ def upsert_dataset_status(
     dataset_name: str,
     status: str | None = None,
     prediction_file: str | Path | None = _UNSET,
-    judge_model: str | dict[str, str | None] | None = _UNSET,
+    judge_model: str | None = _UNSET,
     source_run: str | None = _UNSET,
     reuse_aux: str | None = _UNSET,
     metrics_source: Any = _UNSET,

@@ -59,7 +59,12 @@ def _mss_behavior_judge(model, pred):
 
 class MSSBenchDataset(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('MSSBench',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
     MODALITY = 'IMAGE'
     DATASET_URL = {'MSSBench': 'https://opencompass.openxlab.space/utils/VLMEval/MSSBench.tsv'}
     DATASET_MD5 = {'MSSBench': 'f5398724ede5cb8d1c725fc01c96241b'}

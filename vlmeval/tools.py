@@ -17,7 +17,6 @@ from vlmeval.config import (api_models, cambrian_series, chameleon_series, deeps
                             supported_VLM, vila_series, wemm_series, xcomposer_series,
                             xtuner_series, yivl_series)
 from vlmeval.dataset import SUPPORTED_DATASETS
-from vlmeval.judge import resolve_judge_config
 from vlmeval.smp import (dump, get_logger, get_pred_file_format, listinstr, load, load_env,
                          localize_df, ls, md5, mrlines, mwlines)
 
@@ -445,11 +444,29 @@ def EVAL(dataset_name, data_file, **kwargs):
     from vlmeval.dataset import build_dataset
     dataset = build_dataset(dataset_name)
     # Set the judge kwargs first before evaluation or dumping
-    judge_kwargs = dict(kwargs)
-    judge_kwargs.setdefault('nproc', 4)
-    judge_kwargs.setdefault('verbose', True)
-    judge_kwargs, judge_model = resolve_judge_config(dataset, judge_kwargs)
-    logger.info(f'Judge kwargs: {judge_kwargs}; resolved judge model(s): {judge_model}')
+    judge_kwargs = {'nproc': 4, 'verbose': True}
+    if 'model' not in kwargs:
+        if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro']:
+            judge_kwargs['model'] = 'chatgpt-0125'
+        elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4-turbo'
+        elif listinstr(
+            [
+                'MMLongBench_32K', 'MMLongBench_128K',
+                'MMLongBench_256K', 'MMLongBench_512K',
+            ],
+            dataset_name,
+        ):
+            judge_kwargs['model'] = 'gpt-5.5-2026-04-24'
+        elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o'
+        elif listinstr(['DynaMath', 'MathVerse', 'MathVista', 'MathVision'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o-mini'
+        elif listinstr(['SFE'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o-1120'
+    else:
+        judge_kwargs['model'] = kwargs['model']
+    judge_kwargs['nproc'] = kwargs.get('nproc', 4)
     eval_results = dataset.evaluate(data_file, **judge_kwargs)
     if eval_results is not None:
         assert isinstance(eval_results, dict) or isinstance(eval_results, pd.DataFrame)

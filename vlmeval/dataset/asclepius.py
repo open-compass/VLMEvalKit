@@ -24,7 +24,12 @@ class Asclepius(ImageVQADataset):
     """
 
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('Asclepius',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
     MODALITY = 'IMAGE'
 
     DATASET_URL = {

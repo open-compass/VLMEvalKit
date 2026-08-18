@@ -16,7 +16,6 @@ from PIL import Image
 from tabulate import tabulate
 from tqdm import tqdm
 
-from vlmeval.judge import DefaultJudgeModel
 from vlmeval.smp import (LMUDataRoot, d2df, decode_base64_to_image_file, download_file, dump,
                          encode_image_to_base64, file_size, get_file_extension,
                          get_intermediate_file_path, listinstr, load, md5, read_ok, toliststr)
@@ -242,7 +241,13 @@ class VizWiz(ImageBaseDataset):
 
 class VTCBench(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('VTCBench',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     _DATASET_PATH = "https://huggingface.co/datasets/MLLM-CL/VTCBench"
     # Dataset URL mapping - points to different splits of HuggingFace dataset
     DATASET_URL = {
@@ -573,7 +578,13 @@ class OCRBench(ImageBaseDataset):
 
 class MathVista(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('MathVista',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         'MathVista_MINI':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'
@@ -703,7 +714,13 @@ class MathVista(ImageBaseDataset):
 
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('MathVerse',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         'MathVerse_MINI':
         'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
@@ -846,7 +863,13 @@ class MathVerse(ImageBaseDataset):
 
 class MathVision(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('MathVision',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         'MathVision':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVision.tsv',
@@ -989,7 +1012,13 @@ class MathVision(ImageBaseDataset):
 
 class LENS(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('LENS',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         'LENS-CN-QA':
         'https://huggingface.co/datasets/songlier/LENS/resolve/main/LENS-CN-QA.tsv',
@@ -1280,9 +1309,17 @@ class Physics_yale(ImageBaseDataset):
 
 class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
-    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.when(
-        flag='olympiad_use_api_judger', model='gpt-4o-mini'
-    )
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        judge_kwargs = judge_kwargs or {}
+        if (
+            self._judge_name_matches(requested_dataset_name, ('OlympiadBench',))
+            and judge_kwargs.get('olympiad_use_api_judger', False)
+        ):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         'OlympiadBench':
         'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench.tsv',
@@ -1713,7 +1750,13 @@ class SeePhys(ImageBaseDataset):
 
 class LogicVista(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('LogicVista',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         'LogicVista':
         'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
@@ -1903,7 +1946,13 @@ class MME_CoT(ImageBaseDataset):
 
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('LLaVABench',)):
+            return 'gpt-4-turbo'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         'LLaVABench':
         'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'
@@ -1945,7 +1994,15 @@ class LLaVABench(ImageBaseDataset):
 
 class LLaVABench_KO(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-0806'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('LLaVABench_KO',)):
+            return 'gpt-4o-0806'
+        if self._judge_name_matches(requested_dataset_name, ('LLaVABench',)):
+            return 'gpt-4-turbo'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         'LLaVABench_KO':
         'https://huggingface.co/datasets/NCSOFT/K-LLaVA-W/resolve/main/LLaVABench_KO.tsv'
@@ -1988,7 +2045,12 @@ class LLaVABench_KO(ImageBaseDataset):
 
 class VGRPBench(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('VGRPBench',)):
+            return 'gpt-4o'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
 
     DATASET_URL = {
         'VGRPBench':
@@ -2051,7 +2113,13 @@ class VGRPBench(ImageBaseDataset):
 
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('MMVet',)):
+            return 'gpt-4-turbo'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         'MMVet':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
@@ -3331,7 +3399,13 @@ class CountBenchQA(ImageVQADataset):
 
 class OCR_Reasoning(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('OCR_Reasoning',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         'OCR_Reasoning':
         'https://opencompass.openxlab.space/utils/VLMEval/OCR_Reasoning.tsv'
@@ -3624,7 +3698,15 @@ class Omni3DBench(ImageBaseDataset):
 
 class MMEReasoning(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(
+            requested_dataset_name, ('mme-reasoning',), case_sensitive=False
+        ):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {'MME-Reasoning': 'https://huggingface.co/datasets/U4R/MME-Reasoning/blob/main/MME_Reasoning.tsv'}
     DATASET_MD = {'MME-Reasoning': 'b243f44778782d3821523689f6b40a1e'}
 
@@ -3820,7 +3902,13 @@ class MMEReasoning(ImageBaseDataset):
 
 class MMVMBench(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('MMVMBench',)):
+            return 'gpt-4o'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         'MMVMBench':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVMBench.tsv'
@@ -4003,7 +4091,13 @@ class OCRBench_v2(ImageBaseDataset):
 
 class AyaVisionBench(ImageVQADataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('AyaVisionBench',)):
+            return 'gpt-4.1'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         "AyaVisionBench":
             "https://huggingface.co/datasets/timothycdc/"
@@ -4083,7 +4177,13 @@ class AyaVisionBench(ImageVQADataset):
 
 class MathCanvas(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4.1-2025-04-14'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('MathCanvas',)):
+            return 'gpt-4.1-2025-04-14'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     DATASET_URL = {
         "MathCanvas-Bench":
         "https://huggingface.co/datasets/shiwk24/MathCanvas-Bench/resolve/main/MathCanvas_Bench_VLMEvalKit.tsv"
@@ -4182,7 +4282,13 @@ class MathCanvas(ImageBaseDataset):
 
 class MMReason(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('MMReason',)):
+            return 'gpt-4.1'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     mini_path = 'https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true'
     DATASET_URL = {
         'MMReason_testmini': mini_path,
@@ -4277,7 +4383,12 @@ class MMReason(ImageBaseDataset):
 
 class CoreCognition(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('CoreCognition',)):
+            return 'gpt-4.1'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
 
     DATASET_URL = {
         'CoreCognition': 'https://huggingface.co/datasets/ZTWHHH/CoreCognition/resolve/main/CoreCognition.tsv'

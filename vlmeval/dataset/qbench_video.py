@@ -8,7 +8,6 @@ import portalocker
 from huggingface_hub import snapshot_download
 from PIL import Image
 
-from vlmeval.judge import DefaultJudgeModel, resolve_judge_kwargs
 from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
                          load, md5)
 from vlmeval.utils import track_progress_rich
@@ -58,7 +57,6 @@ Please do not add any other answers beyond this.
 """
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.none()
 
     def __init__(self, dataset='qbenchvideo_single_MCQ', nframe=0, fps=-1):
         dataset_tsv_name = 'qbenchvideo_single_MCQ'
@@ -168,6 +166,8 @@ Please do not add any other answers beyond this.
         score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
+            # model = judge_kwargs.setdefault('model', 'exact_matching')
+
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
@@ -216,7 +216,6 @@ Please analyze these frames and provide a detailed and accurate answer from the 
 """  # noqa: E501
 
     TYPE = 'Video-VQA'
-    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.fixed('gpt-4o-0806')
     DEFAULT_JUDGE = ['gpt-4o-0806', 'gpt-4o']
 
     def __init__(self, dataset='qbenchvideo_single_VQA', nframe=0, fps=-1):
@@ -317,8 +316,7 @@ Please analyze these frames and provide a detailed and accurate answer from the 
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        judge_kwargs = resolve_judge_kwargs(self, judge_kwargs)
-        model = judge_kwargs['model']
+        model = judge_kwargs.setdefault('model', 'gpt-4o-0806')
 
         score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')

@@ -419,7 +419,11 @@ def _judge_one_item(item):
 
 class ChartMimic(ImageBaseDataset):
     TYPE = "VQA"
-    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('ChartMimic',)):
+            return 'gpt-4o'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
 
     # TODO: add dataset url and md5
     DATASET_URL = {

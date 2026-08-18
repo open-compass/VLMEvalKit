@@ -53,7 +53,13 @@ class Video_MMLU_CAP(VideoBaseDataset):
     MD5 = ''
 
     TYPE = 'Video-VQA'
-    DEFAULT_JUDGE_MODEL = 'qwen-72b'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('Video_MMLU_CAP',)):
+            return 'qwen-72b'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     MODALITY = 'VIDEO'
 
     def __init__(self, dataset='Video_MMLU_CAP', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
@@ -370,7 +376,13 @@ class Video_MMLU_QA(VideoBaseDataset):
     MD5 = ''
 
     TYPE = 'Video-VQA'
-    DEFAULT_JUDGE_MODEL = 'qwen-72b'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('Video_MMLU_QA',)):
+            return 'qwen-72b'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     MODALITY = 'VIDEO'
 
     def __init__(self, dataset='Video_MMLU_QA', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):

@@ -81,6 +81,27 @@ class VideoBaseDataset(metaclass=ABCMeta):
             assert idx < len(self.data)
             return dict(self.data.iloc[idx])
 
+    def _judge_name_matches(self, requested_dataset_name, candidates, *, case_sensitive=True):
+        if requested_dataset_name is None:
+            requested_dataset_name = getattr(self, 'dataset_name', None)
+        if not requested_dataset_name:
+            return False
+        if case_sensitive:
+            return any(candidate in requested_dataset_name for candidate in candidates)
+        requested_dataset_name = requested_dataset_name.lower()
+        return any(candidate.lower() in requested_dataset_name for candidate in candidates)
+
+    def get_default_judge_model(
+        self,
+        judge_kwargs=None,
+        *,
+        requested_dataset_name=None,
+    ):
+        dataset_type = getattr(self, 'TYPE', None)
+        if dataset_type in ('MCQ', 'Y/N', 'MCQ_MMMU_Pro'):
+            return 'gpt-4o-mini'
+        return None
+
     def frame_paths(self, video):
         frame_root = osp.join(self.frame_root, video)
         os.makedirs(frame_root, exist_ok=True)
@@ -209,7 +230,7 @@ class VideoBaseDataset(metaclass=ABCMeta):
         return load(data_path)
 
     @classmethod
-    def get_judge_file(cls, eval_file: str | Path, judge_model: Any = None) -> Path | None:
+    def get_judge_file(cls, eval_file: str | Path, judge_model: str | None = None) -> Path | None:
         eval_path = Path(eval_file)
         aux_files = fetch_aux_files(str(eval_path))
         if not aux_files:
@@ -258,7 +279,7 @@ class VideoBaseDataset(metaclass=ABCMeta):
         prediction_file: str | Path | None,
         *,
         total_samples: int | None,
-        judge_model: Any = None,
+        judge_model: str | None = None,
         error_message: str | None = None,
     ) -> dict[str, int | None]:
         if total_samples is None or total_samples <= 0:

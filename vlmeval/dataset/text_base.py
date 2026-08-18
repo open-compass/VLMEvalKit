@@ -33,6 +33,27 @@ class TextBaseDataset:
     def __getitem__(self, idx):
         return dict(self.data.iloc[idx])
 
+    def _judge_name_matches(self, requested_dataset_name, candidates, *, case_sensitive=True):
+        if requested_dataset_name is None:
+            requested_dataset_name = getattr(self, 'dataset_name', None)
+        if not requested_dataset_name:
+            return False
+        if case_sensitive:
+            return any(candidate in requested_dataset_name for candidate in candidates)
+        requested_dataset_name = requested_dataset_name.lower()
+        return any(candidate.lower() in requested_dataset_name for candidate in candidates)
+
+    def get_default_judge_model(
+        self,
+        judge_kwargs=None,
+        *,
+        requested_dataset_name=None,
+    ):
+        dataset_type = getattr(self, 'TYPE', None)
+        if dataset_type in ('MCQ', 'Y/N', 'MCQ_MMMU_Pro'):
+            return 'gpt-4o-mini'
+        return None
+
     def prepare_tsv(self, url, file_md5=None):
         data_root = LMUDataRoot()
         os.makedirs(data_root, exist_ok=True)

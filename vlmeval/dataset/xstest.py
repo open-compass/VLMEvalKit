@@ -61,7 +61,12 @@ def _xstest_judge_llm(model, q, pred):
 
 class XSTestDataset(TextBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if self._judge_name_matches(requested_dataset_name, ('XSTest',)):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
     MODALITY = 'TEXT'
     DATASET_URL = {'XSTest': 'https://opencompass.openxlab.space/utils/VLMEval/XSTest.tsv'}
     DATASET_MD5 = {'XSTest': 'd33f7ff1bc362c2b8d8deb8021959f3c'}

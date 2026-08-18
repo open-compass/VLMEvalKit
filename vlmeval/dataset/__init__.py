@@ -5,7 +5,6 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from vlmeval.judge import resolve_judge_kwargs
 from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, localize_df, toliststr
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
@@ -235,6 +234,19 @@ class ConcatDataset(ImageBaseDataset):
         org_line = copy.deepcopy(org_data[org_data['index'] == idx]).iloc[0]
         return self.dataset_map[dname].build_prompt(org_line)
 
+    def get_default_judge_model(
+        self,
+        judge_kwargs=None,
+        *,
+        requested_dataset_name=None,
+    ):
+        if self._judge_name_matches(requested_dataset_name, ('M4Bench',)):
+            return 'gpt-4o'
+        return super().get_default_judge_model(
+            judge_kwargs,
+            requested_dataset_name=requested_dataset_name,
+        )
+
     def dump_image(self, line):
         # Assert all images are pre-dumped
         assert 'image' not in line
@@ -262,8 +274,7 @@ class ConcatDataset(ImageBaseDataset):
         # One of the vars will be used to aggregate results
         for dname in self.datasets:
             tgt = eval_file.replace(self.dataset_name, dname)
-            child_kwargs = resolve_judge_kwargs(self.dataset_map[dname], judge_kwargs)
-            res = self.dataset_map[dname].evaluate(tgt, **child_kwargs)
+            res = self.dataset_map[dname].evaluate(tgt, **judge_kwargs)
             if isinstance(res, pd.DataFrame):
                 res['DATASET'] = [dname] * len(res)
                 df_all.append(res)

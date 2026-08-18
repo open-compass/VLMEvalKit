@@ -4,7 +4,6 @@ import warnings
 
 import pandas as pd
 
-from vlmeval.judge import DefaultJudgeModel, resolve_judge_kwargs
 from vlmeval.smp import dump, get_intermediate_file_path, load
 from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
@@ -69,7 +68,6 @@ def Comprehensive_auxeval(model, data):
 
 class ImageShortQADataset(ImageBaseDataset):
     TYPE = 'Short'
-    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.fixed('gpt-4o-mini')
 
     DATASET_URL = {
         'LiveMMBench_Infographic': '',
@@ -87,7 +85,6 @@ class ImageShortQADataset(ImageBaseDataset):
 
     # It returns a DataFrame
     def evaluate(self, eval_file, **judge_kwargs):
-        judge_kwargs = resolve_judge_kwargs(self, judge_kwargs)
         data = load(eval_file)
         _ = self.dataset_name
         assert 'answer' in data and 'prediction' in data
@@ -101,7 +98,7 @@ class ImageShortQADataset(ImageBaseDataset):
         if not osp.exists(storage):
             ans_map = {} if not osp.exists(tmp_file) else load(tmp_file)
 
-            model = judge_kwargs.pop('model')
+            model = judge_kwargs.pop('model', 'gpt-4o-mini')
             if model == 'exact_matching':
                 model = None
             else:

@@ -19,7 +19,19 @@ class MMLongBench(ImageBaseDataset):
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
     DEFAULT_JUDGE = 'gpt-5.5-2026-04-24'
-    DEFAULT_JUDGE_MODEL = DEFAULT_JUDGE
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        names = (
+            'MMLongBench_32K', 'MMLongBench_128K',
+            'MMLongBench_256K', 'MMLongBench_512K',
+        )
+        if self._judge_name_matches(requested_dataset_name, names):
+            return 'gpt-5.5-2026-04-24'
+        if self._judge_name_matches(requested_dataset_name, ('MMLongBench',)):
+            return 'gpt-4o'
+        return super().get_default_judge_model(
+            judge_kwargs, requested_dataset_name=requested_dataset_name)
+
     JUDGE_FORMAT = None
     RATING_FORMAT = '{model_name}_{dataset_name}_score.csv'
     HF_REPO_ID = 'ZhaoweiWang/MMLongBench'

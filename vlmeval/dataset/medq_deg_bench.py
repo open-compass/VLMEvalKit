@@ -4,7 +4,6 @@ import os.path as osp
 import pandas as pd
 from huggingface_hub import snapshot_download
 
-from vlmeval.judge import DefaultJudgeModel
 from vlmeval.smp import dump, get_cache_path, get_intermediate_file_path, load
 from .image_mcq import ImageMCQDataset
 
@@ -12,7 +11,6 @@ from .image_mcq import ImageMCQDataset
 class MedQDEGBenchDataset(ImageMCQDataset):
 
     TYPE = 'MCQ'
-    DEFAULT_JUDGE_MODEL = DefaultJudgeModel.none()
 
     DATASET_URL = {
         'MedQDEGBench_simulate_dev': 'MedQ-Robust-simulate-dev.tsv',

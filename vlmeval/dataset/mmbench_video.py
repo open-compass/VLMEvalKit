@@ -68,7 +68,14 @@ Please directly reply with your response to the only question.
 """
 
     TYPE = 'Video-VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+
+    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+        if requested_dataset_name and 'MMBench_Video' in requested_dataset_name:
+            return 'gpt-4-turbo'
+        return super().get_default_judge_model(
+            judge_kwargs,
+            requested_dataset_name=requested_dataset_name,
+        )
 
     def __init__(self, dataset='MMBench-Video', pack=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
