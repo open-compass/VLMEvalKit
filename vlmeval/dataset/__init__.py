@@ -127,6 +127,7 @@ from .SGI_Bench_1_0.experimental_reasoning import SGI_Bench_Experimental_Reasoni
 from .SGI_Bench_1_0.idea_generation import SGI_Bench_Idea_Generation
 from .SGI_Bench_1_0.wet_experiment import SGI_Bench_Wet_Experiment
 from .simplevqa import SimpleVQA
+from .sis_bench import SISBench
 from .sitebench import SiteBenchImage, SiteBenchVideo
 from .siuo import SIUODataset
 from .siuo_gen import SIUOGenDataset
@@ -332,7 +333,7 @@ VIDEO_DATASET = [
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
-    VideoMMEv2, ReVSI
+    VideoMMEv2, ReVSI, SISBench
 ]
 
 # add by EASI team
