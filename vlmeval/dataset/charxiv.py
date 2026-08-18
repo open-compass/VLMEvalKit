@@ -109,7 +109,7 @@ class CharXiv(ImageBaseDataset):
         "CharXiv_reasoning_val": "https://opencompass.openxlab.space/utils/VLMEval/CharXiv_reasoning_val.tsv",
     }
     DATASET_MD5 = {
-        "CharXiv_descriptive_val": "e165037032f169a59dd09ea5d7ad3073",
+        "CharXiv_descriptive_val": "8507c3740f8ddaedcb6b5c1cfcb3fa06",
         "CharXiv_reasoning_val": "6fc1a522ad32c2e3d72a89857b8cf10b",
     }
 

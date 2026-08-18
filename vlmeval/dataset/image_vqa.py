@@ -1134,8 +1134,8 @@ class Physics_yale(ImageBaseDataset):
         'https://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
         'https://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
-        'Physics_blankim': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
-        'Physics': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
+        'Physics_blankim': 'http://opencompass.oss-cn-shanghai.aliyuncs.com/utils/VLMEval/Physics_blankim.tsv',
+        'Physics': 'http://opencompass.oss-cn-shanghai.aliyuncs.com/utils/VLMEval/Physics.tsv'
     }
     DATASET_MD5 = {
         'atomic_dataset': 'b927fae6bcc6163b0bd89041e4421c70',
@@ -1145,7 +1145,7 @@ class Physics_yale(ImageBaseDataset):
         'quantum_dataset': 'd2610f9938ad1e848259ccbcd5ac3acf',
         'statistics_dataset': '78242aa2431a477782b5b3de1c18d633',
         'Physics_blankim': 'b4136f27f09339698f636111c07824e9',
-        'Physics': '528d66b7365f9d4db2b58fdeadeade71'
+        'Physics': 'c27c6228fca6a2e8b450fc5da7279ea2'
     }
 
     def __init__(self, dataset='Physics', skip_noimg=False):
@@ -1165,8 +1165,8 @@ class Physics_yale(ImageBaseDataset):
 
         # The image field can store the base64 encoded image or another question index (for saving space)
         if 'image' in data:
-            images = [toliststr(x) for x in data['image']]
-            data['image'] = [x[0] if len(x) == 1 else x for x in images]
+            images = [toliststr(x) if not pd.isna(x) else None for x in data['image']]
+            data['image'] = [x[0] if x is not None and len(x) == 1 else x for x in images]
             self.meta_only = False
 
         if 'image_path' in data:
@@ -1189,6 +1189,8 @@ class Physics_yale(ImageBaseDataset):
 
         if self.meta_only:
             tgt_path = toliststr(line['image_path'])
+        elif pd.isna(line['image']):
+            tgt_path = None
         else:
             tgt_path = self.dump_image(line)
 

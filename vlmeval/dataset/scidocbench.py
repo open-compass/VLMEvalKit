@@ -783,10 +783,10 @@ class SciDocBench(ImageBaseDataset):
     DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     DATASET_URL = {
-        'SciDocBench': 'https://opencompass.openxlab.space/utils/VLMEvalKit/SciDocBench.tsv',
+        'SciDocBench': 'https://opencompass.openxlab.space/utils/VLMEval/SciDocBench.tsv',
     }
     DATASET_MD5 = {
-        'SciDocBench': None,
+        'SciDocBench': '31cbebfc13b886b33963728ad3715728',
     }
 
     def dump_image(self, line):

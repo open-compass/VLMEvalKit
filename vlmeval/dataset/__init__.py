@@ -9,6 +9,7 @@ from vlmeval.judge import resolve_judge_kwargs
 from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, localize_df, toliststr
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
+from .babyvision import BabyVision
 from .CGAVCounting.cg_av_counting import CGAVCounting
 from .cgbench import (CGBench_MCQ_Grounding, CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded,
                       CGBench_OpenEnded_Mini)
@@ -97,6 +98,7 @@ from .mmsafetybench import MMSafetyBenchDataset
 from .mmsibench import MMSIBench, MMSIVideoBench
 from .moat import MOAT
 from .moviechat1k import MovieChat1k
+from .mrarebench import MRareBenchDiagnosis, MRareBenchEvidenceVerif
 from .mssbench import MSSBenchDataset
 from .mvbench import MVBench, MVBench_MP4
 from .mvu_eval import MVUEval
@@ -108,6 +110,7 @@ from .omnimat import OmniMat
 from .omnispatialbench import OmniSpatialBench
 from .omtgbench import OMTGBench
 from .ost_bench import OSTDataset
+from .perceptionbench import PerceptionBench
 from .plotqa import PlotQA
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 from .reasonmap_plus import ReasonMap_Plus
@@ -138,6 +141,7 @@ from .spbench import SPBench
 from .ssi_bench import SSIBenchDataset
 from .starebench import StareBench
 from .stibench import STIBench
+from .superchem import SUPERChemDataset
 from .tamperbench import MVTamperBench
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
@@ -163,6 +167,7 @@ from .vlmbias import VLMBias
 from .vlrmbench import VLRMBench
 from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
 from .wiki_vqa_bench import WikiVQABench
+from .wildprobe import WildprobeDataset
 from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
@@ -308,6 +313,8 @@ IMAGE_DATASET = [
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
+    MRareBenchDiagnosis, MRareBenchEvidenceVerif,
+    BabyVision, WildprobeDataset, PerceptionBench, SUPERChemDataset,
 ]
 
 # add by EASI team
