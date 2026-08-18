@@ -11,6 +11,7 @@ from vlmeval.smp import (cn_string, d2df, dump, get_logger, get_pred_file_format
                          timestr)
 from vlmeval.smp.vlm import build_option_str
 from vlmeval.utils import can_infer, can_infer_lego, track_progress_rich
+from .mmmu import eval_open, parse_open_response
 
 logger = get_logger(__name__)
 
@@ -57,21 +58,6 @@ MMT_abbrs = {
     'embodied_ai': 'EA',
     'gui_navigation': 'GN'
 }
-
-
-def MMMU_preproc(data):
-    cnt = 0
-    As, Bs, Ans = list(data['A']), list(data['B']), list(data['answer'])
-    lt = len(data)
-    for i in range(lt):
-        if pd.isna(As[i]):
-            As[i] = Ans[i]
-            Bs[i] = 'Other Answers'
-            cnt += 1
-    logger.info(f'During MMMU_preproc in Evaluation, {cnt} open questions are re-formulated to multi-choice ones. ')
-    data['A'] = As
-    data['B'] = Bs
-    return data
 
 
 def report_acc(df):
@@ -437,6 +423,14 @@ def eval_vanilla(model, item, dataset_name=None):
         return dict(hit=0, log=f'Match Log: {match_log}. ')
 
 
+def eval_mmmu_open(item):
+    prediction = str(item['prediction']).rpartition('Answer:')[-1].strip()
+    parsed_prediction = parse_open_response(prediction)
+    hit = int(eval_open(item['GT'], parsed_prediction))
+    log = f'MMMU open-ended match: answer={item["GT"]!r}; parsed_prediction={parsed_prediction!r}.'
+    return dict(hit=hit, log=log)
+
+
 # For Circular Evaluation
 def eval_circular_group(model, sub_data, dataset_name=None):
     prefetched = prefetch_circular_group(sub_data, verbose=True)
@@ -478,25 +472,41 @@ def mcq_vanilla_eval(model, data, meta, nproc, result_file, dataset_name=None):
         result = load(result_file)
     answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
 
-    if 'MMMU' in dataset_name:
-        data = MMMU_preproc(data)
-        answer_map = {k: (v if v in list(string.ascii_uppercase) else 'A') for k, v in answer_map.items()}
+    mmmu_open_indices = set()
+    if dataset_name is not None and 'MMMU' in dataset_name:
+        open_mask = pd.Series(False, index=meta.index)
+        if 'question_type' in meta:
+            question_types = meta['question_type'].astype(str).str.lower()
+            open_mask |= question_types.isin(['open', 'open-ended', 'open_ended'])
+        if 'A' in meta:
+            open_mask |= meta['A'].isna()
+        mmmu_open_indices = set(meta.loc[open_mask, 'index'])
 
     data = data[data['index'].isin(answer_map)]
     data['GT'] = [answer_map[idx] for idx in data['index']]
     items = []
+    mmmu_open_results = {}
 
     for i in range(len(data)):
-        # Dealing with the normal part
         item = data.iloc[i]
-        if item['index'] not in result:
+        if item['index'] in mmmu_open_indices:
+            # Always recompute open answers so cached results from the old pseudo-MCQ
+            # evaluation cannot leak into corrected scores.
+            mmmu_open_results[item['index']] = eval_mmmu_open(item)
+            result[item['index']] = mmmu_open_results[item['index']]
+        elif item['index'] not in result:
             items.append(item)
+
+    if mmmu_open_indices:
+        dump(result, result_file)
 
     tups = [dict(model=model, item=x, dataset_name=dataset_name) for x in items]
     keys = [x['index'] for x in items]
     if len(tups):
         res = track_progress_rich(eval_vanilla, tups, nproc=nproc, chunksize=nproc, save=result_file, keys=keys)
         result = load(result_file)
+        result.update(mmmu_open_results)
+        dump(result, result_file)
         for k, v in zip(keys, res):
             if k not in result:
                 result[k] = v
