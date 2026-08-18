@@ -160,7 +160,7 @@ class TempCompass_MCQ(VideoBaseDataset):
             'fps': vid.get_avg_fps(),
             'n_frames': len(vid),
         }
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
             step_size = len(vid) / (self.nframe + 1)
             indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
             frame_paths = self.frame_paths(line['video'])
@@ -358,7 +358,7 @@ class TempCompass_Captioning(VideoBaseDataset):
             'fps': vid.get_avg_fps(),
             'n_frames': len(vid),
         }
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
             step_size = len(vid) / (self.nframe + 1)
             indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
             frame_paths = self.frame_paths(line['video'])
@@ -553,7 +553,7 @@ class TempCompass_YorN(VideoBaseDataset):
             'fps': vid.get_avg_fps(),
             'n_frames': len(vid),
         }
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
             step_size = len(vid) / (self.nframe + 1)
             indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
             frame_paths = self.frame_paths(line['video'])

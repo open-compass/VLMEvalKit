@@ -3,7 +3,7 @@ import copy as cp
 import pandas as pd
 
 from ..smp import d2df, dump, load
-from ..smp.file import get_intermediate_file_path
+from ..smp.file import get_composite_child_eval_file, get_intermediate_file_path
 from .image_base import ImageBaseDataset
 from .siuo_gen import SIUOGenDataset
 from .siuo_mcq import SIUOMCQDataset
@@ -77,8 +77,10 @@ class SIUODataset(ImageBaseDataset):
         data_all = load(eval_file)
 
         # Split unified prediction file into two subset prediction files.
+        child_eval_files = {}
         for dname in self.SUB_DATASETS:
-            tgt = eval_file.replace(self.dataset_name, dname)
+            tgt = get_composite_child_eval_file(eval_file, dname)
+            child_eval_files[dname] = tgt
             sub = data_all[data_all['SUB_DATASET'] == dname].copy()
             sub.pop('index')
             sub['index'] = sub.pop('original_index')
@@ -86,8 +88,8 @@ class SIUODataset(ImageBaseDataset):
             dump(sub, tgt)
 
         # Evaluate subsets with their native logic.
-        gen_file = eval_file.replace(self.dataset_name, 'SIUO_GEN')
-        mcq_file = eval_file.replace(self.dataset_name, 'SIUO_MCQ')
+        gen_file = child_eval_files['SIUO_GEN']
+        mcq_file = child_eval_files['SIUO_MCQ']
 
         gen_score_obj = self.dataset_map['SIUO_GEN'].evaluate(gen_file, **judge_kwargs)
         mcq_score_obj = self.dataset_map['SIUO_MCQ'].evaluate(mcq_file, **judge_kwargs)

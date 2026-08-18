@@ -5,7 +5,8 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, localize_df, toliststr
+from vlmeval.smp import (LMUDataRoot, dump, get_composite_child_eval_file,
+                         get_intermediate_file_path, load, localize_df, toliststr)
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
 from .babyvision import BabyVision
@@ -172,8 +173,6 @@ from .worldsense import WorldSense
 from .worldvqa import WorldVQA
 from .xstest import XSTestDataset
 
-from .video_dataset_config import supported_video_datasets  # isort: skip
-
 
 class ConcatDataset(ImageBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
@@ -248,9 +247,11 @@ class ConcatDataset(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         # First, split the eval_file by dataset
         data_all = load(eval_file)
+        child_eval_files = {}
         for dname in self.datasets:
-            tgt = eval_file.replace(self.dataset_name, dname)
-            data_sub = data_all[data_all['SUB_DATASET'] == dname]
+            tgt = get_composite_child_eval_file(eval_file, dname)
+            child_eval_files[dname] = tgt
+            data_sub = data_all[data_all['SUB_DATASET'] == dname].copy()
             data_sub.pop('index')
             data_sub['index'] = data_sub.pop('original_index')
             data_sub.pop('SUB_DATASET')
@@ -260,7 +261,7 @@ class ConcatDataset(ImageBaseDataset):
         dict_all = {}
         # One of the vars will be used to aggregate results
         for dname in self.datasets:
-            tgt = eval_file.replace(self.dataset_name, dname)
+            tgt = child_eval_files[dname]
             res = self.dataset_map[dname].evaluate(tgt, **judge_kwargs)
             if isinstance(res, pd.DataFrame):
                 res['DATASET'] = [dname] * len(res)
@@ -398,9 +399,7 @@ def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
 
 def build_dataset(dataset_name, **kwargs):
     for cls in DATASET_CLASSES:
-        if dataset_name in supported_video_datasets:
-            return supported_video_datasets[dataset_name](**kwargs)
-        elif dataset_name in cls.supported_datasets():
+        if dataset_name in cls.supported_datasets():
             return cls(dataset=dataset_name, **kwargs)
 
     warnings.warn(f'Dataset {dataset_name} is not officially supported. ')

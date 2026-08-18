@@ -456,9 +456,9 @@ class MMLongBenchDoc(ImageBaseDataset):
         'XComposer2d5': (1, -1),
     }
 
-    def __init__(self, dataset, **kwargs):
+    def __init__(self, dataset, model=None):
         self.model_list = list(self.SUPPORTED_MODELS.keys())
-        model_name = kwargs['model']
+        model_name = model
         if not listinstr(self.model_list, model_name):
             raise AssertionError("{} doesn't support the evaluation on MMLongBench_DOC.".format(model_name))
         super(MMLongBenchDoc, self).__init__(dataset)
