@@ -42,20 +42,18 @@ class bailingMMWrapper(BaseAPI):
 
     def prepare_inputs(self, inputs):
         msgs = cp.deepcopy(inputs)
-        content = []
+        messages = [{"role": "user","content": []}]
         for i, msg in enumerate(msgs):
             if msg['type'] == 'text':
-                pass
+                messages[-1]["content"].append({"type": "text","text": msg["value"]})
             else:
                 try:
                     image_data = self.image_to_base64(msg['value'])
+                    messages[-1]["content"].append({"type": "image_url","image_url": {"url": f"data:image;base64,{image_data}"}})
                 except Exception as e:
                     if self.verbose:
                         logger.error(e)
-                    image_data = ''
-                msg['value'] = image_data
-            content.append(msg)
-        return content
+        return messages
 
     def generate_inner(self, inputs, **kwargs) -> str:
         assert isinstance(inputs, str) or isinstance(inputs, list)
@@ -63,11 +61,10 @@ class bailingMMWrapper(BaseAPI):
         inputs = [inputs] if isinstance(inputs, str) else inputs
 
         messages = self.prepare_inputs(inputs)
-
         service_url = "https://bailingchat.alipay.com/api/proxy/eval/antgmm/completions"
 
         payload = {
-            "structInput": json.dumps([{"role": "user", "content": messages}]),
+            "structInput": json.dumps(messages, ensure_ascii=False),
             "sk": self.key,
             "model": self.model,
             "timeout": 180000
