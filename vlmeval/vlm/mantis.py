@@ -153,6 +153,18 @@ class Mantis(BaseModel):
             answer = answer.split('|ENDOFTEXT|')[0].strip()
         return answer
 
+    def _generate_from_prompt(self, prompt, images):
+        inputs = self.processor(prompt, images, return_tensors='pt', truncation=True)
+        # FIXME: Fuyu model would return a list instead of a pytorch tensor. This weird behavior needs fixing.
+        if 'image_patches' in inputs.keys():
+            inputs['image_patches'] = inputs['image_patches'][0]
+        inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+        output = self.model.generate(**inputs, **self.kwargs)
+        output = output[0]
+        generated_ids = output[inputs['input_ids'].shape[-1]:]
+        answer = self.processor.decode(generated_ids, skip_special_token=True)
+        return self.output_process(answer)
+
     def generate_inner(self, message, dataset=None):
         content, images = '', []
         ide_content, question = [], ''
@@ -193,14 +205,64 @@ class Mantis(BaseModel):
             assert conv.messages[-1][0] == conv.roles[1] and conv.messages[-1][1] == '', 'Format check'
             prompt = conv.get_prompt()
 
-        inputs = self.processor(prompt, images, return_tensors='pt', truncation=True)
-        # FIXME: Fuyu model would return a list instead of a pytorch tensor. This weird behavior needs fixing.
-        if 'image_patches' in inputs.keys():
-            inputs['image_patches'] = inputs['image_patches'][0]
-        inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
-        output = self.model.generate(**inputs, **self.kwargs)
-        output = output[0]
-        generated_ids = output[inputs['input_ids'].shape[-1]:]
-        answer = self.processor.decode(generated_ids, skip_special_token=True)
-        answer = self.output_process(answer)
-        return answer
+        return self._generate_from_prompt(prompt, images)
+
+    def chat_inner(self, message, dataset=None):
+        images = []
+        if self._is_idefics:
+            prompt = []
+            for turn in message:
+                if turn['role'] not in ['user', 'assistant']:
+                    raise ValueError(f'Unsupported Mantis chat role: {turn["role"]}')
+                content = []
+                for item in turn['content']:
+                    if item['type'] == 'text':
+                        content.append({'type': 'text', 'text': item['value']})
+                    elif item['type'] == 'image':
+                        if turn['role'] != 'user':
+                            raise ValueError('Mantis only supports images in user turns.')
+                        images.append(Image.open(item['value']).convert('RGB'))
+                        content.append({'type': 'image'})
+                prompt.append({'role': turn['role'], 'content': content})
+            prompt = self.processor.apply_chat_template(prompt, add_generation_prompt=True)
+        else:
+            if 'llama-3' in self.model.language_model.name_or_path.lower():
+                conv = self.conv_templates['llama_3']
+                terminators = [
+                    self.processor.tokenizer.eos_token_id,
+                    self.processor.tokenizer.convert_tokens_to_ids('<|eot_id|>')
+                ]
+            else:
+                conv = self.default_conv
+                terminators = [self.processor.tokenizer.eos_token_id]
+
+            if 'eos_token_id' not in self.kwargs:
+                self.kwargs['eos_token_id'] = terminators
+
+            conv = conv.copy()
+            conv.messages = []
+            for turn in message:
+                if turn['role'] == 'user':
+                    role = conv.roles[0]
+                elif turn['role'] == 'assistant':
+                    role = conv.roles[1]
+                else:
+                    raise ValueError(f'Unsupported Mantis chat role: {turn["role"]}')
+
+                content = ''
+                for item in turn['content']:
+                    if item['type'] == 'text':
+                        content += item['value']
+                    elif item['type'] == 'image':
+                        if turn['role'] != 'user':
+                            raise ValueError('Mantis only supports images in user turns.')
+                        images.append(Image.open(item['value']).convert('RGB'))
+                        content += self.DEFAULT_IMAGE_TOKEN + '\n'
+                conv.append_message(role, content)
+
+            if not conv.messages or conv.messages[-1][0] != conv.roles[0]:
+                raise ValueError('Mantis chat history must end with a user turn.')
+            conv.append_message(conv.roles[1], '')
+            prompt = conv.get_prompt()
+
+        return self._generate_from_prompt(prompt, images)
