@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 
 import pandas as pd
@@ -8,17 +9,32 @@ from vlmeval.smp.file import load
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 
+def normalize_logicvista_answer(value):
+    """Normalize a judge answer while rejecting explanatory text."""
+    text = str(value).strip()
+    if re.fullmatch(r'[A-Za-z0-9]+', text):
+        compact = text
+    else:
+        choices = re.split(r'[\s,;]+', text)
+        if not choices or any(len(choice) != 1 or not choice.isalnum() for choice in choices):
+            return None
+        compact = ''.join(choices)
+    if not compact:
+        return None
+    return ''.join(sorted(compact.lower()))
+
+
 def build_prompt_logicvista(line):
     question = line['question']
     prediction = str(line['prediction'])
     tmpl = (
-        "You are a information extractor that extracts multiple choice letter answer choices "
+        "You are an information extractor that extracts multiple-choice answers "
         "from a paragraph that contains the answer choice and sometimes explaination of why that "
         "choice is correct to the given question.\n"
-        "What letter did the following answer choose? If the answer did not select a letter answer choice, "
+        "What option did the following answer choose? If the answer did not select an answer choice, "
         "first try to infer the answer based off the given choices.\n"
         "If it does not seem like the given answer corresponds to an answer choice OR if there is no selected answer, please just respond with Z.\n"  # noqa: E501
-        "Make sure you answer with ONLY the letters chosen.\n"
+        "Make sure you answer with ONLY the option labels chosen (letters or numbers).\n"
         'Example 1: \n'
         'Question: <start>\nWhat is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n<end>\n'
         'Answer: <start>\na cute teddy bear\n<end>\nYour output: A\n'
@@ -43,29 +59,19 @@ def LogicVista_auxeval(model, line):
     print(prompt)
     log = ''
     retry = 5
+    answer = normalize_logicvista_answer(line['answer'])
 
     for i in range(retry):
-        prediction = line['prediction']
         res = model.generate(prompt, temperature=i * 0.5)
-        answer = line['answer'].split(", ")
-        for j in range(0, len(answer)):
-            answer[j] = answer[j].lower()
-        answer.sort()
-        answer = ''.join(answer)
+        extracted = normalize_logicvista_answer(res)
 
         if FAIL_MSG in res:
-            log += f'Try {i}: output is {prediction}, failed to parse.\n'
-        elif not res.isupper() or not res.isalpha():
-            log += f'Try {i}: output is {prediction}, failed to parse.\n'
+            log += f'Try {i}: output is {res}, failed to parse.\n'
+        elif extracted is None:
+            log += f'Try {i}: output is {res}, failed to parse.\n'
         else:
             log += 'Succeed'
-            hit = 0
-            extracted = [alpha.lower() for alpha in res]
-            extracted.sort()
-            extracted = ''.join(extracted)
-            if extracted == answer:
-                hit = 1
-            return dict(log=log, res=res, hit=hit)
+            return dict(log=log, res=res, hit=int(extracted == answer))
     log += 'All 5 retries failed.\n'
     return dict(log=log, res='', hit=0)
 
