@@ -1128,8 +1128,8 @@ class Physics_yale(ImageBaseDataset):
         'https://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
         'https://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
-        'Physics_blankim': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
-        'Physics': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
+        'Physics_blankim': 'http://opencompass.oss-cn-shanghai.aliyuncs.com/utils/VLMEval/Physics_blankim.tsv',
+        'Physics': 'http://opencompass.oss-cn-shanghai.aliyuncs.com/utils/VLMEval/Physics.tsv'
     }
     DATASET_MD5 = {
         'atomic_dataset': 'b927fae6bcc6163b0bd89041e4421c70',
@@ -1139,7 +1139,7 @@ class Physics_yale(ImageBaseDataset):
         'quantum_dataset': 'd2610f9938ad1e848259ccbcd5ac3acf',
         'statistics_dataset': '78242aa2431a477782b5b3de1c18d633',
         'Physics_blankim': 'b4136f27f09339698f636111c07824e9',
-        'Physics': '528d66b7365f9d4db2b58fdeadeade71'
+        'Physics': 'c27c6228fca6a2e8b450fc5da7279ea2'
     }
 
     def __init__(self, dataset='Physics', skip_noimg=False):
