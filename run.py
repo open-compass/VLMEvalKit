@@ -58,11 +58,13 @@ from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.inference_video import infer_data_job_video
-from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, collect_run_benchmark_report,
+from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, collect_run_benchmark_report, dump,
                          get_eval_file_format, get_logger, get_pred_file_format,
                          get_pred_file_path, githash, is_prediction_complete, listinstr, load,
                          load_env, prepare_reuse_files, proxy_set, setup_logger, timestr,
                          upsert_dataset_status, upsert_run_status)
+from vlmeval.utils.dataset_subset import (filter_frame_by_indices, parse_data_indices,
+                                          subset_dataset, validate_data_indices)
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 logger = get_logger(__name__)
@@ -266,6 +268,42 @@ def build_dataset_from_cli(dataset_name, data_config, dataset_kwargs):
             extra_kwargs=dataset_kwargs,
         )
     return build_dataset(dataset_name, **dataset_kwargs)
+
+
+def apply_dataset_subset(dataset, dataset_name, data_indices):
+    requested_indices = data_indices.get(dataset_name)
+    if requested_indices is None:
+        return None
+
+    original_size, selected_size = subset_dataset(dataset, requested_indices)
+    logger.info(
+        f'Selected {selected_size}/{original_size} samples from {dataset_name} '
+        'with --data-indices.'
+    )
+    return requested_indices
+
+
+def trim_prediction_to_subset(result_file, requested_indices):
+    if requested_indices is None or not Path(result_file).exists():
+        return
+
+    predictions = load(result_file)
+    if isinstance(predictions, (list, dict)):
+        predictions = pd.DataFrame(predictions)
+    filtered = filter_frame_by_indices(predictions, requested_indices, require_all=False)
+    if len(filtered) != len(predictions):
+        dump(filtered, result_file)
+        logger.info(f'Trimmed reused predictions in {result_file} to {len(filtered)} selected samples.')
+
+
+def get_effective_reuse_aux(reuse_aux, requested_indices):
+    if requested_indices is not None and reuse_aux == 'all':
+        logger.info(
+            '--data-indices is set; evaluation auxiliary files will not be reused '
+            'because they may contain full-dataset results.'
+        )
+        return 'infer'
+    return reuse_aux
 
 
 def build_model_from_base_url(args):
@@ -525,6 +563,13 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--config', type=str, help='Path to the Config Json File')
     parser.add_argument('--data-config', type=str, default=None,
                         help='Custom dataset configs as a JSON dict string. Keys must match names passed to --data.')
+    parser.add_argument(
+        '--data-indices',
+        type=str,
+        default=None,
+        help='Run selected sample indices, as a JSON object keyed by dataset name. '
+             'Example: \'{"MMBench_DEV_EN": [1203, 63384]}\'.',
+    )
 
     # Work Dir & Mode
     parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
@@ -601,6 +646,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     args = parser.parse_args()
     try:
         args.data_config = load_data_config(args.data_config)
+        args.data_indices = parse_data_indices(args.data_indices)
     except ValueError as e:
         parser.error(str(e))
     if args.ignore:
@@ -620,6 +666,8 @@ def run_local_mode(args):
         args.data = list(cfg['data'].keys())
     else:
         assert len(args.data), '--data should be a list of data files'
+
+    validate_data_indices(args.data_indices, args.data)
 
     if 'MMEVAL_ROOT' in os.environ:
         args.work_dir = os.environ['MMEVAL_ROOT']
@@ -754,6 +802,9 @@ def run_local_mode(args):
                             )
                         continue
 
+                requested_indices = apply_dataset_subset(dataset, dataset_name, args.data_indices)
+                reuse_aux = get_effective_reuse_aux(args.reuse_aux, requested_indices)
+
                 judge_dataset_name = get_judge_dataset_name(dataset_name, args.data_config)
                 judge_kwargs = get_judge_kwargs(judge_dataset_name, dataset.TYPE, args)
                 judge_model = judge_kwargs.get('model', '')
@@ -767,7 +818,7 @@ def run_local_mode(args):
                         dataset=dataset,
                         result_file=result_file,
                         reuse=args.reuse,
-                        reuse_aux=args.reuse_aux,
+                        reuse_aux=reuse_aux,
                         retry_failed=not args.keep_failed,
                         judge_model=judge_model if args.mode != 'infer' else None,
                         world_size=WORLD_SIZE,
@@ -778,8 +829,9 @@ def run_local_mode(args):
                         dataset_name=dataset_name,
                         source_run=reuse_ctx['source_eval_id'],
                         judge_model=judge_model,
-                        reuse_aux=args.reuse_aux,
+                        reuse_aux=reuse_aux,
                     )
+                    trim_prediction_to_subset(result_file, requested_indices)
                     logger.info(judge_kwargs)
 
                 if WORLD_SIZE > 1:
@@ -1055,6 +1107,7 @@ def run_api_mode(args):
             f'Unknown adapter: {args.custom_prompt}. Available: {list(registry.keys())}'
 
     assert args.data, '--data must be set in API mode'
+    validate_data_indices(args.data_indices, args.data)
 
     # Prepare work dir and logging
     commit_id = githash(digits=8)
@@ -1126,6 +1179,9 @@ def run_api_mode(args):
                 logger.error(f'Dataset {ds_name} is not valid, will be skipped.')
                 continue
 
+            requested_indices = apply_dataset_subset(dataset, ds_name, args.data_indices)
+            reuse_aux = get_effective_reuse_aux(args.reuse_aux, requested_indices)
+
             # Prepare the result file.
             result_file = get_pred_file_path(
                 pred_root, model_name, ds_name, use_env_format=True)
@@ -1151,7 +1207,7 @@ def run_api_mode(args):
                 dataset=dataset,
                 result_file=result_file,
                 reuse=args.reuse,
-                reuse_aux=args.reuse_aux,
+                reuse_aux=reuse_aux,
                 retry_failed=not args.keep_failed,
                 judge_model=judge_model if args.mode != 'infer' else None,
                 world_size=1,
@@ -1163,8 +1219,9 @@ def run_api_mode(args):
                 prediction_file=result_file,
                 source_run=reuse_ctx['source_eval_id'],
                 judge_model=judge_model,
-                reuse_aux=args.reuse_aux,
+                reuse_aux=reuse_aux,
             )
+            trim_prediction_to_subset(result_file, requested_indices)
             if args.mode == 'eval' and not reuse_ctx['prediction_complete']:
                 logger.error(
                     f'No reusable completed prediction found for {model_name} x {ds_name}, '

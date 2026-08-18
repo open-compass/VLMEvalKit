@@ -77,6 +77,7 @@ max_pixels=1280 * 28 * 28,
 **参数**
 
 - `--data (list[str])`: 设置在 VLMEvalKit 中支持的数据集名称（可以在代码库首页的 README 中找到支持的数据集列表）
+- `--data-indices (JSON object)`: 仅运行各数据集内指定的样本索引。数据集名称必须与 `--data`（或 `--config` 中的键）一致
 - `--model (list[str])`: 设置在 VLMEvalKit 中支持的 VLM 名称（在 `vlmeval/config.py` 中的 `supported_VLM` 中定义）
 - `--mode (str, 默认值为 'all', 可选值为 ['all', 'infer'])`：当 mode 设置为 "all" 时，将执行推理和评估；当设置为 "infer" 时，只执行推理
 - `--api-nproc (int, 默认值为 4)`: 调用 API 的线程数
@@ -103,6 +104,17 @@ torchrun --nproc-per-node=8 run.py --data MMBench_DEV_EN MME SEEDBench_IMG --mod
 # 在 MME 上使用 Qwen-VL-Chat。在具有 2 个 GPU 的节点上进行推理和评估。
 torchrun --nproc-per-node=2 run.py --data MME --model qwen_chat --verbose
 ```
+
+如需仅重跑部分样本，可通过 `--data-indices` 传入样本的 `index`。该参数支持本地、分布式和 `--api-mode` 推理，评测也会仅针对这些样本进行。索引可以是 JSON 整数或字符串；数据集名称必须与 `--data` 中的名称完全一致。
+
+```bash
+python run.py \
+  --data MMBench_DEV_EN \
+  --data-indices '{"MMBench_DEV_EN": [1203, 63384]}' \
+  --model qwen_chat
+```
+
+同时运行多个数据集时，可为每个需要筛选的数据集添加一个映射项；映射中未出现的数据集仍会完整运行。如果指定的索引不存在，程序会直接报错，而不会静默跳过。
 
 **用于评测视频多模态评测集的命令**
 
