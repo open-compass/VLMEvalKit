@@ -50,9 +50,19 @@ MTL_MMBench_MD5 = {
 }
 
 
+def _preserve_option_text(value):
+    return np.nan if value == '' else value
+
+
 class ImageMCQDataset(ImageBaseDataset):
 
     TYPE = 'MCQ'
+    TSV_LOAD_KWARGS = {
+        'converters': {
+            candidate: _preserve_option_text
+            for candidate in string.ascii_uppercase
+        }
+    }
 
     DATASET_URL = {
         # MMBench v1.0
