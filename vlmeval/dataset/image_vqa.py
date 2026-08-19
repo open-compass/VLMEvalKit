@@ -1290,15 +1290,11 @@ class Physics_yale(ImageBaseDataset):
 class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
+    def get_default_judge_model(self, judge_kwargs=None):
         judge_kwargs = judge_kwargs or {}
-        if (
-            self._judge_name_matches(requested_dataset_name, ('OlympiadBench',))
-            and judge_kwargs.get('olympiad_use_api_judger', False)
-        ):
+        if judge_kwargs.get('olympiad_use_api_judger', False):
             return 'gpt-4o-mini'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+        return super().get_default_judge_model(judge_kwargs)
 
     DATASET_URL = {
         'OlympiadBench':
@@ -1966,14 +1962,7 @@ class LLaVABench(ImageBaseDataset):
 
 class LLaVABench_KO(ImageBaseDataset):
     TYPE = 'VQA'
-
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('LLaVABench_KO',)):
-            return 'gpt-4o-0806'
-        if self._judge_name_matches(requested_dataset_name, ('LLaVABench',)):
-            return 'gpt-4-turbo'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-0806'
 
     DATASET_URL = {
         'LLaVABench_KO':
@@ -3658,14 +3647,7 @@ class Omni3DBench(ImageBaseDataset):
 
 class MMEReasoning(ImageBaseDataset):
     TYPE = 'VQA'
-
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(
-            requested_dataset_name, ('mme-reasoning',), case_sensitive=False
-        ):
-            return 'gpt-4o-mini'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     DATASET_URL = {'MME-Reasoning': 'https://huggingface.co/datasets/U4R/MME-Reasoning/blob/main/MME_Reasoning.tsv'}
     DATASET_MD = {'MME-Reasoning': 'b243f44778782d3821523689f6b40a1e'}

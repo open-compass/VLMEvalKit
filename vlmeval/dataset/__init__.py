@@ -234,18 +234,10 @@ class ConcatDataset(ImageBaseDataset):
         org_line = copy.deepcopy(org_data[org_data['index'] == idx]).iloc[0]
         return self.dataset_map[dname].build_prompt(org_line)
 
-    def get_default_judge_model(
-        self,
-        judge_kwargs=None,
-        *,
-        requested_dataset_name=None,
-    ):
-        if self._judge_name_matches(requested_dataset_name, ('M4Bench',)):
+    def get_default_judge_model(self, judge_kwargs=None):
+        if self.dataset_name == 'M4Bench':
             return 'gpt-4o'
-        return super().get_default_judge_model(
-            judge_kwargs,
-            requested_dataset_name=requested_dataset_name,
-        )
+        return super().get_default_judge_model(judge_kwargs)
 
     def dump_image(self, line):
         # Assert all images are pre-dumped

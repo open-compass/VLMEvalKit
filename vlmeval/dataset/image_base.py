@@ -189,32 +189,9 @@ class ImageBaseDataset(metaclass=ABCMeta):
     def __getitem__(self, idx):
         return dict(self.data.iloc[idx])
 
-    def _judge_name_matches(self, requested_dataset_name, candidates, *, case_sensitive=True):
-        if requested_dataset_name is None:
-            requested_dataset_name = getattr(self, 'dataset_name', None)
-        if not requested_dataset_name:
-            return False
-        if case_sensitive:
-            return any(candidate in requested_dataset_name for candidate in candidates)
-        requested_dataset_name = requested_dataset_name.lower()
-        return any(candidate.lower() in requested_dataset_name for candidate in candidates)
-
-    def get_default_judge_model(
-        self,
-        judge_kwargs=None,
-        *,
-        requested_dataset_name=None,
-    ):
+    def get_default_judge_model(self, judge_kwargs=None):
         default_model = getattr(self, 'DEFAULT_JUDGE_MODEL', None)
-        built_dataset_name = getattr(self, 'dataset_name', None)
-        if (
-            default_model is not None
-            and (
-                requested_dataset_name is None
-                or not built_dataset_name
-                or built_dataset_name in requested_dataset_name
-            )
-        ):
+        if default_model is not None:
             return default_model
 
         dataset_type = getattr(self, 'TYPE', None)

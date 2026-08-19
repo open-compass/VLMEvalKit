@@ -242,13 +242,6 @@ def get_data_config_dataset_name(dataset_name, data_config):
     return dataset_name
 
 
-def get_judge_dataset_name(dataset_name, data_config):
-    base_name = get_data_config_dataset_name(dataset_name, data_config)
-    if base_name == dataset_name:
-        return dataset_name
-    return f'{dataset_name} {base_name} {base_name.replace("-", "_")}'
-
-
 def get_dataset_build_kwargs(dataset_name, model_name, data_config):
     dataset_kwargs = {}
     base_name = get_data_config_dataset_name(dataset_name, data_config)
@@ -315,7 +308,7 @@ def validate_default_judge_model(model):
         raise TypeError('A default judge model must be a non-empty string or None.')
 
 
-def get_judge_kwargs(dataset_name, args, *, dataset):
+def get_judge_kwargs(args, *, dataset):
     """Collect runtime judge kwargs after the dataset has been instantiated."""
     # Determine nproc with mode-specific fallback
     if args.judge_api_nproc is not None:
@@ -345,10 +338,7 @@ def get_judge_kwargs(dataset_name, args, *, dataset):
     if args.judge is not None:
         judge_kwargs['model'] = args.judge
     else:
-        default_model = dataset.get_default_judge_model(
-            judge_kwargs,
-            requested_dataset_name=dataset_name,
-        )
+        default_model = dataset.get_default_judge_model(judge_kwargs)
         validate_default_judge_model(default_model)
         if default_model is not None:
             judge_kwargs['model'] = default_model
@@ -696,8 +686,7 @@ def run_local_mode(args):
                             )
                         continue
 
-                judge_dataset_name = get_judge_dataset_name(dataset_name, args.data_config)
-                judge_kwargs = get_judge_kwargs(judge_dataset_name, args, dataset=dataset)
+                judge_kwargs = get_judge_kwargs(args, dataset=dataset)
                 judge_model = judge_kwargs.get('model', '')
 
                 if RANK == 0:
@@ -1080,8 +1069,7 @@ def run_api_mode(args):
                 logger.info(f'{ds_name} requires special handling, skipped in pipeline.')
                 continue
 
-            judge_dataset_name = get_judge_dataset_name(ds_name, args.data_config)
-            judge_kwargs = get_judge_kwargs(judge_dataset_name, args, dataset=dataset)
+            judge_kwargs = get_judge_kwargs(args, dataset=dataset)
             judge_model = judge_kwargs.get('model', '')
             logger.info(f'Judge kwargs: {judge_kwargs}')
 
