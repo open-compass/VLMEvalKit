@@ -57,11 +57,7 @@ class ImageMTDataset(ImageBaseDataset):
 
 class MMDUDataset(ImageMTDataset):
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('MMDU',)):
-            return 'gpt-4o'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
     DATASET_URL = {'MMDU': 'https://opencompass.openxlab.space/utils/VLMEval/MMDU.tsv'}
     DATASET_MD5 = {'MMDU': '848b635a88a078f49aebcc6e39792061'}
     DIMS = [

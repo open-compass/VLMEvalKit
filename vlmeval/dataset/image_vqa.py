@@ -242,11 +242,7 @@ class VizWiz(ImageBaseDataset):
 class VTCBench(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('VTCBench',)):
-            return 'gpt-4o-mini'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     _DATASET_PATH = "https://huggingface.co/datasets/MLLM-CL/VTCBench"
     # Dataset URL mapping - points to different splits of HuggingFace dataset
@@ -579,11 +575,7 @@ class OCRBench(ImageBaseDataset):
 class MathVista(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('MathVista',)):
-            return 'gpt-4o-mini'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     DATASET_URL = {
         'MathVista_MINI':
@@ -715,11 +707,7 @@ class MathVista(ImageBaseDataset):
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('MathVerse',)):
-            return 'gpt-4o-mini'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     DATASET_URL = {
         'MathVerse_MINI':
@@ -864,11 +852,7 @@ class MathVerse(ImageBaseDataset):
 class MathVision(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('MathVision',)):
-            return 'gpt-4o-mini'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     DATASET_URL = {
         'MathVision':
@@ -1013,11 +997,7 @@ class MathVision(ImageBaseDataset):
 class LENS(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('LENS',)):
-            return 'gpt-4o-mini'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     DATASET_URL = {
         'LENS-CN-QA':
@@ -1751,11 +1731,7 @@ class SeePhys(ImageBaseDataset):
 class LogicVista(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('LogicVista',)):
-            return 'gpt-4o-mini'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     DATASET_URL = {
         'LogicVista':
@@ -1947,11 +1923,7 @@ class MME_CoT(ImageBaseDataset):
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('LLaVABench',)):
-            return 'gpt-4-turbo'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
 
     DATASET_URL = {
         'LLaVABench':
@@ -2046,11 +2018,7 @@ class LLaVABench_KO(ImageBaseDataset):
 class VGRPBench(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('VGRPBench',)):
-            return 'gpt-4o'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     DATASET_URL = {
         'VGRPBench':
@@ -2114,11 +2082,7 @@ class VGRPBench(ImageBaseDataset):
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('MMVet',)):
-            return 'gpt-4-turbo'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
 
     DATASET_URL = {
         'MMVet':
@@ -3400,11 +3364,7 @@ class CountBenchQA(ImageVQADataset):
 class OCR_Reasoning(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('OCR_Reasoning',)):
-            return 'gpt-4o-mini'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     DATASET_URL = {
         'OCR_Reasoning':
@@ -3903,11 +3863,7 @@ class MMEReasoning(ImageBaseDataset):
 class MMVMBench(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('MMVMBench',)):
-            return 'gpt-4o'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     DATASET_URL = {
         'MMVMBench':
@@ -4092,11 +4048,7 @@ class OCRBench_v2(ImageBaseDataset):
 class AyaVisionBench(ImageVQADataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('AyaVisionBench',)):
-            return 'gpt-4.1'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
 
     DATASET_URL = {
         "AyaVisionBench":
@@ -4178,11 +4130,7 @@ class AyaVisionBench(ImageVQADataset):
 class MathCanvas(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('MathCanvas',)):
-            return 'gpt-4.1-2025-04-14'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1-2025-04-14'
 
     DATASET_URL = {
         "MathCanvas-Bench":
@@ -4283,11 +4231,7 @@ class MathCanvas(ImageBaseDataset):
 class MMReason(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('MMReason',)):
-            return 'gpt-4.1'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
 
     mini_path = 'https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true'
     DATASET_URL = {
@@ -4384,11 +4328,7 @@ class MMReason(ImageBaseDataset):
 class CoreCognition(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('CoreCognition',)):
-            return 'gpt-4.1'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
 
     DATASET_URL = {
         'CoreCognition': 'https://huggingface.co/datasets/ZTWHHH/CoreCognition/resolve/main/CoreCognition.tsv'

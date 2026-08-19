@@ -129,11 +129,7 @@ def MMAlignBench_auxeval(model, line):
 class MMAlignBench(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('MMAlignBench',)):
-            return 'gpt-4o'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
     DATASET_URL = {'MMAlignBench': 'https://opencompass.openxlab.space/utils/VLMEval/MMAlignBench.tsv'}
     DATASET_MD5 = {'MMAlignBench': 'd00d8e61c99257cbaf76d8d5e926f01e'}
 

@@ -13,6 +13,7 @@ class TextBaseDataset:
     MODALITY = 'TEXT'
     DATASET_URL = {}
     DATASET_MD5 = {}
+    DEFAULT_JUDGE_MODEL: str | None = None
 
     def __init__(self, dataset='MMBench', **kwargs):
         self.dataset_name = dataset
@@ -49,6 +50,18 @@ class TextBaseDataset:
         *,
         requested_dataset_name=None,
     ):
+        default_model = getattr(self, 'DEFAULT_JUDGE_MODEL', None)
+        built_dataset_name = getattr(self, 'dataset_name', None)
+        if (
+            default_model is not None
+            and (
+                requested_dataset_name is None
+                or not built_dataset_name
+                or built_dataset_name in requested_dataset_name
+            )
+        ):
+            return default_model
+
         dataset_type = getattr(self, 'TYPE', None)
         if dataset_type in ('MCQ', 'Y/N', 'MCQ_MMMU_Pro'):
             return 'gpt-4o-mini'

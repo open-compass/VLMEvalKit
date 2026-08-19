@@ -59,11 +59,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
     TYPE = 'Video-MCQ'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('Video-MME',)):
-            return 'gpt-4o-mini'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='Video-MME', use_subtitle=False, nframe=0, fps=-1):

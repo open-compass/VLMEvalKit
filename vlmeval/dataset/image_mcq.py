@@ -1694,11 +1694,7 @@ class LEGO(ImageMCQDataset):
 class VisualPuzzles(ImageMCQDataset):
     TYPE = "MCQ"
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('VisualPuzzles',)):
-            return 'exact_matching'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
 
     DATASET_URL = {
         'VisualPuzzles': 'https://opencompass.openxlab.space/utils/VLMEval/VisualPuzzles.tsv'
@@ -1798,11 +1794,7 @@ class VisualPuzzles(ImageMCQDataset):
 class PuzzleVQA(ImageMCQDataset):
     TYPE = "MCQ"
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('PuzzleVQA',)):
-            return 'exact_matching'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
 
     DATASET_URL = {
         'PuzzleVQA': 'https://opencompass.openxlab.space/utils/VLMEval/PuzzleVQA.tsv'
@@ -1876,11 +1868,7 @@ class PuzzleVQA(ImageMCQDataset):
 class VisuLogic(ImageMCQDataset):
     TYPE = "MCQ"
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('VisuLogic',)):
-            return 'exact_matching'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
 
     DATASET_URL = {
         'VisuLogic': 'https://opencompass.openxlab.space/utils/VLMEval/VisuLogic.tsv'

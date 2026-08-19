@@ -85,11 +85,7 @@ def _siuo_eff_judge(model, q, pred):
 class SIUOGenDataset(ImageBaseDataset):
     TYPE = 'VQA'
 
-    def get_default_judge_model(self, judge_kwargs=None, *, requested_dataset_name=None):
-        if self._judge_name_matches(requested_dataset_name, ('SIUO', 'SIUO_GEN')):
-            return 'gpt-4o-mini'
-        return super().get_default_judge_model(
-            judge_kwargs, requested_dataset_name=requested_dataset_name)
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     MODALITY = 'IMAGE'
     DATASET_URL = {'SIUO_GEN': 'https://opencompass.openxlab.space/utils/VLMEval/SIUO_GEN.tsv'}
     DATASET_MD5 = {'SIUO_GEN': '74a41eadede71e932cce9004442cf1a7'}
