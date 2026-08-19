@@ -451,7 +451,11 @@ def EVAL(dataset_name, data_file, **kwargs):
         elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
             judge_kwargs['model'] = 'gpt-4-turbo'
         elif listinstr(
-            ['MMLongBench_32K', 'MMLongBench_128K', 'MMLongBench_256K', 'MMLongBench_512K'], dataset_name
+            [
+                'MMLongBench_32K', 'MMLongBench_128K',
+                'MMLongBench_256K', 'MMLongBench_512K',
+            ],
+            dataset_name,
         ):
             judge_kwargs['model'] = 'gpt-5.5-2026-04-24'
         elif listinstr(['MMLongBench', 'MMDU'], dataset_name):

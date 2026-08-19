@@ -60,8 +60,8 @@ from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, collect_run_benchmark_report,
                          get_eval_file_format, get_logger, get_pred_file_format,
-                         get_pred_file_path, githash, is_prediction_complete, listinstr, load,
-                         load_env, prepare_reuse_files, proxy_set, setup_logger, timestr,
+                         get_pred_file_path, githash, is_prediction_complete, load, load_env,
+                         prepare_reuse_files, proxy_set, setup_logger, timestr,
                          upsert_dataset_status, upsert_run_status)
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
@@ -242,13 +242,6 @@ def get_data_config_dataset_name(dataset_name, data_config):
     return dataset_name
 
 
-def get_judge_dataset_name(dataset_name, data_config):
-    base_name = get_data_config_dataset_name(dataset_name, data_config)
-    if base_name == dataset_name:
-        return dataset_name
-    return f'{dataset_name} {base_name} {base_name.replace("-", "_")}'
-
-
 def get_dataset_build_kwargs(dataset_name, model_name, data_config):
     dataset_kwargs = {}
     base_name = get_data_config_dataset_name(dataset_name, data_config)
@@ -308,13 +301,15 @@ def build_model_from_base_url(args):
     return model_args
 
 
-def get_judge_kwargs(dataset_name, dataset_type, args):
-    """Determine judge kwargs based on dataset name and type.
+def validate_default_judge_model(model):
+    if model is None:
+        return
+    if not isinstance(model, str) or not model:
+        raise TypeError('A default judge model must be a non-empty string or None.')
 
-    Uses run.py's logic as the canonical source for dataset-specific judge model
-    assignments, with additional entries from run_api.py (Video-MME).
-    Supports both local and API modes with mode-specific fallbacks.
-    """
+
+def get_judge_kwargs(args, *, dataset):
+    """Collect runtime judge kwargs after the dataset has been instantiated."""
     # Determine nproc with mode-specific fallback
     if args.judge_api_nproc is not None:
         nproc = args.judge_api_nproc
@@ -343,73 +338,10 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
     if args.judge is not None:
         judge_kwargs['model'] = args.judge
     else:
-        if dataset_type in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro'] or listinstr(
-            ['moviechat1k', 'mme-reasoning'], dataset_name.lower()
-        ):
-            if listinstr(['WeMath', 'MME-Reasoning'], dataset_name):
-                judge_kwargs['model'] = 'gpt-4o-mini'
-            elif listinstr(['VisualPuzzles'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            elif listinstr(['PuzzleVQA'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            elif listinstr(['VisuLogic'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            else:
-                judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
-            if listinstr(['LLaVABench_KO'], dataset_name):
-                judge_kwargs['model'] = 'gpt-4o-0806'
-            else:
-                judge_kwargs['model'] = 'gpt-4-turbo'
-        elif listinstr(['VGRPBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(
-            ['MathVista', 'MathVerse', 'MathVision', 'LENS', 'DynaMath', 'VL-RewardBench',
-             'LogicVista', 'MOAT', 'OCR_Reasoning', 'VTCBench', 'Asclepius',
-             'MMSafetyBench', 'MSSBench', 'SIUO', 'SIUO_GEN', 'XSTest', 'Flames'], dataset_name
-        ):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['OlympiadBench'], dataset_name):
-            use_api_judger = judge_kwargs.get("olympiad_use_api_judger", False)
-            if use_api_judger:
-                judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(
-            ['MMLongBench_32K', 'MMLongBench_128K', 'MMLongBench_256K', 'MMLongBench_512K'], dataset_name
-        ):
-            judge_kwargs['model'] = 'gpt-5.5-2026-04-24'
-        elif listinstr(
-            ['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench',
-             'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name
-        ):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['ChartMimic'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['VDC'], dataset_name):
-            judge_kwargs['model'] = 'llama31-8b'
-        elif listinstr(['Video_MMLU_QA', 'Video_MMLU_CAP'], dataset_name):
-            judge_kwargs['model'] = 'qwen-72b'
-        elif listinstr(['MMVMBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['CVQA_EN', 'CVQA_LOC'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['M4Bench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['AyaVisionBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['MathCanvas'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1-2025-04-14'
-        elif listinstr(['MMReason'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['CoreCognition'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['WorldVQA'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-1120'
-        elif listinstr(['Video-MME'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['MaCBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['SciDocBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
+        default_model = dataset.get_default_judge_model(judge_kwargs)
+        validate_default_judge_model(default_model)
+        if default_model is not None:
+            judge_kwargs['model'] = default_model
 
     if args.use_verifier:
         judge_kwargs['use_verifier'] = True
@@ -754,8 +686,7 @@ def run_local_mode(args):
                             )
                         continue
 
-                judge_dataset_name = get_judge_dataset_name(dataset_name, args.data_config)
-                judge_kwargs = get_judge_kwargs(judge_dataset_name, dataset.TYPE, args)
+                judge_kwargs = get_judge_kwargs(args, dataset=dataset)
                 judge_model = judge_kwargs.get('model', '')
 
                 if RANK == 0:
@@ -1138,8 +1069,7 @@ def run_api_mode(args):
                 logger.info(f'{ds_name} requires special handling, skipped in pipeline.')
                 continue
 
-            judge_dataset_name = get_judge_dataset_name(ds_name, args.data_config)
-            judge_kwargs = get_judge_kwargs(judge_dataset_name, dataset.TYPE, args)
+            judge_kwargs = get_judge_kwargs(args, dataset=dataset)
             judge_model = judge_kwargs.get('model', '')
             logger.info(f'Judge kwargs: {judge_kwargs}')
 

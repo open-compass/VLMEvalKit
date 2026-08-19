@@ -108,7 +108,6 @@ def SFE_auxeval(model, data):
 
 
 class SFE(ImageVQADataset):
-
     DATASET_URL = {
         'SFE': 'https://opencompass.openxlab.space/utils/VLMEval/SFE.tsv',
         'SFE-zh': 'https://opencompass.openxlab.space/utils/VLMEval/SFE-zh.tsv'

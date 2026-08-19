@@ -241,6 +241,9 @@ class VizWiz(ImageBaseDataset):
 
 class VTCBench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     _DATASET_PATH = "https://huggingface.co/datasets/MLLM-CL/VTCBench"
     # Dataset URL mapping - points to different splits of HuggingFace dataset
     DATASET_URL = {
@@ -571,6 +574,9 @@ class OCRBench(ImageBaseDataset):
 
 class MathVista(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MathVista_MINI':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'
@@ -700,6 +706,9 @@ class MathVista(ImageBaseDataset):
 
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MathVerse_MINI':
         'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
@@ -842,6 +851,9 @@ class MathVerse(ImageBaseDataset):
 
 class MathVision(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MathVision':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVision.tsv',
@@ -984,6 +996,9 @@ class MathVision(ImageBaseDataset):
 
 class LENS(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'LENS-CN-QA':
         'https://huggingface.co/datasets/songlier/LENS/resolve/main/LENS-CN-QA.tsv',
@@ -1274,6 +1289,13 @@ class Physics_yale(ImageBaseDataset):
 
 class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
+
+    def get_default_judge_model(self, judge_kwargs=None):
+        judge_kwargs = judge_kwargs or {}
+        if judge_kwargs.get('olympiad_use_api_judger', False):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(judge_kwargs)
+
     DATASET_URL = {
         'OlympiadBench':
         'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench.tsv',
@@ -1704,6 +1726,9 @@ class SeePhys(ImageBaseDataset):
 
 class LogicVista(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'LogicVista':
         'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
@@ -1893,6 +1918,9 @@ class MME_CoT(ImageBaseDataset):
 
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+
     DATASET_URL = {
         'LLaVABench':
         'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'
@@ -1934,6 +1962,8 @@ class LLaVABench(ImageBaseDataset):
 
 class LLaVABench_KO(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-0806'
+
     DATASET_URL = {
         'LLaVABench_KO':
         'https://huggingface.co/datasets/NCSOFT/K-LLaVA-W/resolve/main/LLaVABench_KO.tsv'
@@ -1976,6 +2006,8 @@ class LLaVABench_KO(ImageBaseDataset):
 
 class VGRPBench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     DATASET_URL = {
         'VGRPBench':
@@ -2038,6 +2070,9 @@ class VGRPBench(ImageBaseDataset):
 
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+
     DATASET_URL = {
         'MMVet':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
@@ -3317,6 +3352,9 @@ class CountBenchQA(ImageVQADataset):
 
 class OCR_Reasoning(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'OCR_Reasoning':
         'https://opencompass.openxlab.space/utils/VLMEval/OCR_Reasoning.tsv'
@@ -3609,6 +3647,8 @@ class Omni3DBench(ImageBaseDataset):
 
 class MMEReasoning(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {'MME-Reasoning': 'https://huggingface.co/datasets/U4R/MME-Reasoning/blob/main/MME_Reasoning.tsv'}
     DATASET_MD = {'MME-Reasoning': 'b243f44778782d3821523689f6b40a1e'}
 
@@ -3804,6 +3844,9 @@ class MMEReasoning(ImageBaseDataset):
 
 class MMVMBench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+
     DATASET_URL = {
         'MMVMBench':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVMBench.tsv'
@@ -3986,6 +4029,9 @@ class OCRBench_v2(ImageBaseDataset):
 
 class AyaVisionBench(ImageVQADataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
+
     DATASET_URL = {
         "AyaVisionBench":
             "https://huggingface.co/datasets/timothycdc/"
@@ -4065,6 +4111,9 @@ class AyaVisionBench(ImageVQADataset):
 
 class MathCanvas(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1-2025-04-14'
+
     DATASET_URL = {
         "MathCanvas-Bench":
         "https://huggingface.co/datasets/shiwk24/MathCanvas-Bench/resolve/main/MathCanvas_Bench_VLMEvalKit.tsv"
@@ -4163,6 +4212,9 @@ class MathCanvas(ImageBaseDataset):
 
 class MMReason(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
+
     mini_path = 'https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true'
     DATASET_URL = {
         'MMReason_testmini': mini_path,
@@ -4257,6 +4309,8 @@ class MMReason(ImageBaseDataset):
 
 class CoreCognition(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
 
     DATASET_URL = {
         'CoreCognition': 'https://huggingface.co/datasets/ZTWHHH/CoreCognition/resolve/main/CoreCognition.tsv'

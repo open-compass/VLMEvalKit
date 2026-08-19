@@ -781,6 +781,8 @@ class SciDocBench(ImageBaseDataset):
 
     TYPE = 'VQA'
 
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'SciDocBench': 'https://opencompass.openxlab.space/utils/VLMEval/SciDocBench.tsv',
     }

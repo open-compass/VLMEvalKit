@@ -184,6 +184,8 @@ class VideoMMEv2(VideoBaseDataset):
 
     TYPE = 'Video-MCQ'
 
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     def __init__(self, dataset='Video-MME-v2', nframe=64, fps=-1,
                  with_subtitle=False, subtitle_interleave=False, reasoning=False,
                  resize_target_area=False):

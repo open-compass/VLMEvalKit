@@ -22,6 +22,7 @@ class MovieChat1k(VideoBaseDataset):
     MD5 = '7c0aa7e10de1cddb37af42b4abc9a2dd'
 
     TYPE = 'Video-VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     def __init__(self, dataset='MovieChat1k', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
