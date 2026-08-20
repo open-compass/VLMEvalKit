@@ -1,7 +1,7 @@
 import re
 from collections import deque
 
-import nltk
+import editdistance
 from apted import APTED, Config
 from apted.helpers import Tree
 from tqdm import tqdm
@@ -67,7 +67,7 @@ class CustomConfig(Config):
             return 1.0
         if node1.tag == "td":
             if node1.content or node2.content:
-                return nltk.edit_distance(node1.content, node2.content) / max(len(node1.content), len(node2.content))
+                return editdistance.eval(node1.content, node2.content) / max(len(node1.content), len(node2.content))
         return 0.0
 
 
@@ -197,7 +197,7 @@ class ParsingEvaluator(BaseMetric):
             pred = pred.replace(' ', '').replace('\n', '')
             gt = gt.replace(' ', '').replace('\n', '')
 
-            edit_dist = nltk.edit_distance(pred, gt) / max(len(pred), len(gt))
+            edit_dist = editdistance.eval(pred, gt) / max(len(pred), len(gt))
             results.append(1 - edit_dist)
 
         score = sum(results) / len(results)
@@ -246,7 +246,7 @@ class ParsingEvaluator(BaseMetric):
             elif op_name == 'molecular':
                 pred = pred.replace("\n", "").replace(" ", "").replace("<smiles>", "").replace("</smiles>", "")
                 gt = gt.replace(" ", "")
-            edit_dist = nltk.edit_distance(pred, gt) / max(len(pred), len(gt))
+            edit_dist = editdistance.eval(pred, gt) / max(len(pred), len(gt))
             results.append(1 - edit_dist)
         score = sum(results) / len(results)
         return score
