@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, localize_df, toliststr
+from .activevision import ActiveVisionDataset
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
 from .babyvision import BabyVision
@@ -312,7 +313,7 @@ IMAGE_DATASET = [
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif,
-    BabyVision, WildprobeDataset, PerceptionBench, SUPERChemDataset,
+    BabyVision, WildprobeDataset, PerceptionBench, SUPERChemDataset, ActiveVisionDataset,
 ]
 
 # add by EASI team
