@@ -19,6 +19,7 @@ from .lmdeploy import LMDeployAPI, LMDeployWrapper
 from .minimax_api import MiniMaxAPI
 from .mug_u import MUGUAPI
 from .openai_sdk import OpenAISDKWrapper
+from .orcarouter import OrcaRouterAPI
 from .qwen_api import QwenAPI
 from .qwen_vl_api import Qwen2VLAPI, QwenVLAPI, QwenVLWrapper
 from .rbdashmm_chat3_5_api import RBdashMMChat3_5_38B_API, RBdashMMChat3_78B_API
@@ -42,5 +43,5 @@ __all__ = [
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
     'VideoChatOnlineV2API', 'TeleMM2_API', 'TeleMM2Thinking_API', 'TogetherAPI', 'GCPVertexAPI',
-    'BedrockAPI', 'SenseChatVisionV2API', 'MiniMaxAPI', 'LiteLLMAPI',
+    'BedrockAPI', 'SenseChatVisionV2API', 'MiniMaxAPI', 'LiteLLMAPI', 'OrcaRouterAPI',
 ]

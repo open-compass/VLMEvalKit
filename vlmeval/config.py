@@ -482,6 +482,29 @@ api_models = {
         max_tokens=2048,
         retry=10,
     ),
+    # OrcaRouter — OpenAI-compatible gateway (set ORCAROUTER_API_KEY)
+    # Docs: https://www.orcarouter.ai
+    "OrcaRouter_Auto": partial(
+        api.OrcaRouterAPI,
+        model="orcarouter/auto",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "OrcaRouter_DeepSeek_V4_Pro": partial(
+        api.OrcaRouterAPI,
+        model="orcarouter/deepseek/deepseek-v4-pro",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "OrcaRouter_Qwen3_5_Flash": partial(
+        api.OrcaRouterAPI,
+        model="orcarouter/qwen/qwen3.5-flash",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
     # LiteLLM — unified gateway to 100+ providers (pip install litellm)
     # Use any litellm model string. Set provider-specific env vars for auth.
     # Docs: https://docs.litellm.ai/docs/providers
