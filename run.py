@@ -1191,6 +1191,8 @@ def run_api_mode(args):
             # Complete the dataset config
             if dataset.MODALITY == 'VIDEO':
                 dataset_type = 'video'
+            elif dataset.MODALITY == 'AUDIO':
+                dataset_type = 'audio'
             elif dataset.TYPE == 'MT':
                 dataset_type = 'mt'
             else:

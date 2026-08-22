@@ -1,10 +1,10 @@
-import base64
 import os
 from pathlib import Path
 
 import numpy as np
 
-from ..smp import encode_image_to_base64, get_logger
+from ..smp import (audio_mime_type, encode_file_to_base64, encode_image_to_base64, get_logger,
+                   is_audio_media_url)
 from .adapters import build_adapter
 from .openai_sdk import OpenAISDKWrapper
 
@@ -17,12 +17,14 @@ class LMDeployWrapper(OpenAISDKWrapper):
     Handles lmdeploy-specific details:
 
     * ``LMDEPLOY_API_KEY`` / ``LMDEPLOY_API_BASE`` environment variables
-    * lmdeploy image-encoding format via :meth:`prepare_itlist`
+    * lmdeploy image/video/audio encoding format via :meth:`prepare_itlist`
 
     Model-specific prompt building and payload post-processing are
     delegated to a :class:`~vlmeval.api.adapters.ModelAdapter` that is
     selected automatically or specified via ``custom_prompt``.
     """
+
+    allowed_types = ['text', 'image', 'video', 'audio']
 
     def __init__(self,
                  model,
@@ -51,7 +53,8 @@ class LMDeployWrapper(OpenAISDKWrapper):
         self.local_media = local_media or (os.getenv('VLMEVAL_LOCAL_MEDIA', '0') == '1')
         if self.local_media:
             logger.info(
-                f'lmdeploy: `local_media={self.local_media}`, pass local media file path directly.')
+                f'lmdeploy: `local_media={self.local_media}`, '
+                'pass local media file path directly.')
         else:
             logger.info(
                 f'lmdeploy: `local_media={self.local_media}`, pass media file base64.')
@@ -83,7 +86,7 @@ class LMDeployWrapper(OpenAISDKWrapper):
 
     def prepare_itlist(self, inputs):
         assert np.all([isinstance(x, dict) for x in inputs])
-        multimedia = sum(x['type'] in ('image', 'video') for x in inputs)
+        multimedia = sum(x['type'] in ('image', 'video', 'audio') for x in inputs)
         if multimedia:
             content_list = []
             for msg in inputs:
@@ -104,18 +107,30 @@ class LMDeployWrapper(OpenAISDKWrapper):
                     if self.local_media:
                         video_data_url = f"file://{Path(msg['value']).resolve()}"
                     else:
-                        with open(msg['value'], 'rb') as f:
-                            video_b64 = base64.b64encode(f.read()).decode("utf-8")
-                        ext = Path(msg['value']).suffix
+                        video_b64 = encode_file_to_base64(msg['value'])
+                        ext = Path(msg['value']).suffix.lower()
                         mime_map = {
                             ".mp4": "video/mp4", ".avi": "video/avi", ".mkv": "video/x-matroska",
-                            ".mov": "video/quicktime", ".webm": "video/webm", ".flv": "video/x-flv",
+                            ".mov": "video/quicktime", ".webm": "video/webm",
+                            ".flv": "video/x-flv",
                         }
                         mime = mime_map.get(ext, "video/mp4")
                         video_data_url = f"data:{mime};base64,{video_b64}"
                     extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
                     vid_struct = dict(url=video_data_url, **extra_args)
                     content_list.append(dict(type='video_url', video_url=vid_struct))
+                elif msg['type'] == 'audio':
+                    if is_audio_media_url(msg['value']):
+                        audio_data_url = msg['value']
+                    elif self.local_media:
+                        audio_data_url = Path(msg['value']).resolve().as_uri()
+                    else:
+                        audio_b64 = encode_file_to_base64(msg['value'])
+                        mime = audio_mime_type(msg['value'])
+                        audio_data_url = f'data:{mime};base64,{audio_b64}'
+                    extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
+                    aud_struct = dict(url=audio_data_url, **extra_args)
+                    content_list.append(dict(type='audio_url', audio_url=aud_struct))
         else:
             assert all(x['type'] == 'text' for x in inputs)
             text = '\n'.join(x['value'] for x in inputs)
