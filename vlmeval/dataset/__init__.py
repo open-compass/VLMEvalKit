@@ -70,6 +70,7 @@ from .m3oralbench import M3oralBenchDataset
 from .m4bench import M4Bench
 from .macbench import MaCBench
 from .matbench import MATBench
+from .MDPBench.mdpbench import MDPBench
 from .medq_deg_bench import MedQDEGBenchDataset
 from .medqbench_caption import MedqbenchCaptionDataset
 from .medqbench_mcq import MedqbenchMCQDataset
@@ -291,7 +292,7 @@ IMAGE_DATASET = [
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
     OlympiadBench, SeePhys, WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,  # noqa: E501
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
-    CreationMMBenchDataset, HLEDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
+    CreationMMBenchDataset, HLEDataset, ImageShortQADataset, MMAlignBench, OmniDocBench, MDPBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
     LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot, VenusBench_GD,
     ScreenSpotV2, OSWorld_G, VBGD, MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
