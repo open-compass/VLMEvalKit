@@ -162,6 +162,8 @@ class SimpleVQA(ImageBaseDataset):
                     messages=[{"role": "user", "content": prompt}],
                     temperature=1
                 )
+                if not response.choices or response.choices[0].message is None:
+                    raise ValueError("LLM returned empty or filtered response")
                 res = response.choices[0].message.content
                 res = res.replace("```json", "").replace("```python", "").replace("```", "").strip()
                 if res[-1] != "}":
