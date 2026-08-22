@@ -71,8 +71,16 @@ class ImageVQADataset(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         if judge_kwargs.get('use_verifier', False):
             return self.evaluate_verifier(eval_file, **judge_kwargs)
-        else:
-            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+        # Opt-in LLM-judge rescoring (pass --judge <model>): the default string /
+        # numeric metrics count format-only variants (e.g. '27%' vs '0.27') as
+        # wrong. With a judge configured, strict-failed samples are re-checked
+        # for semantic equivalence; strict scores are reported unchanged and
+        # '<split>_judge' columns are appended.
+        if (listinstr(['TextVQA', 'ChartQA', 'DocVQA', 'InfoVQA'], self.dataset_name)
+                and judge_kwargs.get('model')
+                and judge_kwargs.get('model') != 'exact_matching'):
+            return self.evaluate_with_llm_judge(eval_file, **judge_kwargs)
+        return self.evaluate_heuristic(eval_file, **judge_kwargs)
 
     # It returns a DataFrame
     def evaluate_heuristic(self, eval_file, **judge_kwargs):
@@ -127,6 +135,108 @@ class ImageVQADataset(ImageBaseDataset):
                     # [np.mean(x['match']) >= full_score_weight for x in sub]
                     hit = hit_calculate(sub, dataset)
                     ret[c] = np.mean(hit) * 100
+        ret = d2df(ret)
+        ret.round(2)
+
+        result_file = get_intermediate_file_path(eval_file, '_acc')
+        dump(ret, result_file)
+        return ret
+
+    def evaluate_with_llm_judge(self, eval_file, **judge_kwargs):
+        """Strict metric + LLM-judge rescoring of strict-failed samples.
+
+        The strict columns are identical to evaluate_heuristic's output. A
+        sample counts as correct in the appended '<split>_judge' columns when
+        strict passed (per-sample score >= 0.5) or the judge marked the answer
+        semantically equivalent to the ground truth. Only strict-failed
+        samples are sent to the judge.
+        """
+        from .utils.llm_judge_vqa import LLMJudge_auxeval
+        from .utils.vqa_eval import hit_calculate, process_line
+
+        data = load(eval_file)
+        dataset = self.dataset_name
+        assert 'answer' in data and 'prediction' in data
+        data['prediction'] = [str(x) for x in data['prediction']]
+        data['answer'] = [str(x) for x in data['answer']]
+        lt = len(data)
+        pool = mp.Pool(16)
+        lines = [data.iloc[i] for i in range(lt)]
+        if listinstr(['TextVQA'], dataset):
+            res = pool.map(partial(process_line, method='vqa_score'), lines)
+        elif listinstr(['ChartQA'], dataset):
+            res = pool.map(partial(process_line, method='relaxed_accuracy'), lines)
+        elif listinstr(['DocVQA', 'InfoVQA'], dataset):
+            res = pool.map(partial(process_line, method='anls'), lines)
+        else:
+            res = pool.map(process_line, lines)
+
+        # Per-sample strict score; >= 0.5 counts as pass and skips the judge.
+        sample_hit = hit_calculate(res, dataset)
+        strict_match = [bool(h >= 0.5) for h in sample_hit]
+
+        judge_name = judge_kwargs['model']
+        tmp_file = get_intermediate_file_path(eval_file, f'_llm_judge_{judge_name}', 'pkl')
+        ans = load(tmp_file) if osp.exists(tmp_file) else {}
+        todo, keys = [], []
+        for i in range(lt):
+            idx = lines[i]['index']
+            if not strict_match[i] and idx not in ans:
+                todo.append(lines[i])
+                keys.append(idx)
+        if len(todo):
+            nproc = judge_kwargs.pop('nproc', 4)
+            model = build_judge(max_tokens=16, **judge_kwargs)
+            assert model.working(), 'LLM-judge rescoring requires a working judge endpoint\n' + DEBUG_MESSAGE
+            tups = [(model, line, dataset) for line in todo]
+            track_progress_rich(
+                LLMJudge_auxeval,
+                tups,
+                nproc=nproc,
+                chunksize=nproc,
+                keys=keys,
+                save=tmp_file,
+            )
+            ans = load(tmp_file)
+            for k in keys:
+                assert k in ans
+        judge_flags = [
+            strict_match[i] or str(ans.get(lines[i]['index'], {}).get('res')) == '1'
+            for i in range(lt)
+        ]
+
+        data['eval_gt'] = [r['gt'] for r in res]
+        data['eval_pred'] = [r['pred'] for r in res]
+        data['eval_match'] = [r['match'] for r in res]
+        data['eval_score'] = [np.mean(r['match']) for r in res]
+        data['llm_judge_match'] = judge_flags
+        detailed_result_file = get_intermediate_file_path(eval_file, '_results')
+        dump(data, detailed_result_file)
+
+        # Strict aggregation identical to evaluate_heuristic; judged columns appended.
+        ret = dict()
+        judged = dict()
+        if 'split' in data:
+            splits = set(data['split'])
+            for sp in splits:
+                sub = [r for line, r in zip(lines, res) if line['split'] == sp]
+                ret[sp] = np.mean(hit_calculate(sub, dataset)) * 100
+                subj = [j for line, j in zip(lines, judge_flags) if line['split'] == sp]
+                judged[f'{sp}_judge'] = np.mean(subj) * 100
+            ret['Overall'] = np.mean(hit_calculate(res, dataset)) * 100
+            judged['Overall_judge'] = np.mean(judge_flags) * 100
+        else:
+            ret['Overall'] = np.mean(hit_calculate(res, dataset)) * 100
+            judged['Overall_judge'] = np.mean(judge_flags) * 100
+            if 'category' in data:
+                cates = list(set(data['category']))
+                cates.sort()
+                for c in cates:
+                    sub = [r for line, r in zip(lines, res) if line['category'] == c]
+                    ret[c] = np.mean(hit_calculate(sub, dataset)) * 100
+                    subj = [j for line, j in zip(lines, judge_flags) if line['category'] == c]
+                    judged[f'{c}_judge'] = np.mean(subj) * 100
+        ret.update(judged)
         ret = d2df(ret)
         ret.round(2)
 
@@ -523,11 +633,13 @@ class OCRBench(ImageBaseDataset):
         data = load(eval_file)
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
+        strict_flags = []
         for i in tqdm(range(len(lines))):
             line = lines[i]
             predict = str(line['prediction'])
             answers = eval(line['answer'])
             category = line['category']
+            hit = False
             if category == 'Handwritten Mathematical Expression Recognition':
                 for j in range(len(answers)):
                     answer = answers[j].strip().replace('\n',
@@ -535,15 +647,60 @@ class OCRBench(ImageBaseDataset):
                     predict = predict.strip().replace('\n',
                                                       ' ').replace(' ', '')
                     if answer in predict:
-                        OCRBench_score[category] += 1
+                        hit = True
                         break
             else:
                 for j in range(len(answers)):
                     answer = answers[j].lower().strip().replace('\n', ' ')
                     predict = predict.lower().strip().replace('\n', ' ')
                     if answer in predict:
-                        OCRBench_score[category] += 1
+                        hit = True
                         break
+            if hit:
+                OCRBench_score[category] += 1
+            strict_flags.append(hit)
+
+        # Opt-in LLM-judge rescoring (pass --judge <model>): substring matching
+        # misses paraphrased-but-correct readings; strict-failed samples are
+        # re-checked and '<key>_judge' aggregates appended below (strict scores
+        # reported unchanged).
+        judge_flags = None
+        if judge_kwargs.get('model') and judge_kwargs.get('model') != 'exact_matching':
+            from .utils.llm_judge_vqa import LLMJudge_auxeval
+            judge_name = judge_kwargs['model']
+            tmp_file = get_intermediate_file_path(eval_file, f'_llm_judge_{judge_name}', 'pkl')
+            ans = load(tmp_file) if osp.exists(tmp_file) else {}
+            todo = [
+                i for i in range(len(lines))
+                if not strict_flags[i] and lines[i]['index'] not in ans
+            ]
+            if len(todo):
+                nproc = judge_kwargs.pop('nproc', 4)
+                model = build_judge(max_tokens=16, **judge_kwargs)
+                assert model.working(), \
+                    'LLM-judge rescoring requires a working judge endpoint\n' + DEBUG_MESSAGE
+                tups, keys = [], []
+                for i in todo:
+                    line = lines[i]
+                    tups.append((model, dict(
+                        question=str(line['question']),
+                        answer='; '.join(str(a) for a in eval(line['answer'])),
+                        prediction=str(line['prediction']),
+                    ), self.dataset_name if hasattr(self, 'dataset_name') else 'OCRBench'))
+                    keys.append(line['index'])
+                track_progress_rich(
+                    LLMJudge_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=keys,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+            judge_flags = [
+                strict_flags[i] or str(ans.get(lines[i]['index'], {}).get('res')) == '1'
+                for i in range(len(lines))
+            ]
 
         final_score_dict = {}
         final_score_dict['Text Recognition'] = \
@@ -564,6 +721,31 @@ class OCRBench(ImageBaseDataset):
              + final_score_dict['Handwritten Mathematical Expression Recognition'])
         final_score_dict['Final Score Norm'] = (
             float(final_score_dict['Final Score']) / 10)
+        if judge_flags is not None:
+            judge_score = {k: 0 for k in OCRBench_score}
+            for i in range(len(lines)):
+                if judge_flags[i]:
+                    judge_score[lines[i]['category']] += 1
+            final_score_dict['Text Recognition_judge'] = \
+                (judge_score['Regular Text Recognition'] + judge_score['Irregular Text Recognition']
+                 + judge_score['Artistic Text Recognition'] + judge_score['Handwriting Recognition']
+                 + judge_score['Digit String Recognition'] + judge_score['Non-Semantic Text Recognition'])
+            final_score_dict['Scene Text-centric VQA_judge'] = judge_score[
+                'Scene Text-centric VQA']
+            final_score_dict['Doc-oriented VQA_judge'] = judge_score[
+                'Doc-oriented VQA']
+            final_score_dict['Key Information Extraction_judge'] = judge_score[
+                'Key Information Extraction']
+            final_score_dict['Handwritten Mathematical Expression Recognition_judge'] = \
+                (judge_score['Handwritten Mathematical Expression Recognition'])
+            final_score_dict['Final Score_judge'] = \
+                (final_score_dict['Text Recognition_judge']
+                 + final_score_dict['Scene Text-centric VQA_judge']
+                 + final_score_dict['Doc-oriented VQA_judge']
+                 + final_score_dict['Key Information Extraction_judge']
+                 + final_score_dict['Handwritten Mathematical Expression Recognition_judge'])
+            final_score_dict['Final Score Norm_judge'] = (
+                float(final_score_dict['Final Score_judge']) / 10)
         score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(final_score_dict, score_pth)
         return final_score_dict
