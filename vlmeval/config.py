@@ -2647,6 +2647,10 @@ model_groups.extend([bagel_series, spatial_related_models, sensenova_si_series])
 nanovlm_series = {
     "nanoVLM-460M-8k": partial(vlm.NanoVLM, model_path="lusxvr/nanoVLM-460M-8k"),
     "nanoVLM-230M-8k": partial(vlm.NanoVLM, model_path="lusxvr/nanoVLM-230M-8k"),
+    # Hub-packaged VisionPsy checkpoints (trust_remote_code); load via the same
+    # adapter, or with use_vllm=True through the visionpsy-vllm-plugin.
+    "VisionPsy-Nano-460M": partial(vlm.NanoVLM, model_path="qvac/VisionPsy-Nano-460M"),
+    "VisionPsy-Nano-460M-Flash": partial(vlm.NanoVLM, model_path="qvac/VisionPsy-Nano-460M-Flash"),
 }
 
 model_groups.append(nanovlm_series)
