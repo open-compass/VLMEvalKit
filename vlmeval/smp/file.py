@@ -269,10 +269,10 @@ def load(f, fmt=None):
         return pd.read_excel(f)
 
     def load_csv(f):
-        return pd.read_csv(f)
+        return pd.read_csv(f, keep_default_na=False)
 
     def load_tsv(f):
-        return pd.read_csv(f, sep='\t')
+        return pd.read_csv(f, sep='\t', keep_default_na=False)
 
     import validators
     if validators.url(f):
