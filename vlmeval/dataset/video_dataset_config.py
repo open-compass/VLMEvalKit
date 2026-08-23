@@ -256,6 +256,9 @@ revsi_dataset = {
     'revsi_64_frame': partial(ReVSI, dataset='ReVSI', nframe=64),
     'revsi_all_frame': partial(ReVSI, dataset='ReVSI', nframe=None),
 }
+sisbench_dataset = {
+    'SIS-Bench_32frame': partial(SISBench, dataset='SIS-Bench', nframe=32),
+}
 
 dream_1k_dataset = {
     'DREAM-1K_8frame': partial(DREAM, dataset='DREAM-1K', nframe=8),
@@ -388,7 +391,8 @@ dataset_groups = [
     longvideobench_dataset, mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
-    video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset
+    video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset,
+    sisbench_dataset
 ]
 
 # add by EASI team

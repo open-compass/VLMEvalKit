@@ -5,14 +5,7 @@ from pathlib import Path
 import pandas as pd
 from huggingface_hub import snapshot_download
 
-from vlmeval.smp import (
-    dump,
-    get_cache_path,
-    get_file_extension,
-    get_intermediate_file_path,
-    load,
-)
-
+from vlmeval.smp import dump, get_cache_path, get_file_extension, get_intermediate_file_path, load
 from .utils.multiple_choice import extract_characters_regex
 from .video_base import VideoBaseDataset
 
