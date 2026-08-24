@@ -77,12 +77,13 @@ class molmo(BaseModel):
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
         prefix = None
+        ai2d_options = None
         if dataset in ['MMMU_DEV_VAL', 'MMMU_TEST']:
             prompt = self.build_prompt_mcq_vqa(line)
         elif dataset in ['MathVista_MINI']:
             prompt = self.build_prompt_mathvista(line)
         elif dataset in ['AI2D_TEST', 'AI2D_TEST_NO_MASK']:
-            prompt = self.build_prompt_ai2d(line)
+            prompt, ai2d_options = self.build_prompt_ai2d(line)
         elif dataset is not None and listinstr(list(DATASET_PROMPTS.keys()), dataset):
             prefix = DATASET_PROMPTS[dataset]  # rest of supervised datasets are in VQA format
             prompt = self.build_prompt_vqa(line, prefix)
@@ -92,6 +93,9 @@ class molmo(BaseModel):
             prompt = self.build_prompt_vqa(line)
 
         message = [dict(type='text', value=prompt)]
+        if ai2d_options is not None:
+            # The no-letter prompt strips the option letters, so carry them for generate_inner
+            message[0]['ai2d_options'] = ai2d_options
         message.extend([dict(type='image', value=s) for s in tgt_path])
 
         # interleave dataset
@@ -127,9 +131,9 @@ class molmo(BaseModel):
                 prompt += f'\n{item}'
             prompt = f"ai2_diagram_no_letter: {prompt}"
             # prompt = self.build_prompt_multiple_choice(line, prefix='ai2_diagram_no_letter:')
-        else:
-            prompt = self.build_prompt_multiple_choice(line, prefix='ai2_diagram:')
-        return prompt
+            return prompt, options
+        prompt = self.build_prompt_multiple_choice(line, prefix='ai2_diagram:')
+        return prompt, None
 
     def build_prompt_mcq_vqa(self, line):
         if line['question_type'] == 'multiple-choice':
@@ -156,6 +160,21 @@ class molmo(BaseModel):
             prompt = f"{prefix} {question}"
 
         return prompt
+
+    @staticmethod
+    def map_ai2d_answer(options, generated_text):
+        # Map to the option's key, not its position: the letters are not always a
+        # contiguous A/B/C prefix (index 83301 has an empty `A` column, so it is B/C/D).
+        def normalize(text):
+            return str(text).strip().strip(string.punctuation).strip().lower()
+
+        keys = list(options.keys())
+        normalized = [normalize(value) for value in options.values()]
+        target = normalize(generated_text)
+        if target in normalized:
+            return keys[normalized.index(target)]
+        logging.warning(f'Molmo AI2D: reply {generated_text!r} matches no option in {options}.')
+        return generated_text
 
     def build_prompt_vqa(self, line, prefix=None):
         question = line['question']
@@ -200,12 +219,9 @@ class molmo(BaseModel):
         generated_text = self.processor.tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
 
         # AI2D: map direct answer to letter option
-        if dataset in ['AI2D_TEST', 'AI2D_TEST_NO_MASK']:
-            # 'ai2_diagram_no_letter: Which of the following is the magma chamber?\nK\nB\nC\nH'
-            if 'ai2_diagram_no_letter' in prompt:
-                options = prompt.split('\n')[1:]
-                answer = options.index(generated_text)
-                generated_text = chr(answer + ord('A'))
+        ai2d_options = next((m['ai2d_options'] for m in message if 'ai2d_options' in m), None)
+        if ai2d_options is not None:
+            generated_text = self.map_ai2d_answer(ai2d_options, generated_text)
 
         # print(dataset, prompt, generated_text, inputs['images'].size()) # uncomment to debug
 
