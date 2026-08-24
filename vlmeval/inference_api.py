@@ -317,12 +317,17 @@ class APIEvalPipeline:
         """Load finished inference result from previous runs."""
         cfg = self.states[dataset_name]
         results = {}
+        selected_indices = {str(index) for index in cfg.dataset_obj.data['index']}
 
         # 1. Try to load checkpoint at first.
         checkpoint_file = self._get_checkpoint_file(dataset_name)
         if checkpoint_file.exists():
             try:
-                results = load(str(checkpoint_file))
+                results = {
+                    str(index): prediction
+                    for index, prediction in load(str(checkpoint_file)).items()
+                    if str(index) in selected_indices
+                }
                 if self.retry_failed:
                     results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
                 logger.info(f"   [{dataset_name}] Loaded {len(results)} results from checkpoint")
@@ -334,17 +339,20 @@ class APIEvalPipeline:
         if result_path.exists():
             try:
                 data = load(str(result_path))
+                if isinstance(data, (list, dict)):
+                    data = pd.DataFrame(data)
                 if isinstance(data, pd.DataFrame):
                     if self.retry_failed:
                         existing_results = {
                             str(idx): pred
                             for idx, pred in zip(data['index'], data['prediction'])
-                            if FAIL_MSG not in str(pred)
+                            if str(idx) in selected_indices and FAIL_MSG not in str(pred)
                         }
                     else:
                         existing_results = {
                             str(idx): pred
                             for idx, pred in zip(data['index'], data['prediction'])
+                            if str(idx) in selected_indices
                         }
                     results.update(existing_results)
                     logger.info(f"   [{dataset_name}] Loaded {len(existing_results)} "
@@ -352,19 +360,25 @@ class APIEvalPipeline:
             except Exception as e:
                 logger.warning(f"   [{dataset_name}] Failed to load result file: {e}")
 
-        return results
+        return {index: prediction for index, prediction in results.items() if index in selected_indices}
 
     def _save_checkpoint(self, dataset_name: str, result: dict):
         """Save results to checkpoint file threading-safety."""
+        cfg = self.states[dataset_name]
         checkpoint_file = self._get_checkpoint_file(dataset_name)
 
         with self.file_locks[dataset_name]:
+            selected_indices = {str(index) for index in cfg.dataset_obj.data['index']}
             if checkpoint_file.exists():
-                results = load(str(checkpoint_file))
+                results = {
+                    str(index): prediction
+                    for index, prediction in load(str(checkpoint_file)).items()
+                    if str(index) in selected_indices
+                }
             else:
                 results = {}
 
-            results[result['index']] = result['prediction']
+            results[str(result['index'])] = result['prediction']
 
             dump(results, str(checkpoint_file))
 
