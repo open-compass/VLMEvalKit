@@ -87,7 +87,7 @@ class LMDeployWrapper(OpenAISDKWrapper):
         if multimedia:
             content_list = []
             for msg in inputs:
-                if msg['type'] == 'text':
+                if msg['type'] == 'text' and msg['value'].strip():
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
                     if self.local_media:
