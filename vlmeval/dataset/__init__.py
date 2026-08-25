@@ -96,6 +96,7 @@ from .mmrarebench import (MMRarebenchCrossmodal, MMRarebenchDiagnosis, MMRareben
 from .mmsafetybench import MMSafetyBenchDataset
 from .mmsibench import MMSIBench, MMSIVideoBench
 from .moat import MOAT
+from .molrecbench_wild import MolRecBenchWildDataset
 from .moviechat1k import MovieChat1k
 from .mrarebench import MRareBenchDiagnosis, MRareBenchEvidenceVerif
 from .mssbench import MSSBenchDataset
@@ -310,7 +311,7 @@ IMAGE_DATASET = [
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif,
-    BabyVision, SUPERChemDataset,
+    BabyVision, SUPERChemDataset, MolRecBenchWildDataset
 ]
 
 # add by EASI team
