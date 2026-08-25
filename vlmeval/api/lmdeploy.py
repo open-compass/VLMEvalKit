@@ -1,4 +1,5 @@
 import base64
+import math
 import os
 from pathlib import Path
 
@@ -36,6 +37,9 @@ class LMDeployWrapper(OpenAISDKWrapper):
                  custom_prompt=None,
                  video_llm: bool = False,
                  local_media: bool = False,
+                 img_size: int = -1,
+                 total_img_size: int = -1,
+                 max_file_size: int = 1e9,
                  **kwargs):
         self.fail_msg = 'Failed to obtain answer via API. '
         self.timeout = timeout
@@ -49,6 +53,11 @@ class LMDeployWrapper(OpenAISDKWrapper):
 
         self.VIDEO_LLM = video_llm
         self.local_media = local_media or (os.getenv('VLMEVAL_LOCAL_MEDIA', '0') == '1')
+        assert img_size > 0 or img_size == -1
+        self.img_size = img_size
+        assert total_img_size > 0 or total_img_size == -1
+        self.total_img_size = total_img_size
+        self.max_file_size = max_file_size
         if self.local_media:
             logger.info(
                 f'lmdeploy: `local_media={self.local_media}`, pass local media file path directly.')
@@ -81,11 +90,25 @@ class LMDeployWrapper(OpenAISDKWrapper):
     # HTTP message formatting (lmdeploy-specific)
     # ------------------------------------------------------------------
 
+    def _get_image_target_size(self, image_num):
+        image_num = max(image_num, 1)
+        target_size = math.inf
+        if self.img_size > 0:
+            target_size = self.img_size
+        if self.total_img_size > 0:
+            target_size = min(
+                target_size,
+                max(1, int(self.total_img_size / (image_num ** 0.5))),
+            )
+        return -1 if math.isinf(target_size) else target_size
+
     def prepare_itlist(self, inputs):
         assert np.all([isinstance(x, dict) for x in inputs])
         multimedia = sum(x['type'] in ('image', 'video') for x in inputs)
         if multimedia:
             content_list = []
+            image_num = sum(x['type'] == 'image' for x in inputs)
+            image_target_size = self._get_image_target_size(image_num)
             for msg in inputs:
                 if msg['type'] == 'text' and msg['value'].strip():
                     content_list.append(dict(type='text', text=msg['value']))
@@ -95,7 +118,11 @@ class LMDeployWrapper(OpenAISDKWrapper):
                     else:
                         from PIL import Image
                         img = Image.open(msg['value'])
-                        b64 = encode_image_to_base64(img)
+                        b64 = encode_image_to_base64(
+                            img,
+                            target_size=image_target_size,
+                            max_file_size=self.max_file_size,
+                        )
                         image_data_url = f'data:image/jpeg;base64,{b64}'
                     extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
                     img_struct = dict(url=image_data_url, **extra_args)
