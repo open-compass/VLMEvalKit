@@ -61,6 +61,10 @@ class LMDeployWrapper(OpenAISDKWrapper):
         if self.local_media:
             logger.info(
                 f'lmdeploy: `local_media={self.local_media}`, pass local media file path directly.')
+            if img_size != -1 or total_img_size != -1 or max_file_size != 1e9:
+                logger.warning(
+                    'lmdeploy: image encoding parameters `img_size`, `total_img_size`, '
+                    'and `max_file_size` will not take effect when `local_media=True`.')
         else:
             logger.info(
                 f'lmdeploy: `local_media={self.local_media}`, pass media file base64.')
