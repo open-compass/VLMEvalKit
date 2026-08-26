@@ -15,15 +15,15 @@ from vlmeval.smp import LMUDataRoot, decode_base64_to_image_file, load
 from .image_base import ImageBaseDataset
 
 
-SMILES_DATASET = 'MolRecBench_Wild_SMILES'
-SGRAPH_DATASET = 'MolRecBench_Wild_SGraph'
-GRAPH_DATASET = 'MolRecBench_Wild_Graph'
+# SMILES_DATASET = 'MolRecBench_Wild_SMILES'
+# SGRAPH_DATASET = 'MolRecBench_Wild_SGraph'
+# GRAPH_DATASET = 'MolRecBench_Wild_Graph'
 
-DATASET_TRACKS = {
-    SMILES_DATASET: ('SMILES', 'smiles'),
-    SGRAPH_DATASET: ('SGraph', 's_graph'),
-    GRAPH_DATASET: ('Graph', 'graph'),
-}
+# DATASET_TRACKS = {
+#     SMILES_DATASET: ('SMILES', 'smiles'),
+#     SGRAPH_DATASET: ('SGraph', 's_graph'),
+#     GRAPH_DATASET: ('Graph', 'graph'),
+# }
 
 
 class MolRecBenchWildDataset(ImageBaseDataset):
@@ -34,8 +34,8 @@ class MolRecBenchWildDataset(ImageBaseDataset):
 
     # The prepared TSV is currently local. After uploading it, replace these
     # empty values with the same downloadable TSV URL for all three tracks.
-    DATASET_URL = {name: '' for name in DATASET_TRACKS}
-    DATASET_MD5 = {name: None for name in DATASET_TRACKS}
+    DATASET_URL = {"MolRecBench": "http://opencompass.openxlab.space/utils/VLMEval/MolRecBench-Wild.tsv"}
+    DATASET_MD5 = {"MolRecBench": "24e5c7e614f55aa93d648ab45694ae58"}
 
     def __init__(
         self,
