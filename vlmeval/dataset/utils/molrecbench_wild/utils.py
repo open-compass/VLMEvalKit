@@ -419,7 +419,7 @@ def extract_brackets(smiles: str) -> list[str]:
         elif char == "]" and stack:
             start = stack.pop()
             if not stack:
-                results.append(smiles[start + 1 : index])
+                results.append(smiles[start + 1: index])
     return results
 
 
