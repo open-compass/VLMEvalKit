@@ -1,0 +1,122 @@
+You are evaluating whether the model-predicted evidence boxes successfully **recall** each ground-truth (GT) evidence region on a single document page. You will judge **multiple GT boxes at once** for the same page.
+
+The page image contains:
+- **GREEN boxes**: ground-truth evidence regions, each labelled `GOLD[i]` (1-based).
+- **RED boxes**: model-predicted evidence regions.
+
+---
+
+# Special Structural Rules (apply first, before general criteria)
+
+These rules override general size/coverage intuitions for specific structural cases:
+
+**Rule 1 — Table cell/row/column → whole table Pred:**
+If GT marks a single row, column, or cell inside a table, and Pred covers the entire table, treat it as **`covered`**.
+
+**Rule 2 — Bullet/numbered list: one item GT → whole list Pred:**
+If GT marks a single item from a bullet or numbered list, and Pred covers the entire list (multiple items), treat it as **`imprecise`**. The model failed to isolate the specific item.
+
+**Rule 3 — Pred smaller than GT but mostly overlapping:**
+If Pred is smaller than GT but covers the majority of the GT region's content, treat it as **`covered`**.
+
+**Rule 4 — Chart/figure/image as a whole:**
+If GT marks a chart, figure, or image as a whole, Pred does not need to be tight or complete. As long as it is visually clear that Pred is targeting that same object, treat it as **`covered`**.
+
+---
+
+# Input
+
+- **Question being answered:** {question}
+- **Gold answer (for reference only):** {gold_answer}
+- **Page:** {gt_page}
+- **Total GT boxes on this page:** {gold_total_on_page}
+- **GT boxes to judge** (one per row):
+{gold_facts_block}
+- **Predicted boxes (normalized, shared across all GT boxes):**
+  - Count: {n_pred}
+  - Boxes: {pred_bboxes_norm}
+
+Each row looks like `id=g<i> :: index_on_page=<i>, element_type=<...>, gold_bbox_px=<...>`. Echo the `id` verbatim in your output.
+
+---
+
+# Core Criterion
+
+This is a **recall-oriented** judgment. Credit is given if the GT evidence content is effectively included in the **union of all red predicted boxes**, regardless of how large, loose, or imprecise the prediction is.
+
+Always evaluate the **union** of all red boxes. No single red box needs to cover the GT alone.
+
+Judge every GT box **independently**. Never promote or demote one GT box based on another.
+
+---
+
+# Labels
+
+## `"covered"`
+The GT evidence is fully or effectively recalled by the red union.
+
+Use `"covered"` even if:
+- the red prediction is much larger than the GT (whole section, whole table, whole page);
+- the red prediction includes unrelated surrounding content;
+- the red boundary is slightly shifted or has minor clipping artifacts;
+- **the GT is a row/cell/column and Pred covers the whole table** (Rule 1);
+- **the GT is a chart/figure and Pred clearly targets it** (Rule 4).
+
+## `"imprecise"`
+The red union meaningfully overlaps the GT but fails to recall a substantial portion of it.
+
+Use `"imprecise"` when:
+- a significant part of the GT content is outside all red boxes;
+- the red covers only part of a table, chart, paragraph, or header the GT marks as a whole;
+- **the GT is one bullet item and Pred covers the entire list** (Rule 2).
+
+## `"not_covered"`
+The red union does not meaningfully overlap the GT.
+
+Use `"not_covered"` when:
+- red boxes are essentially disjoint from this GT;
+- red boxes only touch the GT boundary without meaningful overlap;
+- red boxes refer to a clearly different region.
+
+---
+
+# Decision Procedure
+
+1. Check if any **Special Structural Rule** applies → apply it directly.
+2. Otherwise: locate `GOLD[i]`, form the union of all red boxes, then ask:
+   - Is GT content effectively recalled by the red union? → **`covered`**
+   - Does the red union meaningfully overlap GT but miss a substantial part? → **`imprecise`**
+   - Otherwise → **`not_covered`**
+
+**Tie-breaking:** If unsure between `"covered"` and `"imprecise"`, choose `"covered"` when ≥90% of the GT content or all semantically important GT content is inside the red union.
+
+---
+
+# Illustrative Examples
+
+| Situation | Label |
+|---|---|
+| Red covers entire page; GT is one paragraph inside | `covered` |
+| Red covers whole table; GT is one row of that table | `covered` (Rule 1) |
+| GT is a chart; Red clearly targets that chart but isn't tight | `covered` (Rule 4) |
+| Red covers whole bullet list; GT is one specific bullet item | `imprecise` (Rule 2) |
+| Red covers only bottom half of a GT table, missing header and top rows | `imprecise` |
+| Red covers GT paragraph plus surrounding paragraphs | `covered` |
+| Red is on a completely different region with no meaningful overlap | `not_covered` |
+| Red covers most of a GT image but clips a small border with no important content | `covered` |
+| Red covers only the right half of a GT chart, missing left half | `imprecise` |
+| Red covers a header region but clips off the last word of the header text | `covered` (minor clipping) |
+
+---
+
+# Output Format
+
+Return exactly one JSON object on one line. No markdown, no commentary.
+
+
+{{"items": [{{"id": "<gt_id>", "label": "covered" | "imprecise" | "not_covered", "reason": "<one concise sentence>"}}, ...]}}
+
+- `id`: verbatim from input (e.g. `g1`, `g2`).
+- `label`: exactly one of the three values.
+- `reason`: one concise sentence specific to this GT box, referencing which rule or criterion was applied.
+- List must contain exactly one entry per input `id`, in order, no duplicates.
