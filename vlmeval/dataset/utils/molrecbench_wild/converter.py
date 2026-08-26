@@ -220,7 +220,7 @@ def _json_candidates(text: str) -> Iterable[str]:
             elif character == "}":
                 depth -= 1
                 if depth == 0:
-                    yield text[start : index + 1]
+                    yield text[start: index + 1]
                     break
 
 
