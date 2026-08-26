@@ -39,20 +39,18 @@ class MolRecBenchWildDataset(ImageBaseDataset):
 
     def __init__(
         self,
-        dataset: str = SMILES_DATASET,
+        dataset: str = "MolRecBench",
         tsv_path: str | os.PathLike[str] | None = None,
     ) -> None:
-        if dataset not in DATASET_TRACKS:
-            raise ValueError(f'unsupported MolRecBench-Wild dataset: {dataset}')
-        self.track_name, self.track = DATASET_TRACKS[dataset]
-        self.tsv_path = self._resolve_tsv_path(tsv_path)
+        self.tsv_path = MolRecBenchWildDataset.DATASET_URL[dataset] or tsv_path
+        self.dataset = dataset
         self._asset_paths: dict[str, str] = {}
         self._ground_truth: list[dict[str, Any]] = []
         super().__init__(dataset=dataset, skip_noimg=False)
 
     @classmethod
     def supported_datasets(cls) -> list[str]:
-        return list(DATASET_TRACKS)
+        return ["MolRecBench"]
 
     @staticmethod
     def _resolve_tsv_path(tsv_path: str | os.PathLike[str] | None) -> Path:
@@ -62,11 +60,7 @@ class MolRecBenchWildDataset(ImageBaseDataset):
             lmu_path = Path(LMUDataRoot()) / 'MolRecBench-Wild.tsv'
             repo_path = Path(__file__).resolve().parents[2] / 'data' / 'MolRecBench-Wild.tsv'
             path = lmu_path if lmu_path.is_file() else repo_path
-        if not path.is_file():
-            raise FileNotFoundError(
-                f'MolRecBench-Wild TSV not found at {path}. '
-                'Pass tsv_path or place MolRecBench-Wild.tsv under $LMUData.'
-            )
+
         return path
 
     @staticmethod
@@ -133,6 +127,8 @@ class MolRecBenchWildDataset(ImageBaseDataset):
             self._asset_paths[index] = str(path)
 
     def load_data(self, dataset: str) -> pd.DataFrame:
+        data_root = LMUDataRoot()
+        os.makedirs(os.path.join(data_root, 'files'), exist_ok=True)
         frame = load(str(self.tsv_path))
         if not isinstance(frame, pd.DataFrame):
             raise TypeError('MolRecBench-Wild TSV must load as a pandas DataFrame')
@@ -165,13 +161,12 @@ class MolRecBenchWildDataset(ImageBaseDataset):
             records[sample_id] = record
         self._ground_truth = list(records.values())
 
-        samples = all_samples[all_samples['track'] == self.track_name].copy()
-        if samples.empty:
+        if all_samples.empty:
             raise ValueError(f'TSV contains no {self.track_name} rows')
-        samples['image'] = [self._resolve_image(value, image_map) for value in samples['image']]
-        samples['index'] = samples['index'].map(self._integer_index)
-        samples['image_path'] = samples['sample_id'].map(lambda value: Path(str(value)).name)
-        return samples.reset_index(drop=True)
+        all_samples['image'] = [self._resolve_image(value, image_map) for value in all_samples['image']]
+        all_samples['index'] = all_samples['index'].map(self._integer_index)
+        all_samples['image_path'] = all_samples['sample_id'].map(lambda value: Path(str(value)).name)
+        return all_samples.reset_index(drop=True)
 
     def build_prompt(self, line: int | pd.Series) -> list[dict[str, str]]:
         if isinstance(line, int):
