@@ -86,7 +86,7 @@ def extract_boxed_answer(pred_str: str):
 
 
 def get_streaming_response(response: requests.Response):
-   for chunk in response.iter_lines(chunk_size=4096,
+    for chunk in response.iter_lines(chunk_size=4096,
                                      decode_unicode=False):
         if chunk:
             data = json.loads(chunk.decode("utf-8"))
@@ -155,6 +155,7 @@ class BlueLMWrapper(BaseAPI):
             'Please set the API Key (obtain it here: '
             'contact by email : shuai.ren@vivo.com'
         )
+
         super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def message_to_promptimg(self, message, dataset=None):
@@ -234,6 +235,7 @@ class BlueLMWrapper(BaseAPI):
                 logger.error(f'{type(err)}: {err}')
                 logger.error(f'The input messages are {inputs}.')
             return -1, '', ''
+
 
 class BlueLM_API(BlueLMWrapper):
 
