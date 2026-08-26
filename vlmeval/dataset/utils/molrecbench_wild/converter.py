@@ -531,12 +531,10 @@ def convert_graph_prediction(record_id: str, value: Any) -> dict[str, Any]:
 def convert_dataframe(
     dataframe: pd.DataFrame,
     *,
-    track: str,
     sheet: str = "Sheet1",
     id_suffix: str = "",
 ) -> tuple[list[dict[str, Any]], list[ConversionIssue]]:
-    track = normalize_track(track)
-    required_columns = {"index", "prediction"}
+    required_columns = {"index", "track", "prediction"}
     missing_columns = sorted(required_columns - set(dataframe.columns))
     if missing_columns:
         raise WorkbookConversionError(
@@ -559,6 +557,7 @@ def convert_dataframe(
             )
         seen_ids.add(record_id)
 
+        track = normalize_track(row["track"])
         try:
             if track == "smiles":
                 record = convert_smiles_prediction(record_id, row["prediction"])

@@ -46,7 +46,6 @@ def convert_prediction(
 def convert_dataframe(
     dataframe: Any,
     *,
-    track: str,
     sheet: str = "Sheet1",
     id_suffix: str = "",
 ) -> tuple[list[dict[str, Any]], list[Any]]:
@@ -56,7 +55,6 @@ def convert_dataframe(
 
     return implementation(
         dataframe,
-        track=track,
         sheet=sheet,
         id_suffix=id_suffix,
     )
