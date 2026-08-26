@@ -74,7 +74,7 @@ class FlamesDataset(TextBaseDataset):
         data = load(eval_file)
         assert 'prediction' in data and 'question' in data
 
-        model_name = judge_kwargs.pop('model', 'gpt-4o-mini')
+        model_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         nproc = judge_kwargs.pop('nproc', 4)
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}_judge', 'pkl')
 

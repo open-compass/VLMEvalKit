@@ -1130,6 +1130,7 @@ class LENS(ImageBaseDataset):
 
 class Physics_yale(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     DATASET_URL = {
         'atomic_dataset':
         'https://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
@@ -1240,7 +1241,7 @@ class Physics_yale(ImageBaseDataset):
             model = os.path.basename(os.environ.get('LOCAL_LLM'))
             print(f'Using local model as judge model for PHYSICS: {model}')
         else:
-            model = judge_kwargs.setdefault('model', 'gpt-4o-mini')
+            model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -1613,6 +1614,7 @@ class OlympiadBench(ImageBaseDataset):
 
 class SeePhys(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'deepseek'
     DATASET_URL = {
         'SeePhys':
         'https://huggingface.co/datasets/SeePhys/SeePhys/resolve/main/data_vlmevalkit/SeePhys_total.tsv',
@@ -1679,7 +1681,7 @@ class SeePhys(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.seephys import eval_acc, extract
 
-        model = judge_kwargs.pop('model', 'deepseek')
+        model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -1734,13 +1736,12 @@ class LogicVista(ImageBaseDataset):
         'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
     }
     DATASET_MD5 = {'LogicVista': '41c5d33adf33765c399e0e6ae588c061'}
-    DEFAULT_JUDGE = ['gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini']
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.logicvista import LogicVista_auxeval, evaluate_logicvista
 
         # model = judge_kwargs['model']
-        model = judge_kwargs.get('model', 'exact_matching')
+        model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         name_str_map = {
             'gpt-4-0125': 'gpt4',
             'gpt-4-turbo': 'gpt4-turbo',
@@ -2993,6 +2994,7 @@ class MMNIAH(ImageBaseDataset):
 class MMSci_Captioning(ImageBaseDataset):
 
     TYPE = 'MMSci_Captioning'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-0806'
     DATASET_URL = {
         'MMSci_DEV_Captioning_image_only':
         'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_Captioning_image_only.tsv',  # noqa: E501
@@ -3004,7 +3006,6 @@ class MMSci_Captioning(ImageBaseDataset):
         'MMSci_DEV_Captioning_image_only': '0f5f0fd7ff383699fbd2203a4659d3e8',
         'MMSci_DEV_Captioning_with_abs': 'ae4a9b88166153efd74e28c989e4a484'
     }
-    DEFAULT_JUDGE = ['gpt-4o-0806', 'gemini-1.5-pro-exp-0801']
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mmsci import fact_score_generate  # noqa: F401
@@ -3079,7 +3080,7 @@ class MMSci_Captioning(ImageBaseDataset):
             if isinstance(references[0], str):
                 references = [[r] for r in references]
 
-            model = judge_kwargs.pop('model', 'gpt-4o-0806')
+            model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
             nproc = judge_kwargs.pop('nproc', 4)
             # not supported gemini-1.5-pro-exp-0801 as judge model yet、
             judge_model = build_judge(model=model, **judge_kwargs)
@@ -3178,6 +3179,8 @@ class BMMR(ImageBaseDataset):
 
 
 class TDBenchGrounding(ImageVQADataset):
+    DEFAULT_JUDGE_MODEL = 'centroid'
+
     DATASET_URL = {
         'tdbench_grounding_rot0':
         'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot0.tsv',  # noqa: E501
@@ -3198,7 +3201,7 @@ class TDBenchGrounding(ImageVQADataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.tdbench import evaluate_bbox, extract_bbox_from_string, rotational_eval
-        method = judge_kwargs.get('model', 'centroid')
+        method = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         assert method in ['centroid',
                           'iou'], '--judge should be either centroid or iou'
 
@@ -3677,7 +3680,7 @@ class MMEReasoning(ImageBaseDataset):
         from .utils.mme_reasoning import (FAIL_MSG, MMEReasoning_acc, MMEReasoning_extract,  # noqa
                                           MMEReasoning_openeval, mme_reasoning_eval_functions)
 
-        model = judge_kwargs.get('model', 'gpt-4o-mini')
+        model = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract')
         tmp_file_extract = get_intermediate_file_path(eval_file, f'_{model}_extract_tmp')
         score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
@@ -4345,7 +4348,7 @@ class CoreCognition(ImageBaseDataset):
         from .utils.corecognition import CoreCognition_acc, CoreCognition_eval
 
         nproc = judge_kwargs.pop('nproc', 4)
-        model = judge_kwargs.get('model', 'exact_matching')
+        model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4o-mini': 'gpt4omini', 'gpt-4.1': 'gpt41'}
         name_str = name_str_map[model] if model in name_str_map else model
 

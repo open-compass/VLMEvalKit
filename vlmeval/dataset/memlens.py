@@ -32,7 +32,7 @@ class MemLens(ImageBaseDataset):
 
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DEFAULT_JUDGE = 'deepseek'
+    DEFAULT_JUDGE_MODEL = 'deepseek'
 
     HF_REPO_ID = 'xiyuRenBill/MEMLENS'
     SOURCE_HF_REPO_ID = HF_REPO_ID
@@ -190,7 +190,7 @@ class MemLens(ImageBaseDataset):
         logger = get_logger('Evaluation')
         data = load(eval_file)
 
-        judge_name = judge_kwargs.pop('model', cls.DEFAULT_JUDGE)
+        judge_name = judge_kwargs.pop('model', cls.DEFAULT_JUDGE_MODEL)
         nproc = judge_kwargs.pop('nproc', 8)
         use_cache = judge_kwargs.pop('use_cache', True)
         max_samples = judge_kwargs.pop('max_samples', None)

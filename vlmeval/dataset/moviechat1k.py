@@ -11,7 +11,7 @@ from huggingface_hub import snapshot_download
 from vlmeval.smp import (dump, extract_json_objects, get_cache_path, get_file_extension,
                          get_intermediate_file_path, load, md5)
 from ..utils import track_progress_rich
-from .utils import build_judge
+from .utils import build_judge, warn_if_judge_model_changed
 from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -223,8 +223,8 @@ class MovieChat1k(VideoBaseDataset):
         from .utils.moviechat1k import get_dimension_rating, prepare_score_prompt
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
-        judge = judge_kwargs.setdefault('model', 'chatgpt-0125')
-        assert judge in ['chatgpt-0125'], f'Invalid judge model for MovieChat1k: {judge}'
+        judge = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
+        warn_if_judge_model_changed(judge, 'chatgpt-0125', 'MovieChat1k')
         nproc = judge_kwargs.pop('nproc', 4)
         _ = judge_kwargs.pop('verbose', None)
         _ = judge_kwargs.pop('retry', None)

@@ -107,7 +107,7 @@ class SIUOGenDataset(ImageBaseDataset):
         data = load(eval_file)
         assert 'prediction' in data and 'question' in data
 
-        model_name = judge_kwargs.pop('model', 'gpt-4o-mini')
+        model_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         nproc = judge_kwargs.pop('nproc', 4)
         safe_tmp = get_intermediate_file_path(eval_file, f'_{model_name}_safe', 'pkl')
         eff_tmp = get_intermediate_file_path(eval_file, f'_{model_name}_eff', 'pkl')

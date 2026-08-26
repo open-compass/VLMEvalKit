@@ -20,6 +20,7 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 class WorldSense(VideoBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
 
     MD5 = 'bfc25490be4080aa5494b883370b6b1f'
 
@@ -47,7 +48,6 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 """
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='WorldSense', use_subtitle=False, use_audio=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
@@ -304,7 +304,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
         score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.get('model', 'exact_matching')
+            model = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
 
             if model == 'exact_matching':
                 model = None

@@ -309,7 +309,11 @@ def validate_default_judge_model(model):
 
 
 def get_judge_kwargs(args, *, dataset):
-    """Collect runtime judge kwargs after the dataset has been instantiated."""
+    """Collect runtime judge kwargs after dataset instantiation.
+
+    Explicit ``--judge`` and ``--judge-args.model`` values take precedence over
+    a benchmark-provided default model.
+    """
     # Determine nproc with mode-specific fallback
     if args.judge_api_nproc is not None:
         nproc = args.judge_api_nproc
@@ -322,13 +326,19 @@ def get_judge_kwargs(args, *, dataset):
     else:
         retry = args.retry
 
+    judge_args = json.loads(args.judge_args) if args.judge_args else {}
     judge_kwargs = {
         'nproc': nproc,
         'verbose': args.verbose,
         'retry': retry,
         'timeout': args.judge_timeout,
-        **(json.loads(args.judge_args) if args.judge_args else {}),
+        **judge_args,
     }
+    # Keep track of whether ``model`` came from --judge-args.  A model in
+    # judge_args is an explicit user choice and must not be confused with a
+    # model that the benchmark resolver may add later.
+    model_from_judge_args = 'model' in judge_args
+    judge_args_model = judge_args.get('model')
 
     if args.judge_base_url:
         judge_kwargs['api_base'] = f"{args.judge_base_url.rstrip('/')}/chat/completions"
@@ -340,8 +350,13 @@ def get_judge_kwargs(args, *, dataset):
     else:
         default_model = dataset.get_default_judge_model(judge_kwargs)
         validate_default_judge_model(default_model)
-        if default_model is not None:
+        if default_model is not None and not model_from_judge_args:
             judge_kwargs['model'] = default_model
+        elif model_from_judge_args:
+            # A dataset-specific resolver is allowed to inspect judge_args,
+            # but its default must not replace an explicitly requested model.
+            # Restore it as well in case a custom resolver mutates kwargs.
+            judge_kwargs['model'] = judge_args_model
 
     if args.use_verifier:
         judge_kwargs['use_verifier'] = True

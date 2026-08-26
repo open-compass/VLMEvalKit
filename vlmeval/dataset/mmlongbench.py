@@ -18,7 +18,6 @@ class MMLongBench(ImageBaseDataset):
 
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DEFAULT_JUDGE = 'gpt-5.5-2026-04-24'
     DEFAULT_JUDGE_MODEL = 'gpt-5.5-2026-04-24'
 
     JUDGE_FORMAT = None

@@ -113,7 +113,7 @@ class MIABench(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        judge_name = judge_kwargs.pop('model', 'gpt-4o')
+        judge_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
 
         model = build_judge(model=judge_name, **judge_kwargs)
 

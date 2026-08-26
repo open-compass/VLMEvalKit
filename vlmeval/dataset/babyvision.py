@@ -152,7 +152,7 @@ def _safe_model_name(model_name):
 class BabyVision(ImageBaseDataset):
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DEFAULT_JUDGE = 'openai/gpt-5.2'
+    DEFAULT_JUDGE_MODEL = 'openai/gpt-5.2'
     DATASET_URL = {BABYVISION_DATASET: BABYVISION_ZIP_URL}
     DATASET_MD5 = {BABYVISION_DATASET: BABYVISION_ZIP_MD5}
     force_use_dataset_prompt = True
@@ -261,7 +261,7 @@ class BabyVision(ImageBaseDataset):
         data['prediction'] = [str(x) if pd.notna(x) else '' for x in data['prediction']]
         data['answer'] = [str(x) if pd.notna(x) else '' for x in data['answer']]
 
-        judge_model = judge_kwargs.pop('model', self.DEFAULT_JUDGE)
+        judge_model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         safe_model = _safe_model_name(judge_model)
         storage = get_intermediate_file_path(eval_file, f'_{safe_model}_judge')
         tmp_file = get_intermediate_file_path(eval_file, f'_{safe_model}_judge_tmp', 'pkl')

@@ -23,7 +23,6 @@ logger = get_logger(__name__)
 class VideoBaseDataset(metaclass=ABCMeta):
 
     MODALITY = 'VIDEO'
-    DEFAULT_JUDGE: str | list = 'gpt-4o-mini'
     DEFAULT_JUDGE_MODEL: str | None = None
 
     INFER_FAIL_MARKERS = (INFER_FAIL_MSG, )

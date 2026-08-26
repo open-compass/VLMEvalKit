@@ -141,7 +141,7 @@ class MSSBenchDataset(ImageBaseDataset):
         data = load(eval_file)
         assert 'prediction' in data and 'answer' in data
 
-        model_name = judge_kwargs.pop('model', 'exact_matching')
+        model_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         nproc = judge_kwargs.pop('nproc', 4)
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}_judge', 'pkl')
 
