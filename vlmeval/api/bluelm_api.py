@@ -10,6 +10,8 @@ from vlmeval.api.base import BaseAPI
 from vlmeval.smp import concat_images_vlmeval, get_logger
 
 logger = get_logger(__name__)
+M_APP_ID = os.environ.get('M_APP_ID', None)
+M_APP_KEY = os.environ.get('M_APP_KEY', None)
 
 
 def split_think(text: str) -> str:
@@ -84,7 +86,7 @@ def extract_boxed_answer(pred_str: str):
 
 
 def get_streaming_response(response: requests.Response):
-    for chunk in response.iter_lines(chunk_size=4096,
+   for chunk in response.iter_lines(chunk_size=4096,
                                      decode_unicode=False):
         if chunk:
             data = json.loads(chunk.decode("utf-8"))
@@ -92,7 +94,7 @@ def get_streaming_response(response: requests.Response):
             yield output
 
 
-def multimodal(images, text, url, key, temperature=0.6, max_tokens=32768, top_k=20, top_p=0.95, stream=True, history=[], timeout=60):  # noqa: E501
+def multimodal(images, text, url, key, temperature=0.6, max_tokens=32768, top_k=20, top_p=0.95, stream=True, history=[], timeout=600):  # noqa: E501
     if images:
         pics = []
         for image in images:
@@ -108,7 +110,8 @@ def multimodal(images, text, url, key, temperature=0.6, max_tokens=32768, top_k=
             'text': text, 'key': key, 'temperature': temperature,
             'max_tokens': max_tokens, 'top_k': top_k, 'top_p': top_p, 'stream': stream
         }
-    response = requests.post(url, json=data, headers={"Content-Type": "application/json"}, timeout=timeout)
+    auth_token = f"sk-xuanji-{M_APP_ID}-{base64.b64encode(M_APP_KEY.encode()).decode()}"    
+    response = requests.post(url, json=data, headers={"Content-Type": "application/json","Authorization":f"Bearer {auth_token}"}, timeout=timeout)    
     if stream:
         final_text = ''
         for h in get_streaming_response(response):
@@ -123,7 +126,7 @@ class BlueLMWrapper(BaseAPI):
     is_api: bool = True
 
     def __init__(self,
-                 model: str = 'BlueLM-2.5-3B',
+                 model: str = 'BlueLM-3.5-3B',
                  retry: int = 5,
                  verbose: bool = True,
                  temperature: float = 0.6,
@@ -133,7 +136,7 @@ class BlueLMWrapper(BaseAPI):
                  top_p: float = 0.95,
                  timeout: int = 60,
                  key: str = None,
-                 url: str = 'http://api-ai.vivo.com.cn/multimodal',
+                 url: str = 'http://api-ai.vivo.com.cn/predict',
                  **kwargs):
 
         self.model = model
@@ -152,7 +155,6 @@ class BlueLMWrapper(BaseAPI):
             'Please set the API Key (obtain it here: '
             'contact by email : shuai.ren@vivo.com'
         )
-
         super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def message_to_promptimg(self, message, dataset=None):
@@ -232,7 +234,6 @@ class BlueLMWrapper(BaseAPI):
                 logger.error(f'{type(err)}: {err}')
                 logger.error(f'The input messages are {inputs}.')
             return -1, '', ''
-
 
 class BlueLM_API(BlueLMWrapper):
 
