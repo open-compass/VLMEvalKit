@@ -41,9 +41,11 @@ class MolRecBenchWildDataset(ImageBaseDataset):
         self,
         dataset: str = "MolRecBench",
         tsv_path: str | os.PathLike[str] | None = None,
+        nsamples: int | None = None,
     ) -> None:
         self.tsv_path = MolRecBenchWildDataset.DATASET_URL[dataset] or tsv_path
         self.dataset = dataset
+        self.nsamples = nsamples
         self._asset_paths: dict[str, str] = {}
         self._ground_truth: list[dict[str, Any]] = []
         super().__init__(dataset=dataset, skip_noimg=False)
@@ -166,14 +168,17 @@ class MolRecBenchWildDataset(ImageBaseDataset):
         all_samples['image'] = [self._resolve_image(value, image_map) for value in all_samples['image']]
         all_samples['index'] = all_samples['index'].map(self._integer_index)
         all_samples['image_path'] = all_samples['sample_id'].map(lambda value: Path(str(value)).name)
-        return all_samples.reset_index(drop=True)
+        samples = all_samples.reset_index(drop=True)
+        if self.nsamples is not None:
+            samples = samples.head(self.nsamples)
+        return samples
 
     def build_prompt(self, line: int | pd.Series) -> list[dict[str, str]]:
         if isinstance(line, int):
             line = self.data.iloc[line]
         target = self.dump_image(line)[0]
         messages: list[dict[str, str]] = []
-        if self.track == 'graph':
+        if line['track'] == 'graph':
             for column in ('reference_image_1', 'reference_image_2'):
                 reference = self._reference_key(line[column])
                 if reference not in self._asset_paths:
@@ -198,39 +203,49 @@ class MolRecBenchWildDataset(ImageBaseDataset):
             self._integer_index(index): prediction
             for index, prediction in zip(predictions['index'], predictions['prediction'])
         }
-        missing = [index for index in selected_indices if index not in prediction_map]
-        if missing:
-            raise ValueError(f'prediction file misses {len(missing)} samples')
+        track_map = {
+            self._integer_index(index): track
+            for index, track in zip(predictions['index'], predictions['track'])
+        }
+        # missing = [index for index in selected_indices if index not in prediction_map or index not in track_map]
+        # if missing:
+        #     raise ValueError(f'prediction file misses {len(missing)} samples')
         sample_ids = list(self.data['sample_id'].map(self._string))
         selected = pd.DataFrame({
             # The official converter keys records by the molecule image name,
             # while VLMEvalKit uses the TSV's integer index during inference.
             'index': sample_ids,
+            'track': [track_map[index] for index in selected_indices],
             'prediction': [prediction_map[index] for index in selected_indices],
         })
 
         from .utils.molrecbench_wild import convert_dataframe, score_records
 
-        converted, _ = convert_dataframe(selected, track=self.track)
+        # 按 track 分组调用 convert_dataframe 并分别评分
         selected_set = set(sample_ids)
         ground_truth = [row for row in self._ground_truth if row['id'] in selected_set]
-        result = score_records(
-            ground_truth,
-            converted,
-            self.track,
-            full_gt_records=self._ground_truth,
-            timeout_seconds=5,
-            ignore_cistrans=True,
-        )
+
         rows = []
-        for split in ('Full', 'A', 'B', 'C'):
-            metric = result.summary['subset_metrics'][split]
-            rows.append({
-                'track': self.track_name,
-                'split': split,
-                'total': metric['total_gt_records'],
-                'scored': metric['scored_records'],
-                'correct': metric['correct_records'],
-                'accuracy': metric['accuracy'],
-            })
+        for track_val, group in selected.groupby('track'):
+            converted, _ = convert_dataframe(group.reset_index(drop=True))
+            group_ids = set(group['index'])
+            ground_truth = [row for row in self._ground_truth if row['id'] in group_ids]
+            result = score_records(
+                ground_truth,
+                converted,
+                track_val,
+                full_gt_records=self._ground_truth,
+                timeout_seconds=5,
+                ignore_cistrans=True,
+            )
+            for split in ('Full', 'A', 'B', 'C'):
+                metric = result.summary['subset_metrics'][split]
+                rows.append({
+                    'track': track_val,
+                    'split': split,
+                    'total': metric['total_gt_records'],
+                    'scored': metric['scored_records'],
+                    'correct': metric['correct_records'],
+                    'accuracy': metric['accuracy'],
+                })
         return pd.DataFrame(rows)
