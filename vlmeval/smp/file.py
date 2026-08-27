@@ -26,48 +26,6 @@ RUN_STATUS_NAME = 'status.json'
 INFER_FAIL_MSG = 'Failed to obtain answer'
 logger = get_logger(__name__)
 
-AUDIO_MIME_MAP = {
-    '.wav': 'audio/wav',
-    '.mp3': 'audio/mpeg',
-    '.m4a': 'audio/mp4',
-    '.flac': 'audio/flac',
-    '.ogg': 'audio/ogg',
-    '.aac': 'audio/aac',
-    '.oga': 'audio/ogg',
-    '.opus': 'audio/ogg',
-}
-AUDIO_MEDIA_URL_PREFIXES = ('http://', 'https://', 'file://', 'data:audio/')
-
-
-def _suffix_from_media_value(value):
-    value = str(value)
-    value = value.split('?', 1)[0].split('#', 1)[0]
-    return osp.splitext(value)[1].lower()
-
-
-def infer_audio_mime_type(value):
-    if not isinstance(value, str):
-        return None
-    if value.startswith('data:audio/'):
-        mime = value[5:].split(';', 1)[0].lower()
-        return mime if mime.startswith('audio/') else None
-
-    suffix = _suffix_from_media_value(value)
-    if suffix in AUDIO_MIME_MAP:
-        return AUDIO_MIME_MAP[suffix]
-    mime = mimetypes.guess_type(value)[0]
-    if mime and mime.startswith('audio/'):
-        return mime
-    return None
-
-
-def audio_mime_type(value, default='audio/wav'):
-    return infer_audio_mime_type(value) or default
-
-
-def is_audio_media_url(value):
-    return isinstance(value, str) and value.startswith(AUDIO_MEDIA_URL_PREFIXES)
-
 
 def decode_img_omni(tup):
     root, im, p = tup
@@ -430,7 +388,18 @@ def last_modified(pth):
     return t
 
 
-def parse_file(s):
+def parse_file(s, **kwargs):
+    """Parse media values, using local paths as the audio intermediate protocol."""
+    from .audio import (UnsupportedAudioSourceError, audio_mime_type, infer_audio_mime_type,
+                        resolve_media_source)
+
+    audio_max_file_size = kwargs.get('audio_max_file_size')
+    probe_remote_audio = kwargs.get('probe_remote_audio', False)
+
+    def resolve_audio(value):
+        path = resolve_media_source(value, max_file_size=audio_max_file_size)
+        return audio_mime_type(path, default=None), path
+
     if osp.exists(s) and s != '.':
         assert osp.isfile(s)
         suffix = osp.splitext(s)[1].lower()
@@ -439,7 +408,7 @@ def parse_file(s):
             return ('image/webp', s)
         audio_mime = infer_audio_mime_type(s)
         if audio_mime is not None:
-            return (audio_mime, s)
+            return resolve_audio(s)
         mime = mimetypes.types_map.get(suffix, 'unknown')
         return (mime, s)
     elif s.startswith('data:image/'):
@@ -454,22 +423,18 @@ def parse_file(s):
         tgt = osp.join(dname, md5(b64) + '.png')
         decode_base64_to_image_file(b64, tgt)
         return parse_file(tgt)
-    elif s.startswith('data:audio/'):
-        mime = infer_audio_mime_type(s)
-        return (mime, s) if mime is not None else (None, s)
+    elif s.lower().startswith('data:audio/'):
+        audio_mime = infer_audio_mime_type(s)
+        if audio_mime is not None:
+            return resolve_audio(s)
+        return (None, s)
     elif validators.url(s):
         suffix = osp.splitext(s)[1].lower()
         # 添加对webp的支持
         if suffix == '.webp':
             mime = 'image/webp'
         elif infer_audio_mime_type(s) is not None:
-            mime = infer_audio_mime_type(s)
-            suffix = _suffix_from_media_value(s)
-            dname = osp.join(LMUDataRoot(), 'files')
-            os.makedirs(dname, exist_ok=True)
-            tgt = osp.join(dname, md5(s) + suffix)
-            download_file(s, tgt)
-            return (mime, tgt)
+            return resolve_audio(s)
         elif suffix in mimetypes.types_map:
             mime = mimetypes.types_map[suffix]
             dname = osp.join(LMUDataRoot(), 'files')
@@ -477,6 +442,11 @@ def parse_file(s):
             tgt = osp.join(dname, md5(s) + suffix)
             download_file(s, tgt)
             return (mime, tgt)
+        elif probe_remote_audio:
+            try:
+                return resolve_audio(s)
+            except UnsupportedAudioSourceError:
+                return 'url', s
         else:
             return ('url', s)
 

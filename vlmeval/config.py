@@ -137,6 +137,14 @@ o1_apis = {
 
 api_models = {
     # GPT
+    "GPT-Audio-1.5": partial(
+        api.GPTAudio,
+        model="gpt-audio-1.5",
+        temperature=0,
+        retry=5,
+        max_tokens=16384,
+        verbose=False,
+    ),
     "GPT4V": partial(
         api.GPT4V,
         model="gpt-4-1106-vision-preview",

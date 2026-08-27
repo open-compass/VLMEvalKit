@@ -10,13 +10,16 @@ from urllib.parse import quote
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, get_logger, load
-from .audio_base import AudioBaseDataset
+from vlmeval.smp import (LMUDataRoot, atomic_write_audio_file, dump, get_intermediate_file_path,
+                         get_logger, load)
+from .audio_base import AudioBaseDataset, audio_read_ok, audio_reuse_ok
 from .utils import DEBUG_MESSAGE, build_judge
 
 logger = get_logger(__name__)
 
-MMSU_AUDIO_EXTENSIONS = {'.wav', '.mp3', '.m4a', '.flac', '.ogg', '.aac'}
+MMSU_AUDIO_EXTENSIONS = {
+    '.wav', '.mp3', '.m4a', '.flac', '.ogg', '.oga', '.opus', '.aac'
+}
 
 
 def _clean_text(value):
@@ -87,7 +90,15 @@ def _write_wav_from_array(array, sampling_rate, target):
     if arr.dtype.kind == 'f':
         arr = np.clip(arr, -1.0, 1.0)
         arr = (arr * np.iinfo(np.int16).max).astype(np.int16)
-    wavfile.write(target, int(sampling_rate), arr)
+    atomic_write_audio_file(target, lambda f: wavfile.write(f, int(sampling_rate), arr))
+
+
+def _copy_audio_file(source, target):
+    def writer(output):
+        with open(source, 'rb') as input_file:
+            shutil.copyfileobj(input_file, output)
+
+    atomic_write_audio_file(target, writer)
 
 
 def _resolve_source_path(path, source_root=None):
@@ -106,30 +117,29 @@ def _export_hf_audio(audio, audio_dir, audio_name, source_root=None):
     if isinstance(audio, dict):
         suffix = _audio_extension(audio)
         target = osp.join(audio_dir, audio_name + suffix)
-        if osp.exists(target) and osp.getsize(target) > 0:
+        if audio_read_ok(target):
             return osp.basename(target)
 
         audio_bytes = audio.get('bytes')
         if audio_bytes:
-            with open(target, 'wb') as f:
-                f.write(audio_bytes)
+            atomic_write_audio_file(target, lambda f: f.write(audio_bytes))
             return osp.basename(target)
 
         audio_path = audio.get('path')
         if audio_path and osp.isfile(_resolve_source_path(audio_path, source_root)):
-            shutil.copyfile(_resolve_source_path(audio_path, source_root), target)
+            _copy_audio_file(_resolve_source_path(audio_path, source_root), target)
             return osp.basename(target)
 
         if audio.get('array') is not None and audio.get('sampling_rate') is not None:
             target = osp.join(audio_dir, audio_name + '.wav')
-            _write_wav_from_array(audio['array'], audio['sampling_rate'], target)
+            if not audio_read_ok(target):
+                _write_wav_from_array(audio['array'], audio['sampling_rate'], target)
             return osp.basename(target)
 
     if isinstance(audio, (bytes, bytearray)):
         target = osp.join(audio_dir, audio_name + '.wav')
-        if not osp.exists(target) or osp.getsize(target) == 0:
-            with open(target, 'wb') as f:
-                f.write(audio)
+        if not audio_read_ok(target):
+            atomic_write_audio_file(target, lambda f: f.write(audio))
         return osp.basename(target)
 
     if isinstance(audio, str):
@@ -137,8 +147,8 @@ def _export_hf_audio(audio, audio_dir, audio_name, source_root=None):
         if osp.isfile(source_path):
             suffix = _audio_extension(audio)
             target = osp.join(audio_dir, audio_name + suffix)
-            if not osp.exists(target) or osp.getsize(target) == 0:
-                shutil.copyfile(source_path, target)
+            if not audio_read_ok(target):
+                _copy_audio_file(source_path, target)
             return osp.basename(target)
 
     raise ValueError(f'Unsupported MMSU audio payload type: {type(audio)}')
@@ -313,6 +323,8 @@ class MMSUDataset(AudioBaseDataset):
     @staticmethod
     def _repo_file_exists(repo_dir, repo_path):
         target = osp.join(repo_dir, repo_path)
+        if osp.splitext(repo_path)[1].lower() in MMSU_AUDIO_EXTENSIONS:
+            return audio_reuse_ok(target)
         return osp.exists(target) and osp.getsize(target) > 0
 
     @staticmethod
@@ -326,11 +338,10 @@ class MMSUDataset(AudioBaseDataset):
 
     def _download_hf_file(self, requests, endpoint, repo_path, repo_dir):
         target = osp.join(repo_dir, repo_path)
-        if osp.exists(target) and osp.getsize(target) > 0:
+        if self._repo_file_exists(repo_dir, repo_path):
             return
 
         os.makedirs(osp.dirname(target), exist_ok=True)
-        tmp_target = target + '.tmp'
         url = (
             f'{endpoint}/datasets/{self.HF_DATASET}/resolve/main/'
             f'{quote(repo_path, safe="/")}'
@@ -340,13 +351,57 @@ class MMSUDataset(AudioBaseDataset):
         if token:
             headers['Authorization'] = f'Bearer {token}'
 
-        with requests.get(url, headers=headers, stream=True, timeout=(10, 300)) as response:
-            response.raise_for_status()
-            with open(tmp_target, 'wb') as f:
+        def stream_to(output):
+            with requests.get(url, headers=headers, stream=True, timeout=(10, 300)) as response:
+                response.raise_for_status()
+                response_headers = getattr(response, 'headers', {})
+                content_length = response_headers.get('Content-Length')
+                expected_size = None
+                if content_length is not None:
+                    try:
+                        expected_size = int(content_length)
+                    except (TypeError, ValueError):
+                        logger.warning(
+                            f'Ignoring invalid Content-Length for {repo_path!r}: '
+                            f'{content_length!r}'
+                        )
+                    if expected_size is not None and expected_size < 0:
+                        expected_size = None
+                written = 0
                 for chunk in response.iter_content(chunk_size=1024 * 1024):
                     if chunk:
-                        f.write(chunk)
-        os.replace(tmp_target, target)
+                        output.write(chunk)
+                        written += len(chunk)
+                        if expected_size is not None and written > expected_size:
+                            raise IOError(
+                                f'MMSU download exceeded Content-Length for {repo_path!r}: '
+                                f'expected {expected_size} bytes, received at least {written}.'
+                            )
+                if expected_size is not None and written != expected_size:
+                    raise IOError(
+                        f'Incomplete MMSU download for {repo_path!r}: expected '
+                        f'{expected_size} bytes, received {written}.'
+                    )
+                if written == 0:
+                    raise IOError(f'MMSU download returned an empty body for {repo_path!r}.')
+
+        if osp.splitext(repo_path)[1].lower() in MMSU_AUDIO_EXTENSIONS:
+            atomic_write_audio_file(target, stream_to)
+            return
+
+        tmp_target = target + '.tmp'
+        try:
+            with open(tmp_target, 'wb') as output:
+                stream_to(output)
+                output.flush()
+                os.fsync(output.fileno())
+            os.replace(tmp_target, target)
+        finally:
+            if osp.exists(tmp_target):
+                try:
+                    os.unlink(tmp_target)
+                except OSError:
+                    pass
 
     @staticmethod
     def _iter_samples(hf_data):

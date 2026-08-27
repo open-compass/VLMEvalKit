@@ -1,12 +1,17 @@
+import base64
+import copy as cp
 import json
 import math
 import os
+import time
 
 import numpy as np
 import requests
 from PIL import Image
 
-from vlmeval.smp import encode_image_to_base64, get_logger
+from vlmeval.smp import (encode_image_to_base64, get_logger, normalize_audio, parse_file,
+                         resolve_media_source)
+from vlmeval.smp.audio import AudioDownloadError
 from .base import BaseAPI
 
 logger = get_logger(__name__)
@@ -208,7 +213,7 @@ class OpenAIWrapper(BaseAPI):
                 self.api_base = os.environ.get('BOYUE_API_BASE')
                 self.key = os.environ.get('BOYUE_API_KEY')
 
-        logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
+        logger.info(f'Using API Base: {self.api_base}')
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
@@ -372,3 +377,164 @@ class GPT4V(OpenAIWrapper):
 
     def generate(self, message, dataset=None):
         return super(GPT4V, self).generate(message)
+
+
+class GPTAudio(OpenAIWrapper):
+    """OpenAI Chat Completions wrapper for native text/audio models."""
+
+    allowed_types = ['text', 'audio']
+    _normalized_audio_key = '_gpt_audio_normalized_payload'
+
+    def __init__(
+        self,
+        model='gpt-audio-1.5',
+        audio_cache_dir=None,
+        audio_sample_rate='auto',
+        audio_channels='auto',
+        audio_max_file_size=64 * 1024 ** 2,
+        audio_max_payload_size=64 * 1024 ** 2,
+        **kwargs,
+    ):
+        self.audio_cache_dir = audio_cache_dir
+        self.audio_sample_rate = audio_sample_rate
+        self.audio_channels = audio_channels
+        self.audio_max_file_size = audio_max_file_size
+        self.audio_max_payload_size = audio_max_payload_size
+        super().__init__(model=model, **kwargs)
+        logger.info(f'Using provider=OpenAI, model={self.model}, audio_mode=native')
+
+    def preproc_content(self, inputs):
+        """Resolve audio to local paths after this provider's capability is known."""
+        content_type = self.check_content(inputs)
+        if content_type == 'liststr':
+            result = []
+            for value in inputs:
+                mime, localized = parse_file(
+                    value,
+                    audio_max_file_size=self.audio_max_file_size,
+                    probe_remote_audio=True,
+                )
+                if mime is None or mime == 'unknown':
+                    result.append(dict(type='text', value=value))
+                else:
+                    result.append(dict(type=mime.split('/')[0], value=localized))
+            return result
+        if content_type in ('dict', 'listdict'):
+            items = [inputs] if content_type == 'dict' else inputs
+            for item in items:
+                assert 'type' in item and 'value' in item
+                assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
+                if item['type'] == 'audio' and self._normalized_audio_key in item:
+                    continue
+                if item['type'] == 'audio':
+                    item['value'] = resolve_media_source(
+                        item['value'],
+                        max_file_size=self.audio_max_file_size,
+                    )
+                    continue
+                mime, localized = parse_file(item['value'])
+                if mime is None:
+                    assert item['type'] == 'text', item['value']
+                else:
+                    assert mime.split('/')[0] == item['type']
+                    item['value'] = localized
+            return items
+        return super().preproc_content(inputs)
+
+    def _normalize_audio_once(self, message):
+        """Normalize local audio before entering ``BaseAPI``'s retry loop."""
+        message = cp.deepcopy(message)
+        if self.check_content(message) == 'listdict':
+            message = self.preprocess_message_with_role(message)
+
+        assert self.check_content(message) in ['str', 'dict', 'liststr', 'listdict'], (
+            f'Invalid input type: {message}'
+        )
+        message = self.preproc_content(message)
+        assert message is not None and self.check_content(message) == 'listdict'
+        for item in message:
+            assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
+        if sum(item['type'] == 'audio' for item in message) > 1:
+            raise ValueError('GPTAudio supports at most one audio item per user message.')
+
+        normalized_message = []
+        for item in message:
+            item = dict(item)
+            if item['type'] == 'audio':
+                item[self._normalized_audio_key] = normalize_audio(
+                    item.get('value'),
+                    target_format='wav',
+                    cache_dir=self.audio_cache_dir,
+                    sample_rate=self.audio_sample_rate,
+                    channels=self.audio_channels,
+                    max_file_size=self.audio_max_file_size,
+                    max_output_file_size=self.audio_max_payload_size,
+                )
+            normalized_message.append(item)
+        return normalized_message
+
+    def _normalize_audio_with_retries(self, message):
+        for attempt in range(self.retry):
+            try:
+                return self._normalize_audio_once(message)
+            except AudioDownloadError:
+                if attempt + 1 >= self.retry:
+                    raise
+                time.sleep(self.wait)
+        raise AssertionError('unreachable')
+
+    @staticmethod
+    def _serialize_audio_payload(audio):
+        """Serialize a normalized payload into the OpenAI request schema."""
+        return dict(
+            type='input_audio',
+            input_audio=dict(
+                data=base64.b64encode(audio.data).decode('ascii'),
+                format=audio.format,
+            ),
+        )
+
+    def generate(self, message, dataset=None, **kwargs):
+        # ``dataset`` is runner metadata, not part of the OpenAI request schema.
+        message = self._normalize_audio_with_retries(message)
+        return super().generate(message, **kwargs)
+
+    def chat(self, messages, **kwargs):
+        """Normalize each turn once without mutating the caller's history."""
+        messages = cp.deepcopy(messages)
+        for message in messages:
+            assert isinstance(message, dict) and 'role' in message and 'content' in message
+            message['content'] = self._normalize_audio_with_retries(message['content'])
+        return super().chat(messages, **kwargs)
+
+    def prepare_itlist(self, inputs):
+        if not isinstance(inputs, list) or not all(isinstance(item, dict) for item in inputs):
+            raise TypeError('GPTAudio inputs must be a list of content dictionaries.')
+
+        audio_items = [item for item in inputs if item.get('type') == 'audio']
+        if len(audio_items) > 1:
+            raise ValueError('GPTAudio supports at most one audio item per user message.')
+
+        text_content = []
+        audio_content = []
+        for item in inputs:
+            item_type = item.get('type')
+            if item_type == 'text':
+                if item.get('value'):
+                    text_content.append(dict(type='text', text=item['value']))
+            elif item_type == 'audio':
+                audio = item.get(self._normalized_audio_key)
+                if audio is None:
+                    raise RuntimeError(
+                        'GPTAudio provider serialization requires a normalized '
+                        'AudioPayload.'
+                    )
+                audio_content.append(self._serialize_audio_payload(audio))
+            else:
+                raise ValueError(f'GPTAudio does not support input type: {item_type!r}.')
+
+        # GPT Audio on the Azure endpoint is
+        # order-sensitive: text after input_audio may be treated as a metadata
+        # query instead of an instruction. MMSU has one audio item per prompt,
+        # so canonicalize that provider payload without changing dataset prompts.
+        return text_content + audio_content
