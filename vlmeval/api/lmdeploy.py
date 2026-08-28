@@ -37,6 +37,7 @@ class LMDeployWrapper(OpenAISDKWrapper):
                  custom_prompt=None,
                  video_llm: bool = False,
                  local_media: bool = False,
+                 response_charset='utf-8',
                  img_size: int = -1,
                  total_img_size: int = -1,
                  max_file_size: int = 1e9,
@@ -79,6 +80,7 @@ class LMDeployWrapper(OpenAISDKWrapper):
             wait=wait,
             system_prompt=system_prompt,
             verbose=verbose,
+            response_charset=response_charset,
             **kwargs,
         )
 
@@ -176,6 +178,14 @@ class LMDeployWrapper(OpenAISDKWrapper):
 class LMDeployAPI(LMDeployWrapper):
 
     def __init__(self, **kwargs):
+        """
+        Args:
+            response_charset: Charset used to decode HTTP responses that do
+                not declare a charset in the Content-Type header. Defaults to
+                ``utf-8``. Set to ``None`` to keep requests' inferred encoding.
+            **kwargs: Additional keyword arguments forwarded to
+                :class:`LMDeployWrapper`.
+        """
         super().__init__(**kwargs)
 
     def generate(self, message, dataset=None):
