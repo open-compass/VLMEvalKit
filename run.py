@@ -51,7 +51,6 @@ if LOCAL_WORLD_SIZE > 1 and len(GPU_LIST):
     )
 
 
-from vlmeval.api import LMDeployAPI
 from vlmeval.config import supported_VLM
 from vlmeval.dataset import build_dataset
 from vlmeval.dataset.video_dataset_config import supported_video_datasets
@@ -261,11 +260,23 @@ def build_dataset_from_cli(dataset_name, data_config, dataset_kwargs):
     return build_dataset(dataset_name, **dataset_kwargs)
 
 
+def get_api_model_class(model_class):
+    import vlmeval.api
+
+    model_class = model_class or 'LMDeployAPI'
+    if not hasattr(vlmeval.api, model_class):
+        raise ValueError(f'Model class `{model_class}` is not supported in `vlmeval.api`')
+    wrapper = getattr(vlmeval.api, model_class)
+    if not getattr(wrapper, 'is_api', False):
+        raise ValueError(f'Model class `{model_class}` is not an API model wrapper')
+    return wrapper
+
+
 def build_model_from_base_url(args):
-    """Build LMDeployAPI model kwargs from command-line arguments.
+    """Build API model kwargs from command-line arguments.
 
     Used by both local and API modes when --base-url is specified.
-    Returns a dict suitable for LMDeployAPI(**kwargs) or partial(LMDeployAPI, **kwargs).
+    Returns a dict suitable for the selected inference API wrapper.
     """
     model_args = dict(
         model=args.model[0] if isinstance(args.model, list) else args.model,
@@ -514,7 +525,9 @@ You can launch the evaluation by setting either --data and --model or --config.
     # Inference Model Args (when --base-url is specified)
     parser.add_argument('--base-url', type=str, default=None,
                         help='Base URL of OpenAI-compatible API (e.g. http://localhost:8080/v1). '
-                             'If set, LMDeployAPI is used for inference without modifying config.py.')
+                             'If set, --model-class is used for inference without modifying config.py.')
+    parser.add_argument('--model-class', type=str, default='LMDeployAPI',
+                        help='API model class in vlmeval.api for inference when --base-url is set.')
     parser.add_argument('--key', type=str, default='sk-admin', help='API key for inference model')
     parser.add_argument('--thinker', action='store_true',
                         help='[Deprecated] Enable thinking mode: doubles timeout and max_tokens.')
@@ -637,9 +650,10 @@ def run_local_mode(args):
         if use_config:
             model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
         elif args.base_url:
+            api_model_class = get_api_model_class(args.model_class)
             model_args = build_model_from_base_url(args)
             model_args['model'] = model_name
-            model = LMDeployAPI(**model_args)
+            model = api_model_class(**model_args)
 
         for _, dataset_name in enumerate(args.data):
             logger.info(f'----------- {dataset_name} -----------')
@@ -1035,8 +1049,9 @@ def run_api_mode(args):
 
     # Build model args (shared across all datasets)
     if args.base_url is not None:
+        api_model_class = get_api_model_class(args.model_class)
         model_args = build_model_from_base_url(args)
-        model_builder = partial(LMDeployAPI, **model_args)
+        model_builder = partial(api_model_class, **model_args)
     else:
         assert model_name in supported_VLM, \
             f'Model "{model_name}" not found in supported_VLM. Consider using --base-url to specify an API endpoint.'

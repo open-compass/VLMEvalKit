@@ -1,4 +1,5 @@
 """Public bond-type constants retained for compatibility with repository tools."""
+# flake8: noqa
 
 SINGLE_BOND_ID = 1
 DOUBLE_BOND_ID = 2

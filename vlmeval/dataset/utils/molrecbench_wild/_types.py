@@ -1,7 +1,6 @@
 """Dependency-free public result types for MolRecBench-Wild."""
 
 from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Any
 

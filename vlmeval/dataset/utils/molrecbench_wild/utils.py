@@ -1,7 +1,6 @@
 """Shared graph and SMILES evaluation helpers."""
 
 from __future__ import annotations
-
 import itertools
 import re
 from collections import Counter, defaultdict
@@ -11,7 +10,6 @@ from rdkit import Chem
 from rdkit.Geometry import Point3D
 
 from .constants import ABBR2MOLBLOCKS
-
 
 GREEK_LETTERS = list("αβγδεζηθικλμνξοπρστυφχψω")
 _GREEK_CHARS = frozenset(GREEK_LETTERS)
