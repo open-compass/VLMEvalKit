@@ -267,15 +267,15 @@ def build_dataset_from_cli(dataset_name, data_config, dataset_kwargs):
     return build_dataset(dataset_name, **dataset_kwargs)
 
 
-def get_infer_api_wrapper(wrapper_name):
+def get_api_model_class(model_class):
     import vlmeval.api
 
-    wrapper_name = wrapper_name or 'LMDeployAPI'
-    if not hasattr(vlmeval.api, wrapper_name):
-        raise ValueError(f'Inference API wrapper `{wrapper_name}` is not supported in `vlmeval.api`')
-    wrapper = getattr(vlmeval.api, wrapper_name)
+    model_class = model_class or 'LMDeployAPI'
+    if not hasattr(vlmeval.api, model_class):
+        raise ValueError(f'Model class `{model_class}` is not supported in `vlmeval.api`')
+    wrapper = getattr(vlmeval.api, model_class)
     if not getattr(wrapper, 'is_api', False):
-        raise ValueError(f'Inference API wrapper `{wrapper_name}` is not an API model wrapper')
+        raise ValueError(f'Model class `{model_class}` is not an API model wrapper')
     return wrapper
 
 
@@ -578,9 +578,9 @@ You can launch the evaluation by setting either --data and --model or --config.
     # Inference Model Args (when --base-url is specified)
     parser.add_argument('--base-url', type=str, default=None,
                         help='Base URL of OpenAI-compatible API (e.g. http://localhost:8080/v1). '
-                             'If set, --infer-api-wrapper is used for inference without modifying config.py.')
-    parser.add_argument('--infer-api-wrapper', type=str, default='LMDeployAPI',
-                        help='API wrapper class in vlmeval.api for inference when --base-url is set.')
+                             'If set, --model-class is used for inference without modifying config.py.')
+    parser.add_argument('--model-class', type=str, default='LMDeployAPI',
+                        help='API model class in vlmeval.api for inference when --base-url is set.')
     parser.add_argument('--key', type=str, default='sk-admin', help='API key for inference model')
     parser.add_argument('--thinker', action='store_true',
                         help='[Deprecated] Enable thinking mode: doubles timeout and max_tokens.')
@@ -703,10 +703,10 @@ def run_local_mode(args):
         if use_config:
             model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
         elif args.base_url:
-            infer_api_wrapper = get_infer_api_wrapper(args.infer_api_wrapper)
+            api_model_class = get_api_model_class(args.model_class)
             model_args = build_model_from_base_url(args)
             model_args['model'] = model_name
-            model = infer_api_wrapper(**model_args)
+            model = api_model_class(**model_args)
 
         for _, dataset_name in enumerate(args.data):
             logger.info(f'----------- {dataset_name} -----------')
@@ -1103,9 +1103,9 @@ def run_api_mode(args):
 
     # Build model args (shared across all datasets)
     if args.base_url is not None:
-        infer_api_wrapper = get_infer_api_wrapper(args.infer_api_wrapper)
+        api_model_class = get_api_model_class(args.model_class)
         model_args = build_model_from_base_url(args)
-        model_builder = partial(infer_api_wrapper, **model_args)
+        model_builder = partial(api_model_class, **model_args)
     else:
         assert model_name in supported_VLM, \
             f'Model "{model_name}" not found in supported_VLM. Consider using --base-url to specify an API endpoint.'
