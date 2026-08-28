@@ -305,10 +305,12 @@ class OpenAIResponsesWrapper(BaseAPI):
             if self.verbose:
                 logger.info(f'Finish reason: {finish_reason}')
             if finish_reason != 'stop':
-                return -1, self.fail_msg, (
+                log = (
                     f'Finish reason is not stop: {finish_reason}. '
                     f'Raw response: {response}'
                 )
+                logger.warning(log)
+                return -1, self.fail_msg, log
             if self.adapter is not None:
                 answer = self.adapter.postprocess(answer, dataset=dataset)
             return 0, answer, response
