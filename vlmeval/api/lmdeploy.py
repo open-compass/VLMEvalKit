@@ -178,6 +178,14 @@ class LMDeployWrapper(OpenAISDKWrapper):
 class LMDeployAPI(LMDeployWrapper):
 
     def __init__(self, **kwargs):
+        """
+        Args:
+            response_charset: Charset used to decode HTTP responses that do
+                not declare a charset in the Content-Type header. Defaults to
+                ``utf-8``. Set to ``None`` to keep requests' inferred encoding.
+            **kwargs: Additional keyword arguments forwarded to
+                :class:`LMDeployWrapper`.
+        """
         super().__init__(**kwargs)
 
     def generate(self, message, dataset=None):

@@ -95,7 +95,8 @@ class OpenAISDKWrapper(BaseAPI):
             model_adapter: Either a :class:`ModelAdapter` instance, a
                 registered adapter name (``str``), or ``None``.
             response_charset: Charset used to decode HTTP responses that do
-                not declare a charset in the Content-Type header.
+                not declare a charset in the Content-Type header. Defaults to
+                ``utf-8``. Set to ``None`` to keep requests' inferred encoding.
         """
         self.adapter = None
         self.stream = stream
