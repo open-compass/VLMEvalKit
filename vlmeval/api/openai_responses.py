@@ -301,6 +301,14 @@ class OpenAIResponsesWrapper(BaseAPI):
                 answer, response = self._collect_streaming_response(response)
             else:
                 answer = _extract_response_text(response)
+            finish_reason = _extract_finish_reason(response)
+            if self.verbose:
+                logger.info(f'Finish reason: {finish_reason}')
+            if finish_reason != 'stop':
+                return -1, self.fail_msg, (
+                    f'Finish reason is not stop: {finish_reason}. '
+                    f'Raw response: {response}'
+                )
             if self.adapter is not None:
                 answer = self.adapter.postprocess(answer, dataset=dataset)
             return 0, answer, response
