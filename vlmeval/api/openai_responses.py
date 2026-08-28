@@ -1,3 +1,4 @@
+import json
 import math
 import os
 
@@ -70,6 +71,33 @@ def _extract_finish_reason(response):
             return reason
 
     return _get_attr(response, 'status')
+
+
+def _is_finished_successfully(finish_reason):
+    return finish_reason in ('stop', 'completed')
+
+
+def _sanitize_payload_for_log(payload):
+    if isinstance(payload, dict):
+        sanitized = {}
+        for key, value in payload.items():
+            key_lower = str(key).lower()
+            if key_lower in ('api_key', 'key', 'authorization'):
+                sanitized[key] = '<redacted>'
+            elif key_lower in ('input', 'message', 'messages'):
+                sanitized[key] = '<omitted>'
+            else:
+                sanitized[key] = _sanitize_payload_for_log(value)
+        return sanitized
+
+    if isinstance(payload, list):
+        return [_sanitize_payload_for_log(x) for x in payload]
+
+    if isinstance(payload, str) and payload.startswith('data:'):
+        media_type = payload[5:].split(';', 1)[0]
+        return f'<{media_type} data omitted, length={len(payload)}>'
+
+    return payload
 
 
 class OpenAIResponsesWrapper(BaseAPI):
@@ -296,6 +324,9 @@ class OpenAIResponsesWrapper(BaseAPI):
 
         response = None
         try:
+            if self.verbose:
+                log_payload = json.dumps(_sanitize_payload_for_log(payload), ensure_ascii=False)
+                logger.info(f'Responses API request payload: {log_payload}')
             response = self.client.responses.create(**payload)
             if stream:
                 answer, response = self._collect_streaming_response(response)
@@ -304,13 +335,12 @@ class OpenAIResponsesWrapper(BaseAPI):
             finish_reason = _extract_finish_reason(response)
             if self.verbose:
                 logger.info(f'Finish reason: {finish_reason}')
-            if finish_reason != 'stop':
+            if not _is_finished_successfully(finish_reason):
                 log = (
-                    f'Finish reason is not stop: {finish_reason}. '
+                    f'Finish reason indicates an incomplete response: {finish_reason}. '
                     f'Raw response: {response}'
                 )
                 logger.warning(log)
-                return -1, self.fail_msg, log
             if self.adapter is not None:
                 answer = self.adapter.postprocess(answer, dataset=dataset)
             return 0, answer, response
