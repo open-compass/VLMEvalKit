@@ -1,7 +1,6 @@
 """Minimal Carbon-format molecular graph used by Graph and S-Graph scoring."""
 
 from __future__ import annotations
-
 import math
 import numbers
 from copy import deepcopy
@@ -10,7 +9,6 @@ from typing import Any, Mapping
 import networkx as nx
 
 from .utils import simplify_bonds
-
 
 DIRECTED_BOND_TYPES = {5, 6, 11, 13, 17, 21}
 

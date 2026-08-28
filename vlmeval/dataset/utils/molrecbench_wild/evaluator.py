@@ -1,7 +1,6 @@
 """Exact-match evaluators for Carbon-format molecular annotations."""
 
 from __future__ import annotations
-
 import argparse
 import copy
 import json
@@ -19,25 +18,13 @@ from networkx.algorithms import isomorphism
 
 from ._types import EvaluationResult
 from .mol_graph import MolGraph
-from .smiles_metric import (
-    ANNOTATION_METADATA_FIELDS,
-    DEFAULT_GT,
-    DEFAULT_PRED as DEFAULT_SMILES_PRED,
-    evaluate as run_smiles_evaluation,
-    prediction_coverage_errors,
-)
-from .utils import (
-    Convert_Rx_to_R,
-    canonicalize_smiles_w_superatom,
-    check_R_atom,
-    compare_brackets,
-    is_special_R,
-    iter_special_R_substitution_mappings,
-    normalize_greek_letters,
-    simplify_R_group_in_symbols,
-    special_R_stem,
-)
-
+from .smiles_metric import ANNOTATION_METADATA_FIELDS, DEFAULT_GT
+from .smiles_metric import DEFAULT_PRED as DEFAULT_SMILES_PRED
+from .smiles_metric import evaluate as run_smiles_evaluation
+from .smiles_metric import prediction_coverage_errors
+from .utils import (Convert_Rx_to_R, canonicalize_smiles_w_superatom, check_R_atom,
+                    compare_brackets, is_special_R, iter_special_R_substitution_mappings,
+                    normalize_greek_letters, simplify_R_group_in_symbols, special_R_stem)
 
 DEFAULT_GRAPH_PRED = (
     Path(__file__).resolve().parents[1]

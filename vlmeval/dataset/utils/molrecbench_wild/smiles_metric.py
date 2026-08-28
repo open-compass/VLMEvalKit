@@ -9,7 +9,6 @@ both forms of stereochemistry.
 """
 
 from __future__ import annotations
-
 import csv
 import json
 import re
@@ -19,12 +18,7 @@ from typing import Any, Iterable
 
 from rdkit import RDLogger
 
-from .utils import (
-    carbon_to_smiles,
-    canonicalize_smiles_w_superatom,
-    replace_superatom_with_mol,
-)
-
+from .utils import canonicalize_smiles_w_superatom, carbon_to_smiles, replace_superatom_with_mol
 
 RDLogger.DisableLog("rdApp.*")
 
