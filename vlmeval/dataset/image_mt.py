@@ -57,6 +57,7 @@ class ImageMTDataset(ImageBaseDataset):
 
 class MMDUDataset(ImageMTDataset):
 
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
     DATASET_URL = {'MMDU': 'https://opencompass.openxlab.space/utils/VLMEval/MMDU.tsv'}
     DATASET_MD5 = {'MMDU': '848b635a88a078f49aebcc6e39792061'}
     DIMS = [
@@ -99,7 +100,7 @@ class MMDUDataset(ImageMTDataset):
         nproc = judge_kwargs.pop('nproc', 4)
 
         data = load(eval_file)
-        model = judge_kwargs.pop('model', 'gpt-4o')
+        model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         judge_model = build_judge(model=model, **judge_kwargs)
 
         lt = len(data)

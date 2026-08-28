@@ -18,8 +18,6 @@ class TextMCQDataset(TextBaseDataset):
 
     DATASET_MD5 = {}
 
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
-
     def build_prompt(self, line):
 
         if isinstance(line, int):

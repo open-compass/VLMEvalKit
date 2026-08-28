@@ -12,12 +12,13 @@ def VLMBias_auxeval(verifier, pred, gt):
 
 
 class VLMBias(ImageVQADataset):
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     DATASET_URL = {'VLMBias': 'https://opencompass.openxlab.space/utils/VLMEval/VLMBias.tsv'}
     DATASET_MD5 = {'VLMBias': '23d0119c89243954e81f41a11a2ef347'}
 
     def evaluate(self, eval_file, **judge_kwargs):
-        model = judge_kwargs.pop('model', 'gpt-4o')
+        model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}_tmp')
         nproc = judge_kwargs.pop('nproc', 16)

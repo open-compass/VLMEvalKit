@@ -99,12 +99,12 @@ def insert_subtitles_into_frames(
 
 
 class LongVideoBench(VideoBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
 
     MD5 = '82905eae3a5ae7383c5a8ee9655e1ab9'
     SYS = ''
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='LongVideoBench', use_subtitle=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
@@ -297,7 +297,7 @@ class LongVideoBench(VideoBaseDataset):
         score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.get('model', 'exact_matching')
+            model = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
 
             if model == 'exact_matching':
                 model = None

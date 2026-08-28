@@ -241,6 +241,9 @@ class VizWiz(ImageBaseDataset):
 
 class VTCBench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     _DATASET_PATH = "https://huggingface.co/datasets/MLLM-CL/VTCBench"
     # Dataset URL mapping - points to different splits of HuggingFace dataset
     DATASET_URL = {
@@ -571,6 +574,9 @@ class OCRBench(ImageBaseDataset):
 
 class MathVista(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MathVista_MINI':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'
@@ -700,6 +706,9 @@ class MathVista(ImageBaseDataset):
 
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MathVerse_MINI':
         'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
@@ -842,6 +851,9 @@ class MathVerse(ImageBaseDataset):
 
 class MathVision(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MathVision':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVision.tsv',
@@ -984,6 +996,9 @@ class MathVision(ImageBaseDataset):
 
 class LENS(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'LENS-CN-QA':
         'https://huggingface.co/datasets/songlier/LENS/resolve/main/LENS-CN-QA.tsv',
@@ -1115,6 +1130,7 @@ class LENS(ImageBaseDataset):
 
 class Physics_yale(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     DATASET_URL = {
         'atomic_dataset':
         'https://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
@@ -1225,7 +1241,7 @@ class Physics_yale(ImageBaseDataset):
             model = os.path.basename(os.environ.get('LOCAL_LLM'))
             print(f'Using local model as judge model for PHYSICS: {model}')
         else:
-            model = judge_kwargs.setdefault('model', 'gpt-4o-mini')
+            model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -1274,6 +1290,13 @@ class Physics_yale(ImageBaseDataset):
 
 class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
+
+    def get_default_judge_model(self, judge_kwargs=None):
+        judge_kwargs = judge_kwargs or {}
+        if judge_kwargs.get('olympiad_use_api_judger', False):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(judge_kwargs)
+
     DATASET_URL = {
         'OlympiadBench':
         'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench.tsv',
@@ -1591,6 +1614,7 @@ class OlympiadBench(ImageBaseDataset):
 
 class SeePhys(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'deepseek'
     DATASET_URL = {
         'SeePhys':
         'https://huggingface.co/datasets/SeePhys/SeePhys/resolve/main/data_vlmevalkit/SeePhys_total.tsv',
@@ -1657,7 +1681,7 @@ class SeePhys(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.seephys import eval_acc, extract
 
-        model = judge_kwargs.pop('model', 'deepseek')
+        model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -1704,18 +1728,20 @@ class SeePhys(ImageBaseDataset):
 
 class LogicVista(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'LogicVista':
         'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
     }
     DATASET_MD5 = {'LogicVista': '41c5d33adf33765c399e0e6ae588c061'}
-    DEFAULT_JUDGE = ['gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini']
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.logicvista import LogicVista_auxeval, evaluate_logicvista
 
         # model = judge_kwargs['model']
-        model = judge_kwargs.get('model', 'exact_matching')
+        model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         name_str_map = {
             'gpt-4-0125': 'gpt4',
             'gpt-4-turbo': 'gpt4-turbo',
@@ -1893,6 +1919,9 @@ class MME_CoT(ImageBaseDataset):
 
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+
     DATASET_URL = {
         'LLaVABench':
         'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'
@@ -1934,6 +1963,8 @@ class LLaVABench(ImageBaseDataset):
 
 class LLaVABench_KO(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-0806'
+
     DATASET_URL = {
         'LLaVABench_KO':
         'https://huggingface.co/datasets/NCSOFT/K-LLaVA-W/resolve/main/LLaVABench_KO.tsv'
@@ -1976,6 +2007,8 @@ class LLaVABench_KO(ImageBaseDataset):
 
 class VGRPBench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     DATASET_URL = {
         'VGRPBench':
@@ -2038,6 +2071,9 @@ class VGRPBench(ImageBaseDataset):
 
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+
     DATASET_URL = {
         'MMVet':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
@@ -2958,6 +2994,7 @@ class MMNIAH(ImageBaseDataset):
 class MMSci_Captioning(ImageBaseDataset):
 
     TYPE = 'MMSci_Captioning'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-0806'
     DATASET_URL = {
         'MMSci_DEV_Captioning_image_only':
         'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_Captioning_image_only.tsv',  # noqa: E501
@@ -2969,7 +3006,6 @@ class MMSci_Captioning(ImageBaseDataset):
         'MMSci_DEV_Captioning_image_only': '0f5f0fd7ff383699fbd2203a4659d3e8',
         'MMSci_DEV_Captioning_with_abs': 'ae4a9b88166153efd74e28c989e4a484'
     }
-    DEFAULT_JUDGE = ['gpt-4o-0806', 'gemini-1.5-pro-exp-0801']
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mmsci import fact_score_generate  # noqa: F401
@@ -3044,7 +3080,7 @@ class MMSci_Captioning(ImageBaseDataset):
             if isinstance(references[0], str):
                 references = [[r] for r in references]
 
-            model = judge_kwargs.pop('model', 'gpt-4o-0806')
+            model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
             nproc = judge_kwargs.pop('nproc', 4)
             # not supported gemini-1.5-pro-exp-0801 as judge model yet、
             judge_model = build_judge(model=model, **judge_kwargs)
@@ -3143,6 +3179,8 @@ class BMMR(ImageBaseDataset):
 
 
 class TDBenchGrounding(ImageVQADataset):
+    DEFAULT_JUDGE_MODEL = 'centroid'
+
     DATASET_URL = {
         'tdbench_grounding_rot0':
         'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot0.tsv',  # noqa: E501
@@ -3163,7 +3201,7 @@ class TDBenchGrounding(ImageVQADataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.tdbench import evaluate_bbox, extract_bbox_from_string, rotational_eval
-        method = judge_kwargs.get('model', 'centroid')
+        method = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         assert method in ['centroid',
                           'iou'], '--judge should be either centroid or iou'
 
@@ -3317,6 +3355,9 @@ class CountBenchQA(ImageVQADataset):
 
 class OCR_Reasoning(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'OCR_Reasoning':
         'https://opencompass.openxlab.space/utils/VLMEval/OCR_Reasoning.tsv'
@@ -3609,6 +3650,8 @@ class Omni3DBench(ImageBaseDataset):
 
 class MMEReasoning(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {'MME-Reasoning': 'https://huggingface.co/datasets/U4R/MME-Reasoning/blob/main/MME_Reasoning.tsv'}
     DATASET_MD = {'MME-Reasoning': 'b243f44778782d3821523689f6b40a1e'}
 
@@ -3637,7 +3680,7 @@ class MMEReasoning(ImageBaseDataset):
         from .utils.mme_reasoning import (FAIL_MSG, MMEReasoning_acc, MMEReasoning_extract,  # noqa
                                           MMEReasoning_openeval, mme_reasoning_eval_functions)
 
-        model = judge_kwargs.get('model', 'gpt-4o-mini')
+        model = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract')
         tmp_file_extract = get_intermediate_file_path(eval_file, f'_{model}_extract_tmp')
         score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
@@ -3804,6 +3847,9 @@ class MMEReasoning(ImageBaseDataset):
 
 class MMVMBench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+
     DATASET_URL = {
         'MMVMBench':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVMBench.tsv'
@@ -3986,6 +4032,9 @@ class OCRBench_v2(ImageBaseDataset):
 
 class AyaVisionBench(ImageVQADataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
+
     DATASET_URL = {
         "AyaVisionBench":
             "https://huggingface.co/datasets/timothycdc/"
@@ -4065,6 +4114,9 @@ class AyaVisionBench(ImageVQADataset):
 
 class MathCanvas(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1-2025-04-14'
+
     DATASET_URL = {
         "MathCanvas-Bench":
         "https://huggingface.co/datasets/shiwk24/MathCanvas-Bench/resolve/main/MathCanvas_Bench_VLMEvalKit.tsv"
@@ -4163,6 +4215,9 @@ class MathCanvas(ImageBaseDataset):
 
 class MMReason(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
+
     mini_path = 'https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true'
     DATASET_URL = {
         'MMReason_testmini': mini_path,
@@ -4258,6 +4313,8 @@ class MMReason(ImageBaseDataset):
 class CoreCognition(ImageBaseDataset):
     TYPE = 'VQA'
 
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
+
     DATASET_URL = {
         'CoreCognition': 'https://huggingface.co/datasets/ZTWHHH/CoreCognition/resolve/main/CoreCognition.tsv'
     }
@@ -4291,7 +4348,7 @@ class CoreCognition(ImageBaseDataset):
         from .utils.corecognition import CoreCognition_acc, CoreCognition_eval
 
         nproc = judge_kwargs.pop('nproc', 4)
-        model = judge_kwargs.get('model', 'exact_matching')
+        model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4o-mini': 'gpt4omini', 'gpt-4.1': 'gpt41'}
         name_str = name_str_map[model] if model in name_str_map else model
 
