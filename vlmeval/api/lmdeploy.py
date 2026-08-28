@@ -37,6 +37,7 @@ class LMDeployWrapper(OpenAISDKWrapper):
                  custom_prompt=None,
                  video_llm: bool = False,
                  local_media: bool = False,
+                 response_charset='utf-8',
                  img_size: int = -1,
                  total_img_size: int = -1,
                  max_file_size: int = 1e9,
@@ -79,6 +80,7 @@ class LMDeployWrapper(OpenAISDKWrapper):
             wait=wait,
             system_prompt=system_prompt,
             verbose=verbose,
+            response_charset=response_charset,
             **kwargs,
         )
 
