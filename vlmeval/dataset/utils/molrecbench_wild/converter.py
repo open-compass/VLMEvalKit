@@ -8,7 +8,6 @@ its row in the output as an empty prediction and is reported as a diagnostic;
 """
 
 from __future__ import annotations
-
 import argparse
 import json
 import math
@@ -24,14 +23,8 @@ from typing import Any, Iterable, Mapping, Sequence
 
 import pandas as pd
 
-from .constants import (
-    AROMATIC_BOND_ID,
-    BOND_TYPES,
-    CROSSED_DOUBLE_BOND_ID,
-    DASHED_DATIVE_BOND_ID,
-    DATIVE_BOND_ID,
-)
-
+from .constants import (AROMATIC_BOND_ID, BOND_TYPES, CROSSED_DOUBLE_BOND_ID,
+                        DASHED_DATIVE_BOND_ID, DATIVE_BOND_ID)
 
 TRACKS = ("smiles", "s_graph", "graph")
 TRACK_ALIASES = {

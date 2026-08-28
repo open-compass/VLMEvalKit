@@ -6,7 +6,6 @@ available in inference-only environments.
 """
 
 from __future__ import annotations
-
 from importlib.util import find_spec
 from typing import Any, Iterable, Mapping
 

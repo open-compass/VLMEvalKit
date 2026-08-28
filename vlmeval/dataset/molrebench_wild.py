@@ -1,7 +1,6 @@
 """MolRecBench-Wild benchmark backed by one self-contained TSV file."""
 
 from __future__ import annotations
-
 import base64
 import json
 import os
@@ -11,9 +10,7 @@ from typing import Any, Mapping
 import pandas as pd
 
 from vlmeval.smp import LMUDataRoot, decode_base64_to_image_file, load
-
 from .image_base import ImageBaseDataset
-
 
 SMILES_DATASET = 'MolRecBench_Wild_SMILES'
 SGRAPH_DATASET = 'MolRecBench_Wild_SGraph'
