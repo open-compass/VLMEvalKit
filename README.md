@@ -34,6 +34,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 ## 🆕 News
 
+- **[2026-08-31]** Supported [**HERBench**](https://herbench.github.io/) (CVPR 2026), a benchmark for multi-evidence integration in video question answering: every question requires aggregating at least 3 temporally separated visual cues from long videos. Datasets: `HERBench` / `HERBench_lite` / `HERBench_lite_v2`. 🔥🔥🔥
 - **[2026-04-08]** Supported [**Video-MME-v2**](https://github.com/MME-Benchmarks/Video-MME-v2). Video-MME-v2 is an authoritative benchmark towards the next stage in video understanding evaluation. 🔥🔥🔥
 - **[2025-07-07]** Supported [**SeePhys**](https://seephys.github.io/), which is a ​full spectrum multimodal benchmark for evaluating physics reasoning across different knowledge levels. thanks to [**Quinn777**](https://github.com/Quinn777) 🔥🔥🔥
 - **[2025-07-02]** Supported [**OvisU1**](https://huggingface.co/AIDC-AI/Ovis-U1-3B), thanks to [**liyang-7**](https://github.com/liyang-7) 🔥🔥🔥
