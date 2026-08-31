@@ -100,6 +100,16 @@ def _sanitize_payload_for_log(payload):
     return payload
 
 
+def _format_response_for_log(response):
+    if response is None:
+        return None
+    if isinstance(response, dict):
+        return json.dumps(response, ensure_ascii=False, default=str)
+    if hasattr(response, 'to_json'):
+        return response.to_json()
+    return str(response)
+
+
 class OpenAIResponsesWrapper(BaseAPI):
     """OpenAI Responses API wrapper using the official OpenAI Python SDK."""
 
@@ -338,17 +348,17 @@ class OpenAIResponsesWrapper(BaseAPI):
             if not _is_finished_successfully(finish_reason):
                 log = (
                     f'Finish reason indicates an incomplete response: {finish_reason}. '
-                    f'Raw response: {response}'
+                    f'Raw response: {_format_response_for_log(response)}'
                 )
                 logger.warning(log)
             if self.adapter is not None:
                 answer = self.adapter.postprocess(answer, dataset=dataset)
-            return 0, answer, response
+            return 0, answer, _format_response_for_log(response)
         except Exception as err:
             if self.verbose:
                 logger.error(f'{type(err).__name__}: {err}')
                 logger.error(f'Finish reason: {_extract_finish_reason(response)}')
-                logger.error(response.text if hasattr(response, 'text') else response)
+                logger.error(_format_response_for_log(response))
             return -1, self.fail_msg, str(err)
 
 

@@ -152,7 +152,7 @@ def _safe_model_name(model_name):
 class BabyVision(ImageBaseDataset):
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DEFAULT_JUDGE_MODEL = 'openai/gpt-5.2'
+    DEFAULT_JUDGE_MODEL = 'gpt-5.2'
     DATASET_URL = {BABYVISION_DATASET: BABYVISION_ZIP_URL}
     DATASET_MD5 = {BABYVISION_DATASET: BABYVISION_ZIP_MD5}
     force_use_dataset_prompt = True
