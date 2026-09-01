@@ -87,16 +87,18 @@ def track_progress_rich(
         nproc: int | None = 1,
         save=None,
         keys=None,
+        save_func=None,
         use_process: bool = False,
         **kwargs) -> list:
 
     from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
     from tqdm import tqdm
+    save_func = save_func or dump
     if save is not None:
         assert osp.exists(osp.dirname(save)) or osp.dirname(save) == ''
         if not osp.exists(save):
-            dump({}, save)
+            save_func({}, save)
     if keys is not None:
         assert len(keys) == len(tasks)
     if not callable(func):
@@ -122,8 +124,8 @@ def track_progress_rich(
             results[idx] = result
             if keys is not None:
                 res[keys[idx]] = result
-                dump(res, save)
+                save_func(res, save)
 
     if save is not None:
-        dump(res, save)
+        save_func(res, save)
     return results
