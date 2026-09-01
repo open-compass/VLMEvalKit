@@ -11,9 +11,9 @@ from PIL import Image
 
 from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
                          load, md5, modelscope_flag_set)
-from ..utils.cgbench import post_process, unzip_hf_zip
+from ..utils.cgbench import unzip_hf_zip
 from ..video_base import VideoBaseDataset
-from .utils import get_timestampes, rating_func
+from .utils import get_timestampes, post_process, rating_func
 
 
 class CGAVCounting(VideoBaseDataset):
