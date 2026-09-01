@@ -4230,7 +4230,7 @@ class MathCanvas(ImageBaseDataset):
             json.dump(config, f, ensure_ascii=False, indent=4)
 
         tmp_file = get_judge_cache_file(eval_file, 'eval', judge_name)
-        detailed_results_file = get_judge_detail_file(eval_file, 'eval', judge_name, 'json')
+        detailed_results_file = get_judge_detail_file(eval_file, 'eval', judge_name, 'pkl')
         print("Evaluating missing or failed samples with judge, if any...")
         eval_results_list = evaluate_with_judge(eval_file, self.data, cache_file=tmp_file, **judge_kwargs)
         dump(eval_results_list, detailed_results_file)

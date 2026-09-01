@@ -26,6 +26,40 @@ def m4bench_judge_extract(judge, prompt):
     return judge_output
 
 
+def get_m4bench_option_labels(query):
+    """Return the explicit single-letter option labels declared by a question."""
+    matches = re.findall(r'(?im)^\s*(?:\(([A-Z])\)|([A-Z])[\).:：])\s*', str(query))
+    labels = {(left or right).upper() for left, right in matches}
+    return labels if len(labels) >= 2 else set()
+
+
+def get_ans(output, valid_options):
+    """Parse an explicit answer label without guessing from ordinary prose."""
+    allowed = {
+        str(label).strip().upper()
+        for label in (valid_options or ())
+        if re.fullmatch(r'[A-Za-z]', str(label).strip())
+    }
+    allowed.add('Z')
+    text = str(output).strip()
+    patterns = (
+        r'\(\s*([A-Z])\s*\)[.!]?',
+        r'([A-Z])[.!]?',
+        r'(?:answer|output)\s*[:：]\s*\(\s*([A-Z])\s*\)[.!]?',
+        r'(?:answer|output)\s*[:：]\s*([A-Z])[.!]?',
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, text, flags=re.IGNORECASE)
+        if match:
+            label = match.group(1).upper()
+            return label if label in allowed else None
+    return None
+
+
+def m4bench_judge_failed(result, valid_options):
+    return get_ans(result, valid_options) is None
+
+
 class M4Bench(ImageBaseDataset):
     """
     Dataset class for M4Bench, handling single and dual image inputs.
@@ -121,19 +155,6 @@ class M4Bench(ImageBaseDataset):
         detail_file = get_judge_detail_file(eval_file, 'extract', judge_name)
         score_file = get_judge_score_file(eval_file, judge_name, 'json')
 
-        def get_ans(s):
-            s = str(s)
-            match = re.search(r'\(([A-Z])\)', s)
-            if match:
-                return match.group(1)
-            match = re.search(r'(?i)(?:answer|output)\s*[:：]\s*([A-Z])\b', s)
-            if match:
-                return match.group(1).upper()
-            match = re.search(r'^\s*([A-Z])\s*[\).:：]?', s)
-            if match and len(s.strip().split()) <= 3:
-                return match.group(1)
-            return None
-
         if judge_kwargs:
             nproc = judge_kwargs.pop('nproc', 4)
             tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
@@ -149,6 +170,7 @@ class M4Bench(ImageBaseDataset):
 
             df['question_text'] = df['query'].apply(extract_question)
             df['options_text'] = df['query'].apply(extract_options)
+            option_sets = [get_m4bench_option_labels(query) for query in df['query']]
 
             prompt_tmpl = (
                 'You are an AI assistant who will help me to match '
@@ -156,7 +178,7 @@ class M4Bench(ImageBaseDataset):
                 'You are provided with a question, several options, and an answer, '    # noqa: E501
                 'and you need to find which option is most similar to the answer. '    # noqa: E501
                 'If the meaning of all options are significantly different from the answer, output Z. '   # noqa: E501
-                'Your should output a single uppercase character in A, B, C, D (if they are valid options), and Z. \n'    # noqa: E501
+                'You should output one valid option label, or Z when no option matches. \n'
                 'Example 1: \n'
                 'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'    # noqa: E501
                 'Answer: a cute teddy bear\nYour output: A\n'
@@ -178,8 +200,8 @@ class M4Bench(ImageBaseDataset):
             cache = load_judge_cache(tmp_file)
             pending_prompts = []
             pending_indices = []
-            for idx, prompt in zip(indices, prompts):
-                if idx not in cache or get_ans(cache[idx]) is None:
+            for idx, prompt, valid_options in zip(indices, prompts, option_sets):
+                if idx not in cache or m4bench_judge_failed(cache[idx], valid_options):
                     pending_prompts.append(prompt)
                     pending_indices.append(idx)
 
@@ -201,16 +223,33 @@ class M4Bench(ImageBaseDataset):
                 except Exception as e:
                     print(f"Error during judge evaluation: {e}")
                     print(DEBUG_MESSAGE)
+                if osp.exists(tmp_file):
+                    cache = load_judge_cache(tmp_file)
 
-            df['judge_raw'] = [cache.get(idx, '') for idx in indices]
-            df['parsed_pred'] = [
-                get_ans(cache.get(idx, '')) or get_ans(pred)
-                for idx, pred in zip(indices, df['prediction'])
-            ]
+            judge_raw, parsed_pred, judge_method = [], [], []
+            for idx, pred, valid_options in zip(indices, df['prediction'], option_sets):
+                raw = cache.get(idx, '')
+                parsed_judge = get_ans(raw, valid_options)
+                parsed_fallback = get_ans(pred, valid_options)
+                judge_raw.append(raw)
+                if parsed_judge is not None:
+                    parsed_pred.append(parsed_judge)
+                    judge_method.append('judge')
+                else:
+                    parsed_pred.append(parsed_fallback)
+                    judge_method.append('exact_match' if parsed_fallback is not None else 'failed')
+            df['judge_raw'] = judge_raw
+            df['parsed_pred'] = parsed_pred
+            df['judge_method'] = judge_method
         else:
             # Fallback to simple parsing if no judge is provided
             df['judge_raw'] = df['prediction']
-            df['parsed_pred'] = df['prediction'].apply(get_ans)
+            option_sets = [get_m4bench_option_labels(query) for query in df['query']]
+            df['parsed_pred'] = [get_ans(pred, options) for pred, options in zip(df['prediction'], option_sets)]
+            df['judge_method'] = [
+                'exact_match' if parsed is not None else 'failed'
+                for parsed in df['parsed_pred']
+            ]
 
         # Calculate score
         df['score'] = (df['parsed_pred'] == df['response'])
