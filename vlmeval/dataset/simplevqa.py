@@ -99,10 +99,17 @@ COMPARE_ANSWER_PROMPT = """
 def simplevqa_judge_failed(result):
     if not isinstance(result, dict):
         return True
-    judge_res = result.get('judge_res', {}).get('model_response')
+    judge_results = result.get('judge_res')
+    if not isinstance(judge_results, dict):
+        return True
+    judge_res = judge_results.get('model_response')
     if isinstance(judge_res, dict):
-        return judge_res.get('conclusion') == '答案解析失败'
-    return judge_res is None or '答案解析失败' in str(judge_res)
+        judge_res = judge_res.get('conclusion')
+    return (
+        not isinstance(judge_res, str)
+        or not judge_res.strip()
+        or '答案解析失败' in judge_res
+    )
 
 
 class SimpleVQA(ImageBaseDataset):
