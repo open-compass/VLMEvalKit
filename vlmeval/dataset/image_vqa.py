@@ -30,7 +30,7 @@ from .utils.vqa_eval import istype
 def llava_judge_failed(result):
     return (
         not isinstance(result, (list, tuple)) or len(result) != 2
-        or any(score is None or score < 0 for score in result)
+        or any(not isinstance(score, (int, float, np.number)) or score < 0 for score in result)
     )
 
 
@@ -40,7 +40,11 @@ def vgrp_judge_failed(result):
 
 
 def corecognition_judge_failed(result):
-    return not isinstance(result, dict) or result.get('matched', 'Fail').upper() == 'FAIL'
+    required = {'matched', 'judge_log', 'judge_method', 'correct'}
+    if not isinstance(result, dict) or not required.issubset(result):
+        return True
+    matched = result['matched']
+    return not isinstance(matched, str) or matched.upper() == 'FAIL'
 
 
 class ImageVQADataset(ImageBaseDataset):
@@ -1950,41 +1954,37 @@ class LLaVABench(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.llavabench import LLaVABench_atomeval, LLaVABench_score, build_prompt
 
-        judge_name = judge_kwargs.get('model', 'default')
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         tmp_file = get_judge_cache_file(eval_file, 'eval', judge_name)
         record_file = get_judge_detail_file(eval_file, 'eval', judge_name)
         score_file = get_judge_score_file(eval_file, judge_name, 'csv')
         nproc = judge_kwargs.pop('nproc', 4)
         system_prompt = 'You are a helpful and precise assistant for checking the quality of the answer.'
 
-        if not osp.exists(record_file):
-            data = load(eval_file)
-            lines = [data.iloc[i] for i in range(len(data))]
-            indices = data['index'].tolist() if 'index' in data.columns else list(range(len(data)))
+        data = load(eval_file)
+        lines = [data.iloc[i] for i in range(len(data))]
+        indices = data['index'].tolist() if 'index' in data.columns else list(range(len(data)))
+        prompts = [build_prompt(line) for line in lines]
+        scores = load_judge_cache(tmp_file)
+        pending = [idx for idx in indices if idx not in scores or llava_judge_failed(scores[idx])]
+        if pending:
+            model = build_judge(temperature=0.2, system_prompt=system_prompt, **judge_kwargs)
+            assert model.working(), 'LLaVABench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            tups = [(model, prompt) for prompt in prompts]
+            scores = run_cached_tasks(
+                LLaVABench_atomeval,
+                tups,
+                indices,
+                tmp_file,
+                nproc=nproc,
+                chunksize=nproc,
+                failure_fn=llava_judge_failed,
+            )
+        ordered_scores = [scores.get(idx, (-1, -1)) for idx in indices]
+        data['gpt4_score'] = [score[0] if not llava_judge_failed(score) else -1 for score in ordered_scores]
+        data['score'] = [score[1] if not llava_judge_failed(score) else -1 for score in ordered_scores]
+        dump(data, record_file)
 
-            prompts = [build_prompt(line) for line in lines]
-            scores = load_judge_cache(tmp_file)
-            pending = [idx for idx in indices if idx not in scores or llava_judge_failed(scores[idx])]
-            if pending:
-                model = build_judge(temperature=0.2,
-                                    system_prompt=system_prompt,
-                                    **judge_kwargs)
-                assert model.working(), 'LLaVABench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
-                tups = [(model, prompt) for prompt in prompts]
-                scores = run_cached_tasks(
-                    LLaVABench_atomeval,
-                    tups,
-                    indices,
-                    tmp_file,
-                    nproc=nproc,
-                    chunksize=nproc,
-                    failure_fn=llava_judge_failed,
-                )
-            data['gpt4_score'] = [scores[idx][0] for idx in indices]
-            data['score'] = [scores[idx][1] for idx in indices]
-            dump(data, record_file)
-
-        data = load(record_file)
         ret = LLaVABench_score(data).round(1)
         dump(ret, score_file)
         return ret
@@ -2005,41 +2005,37 @@ class LLaVABench_KO(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.llavabench import LLaVABench_atomeval, LLaVABench_score, build_prompt_ko
 
-        judge_name = judge_kwargs.get('model', 'default')
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         tmp_file = get_judge_cache_file(eval_file, 'eval', judge_name)
         record_file = get_judge_detail_file(eval_file, 'eval', judge_name)
         score_file = get_judge_score_file(eval_file, judge_name, 'csv')
         nproc = judge_kwargs.pop('nproc', 4)
         system_prompt = 'You are a helpful and precise assistant for checking the quality of the answer.'
 
-        if not osp.exists(record_file):
-            data = load(eval_file)
-            lines = [data.iloc[i] for i in range(len(data))]
-            indices = data['index'].tolist() if 'index' in data.columns else list(range(len(data)))
+        data = load(eval_file)
+        lines = [data.iloc[i] for i in range(len(data))]
+        indices = data['index'].tolist() if 'index' in data.columns else list(range(len(data)))
+        prompts = [build_prompt_ko(line) for line in lines]
+        scores = load_judge_cache(tmp_file)
+        pending = [idx for idx in indices if idx not in scores or llava_judge_failed(scores[idx])]
+        if pending:
+            model = build_judge(temperature=0.2, system_prompt=system_prompt, **judge_kwargs)
+            assert model.working(), 'LLaVABench_KO evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            tups = [(model, prompt) for prompt in prompts]
+            scores = run_cached_tasks(
+                LLaVABench_atomeval,
+                tups,
+                indices,
+                tmp_file,
+                nproc=nproc,
+                chunksize=nproc,
+                failure_fn=llava_judge_failed,
+            )
+        ordered_scores = [scores.get(idx, (-1, -1)) for idx in indices]
+        data['gpt4_score'] = [score[0] if not llava_judge_failed(score) else -1 for score in ordered_scores]
+        data['score'] = [score[1] if not llava_judge_failed(score) else -1 for score in ordered_scores]
+        dump(data, record_file)
 
-            prompts = [build_prompt_ko(line) for line in lines]
-            scores = load_judge_cache(tmp_file)
-            pending = [idx for idx in indices if idx not in scores or llava_judge_failed(scores[idx])]
-            if pending:
-                model = build_judge(temperature=0.2,
-                                    system_prompt=system_prompt,
-                                    **judge_kwargs)
-                assert model.working(), 'LLaVABench_KO evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
-                tups = [(model, prompt) for prompt in prompts]
-                scores = run_cached_tasks(
-                    LLaVABench_atomeval,
-                    tups,
-                    indices,
-                    tmp_file,
-                    nproc=nproc,
-                    chunksize=nproc,
-                    failure_fn=llava_judge_failed,
-                )
-            data['gpt4_score'] = [scores[idx][0] for idx in indices]
-            data['score'] = [scores[idx][1] for idx in indices]
-            dump(data, record_file)
-
-        data = load(record_file)
         ret = LLaVABench_score(data).round(1)
         dump(ret, score_file)
         return ret
@@ -2062,55 +2058,44 @@ class VGRPBench(ImageBaseDataset):
         from .utils.vgrpbench.evaluation import (VGRPBench_atomeval, VGRPBench_get_system_prompt,
                                                  VGRPBench_score, build_prompt)
 
-        judge_name = judge_kwargs.get('model', 'default')
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         tmp_file = get_judge_cache_file(eval_file, 'eval', judge_name)
         record_file = get_judge_detail_file(eval_file, 'eval', judge_name)
         score_file = get_judge_score_file(eval_file, judge_name, 'csv')
 
         nproc = judge_kwargs.pop('nproc', 4)
 
-        if not osp.exists(record_file):
-            data = load(eval_file)
-            lines = [data.iloc[i] for i in range(len(data))]
-            indices = data['index'].tolist() if 'index' in data.columns else list(range(len(data)))
+        data = load(eval_file)
+        lines = [data.iloc[i] for i in range(len(data))]
+        indices = data['index'].tolist() if 'index' in data.columns else list(range(len(data)))
+        system_prompts = [VGRPBench_get_system_prompt(line) for line in lines]
+        prompts = [build_prompt(line) for line in lines]
+        scores = load_judge_cache(tmp_file)
+        pending = [idx for idx in indices if idx not in scores or vgrp_judge_failed(scores[idx])]
+        if pending:
+            pending_set = set(pending)
+            tups = []
+            for idx, system_prompt, prompt, line in zip(indices, system_prompts, prompts, lines):
+                if idx not in pending_set:
+                    continue
+                model = build_judge(temperature=0.0, system_prompt=system_prompt, **judge_kwargs)
+                tups.append((model, prompt, line))
 
-            system_prompts = [
-                VGRPBench_get_system_prompt(line) for line in lines
-            ]
+            scores = run_cached_tasks(
+                VGRPBench_atomeval,
+                tups,
+                pending,
+                tmp_file,
+                nproc=nproc,
+                chunksize=nproc,
+                failure_fn=vgrp_judge_failed,
+            )
 
-            prompts = [build_prompt(line) for line in lines]
-            scores = load_judge_cache(tmp_file)
-            pending = [idx for idx in indices if idx not in scores or vgrp_judge_failed(scores[idx])]
-            if pending:
-                tups = []
-                for idx, system_prompt, prompt, line in zip(indices, system_prompts, prompts, lines):
-                    if idx not in pending:
-                        continue
-                    model = build_judge(temperature=0.0,
-                                        system_prompt=system_prompt,
-                                        **judge_kwargs)
-                    tups.append((model, prompt, line))
-
-                scores = run_cached_tasks(
-                    VGRPBench_atomeval,
-                    tups,
-                    pending,
-                    tmp_file,
-                    nproc=nproc,
-                    chunksize=nproc,
-                    failure_fn=vgrp_judge_failed,
-                )
-
-            data['perception_correct'] = [
-                scores[idx]['perception_correct'] for idx in indices
-            ]
-            data['answer_correct'] = [scores[idx]['answer_correct'] for idx in indices]
-            data['number_of_samples'] = [
-                scores[idx]['number_of_samples'] for idx in indices
-            ]
-            dump(data, record_file)
-
-        data = load(record_file)
+        ordered_scores = [scores.get(idx, {}) for idx in indices]
+        data['perception_correct'] = [score.get('perception_correct', 0) for score in ordered_scores]
+        data['answer_correct'] = [score.get('answer_correct', 0) for score in ordered_scores]
+        data['number_of_samples'] = [score.get('number_of_samples', 0) for score in ordered_scores]
+        dump(data, record_file)
 
         ret = VGRPBench_score(data).round(1)
         dump(ret, score_file)
@@ -4238,7 +4223,7 @@ class MathCanvas(ImageBaseDataset):
             "temperature": 0.0,
         })
 
-        judge_name = judge_kwargs.get('model', 'default')
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         config = {'hint': self.HINT, 'judge_kwargs': judge_kwargs}
         config_file = get_intermediate_file_path(eval_file, '_config')
         with open(config_file, 'w', encoding='utf-8') as f:
@@ -4246,13 +4231,9 @@ class MathCanvas(ImageBaseDataset):
 
         tmp_file = get_judge_cache_file(eval_file, 'eval', judge_name)
         detailed_results_file = get_judge_detail_file(eval_file, 'eval', judge_name, 'json')
-        if not os.path.exists(detailed_results_file):
-            print("Evaluating with judge, this may take a while...")
-            eval_results_list = evaluate_with_judge(eval_file, self.data, cache_file=tmp_file, **judge_kwargs)
-            dump(eval_results_list, detailed_results_file)
-        else:
-            print(f"Loading existing evaluation results from {detailed_results_file}")
-            eval_results_list = load(detailed_results_file)
+        print("Evaluating missing or failed samples with judge, if any...")
+        eval_results_list = evaluate_with_judge(eval_file, self.data, cache_file=tmp_file, **judge_kwargs)
+        dump(eval_results_list, detailed_results_file)
 
         summary_dict = summarize_mathcanvas_results(eval_results_list)
 
@@ -4402,9 +4383,6 @@ class CoreCognition(ImageBaseDataset):
         tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
         detail_file = get_judge_detail_file(eval_file, 'extract', judge_name)
         score_file = get_judge_score_file(eval_file, judge_name, 'csv')
-        if osp.exists(score_file):
-            acc = load(score_file)
-            return acc
 
         data = load(eval_file)
         data = data.sort_values(by='index')
@@ -4421,33 +4399,31 @@ class CoreCognition(ImageBaseDataset):
         meta_merge = meta[['index', 'answer', 'category', 'l2-category', 'question_type']]
         data = data.merge(meta_merge, on='index', how='left')
 
-        if not osp.exists(detail_file):
-            indices = data['index'].tolist()
-            judged = load_judge_cache(tmp_file)
-            pending = [idx for idx in indices if idx not in judged or corecognition_judge_failed(judged[idx])]
-            if pending:
-                model = build_judge(**judge_kwargs)
-                if not model.working():
-                    warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
-                    warnings.warn(DEBUG_MESSAGE)
-                    model = None
-                tasks = [(model, row.to_dict()) for _, row in data.iterrows()]
-                judged = run_cached_tasks(
-                    CoreCognition_eval_single,
-                    tasks,
-                    indices,
-                    tmp_file,
-                    nproc=nproc,
-                    chunksize=nproc,
-                    failure_fn=corecognition_judge_failed,
-                )
-            data['judge_pred'] = [judged[idx]['matched'] for idx in indices]
-            data['judge_log'] = [judged[idx]['judge_log'] for idx in indices]
-            data['judge_method'] = [judged[idx]['judge_method'] for idx in indices]
-            data['correct'] = [judged[idx]['correct'] for idx in indices]
-            dump(data, detail_file)
-        else:
-            data = load(detail_file)
+        indices = data['index'].tolist()
+        judged = load_judge_cache(tmp_file)
+        pending = [idx for idx in indices if idx not in judged or corecognition_judge_failed(judged[idx])]
+        if pending:
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+            tasks = [(model, row.to_dict()) for _, row in data.iterrows()]
+            judged = run_cached_tasks(
+                CoreCognition_eval_single,
+                tasks,
+                indices,
+                tmp_file,
+                nproc=nproc,
+                chunksize=nproc,
+                failure_fn=corecognition_judge_failed,
+            )
+        ordered_results = [judged.get(idx, {}) for idx in indices]
+        data['judge_pred'] = [result.get('matched', 'Fail') for result in ordered_results]
+        data['judge_log'] = [result.get('judge_log', '') for result in ordered_results]
+        data['judge_method'] = [result.get('judge_method', 'failed') for result in ordered_results]
+        data['correct'] = [result.get('correct', 0) for result in ordered_results]
+        dump(data, detail_file)
 
         # Calculate accuracy
         acc = CoreCognition_acc(data)

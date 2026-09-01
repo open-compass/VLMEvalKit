@@ -10,8 +10,8 @@ from openai import OpenAI
 from pydantic import BaseModel, Field, model_validator
 from tqdm import tqdm
 
-from vlmeval.smp import dump, load, load_env
-from .judge_cache import load_judge_cache
+from vlmeval.smp import load, load_env
+from .judge_cache import dump_judge_cache, load_judge_cache
 
 current_script_path = Path(__file__).resolve()
 current_dir = current_script_path.parent
@@ -165,9 +165,6 @@ def mathcanvas_judge_failed(result):
 
 
 def evaluate_with_judge(eval_file, ground_truth_data, cache_file=None, **judge_kwargs):
-    if OpenAI is None:
-        raise ImportError("OpenAI library is required for MathCanvas evaluation. Please install it.")
-
     predictions = load(eval_file)
 
     tasks = []
@@ -185,6 +182,8 @@ def evaluate_with_judge(eval_file, ground_truth_data, cache_file=None, **judge_k
 
     max_workers = judge_kwargs.get('nproc', 16)
     if tasks:
+        if OpenAI is None:
+            raise ImportError("OpenAI library is required for MathCanvas evaluation. Please install it.")
         load_env()
         api_key = os.environ.get("OPENAI_API_KEY", None)
         base_url = os.environ.get("OPENAI_API_BASE", None)
@@ -199,7 +198,7 @@ def evaluate_with_judge(eval_file, ground_truth_data, cache_file=None, **judge_k
             ):
                 cache[task_key] = result
                 if cache_file is not None:
-                    dump(cache, cache_file)
+                    dump_judge_cache(cache, cache_file)
 
     detailed_results = []
     for _, pred_row in predictions.iterrows():

@@ -182,42 +182,34 @@ class DUDE(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        judge_name = judge_kwargs['model']
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         storage = get_judge_detail_file(eval_file, 'extract', judge_name)
         tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
         legacy_tmp_file = get_judge_named_legacy_cache_file(eval_file, judge_name)
         legacy_files = [legacy_tmp_file] if legacy_tmp_file is not None else []
 
-        if osp.exists(storage):
-            logger.warning(f'GPT scoring file {storage} already exists, will reuse it in DUDE_eval. ')
-        else:
-            data = load(eval_file)
-            lt = len(data)
-            lines = [data.iloc[i] for i in range(lt)]
-            indices = [line['index'] for line in lines]
-            ans = load_judge_cache(tmp_file, legacy_files=legacy_files)
-            pending = [idx for idx in indices if idx not in ans or MMLongBench_judge_failed(ans[idx])]
-            if pending:
-                model = build_judge(max_tokens=128, **judge_kwargs)
-                tups = [(model, line) for line in lines]
-                ans = run_cached_tasks(
-                    MMLongBench_auxeval,
-                    tups,
-                    indices,
-                    tmp_file,
-                    legacy_files=legacy_files,
-                    failure_fn=MMLongBench_judge_failed,
-                )
+        data = load(eval_file)
+        lines = [data.iloc[i] for i in range(len(data))]
+        indices = [line['index'] for line in lines]
+        ans = load_judge_cache(tmp_file, legacy_files=legacy_files)
+        pending = [idx for idx in indices if idx not in ans or MMLongBench_judge_failed(ans[idx])]
+        if pending:
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            tups = [(model, line) for line in lines]
+            ans = run_cached_tasks(
+                MMLongBench_auxeval,
+                tups,
+                indices,
+                tmp_file,
+                legacy_files=legacy_files,
+                failure_fn=MMLongBench_judge_failed,
+            )
 
-            log_map, res_map, pred_map = {}, {}, {}
-            for k, v in ans.items():
-                log_map[k] = v['log']
-                res_map[k] = v['res']
-                pred_map[k] = v['pred']
-            data['res'] = [res_map[idx] for idx in data['index']]
-            data['log'] = [log_map[idx] for idx in data['index']]
-            data['pred'] = [pred_map[idx] for idx in data['index']]
-            dump(data, storage)
+        ordered_results = [ans.get(idx, {}) for idx in indices]
+        data['res'] = [result.get('res', '') for result in ordered_results]
+        data['log'] = [result.get('log', '') for result in ordered_results]
+        data['pred'] = [result.get('pred', '') for result in ordered_results]
+        dump(data, storage)
 
         score = DUDE_acc(storage)
         score_pth = get_judge_score_file(eval_file, judge_name, 'csv')

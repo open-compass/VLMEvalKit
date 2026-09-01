@@ -8,8 +8,9 @@ from openai import OpenAI
 from tqdm import tqdm
 
 from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.dataset.utils.judge_cache import (get_judge_cache_file, get_judge_detail_file,
-                                               get_judge_score_file, load_judge_cache)
+from vlmeval.dataset.utils.judge_cache import (dump_judge_cache, get_judge_cache_file,
+                                               get_judge_detail_file, get_judge_score_file,
+                                               load_judge_cache)
 from vlmeval.dataset.utils.simplevqa import SimpleVQAEval
 from vlmeval.smp import file, misc
 
@@ -106,6 +107,7 @@ def simplevqa_judge_failed(result):
 
 class SimpleVQA(ImageBaseDataset):
     TYPE = "VQA"
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
     DATASET_URL = {
         "SimpleVQA": "https://opencompass.openxlab.space/utils/VLMEval/SimpleVQA.tsv",
     }
@@ -206,7 +208,7 @@ class SimpleVQA(ImageBaseDataset):
                 for future in tqdm(as_completed(futures), total=len(pending)):
                     cache_key, res_json = future.result()
                     cache[cache_key] = res_json
-                    file.dump(cache, cache_file)
+                    dump_judge_cache(cache, cache_file)
 
         results = [cache[key] for key in indices]
         scores = SimpleVQAEval(results)
@@ -223,17 +225,13 @@ class SimpleVQA(ImageBaseDataset):
         Returns:
             DataFrame with evaluation scores by category
         """
-        judge_name = judge_kwargs.get('model', 'gpt-4o')
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         tmp_file = get_judge_cache_file(eval_file, 'eval', judge_name)
         detail_file = get_judge_detail_file(eval_file, 'eval', judge_name, 'json')
         score_file = get_judge_score_file(eval_file, judge_name, 'csv')
 
-        if not os.path.exists(detail_file):
-            results, score = self.get_scores(eval_file, cache_file=tmp_file, **judge_kwargs)
-            file.dump(results, detail_file)
-        else:
-            results = file.load(detail_file)
-            score = pd.DataFrame(list(SimpleVQAEval(results).items()))
+        results, score = self.get_scores(eval_file, cache_file=tmp_file, **judge_kwargs)
+        file.dump(results, detail_file)
 
         file.dump(score, score_file)
         return score

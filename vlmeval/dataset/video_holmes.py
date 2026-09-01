@@ -11,11 +11,15 @@ from PIL import Image
 
 from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
                          load, md5, modelscope_flag_set)
-from .utils.judge_cache import (get_judge_cache_file, get_judge_detail_file, get_judge_score_file,
-                                load_judge_cache)
+from .utils.judge_cache import (dump_judge_cache, get_judge_cache_file, get_judge_detail_file,
+                                get_judge_score_file, has_judge_failure, load_judge_cache)
 from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
+
+
+def video_holmes_judge_failed(result):
+    return has_judge_failure(result) or not isinstance(result, str) or result.strip().lower() in ('', 'fail')
 
 
 def unwrap_hf_pkl(pth, suffix='.mp4'):
@@ -225,34 +229,33 @@ class Video_Holmes(VideoBaseDataset):
         detail_file = get_judge_detail_file(eval_file, 'extract', judge_name)
         score_file = get_judge_score_file(eval_file, judge_name, 'json')
 
-        if not osp.exists(detail_file):
-            res = load_judge_cache(tmp_file, ignored_legacy_files=[untrusted_legacy_tmp_file])
+        res = load_judge_cache(tmp_file, ignored_legacy_files=[untrusted_legacy_tmp_file])
+        data = load(eval_file)
+        data_un = data[~pd.isna(data['prediction'])]
 
-            data = load(eval_file)
-            data_un = data[~pd.isna(data['prediction'])]
+        for idx in data['index']:
+            ans = data.loc[data['index'] == idx, 'answer'].values[0]
+            pred = str(data.loc[data['index'] == idx, 'prediction'].values[0])
 
-            for idx in data['index']:
-                ans = data.loc[data['index'] == idx, 'answer'].values[0]
-                pred = str(data.loc[data['index'] == idx, 'prediction'].values[0])
-
-                predicted_answer = res.get(idx, extract_option(pred))
+            predicted_answer = res.get(idx)
+            if video_holmes_judge_failed(predicted_answer):
+                predicted_answer = extract_option(pred)
                 res[idx] = predicted_answer
-                dump(res, tmp_file)
+                dump_judge_cache(res, tmp_file)
 
-                data.loc[data['index'] == idx, 'judge_pred'] = predicted_answer
-                data.loc[data['index'] == idx, 'score'] = int(predicted_answer == ans)
-
-            rejected = [x for x in data['score'] if x == -1]
-
-            print(
-                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
-                f'failed to obtain the score for another {len(rejected)} questions. '
-                f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
+            data.loc[data['index'] == idx, 'judge_pred'] = predicted_answer
+            data.loc[data['index'] == idx, 'score'] = (
+                -1 if video_holmes_judge_failed(predicted_answer) else int(predicted_answer == ans)
             )
 
-            dump(data, detail_file)
+        rejected = [x for x in data['score'] if x == -1]
+        print(
+            f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
+            f'failed to obtain the score for another {len(rejected)} questions. '
+            f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
+        )
 
-        rating = load(score_file) if osp.exists(score_file) else get_dimension_rating(detail_file)
-        if not osp.exists(score_file):
-            dump(rating, score_file)
+        dump(data, detail_file)
+        rating = get_dimension_rating(detail_file)
+        dump(rating, score_file)
         return rating

@@ -7,8 +7,8 @@ from ..smp import decode_base64_to_image_file, dump, load
 from ..utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
-from .utils.judge_cache import (get_judge_cache_file, get_judge_detail_file, get_judge_score_file,
-                                load_judge_cache)
+from .utils.judge_cache import (dump_judge_cache, get_judge_cache_file, get_judge_detail_file,
+                                get_judge_score_file, load_judge_cache)
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -134,7 +134,7 @@ class M4Bench(ImageBaseDataset):
                 return match.group(1)
             return None
 
-        if judge_kwargs and not osp.exists(detail_file):
+        if judge_kwargs:
             nproc = judge_kwargs.pop('nproc', 4)
             tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
             indices = df['index'].tolist() if 'index' in df.columns else list(range(len(df)))
@@ -195,14 +195,12 @@ class M4Bench(ImageBaseDataset):
                         chunksize=nproc,
                         keys=pending_indices,
                         save=tmp_file,
+                        save_func=dump_judge_cache,
                     )
                     cache = load_judge_cache(tmp_file)
                 except Exception as e:
                     print(f"Error during judge evaluation: {e}")
                     print(DEBUG_MESSAGE)
-                    prediction_map = dict(zip(indices, df['prediction']))
-                    cache.update({idx: prediction_map[idx] for idx in pending_indices})
-                    dump(cache, tmp_file)
 
             df['judge_raw'] = [cache.get(idx, '') for idx in indices]
             df['parsed_pred'] = [
@@ -211,11 +209,8 @@ class M4Bench(ImageBaseDataset):
             ]
         else:
             # Fallback to simple parsing if no judge is provided
-            if osp.exists(detail_file):
-                df = load(detail_file)
-            else:
-                df['judge_raw'] = df['prediction']
-                df['parsed_pred'] = df['prediction'].apply(get_ans)
+            df['judge_raw'] = df['prediction']
+            df['parsed_pred'] = df['prediction'].apply(get_ans)
 
         # Calculate score
         df['score'] = (df['parsed_pred'] == df['response'])

@@ -17,12 +17,16 @@ from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermedi
                          load, md5)
 from vlmeval.smp.file import LMUDataRoot
 from ..utils import DEBUG_MESSAGE, build_judge
-from ..utils.judge_cache import (get_judge_cache_file, get_judge_detail_file, get_judge_score_file,
-                                 has_judge_failure, load_judge_cache)
+from ..utils.judge_cache import (dump_judge_cache, get_judge_cache_file, get_judge_detail_file,
+                                 get_judge_score_file, has_judge_failure, load_judge_cache)
 from ..video_base import VideoBaseDataset
 from .utils import Stack, ToTorchFormatTensor
 
 FAIL_MSG = 'Failed to obtain answer via API.'
+
+
+def egoexo_judge_failed(result):
+    return has_judge_failure(result) or not isinstance(result, str) or result.strip().lower() in ('', 'fail')
 
 
 class EgoExoBench_MCQ(VideoBaseDataset):
@@ -264,61 +268,56 @@ class EgoExoBench_MCQ(VideoBaseDataset):
         detail_file = get_judge_detail_file(eval_file, 'extract', judge_name)
         score_file = get_judge_score_file(eval_file, judge_name, 'json')
 
-        if not osp.exists(detail_file):
-            res = load_judge_cache(tmp_file, ignored_legacy_files=[untrusted_legacy_tmp_file])
+        res = load_judge_cache(tmp_file, ignored_legacy_files=[untrusted_legacy_tmp_file])
+        data = load(eval_file)
+        data_un = data[~pd.isna(data['prediction'])]
+        model = None
+        model_built = False
 
-            data = load(eval_file)
-            data_un = data[~pd.isna(data['prediction'])]
-            model = None
-            model_built = False
+        def get_model():
+            nonlocal model, model_built
+            if judge_name == 'exact_matching':
+                return None
+            if not model_built:
+                model = build_judge(**judge_kwargs)
+                if not model.working():
+                    warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                    warnings.warn(DEBUG_MESSAGE)
+                    model = None
+                model_built = True
+            return model
 
-            def get_model():
-                nonlocal model, model_built
-                if judge_name == 'exact_matching':
-                    return None
-                if not model_built:
-                    model = build_judge(**judge_kwargs)
-                    if not model.working():
-                        warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
-                        warnings.warn(DEBUG_MESSAGE)
-                        model = None
-                    model_built = True
-                return model
+        for idx in data['index']:
+            ans = data.loc[data['index'] == idx, 'answer'].values[0]
+            pred = data.loc[data['index'] == idx, 'prediction'].values[0]
 
-            for idx in data['index']:
-                ans = data.loc[data['index'] == idx, 'answer'].values[0]
-                pred = data.loc[data['index'] == idx, 'prediction'].values[0]
-
-                if extract_characters_regex(pred) == '':
-                    extract_pred = res.get(idx)
-                    if has_judge_failure(extract_pred):
-                        extract_pred = extract_option(
-                            get_model(),
-                            data.loc[data['index'] == idx].to_dict(orient='records')[0],
-                            'EgoExoBench_MCQ',
-                        )
-                        res[idx] = extract_pred
-                        dump(res, tmp_file)
-                    data.loc[data['index'] == idx, 'judge_pred'] = extract_pred
-                    data.loc[data['index'] == idx, 'score'] = (
-                        -1 if extract_pred in ['Fail', ''] else int(extract_pred == ans)
+            if extract_characters_regex(pred) == '':
+                extract_pred = res.get(idx)
+                if egoexo_judge_failed(extract_pred):
+                    extract_pred = extract_option(
+                        get_model(),
+                        data.loc[data['index'] == idx].to_dict(orient='records')[0],
+                        'EgoExoBench_MCQ',
                     )
-                else:
-                    extract_pred = extract_characters_regex(pred)
-                    data.loc[data['index'] == idx, 'judge_pred'] = extract_pred
-                    data.loc[data['index'] == idx, 'score'] = int(extract_pred == ans)
+                    res[idx] = extract_pred
+                    dump_judge_cache(res, tmp_file)
+                data.loc[data['index'] == idx, 'judge_pred'] = extract_pred
+                data.loc[data['index'] == idx, 'score'] = (
+                    -1 if egoexo_judge_failed(extract_pred) else int(extract_pred == ans)
+                )
+            else:
+                extract_pred = extract_characters_regex(pred)
+                data.loc[data['index'] == idx, 'judge_pred'] = extract_pred
+                data.loc[data['index'] == idx, 'score'] = int(extract_pred == ans)
 
-            rejected = [x for x in data['score'] if x == -1]
+        rejected = [x for x in data['score'] if x == -1]
+        print(
+            f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
+            f'failed to obtain the score for another {len(rejected)} questions. '
+            f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
+        )
 
-            print(
-                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
-                f'failed to obtain the score for another {len(rejected)} questions. '
-                f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
-            )
-
-            dump(data, detail_file)
-
-        rating = load(score_file) if osp.exists(score_file) else get_dimension_rating(detail_file)
-        if not osp.exists(score_file):
-            dump(rating, score_file)
+        dump(data, detail_file)
+        rating = get_dimension_rating(detail_file)
+        dump(rating, score_file)
         return rating
