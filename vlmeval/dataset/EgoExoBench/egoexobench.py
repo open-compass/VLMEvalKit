@@ -260,12 +260,12 @@ class EgoExoBench_MCQ(VideoBaseDataset):
 
         judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
-        legacy_tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        untrusted_legacy_tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
         detail_file = get_judge_detail_file(eval_file, 'extract', judge_name)
         score_file = get_judge_score_file(eval_file, judge_name, 'json')
 
         if not osp.exists(detail_file):
-            res = load_judge_cache(tmp_file, legacy_files=[legacy_tmp_file])
+            res = load_judge_cache(tmp_file, ignored_legacy_files=[untrusted_legacy_tmp_file])
 
             data = load(eval_file)
             data_un = data[~pd.isna(data['prediction'])]

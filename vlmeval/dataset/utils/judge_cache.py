@@ -72,6 +72,21 @@ def get_judge_score_file(eval_file, model, fmt):
     )
 
 
+def get_judge_named_legacy_cache_file(eval_file, model):
+    """Return a pre-contract cache path only when the judge name is unambiguous."""
+    judge_name = 'exact_matching' if model is None else str(model)
+    if re.fullmatch(r'[0-9A-Za-z._-]+', judge_name) is None:
+        return None
+    return get_intermediate_file_path(eval_file, f'_{judge_name}', 'pkl')
+
+
+def _get_previous_contract_cache_file(cache_file):
+    stem, extension = osp.splitext(cache_file)
+    if extension.lower() != '.pkl' or not stem.endswith('_cache'):
+        return None
+    return f'{stem[:-len("_cache")]}{extension}'
+
+
 def dump_judge_cache(cache, cache_file):
     """Atomically persist a sample-id-to-result judge cache."""
     if not isinstance(cache, dict):
@@ -150,15 +165,21 @@ def load_judge_cache(cache_file, legacy_files=None, ignored_legacy_files=None):
     if osp.exists(cache_file):
         return _read_cache_file(cache_file, strict=True)
 
+    previous_contract_file = _get_previous_contract_cache_file(cache_file)
+    trusted_legacy_files = []
+    for path in [previous_contract_file, *(legacy_files or [])]:
+        if path is not None and path != cache_file and path not in trusted_legacy_files:
+            trusted_legacy_files.append(path)
+
     cache = {}
     migrated = False
-    for path in legacy_files or []:
+    for path in trusted_legacy_files:
         if not osp.exists(path):
             continue
         data = _read_cache_file(path, strict=False)
         if data is None:
             continue
-        cache.update(data)
+        cache = data.copy()
         migrated = True
         logger.info(
             'Migrating legacy judge cache %s to %s with %d entries.',
@@ -166,6 +187,7 @@ def load_judge_cache(cache_file, legacy_files=None, ignored_legacy_files=None):
             cache_file,
             len(data),
         )
+        break
     if migrated:
         dump_judge_cache(cache, cache_file)
     return cache

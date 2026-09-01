@@ -11,14 +11,15 @@ import pandas as pd
 from PIL import Image
 
 from vlmeval.dataset.utils.judge_cache import (get_judge_cache_file, get_judge_detail_file,
+                                               get_judge_named_legacy_cache_file,
                                                get_judge_score_file, load_judge_cache,
                                                run_cached_tasks)
 from vlmeval.smp import (LMUDataRoot, decode_base64_to_image_file, download_file, dump,
-                         encode_image_to_base64, get_intermediate_file_path, get_logger, listinstr,
-                         load, md5, read_ok, toliststr)
+                         encode_image_to_base64, get_logger, listinstr, load, md5, read_ok,
+                         toliststr)
 from .image_base import ImageBaseDataset
-from .mmlongbenchdoc import (MMLongBench_auxeval, MMLongBench_judge_failed,
-                             anls_compute, concat_images)
+from .mmlongbenchdoc import (MMLongBench_auxeval, MMLongBench_judge_failed, anls_compute,
+                             concat_images)
 from .utils.judge_util import build_judge
 
 logger = get_logger(__name__)
@@ -184,7 +185,8 @@ class DUDE(ImageBaseDataset):
         judge_name = judge_kwargs['model']
         storage = get_judge_detail_file(eval_file, 'extract', judge_name)
         tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
-        legacy_tmp_file = get_intermediate_file_path(eval_file, f'_{judge_name}', 'pkl')
+        legacy_tmp_file = get_judge_named_legacy_cache_file(eval_file, judge_name)
+        legacy_files = [legacy_tmp_file] if legacy_tmp_file is not None else []
 
         if osp.exists(storage):
             logger.warning(f'GPT scoring file {storage} already exists, will reuse it in DUDE_eval. ')
@@ -193,7 +195,7 @@ class DUDE(ImageBaseDataset):
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             indices = [line['index'] for line in lines]
-            ans = load_judge_cache(tmp_file, legacy_files=[legacy_tmp_file])
+            ans = load_judge_cache(tmp_file, legacy_files=legacy_files)
             pending = [idx for idx in indices if idx not in ans or MMLongBench_judge_failed(ans[idx])]
             if pending:
                 model = build_judge(max_tokens=128, **judge_kwargs)
@@ -203,7 +205,7 @@ class DUDE(ImageBaseDataset):
                     tups,
                     indices,
                     tmp_file,
-                    legacy_files=[legacy_tmp_file],
+                    legacy_files=legacy_files,
                     failure_fn=MMLongBench_judge_failed,
                 )
 
