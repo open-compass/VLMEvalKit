@@ -274,6 +274,9 @@ def load(f, fmt=None):
     def load_tsv(f):
         return pd.read_csv(f, sep='\t')
 
+    def load_parquet(f):
+        return pd.read_parquet(f)
+
     import validators
     if validators.url(f):
         tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
@@ -281,7 +284,10 @@ def load(f, fmt=None):
             download_file(f, tgt)
         f = tgt
 
-    handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
+    handlers = dict(
+        pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx,
+        csv=load_csv, tsv=load_tsv, parquet=load_parquet
+    )
     if fmt is not None:
         return handlers[fmt](f)
 
