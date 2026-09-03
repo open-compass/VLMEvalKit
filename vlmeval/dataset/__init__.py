@@ -9,6 +9,7 @@ from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, loc
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
 from .babyvision import BabyVision
+from .capeval import CAPEval
 from .CGAVCounting.cg_av_counting import CGAVCounting
 from .cgbench import (CGBench_MCQ_Grounding, CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded,
                       CGBench_OpenEnded_Mini)
@@ -320,6 +321,9 @@ IMAGE_DATASET = [
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
+    MRareBenchDiagnosis, MRareBenchEvidenceVerif,
+    BabyVision, PerceptionBench, SUPERChemDataset, CAPEval,
+    BabyVision, WildprobeDataset, PerceptionBench, SUPERChemDataset,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
     PerceptionBench, SUPERChemDataset,
 ]
