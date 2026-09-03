@@ -20,12 +20,13 @@ Citation::
 
 import json
 import re
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from huggingface_hub import hf_hub_download
+from huggingface_hub import snapshot_download
 
-from vlmeval.smp import dump, get_intermediate_file_path, load
+from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load
 from .image_base import ImageBaseDataset
 
 HF_REPO_ID = 'sci-m-wang/C4-Eval'
@@ -117,25 +118,34 @@ class C4Bench(ImageBaseDataset):
     def load_data(self, dataset):
         if dataset not in DATASET_TASKS:
             raise ValueError(f'Unsupported C4 Bench dataset: {dataset}')
-        data_path = hf_hub_download(
+        dataset_root = Path(LMUDataRoot()) / dataset
+        dataset_root.mkdir(parents=True, exist_ok=True)
+        snapshot_download(
             repo_id=HF_REPO_ID,
-            filename=EVAL_FILENAME,
             repo_type='dataset',
+            local_dir=dataset_root,
+            allow_patterns=EVAL_FILENAME,
         )
+        data_path = dataset_root / EVAL_FILENAME
         data = pd.read_json(data_path, lines=True)
         data = data[data['task'].isin(DATASET_TASKS[dataset])].copy()
         data['index'] = data['instance_id']
+        snapshot_download(
+            repo_id=HF_REPO_ID,
+            repo_type='dataset',
+            local_dir=self.img_root,
+            allow_patterns='images/**',
+        )
+        self._image_root = Path(self.img_root)
         return data.reset_index(drop=True)
 
     def dump_image(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
-        image_path = hf_hub_download(
-            repo_id=HF_REPO_ID,
-            filename=str(line['image_path']),
-            repo_type='dataset',
-        )
-        return [image_path]
+        image_path = self._image_root / str(line['image_path'])
+        if not image_path.is_file():
+            raise FileNotFoundError(f'C4 Bench image is missing: {image_path}')
+        return [str(image_path)]
 
     def build_prompt(self, line):
         if isinstance(line, int):
