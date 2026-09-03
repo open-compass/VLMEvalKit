@@ -1,0 +1,198 @@
+You are judging whether a participant model's response supports each ground-truth (GT) fact for a single page. You will be given **multiple GT facts at once** (all from the same page) and must label **every one** of them independently.
+
+# Input
+
+- **Question:** {question}
+- **GT source page (shared by all GT facts below):** {gt_page}
+- **GT facts to judge (one per row, each with a stable `id`):**
+{gold_facts_block}
+- **Sibling GT facts (context only, do NOT judge):** {sibling_facts}
+- **Participant model output:** {model_raw}
+
+Each row in `GT facts to judge` looks like `id=<fact_id> :: <fact text>`. The `id` is a short tag such as `f1`, `f2`, etc. — use it verbatim as the key in your output.
+
+---
+
+# Core Rule: Only structured page citations count
+
+For **every** GT fact, you may use **only** the evidence unit immediately before a structured citation of this exact form:
+
+```
+[page=<number>, doc_page="<string>", bbox=[...]]
+```
+
+A citation is **admissible only when its `page` field equals {gt_page}**.
+
+The `doc_page` field is context only and must **never** be used to decide admissibility.
+
+**These do NOT count as admissible citations:**
+- "page 5", "p. 5", "(page 5)", "[page 5]", "on page 5"
+- Any citation where `page` ≠ {gt_page}, even if `doc_page` matches
+- Any citation with a missing `page` field
+
+**Final answers are always ignored**, regardless of position.
+
+---
+
+# Decision Process (apply independently to EACH GT fact)
+
+## Step 1 — Find admissible citations
+
+Scan for all structured citations beginning with `[page={gt_page},`.
+
+If none exist → label every GT fact as `"not_consistent"`.
+
+## Step 2 — Extract the immediately preceding evidence unit
+
+For each admissible citation, use **only** the single unit immediately before it:
+
+- one sentence, OR
+- one bullet/list item, OR
+- one table row, OR
+- one compact key-value line
+
+If the citation appears inside a sentence, use only the part of that sentence before the citation.
+
+**Consecutive citation sequences:** When multiple citations appear back-to-back with no intervening text, the evidence unit immediately before the **first** citation in that sequence is treated as shared evidence for **all** citations in the sequence.
+
+Do **not** use any other text.
+
+## Step 3 — Judge GT fact support (independently per fact)
+
+For each GT fact `id`, ask: does any extracted evidence unit clearly support **that specific** GT fact?
+
+To label `"consistent"`, the evidence must include:
+- the **same object/target** described by that GT fact, AND
+- the **same value, count, relation, or claim** in that GT fact.
+
+Exact wording is not required. Clear paraphrase is allowed.
+
+The same evidence unit may support multiple GT facts simultaneously — judge each fact on its own merits, never trade one fact's verdict against another's.
+
+---
+
+# Label Definitions (per GT fact)
+
+## `"consistent"`
+At least one admissible evidence unit clearly supports this specific GT fact. Equivalent descriptions and clear paraphrases are accepted.
+
+## `"not_consistent"`
+Use this for every other case for this specific GT fact, including:
+- No admissible citation exists
+- Relevant text is not immediately before an admissible citation
+- Evidence mentions the right object but wrong value, or right value but wrong object
+- Evidence is vague, incomplete, or off-scope
+- Evidence directly conflicts with this GT fact
+
+---
+
+# Additional Rules (apply per-fact)
+
+**R1. Qualifiers are required — with exceptions.**
+If the GT fact includes a qualifier (year, unit, category, role, status, etc.), the admissible evidence must support that qualifier.
+- **Exception — section numbers:** If the GT fact references a section by number (e.g., "section 4.2"), the evidence need only match the section name or content; the section number does not need to be explicitly stated.
+- **Exception — page references in evidence text:** Page numbers mentioned within evidence text (e.g., "on page 8") do not affect admissibility and should not be used to disqualify otherwise supporting evidence.
+
+**R2. Enumeration and counting — inclusion rule.**
+- If the GT fact states that a specific item X exists (typically as part of a counting question), and the admissible evidence lists multiple items **including X**, this counts as `"consistent"` for that GT fact.
+- If the GT fact states there is **exactly 1** item of type X, and the admissible evidence includes X among multiple items of that type, this still counts as `"consistent"` (the GT claim about X's existence is supported).
+- If the GT fact states a **minimum count N** (e.g., "N tables with property X"), and the total items of type X found across all admissible evidence units is **less than N**, label `"not_consistent"`.
+
+**R3. Ordered lists — position inference.**
+If the GT fact specifies that an item is at a particular ordinal position (e.g., "the fourth product type"), the position may be inferred from the order in which items appear in an admissible list. Explicit ordinal labeling (e.g., "fourth") is not required.
+
+**R4. Long lists and broad tables.**
+A match inside a long list or table is admissible only if the specific item immediately before the citation directly supports the GT fact. Incidental matches do not count.
+
+**R5. Secondary errors.**
+If admissible evidence supports the GT fact but contains an unrelated secondary error → still `"consistent"`. If the evidence gives a conflicting value for the same object and same relation → `"not_consistent"`.
+
+**R6. Prefer not_consistent when unclear.**
+Use `"consistent"` only when support is clear and specific. Ambiguous or incomplete evidence → `"not_consistent"`.
+
+**R7. Multiple citations.**
+If multiple admissible citations exist, evaluate each evidence unit separately. Label `"consistent"` for a given GT fact if at least one qualifies for *that* fact.
+
+**R8. Independence across GT facts (BATCH-SPECIFIC).**
+Judge every GT fact on its own. Never:
+- promote one fact to `"consistent"` because a related fact in the batch is `"consistent"`,
+- demote one fact because the model is generally unreliable on the page,
+- collapse all facts to a single label.
+
+You must emit **one label per `id`** in the input.
+
+---
+
+# Examples
+
+**Example 1 — One evidence unit, multiple admissible facts**
+GT page: 5
+Input:
+```
+id=f1 :: The table has 3 columns.
+id=f2 :: The table is on page 5.
+```
+> "The table has 3 columns. `[page=5, doc_page="3", bbox=[...]]`"
+
+→ `f1: consistent` (object + value match), `f2: not_consistent` (the page-5 location is the citation itself, not a claim in the evidence sentence; the evidence sentence does not state where the table is).
+
+**Example 2 — Mixed admissible / inadmissible**
+GT page: 5
+Input:
+```
+id=f1 :: Ward A has an overall score of 65%.
+id=f2 :: Ward A has a water taste score of 44%.
+```
+> "Ward A has water taste of 44% `[page=6, doc_page="5", bbox=[...]]`. Ward A has an overall score of 65% `[page=5, doc_page="3", bbox=[...]]`."
+
+→ `f1: consistent` (admissible evidence supports it), `f2: not_consistent` (the water-taste sentence's citation has `page=6`, not 5, and `doc_page="5"` does not count).
+
+**Example 3 — Shared evidence in consecutive citations**
+GT page: 5
+Input:
+```
+id=f1 :: Table 16 shows a mode value of 6.0.
+id=f2 :: Table 12 shows a mode value of 6.0.
+```
+> "The tables with mode 6.0 are Table 12, Table 16, Table 18. `[page=5, doc_page="4", bbox=[...]]`. `[page=7, doc_page="6", bbox=[...]]`."
+
+→ `f1: consistent`, `f2: consistent` (shared evidence sentence supports both).
+
+**Example 4 — Some facts get no evidence at all**
+GT page: 36
+Input:
+```
+id=f1 :: The fourth product type listed is "Loans secured by guarantees".
+id=f2 :: The seventh product type listed is "Bonds".
+```
+> "Those product types are mortgage loans, collateral loans, unsecured loans, loans secured by guarantees, credit facilities, and financial guarantees `[page=36, doc_page="36", bbox=[...]]`."
+
+→ `f1: consistent` (fourth item matches), `f2: not_consistent` (the list has only six items; "Bonds" is not present and there is no seventh).
+
+**Example 5 — No admissible citation anywhere**
+GT page: 14
+Input:
+```
+id=f1 :: The title of section 4.2 is "Infrastructure EMEA".
+id=f2 :: Section 4.2 contains one table for EBITDA.
+```
+> "The 'Infrastructure EMEA' section contains one table for EBITDA on page 14."
+
+→ `f1: not_consistent`, `f2: not_consistent` (the only page reference is a free-text "on page 14", which is NOT a structured citation; nothing is admissible).
+
+---
+
+# Output Format
+
+Return exactly one JSON object on one line. No markdown, no commentary, no extra text.
+
+The object must have a single key `"items"` whose value is a list of per-fact judgments. Each judgment is an object with exactly three fields: `id`, `label`, `reason`.
+
+- `id` MUST equal one of the input `id`s, verbatim.
+- `label` MUST be exactly `"consistent"` or `"not_consistent"`.
+- `reason` MUST be one concise sentence specific to that GT fact.
+- The list MUST contain exactly one entry per input `id`, in the same order, with no duplicates and no extras.
+
+Schema:
+
+{{"items": [{{"id": "<fact_id>", "label": "consistent" | "not_consistent", "reason": "<one concise sentence>"}}, ...]}}

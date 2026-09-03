@@ -138,7 +138,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
     MODALITY = 'IMAGE'
     DATASET_URL = {}
     DATASET_MD5 = {}
-    DEFAULT_JUDGE: str | list = 'gpt-4o-mini'
+    DEFAULT_JUDGE_MODEL: str | None = None
 
     INFER_FAIL_MARKERS = (INFER_FAIL_MSG, )
     JUDGE_FAIL_MARKERS = (INFER_FAIL_MSG, )
@@ -187,6 +187,16 @@ class ImageBaseDataset(metaclass=ABCMeta):
 
     def __getitem__(self, idx):
         return dict(self.data.iloc[idx])
+
+    def get_default_judge_model(self, judge_kwargs=None):
+        default_model = getattr(self, 'DEFAULT_JUDGE_MODEL', None)
+        if default_model is not None:
+            return default_model
+
+        dataset_type = getattr(self, 'TYPE', None)
+        if dataset_type in ('MCQ', 'Y/N', 'MCQ_MMMU_Pro'):
+            return 'gpt-4o-mini'
+        return None
 
     @classmethod
     def get_judge_file(cls, eval_file: str | Path, judge_model: str | None = None) -> Path | None:

@@ -1,8 +1,29 @@
 import os
+import warnings
 
 from vlmeval.smp import load_env
 
 INTERNAL = os.environ.get('INTERNAL', 0)
+
+
+def warn_if_judge_model_changed(model, legacy_models, benchmark):
+    """Warn when evaluation uses a judge outside the benchmark's legacy set."""
+    if isinstance(legacy_models, str):
+        legacy_models = (legacy_models, )
+    else:
+        legacy_models = tuple(legacy_models)
+
+    if model in legacy_models:
+        return
+
+    legacy_model_names = ', '.join(repr(name) for name in legacy_models)
+    warnings.warn(
+        f'Judge model {model!r} differs from the legacy judge model(s) used for '
+        f'{benchmark}: {legacy_model_names}. Using a different or newer judge model '
+        'may change evaluation scores.',
+        UserWarning,
+        stacklevel=2,
+    )
 
 
 def build_judge(**kwargs):

@@ -8,6 +8,17 @@ from .base import BaseAPI
 logger = get_logger(__name__)
 
 
+def _apply_response_charset(response, response_charset):
+    if response_charset is None:
+        return
+
+    content_type = ''.join(response.headers.get('Content-Type', '').lower().split())
+    if 'charset=' in content_type:
+        return
+
+    response.encoding = response_charset
+
+
 def _parse_stream_chunk(chunk: dict):
     choices = chunk.get('choices', [])
     if not choices:
@@ -77,14 +88,19 @@ class OpenAISDKWrapper(BaseAPI):
                  system_prompt=None,
                  model_adapter=None,
                  stream=False,
+                 response_charset='utf-8',
                  **kwargs):
         """
         Args:
             model_adapter: Either a :class:`ModelAdapter` instance, a
                 registered adapter name (``str``), or ``None``.
+            response_charset: Charset used to decode HTTP responses that do
+                not declare a charset in the Content-Type header. Defaults to
+                ``utf-8``. Set to ``None`` to keep requests' inferred encoding.
         """
         self.adapter = None
         self.stream = stream
+        self.response_charset = response_charset
         if model_adapter is not None:
             if isinstance(model_adapter, str):
                 from .adapters import build_adapter
@@ -173,6 +189,7 @@ class OpenAISDKWrapper(BaseAPI):
             timeout=self.timeout * 1.1,
             stream=stream,
         )
+        _apply_response_charset(response, self.response_charset)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
         answer = self.fail_msg
