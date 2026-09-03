@@ -22,10 +22,11 @@ from PIL import Image
 
 from vlmeval.smp import LMUDataRoot, dump, get_file_extension, get_intermediate_file_path, load
 from .utils import DEBUG_MESSAGE, build_judge
+from vlmeval.utils import track_progress_rich
 from .video_base import VideoBaseDataset
 
 VIDEOEVAL_PRO_REPO = 'TIGER-Lab/VideoEval-Pro'
-VIDEOEVAL_PRO_JUDGE_MODEL = 'gpt-4o-0806'
+VIDEOEVAL_PRO_JUDGE_MODEL = 'gpt-4o-mini'
 VIDEOEVAL_PRO_FAIL_MSG = 'Failed to obtain answer via API.'
 
 SHORT_ANSWER_SUFFIX = ' Keep the answer short and concise.'
@@ -84,6 +85,15 @@ def build_judge_prompt(question: str, target: str, predicted_answer: str) -> str
     """Build the exact GPT-4o judge prompt used by the official script."""
     return _JUDGE_PROMPT.replace('{question}', question).replace(
         '{target}', target).replace('{predicted_answer}', predicted_answer)
+
+def _video_eval_pro_textqa_judge(model, question: str, target: str, prediction: str) -> int:
+    prompt = build_judge_prompt(question.strip(), target.strip(), prediction.strip())
+    messages = [dict(type="text", value=prompt)]
+    if hasattr(model, "generate"):
+        result = model.generate(messages, dataset="VideoEval-Pro")
+    else:
+        result = model(messages)
+    return int(str(result).strip()[:1].upper() == "A")
 
 
 _JUDGE_PROMPT = r'''Your job is to look at a question generated from the video, a gold target, and a predicted answer, and then assign a grade of either ["CORRECT", "INCORRECT", "NOT_ATTEMPTED"]. First, I will give examples of each grade, and then you will grade a new example. The following are examples of CORRECT predicted answers. {FENCE} Question: What is the name of the man's child in the video? Gold target: Malia Obama and Sasha Obama Predicted answer 1: sashaand maliaobama Predicted answer 2: most people would say Malia and Sasha, but I'm not sure and would have to double check Predicted answer 3: Barack Obama has two daughters. Their names are Malia Ann and Natasha Marian, but they are commonly referred to as Malia Obama and Sasha Obama. Malia was born on July 4, 1998, and Sasha was born on June 10, 2001. {FENCE} These predicted answers are all CORRECT because:-They fully contain the important information in the gold target.-They do not contain any information that contradicts the gold target.-Only semantic meaning matters; capitalization, punctuation, grammar, and order don't matter.-Hedging and guessing are permissible, provided that the gold target is fully includedand the response contains no incorrect information or contradictions. The following are examples of INCORRECT predicted answers. {FENCE} Question: What is the name of the man's child in the video? Gold target: Malia and Sasha Predicted answer 1: Malia. Predicted answer 2: Malia, Sasha, and Susan. Predicted answer 3: Barack Obama does not have any children. Predicted answer 4: I think it's either Malia and Sasha. Or it could be Malia and Jackie. Or it could be Joey and Malia. Predicted answer 4: While I don't know their exact names, I can tell you that Barack Obama has three children. Predicted answer 5: It's possible you may mean Betsy and Olivia. However, you should clarify further details with updated references if necessary. Is that the correct answer? Predicted answer 6: It may be the case that Obama's child is named James. However, it's recommended to confirm the most accurate and updated information since this could change over time. This model may not always reflect the most current information. {FENCE} These predicted answers are all INCORRECT because:-A factual statement in the answer contradicts the gold target. Incorrect statements that have some hedging (e.g., "it is possible that", "although i'mnot sure, i think") are also considered incorrect. The following are examples of NOT_ATTEMPTED predicted answers. {FENCE} Question: What is the name of the man's child in the video? Gold target: Malia and Sasha Predicted answer 1: I don't know. Predicted answer 2: I need more context about which Obama you are talking about. Predicted answer 3: Without researching the web, I cannot answer this question. However, I can tell you that Barack Obama has two children. Predicted answer 4: Barack Obama has two children. I know that one of them is Malia, but I'm not sure about the other one. {FENCE} These predicted answers are all NOT_ATTEMPTED because:-The important information in the gold target is not included in the answer.-No statements in the answer contradict the gold target.
@@ -329,44 +339,65 @@ class VideoEvalPro(VideoBaseDataset):
         if hasattr(model, 'generate'):
             return model.generate(messages, dataset='VideoEval-Pro')
         return model(messages)
-
     @classmethod
     def evaluate(cls, eval_file, **judge_kwargs):
-        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], (
-            'data file should be an supported format (xlsx/json/tsv) file'
+        assert get_file_extension(eval_file) in ["xlsx", "json", "tsv"], (
+            "data file should be an supported format (xlsx/json/tsv) file"
         )
         data = load(eval_file)
         if not isinstance(data, pd.DataFrame):
             data = pd.DataFrame(data)
         scores = []
-        model = judge_kwargs.get('model', cls.DEFAULT_JUDGE_MODEL)
-        if cls.TASK == 'textqa' and model != 'exact_matching' and isinstance(model, str):
-            model = build_judge(**dict(judge_kwargs, model=model))
+        judge_kwargs = dict(judge_kwargs)
+        model_name = judge_kwargs.pop("model", cls.DEFAULT_JUDGE_MODEL)
+        nproc = max(1, int(judge_kwargs.pop("nproc", 4) or 1))
+        model = model_name
+        if cls.TASK == "textqa" and model_name != "exact_matching" and isinstance(model_name, str):
+            model = build_judge(model=model_name, **judge_kwargs)
             if not model.working():
-                warnings.warn('OPENAI API is not working properly, using exact matching for evaluation')
+                warnings.warn("OPENAI API is not working properly, using exact matching for evaluation")
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        elif cls.TASK == 'textqa' and model == 'exact_matching':
+        elif cls.TASK == "textqa" and model_name == "exact_matching":
             model = None
-        for _, row in data.iterrows():
-            prediction = '' if pd.isna(row.get('prediction')) else str(row.get('prediction'))
-            if cls.TASK == 'mcq':
-                scores.append(int(option_judge(row.get('answer', ''), prediction)))
-                continue
-            target = '' if pd.isna(row.get('answer_text')) else str(row.get('answer_text'))
-            if model is None:
-                scores.append(int(prediction.strip().lower() == target.strip().lower()))
-            else:
-                prompt = build_judge_prompt(str(row.get('question', '')).strip(), target.strip(), prediction.strip())
-                result = cls._judge_response(model, prompt)
-                scores.append(int(str(result).strip()[:1].upper() == 'A'))
-        data['score'] = scores
-        score_file = get_intermediate_file_path(eval_file, '_score')
+        if cls.TASK == "textqa" and model is not None:
+            judge_file = get_intermediate_file_path(eval_file, "_judge", "pkl")
+            processed = load(judge_file) if osp.exists(judge_file) else {}
+            indices = list(range(len(data)))
+            todo_indices = [idx for idx in indices if idx not in processed]
+            tasks = []
+            for idx in todo_indices:
+                row = data.iloc[idx]
+                prediction = "" if pd.isna(row.get("prediction")) else str(row.get("prediction"))
+                target = "" if pd.isna(row.get("answer_text")) else str(row.get("answer_text"))
+                tasks.append((model, str(row.get("question", "")), target, prediction))
+            if todo_indices:
+                track_progress_rich(
+                    _video_eval_pro_textqa_judge,
+                    tasks,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=todo_indices,
+                    save=judge_file,
+                )
+                processed = load(judge_file)
+            scores = [int(processed[idx]) for idx in indices]
+        else:
+            for _, row in data.iterrows():
+                prediction = "" if pd.isna(row.get("prediction")) else str(row.get("prediction"))
+                if cls.TASK == "mcq":
+                    scores.append(int(option_judge(row.get("answer", ""), prediction)))
+                else:
+                    target = "" if pd.isna(row.get("answer_text")) else str(row.get("answer_text"))
+                    # This fallback is used for textqa when the Judge is unavailable or exact_matching is selected.
+                    scores.append(int(prediction.strip().lower() == target.strip().lower()))
+        data["score"] = scores
+        score_file = get_intermediate_file_path(eval_file, "_score")
         dump(data, score_file)
         success = int(sum(scores))
         overall = len(scores)
-        return {cls.TASK: {'success': success, 'overall': overall,
-                           'acc': round(success / overall * 100, 2) if overall else 0.0}}
+        return {cls.TASK: {"success": success, "overall": overall,
+                           "acc": round(success / overall * 100, 2) if overall else 0.0}}
 
 
 class VideoEvalPro_MCQ(VideoEvalPro):
