@@ -845,7 +845,7 @@ def evaluate(data: List[Dict[str, Any]],
     elapsed = time.time() - start
 
     if remaining:
-        print(f"[Judge] Done {len(remaining)} samples in {elapsed:.1f}s ({len(remaining)/elapsed:.1f} samples/s)")
+        print(f"[Judge] Done {len(remaining)} samples in {elapsed:.1f}s ({len(remaining) / elapsed:.1f} samples/s)")
 
     # Build ordered details list + metrics with diagnostics
     details = []

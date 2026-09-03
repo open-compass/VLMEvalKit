@@ -234,6 +234,8 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
 # -------------------- dataset --------------------
 class WorldVQA(ImageBaseDataset):
     TYPE = "VQA"
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-1120'
     DATASET_URL = {
         # 改成你自己的 tsv 路径或挂载路径
         "WorldVQA": "https://huggingface.co/datasets/moonshotai/WorldVQA/blob/main/WorldVQA.tsv",
@@ -359,12 +361,12 @@ class WorldVQA(ImageBaseDataset):
         if "LOCAL_LLM" in os.environ:
             judge_name = os.path.basename(os.environ.get("LOCAL_LLM"))
         else:
-            judge_name = judge_kwargs.get("model", "gpt-4o-1120")
+            judge_name = judge_kwargs.get("model", self.DEFAULT_JUDGE_MODEL)
 
         if judge_name != "gpt-4o-mini":
             warnings.warn(f"judge_model='{judge_name}' is not gpt-4o-mini; results may vary.")
 
-        judge_kwargs["model"] = judge_kwargs.get("model", "gpt-4o-1120")
+        judge_kwargs["model"] = judge_kwargs.get("model", self.DEFAULT_JUDGE_MODEL)
         judge_model = build_judge(**judge_kwargs)
         judge_model_name = judge_model.model
 

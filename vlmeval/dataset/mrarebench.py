@@ -438,8 +438,6 @@ class MRareBenchDiagnosis(ImageBaseDataset):
 
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DEFAULT_JUDGE = 'gpt-5.4-mini'
-
     # ----- input-condition register (visual-necessity ablation) ----------------
     #   FD (Findings-Disclosed) : context + findings text + images
     #   LC (baseline)           : context (findings redacted) + images
@@ -1143,8 +1141,6 @@ class MRareBenchEvidenceVerif(ImageBaseDataset):
 
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DEFAULT_JUDGE = 'gpt-5.4-mini'
-
     # ----- input-condition register -------------------------------------------
     #   MRareBench_EvidenceVerif      : images attached, diagnosis given  <- gold
     #   MRareBench_EvidenceVerif_TO   : NO image,        diagnosis given
