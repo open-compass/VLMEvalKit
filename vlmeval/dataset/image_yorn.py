@@ -2,6 +2,7 @@ import os.path as osp
 import warnings
 
 from vlmeval.smp import dump, get_intermediate_file_path, listinstr, load
+from vlmeval.smp.status_report import is_number, to_number
 from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
@@ -107,3 +108,20 @@ class ImageYORNDataset(ImageBaseDataset):
         score_tgt = get_intermediate_file_path(eval_file, '_score', 'csv')
         dump(score, score_tgt)
         return score
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        avg = metrics.get('split=Overall|Avg')
+        if is_number(avg):
+            return {'Avg': to_number(avg)}
+
+        aacc = metrics.get('split=Overall|aAcc')
+        facc = metrics.get('split=Overall|fAcc')
+        qacc = metrics.get('split=Overall|qAcc')
+        if all(is_number(x) for x in (aacc, facc, qacc)):
+            return {'Avg': (to_number(aacc) + to_number(facc) + to_number(qacc)) / 3}
+
+        return super().report_primary_metric(metrics)
