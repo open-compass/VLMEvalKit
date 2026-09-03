@@ -118,29 +118,30 @@ def Hallusion_rating(data_file):
     data['figure_id'] = [x.split('_')[4] for x in data['index']]
     data['question_id'] = [x.split('_')[5] for x in data['index']]
 
-    res = dict(split=[], aAcc=[], fAcc=[], qAcc=[])
-    res['split'].append('Overall')
-    res['aAcc'].append(calc_aAcc(data))
-    res['fAcc'].append(calc_fAcc(data))
-    res['qAcc'].append(calc_qAcc(data))
+    res = dict(split=[], aAcc=[], fAcc=[], qAcc=[], Avg=[])
+
+    def append_split(name, subset):
+        aacc = calc_aAcc(subset)
+        facc = calc_fAcc(subset)
+        qacc = calc_qAcc(subset)
+        res['split'].append(name)
+        res['aAcc'].append(aacc)
+        res['fAcc'].append(facc)
+        res['qAcc'].append(qacc)
+        # OpenCompass MM leaderboard overall: (aAcc + fAcc + qAcc) / 3
+        res['Avg'].append((aacc + facc + qacc) / 3)
+
+    append_split('Overall', data)
 
     if 'category' in data:
         cates = list(set(data['category']))
         for c in cates:
-            sub = data[data['category'] == c]
-            res['split'].append(c)
-            res['aAcc'].append(calc_aAcc(sub))
-            res['fAcc'].append(calc_fAcc(sub))
-            res['qAcc'].append(calc_qAcc(sub))
+            append_split(c, data[data['category'] == c])
 
     if 'l2-category' in data:
         cates = list(set(data['l2-category']))
         for c in cates:
-            sub = data[data['l2-category'] == c]
-            res['split'].append(c)
-            res['aAcc'].append(calc_aAcc(sub))
-            res['fAcc'].append(calc_fAcc(sub))
-            res['qAcc'].append(calc_qAcc(sub))
+            append_split(c, data[data['l2-category'] == c])
     ret = pd.DataFrame(res)
     return ret
 
