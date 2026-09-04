@@ -181,11 +181,33 @@ class llama4(BaseModel):
                 })
         return processed_message
 
-    def generate_inner_transformers(self, message, dataset=None):
-        prompt = self.message_to_promptimg(message, dataset=dataset)
-        messages = [
-            {'role': 'user', 'content': prompt}
-        ]
+    @staticmethod
+    def _validate_chat(message):
+        if not message or message[-1]['role'] != 'user':
+            raise ValueError('Llama 4 chat history must end with a user turn.')
+        for index, turn in enumerate(message):
+            expected_role = 'user' if index % 2 == 0 else 'assistant'
+            if turn['role'] != expected_role:
+                raise ValueError('Llama 4 chat history must alternate user and assistant turns.')
+            if turn['role'] == 'assistant' and any(item['type'] == 'image' for item in turn['content']):
+                raise ValueError('Llama 4 only supports images in user turns.')
+
+    def _message_to_chat(self, message, dataset=None):
+        self._validate_chat(message)
+        messages = []
+        if self.system_prompt is not None:
+            messages.append({
+                'role': 'system',
+                'content': [{'type': 'text', 'text': self.system_prompt}],
+            })
+        for turn in message:
+            messages.append({
+                'role': turn['role'],
+                'content': self.message_to_promptimg(turn['content'], dataset=dataset),
+            })
+        return messages
+
+    def _generate_inner_transformers(self, messages):
         inputs = self.processor.apply_chat_template(
             messages,
             add_generation_prompt=True,
@@ -201,6 +223,17 @@ class llama4(BaseModel):
         if generated_text.endswith("<|eot|>"):
             generated_text = generated_text[:-7]
         return generated_text
+
+    def generate_inner_transformers(self, message, dataset=None):
+        messages = [{
+            'role': 'user',
+            'content': self.message_to_promptimg(message, dataset=dataset),
+        }]
+        return self._generate_inner_transformers(messages)
+
+    def chat_inner_transformers(self, message, dataset=None):
+        messages = self._message_to_chat(message, dataset=dataset)
+        return self._generate_inner_transformers(messages)
 
     def message_to_promptimg_vllm(self, message, dataset=None):
         processed_message = []
@@ -232,11 +265,48 @@ class llama4(BaseModel):
         return processed_message, images
 
     def generate_inner_vllm(self, message, dataset=None):
-        from vllm import SamplingParams
         prompt, images = self.message_to_promptimg_vllm(message, dataset=dataset)
         messages = [
             {'role': 'user', 'content': prompt}
         ]
+        return self._generate_inner_vllm(messages, images)
+
+    def _message_to_chat_vllm(self, message, dataset=None):
+        self._validate_chat(message)
+        messages = []
+        if self.system_prompt is not None:
+            messages.append({
+                'role': 'system',
+                'content': [{'type': 'text', 'text': self.system_prompt}],
+            })
+
+        images = []
+        image_count = 0
+        for turn in message:
+            content = []
+            for item in turn['content']:
+                if item['type'] == 'text':
+                    content.append({'type': 'text', 'text': item['value']})
+                elif item['type'] == 'image':
+                    image_count += 1
+                    if len(images) < self.limit_mm_per_prompt:
+                        encoded_image = self.encode_image(item['value'])
+                        image = Image.open(BytesIO(base64.b64decode(encoded_image)))
+                        image.load()
+                        content.append({'type': 'image', 'url': ''})
+                        images.append(image)
+            messages.append({'role': turn['role'], 'content': content})
+
+        if image_count > self.limit_mm_per_prompt:
+            logging.warning(
+                f"Number of images exceeds the limit of {self.limit_mm_per_prompt}."
+                f"Only the first {self.limit_mm_per_prompt} images will be used."
+            )
+        return messages, images
+
+    def _generate_inner_vllm(self, messages, images):
+        from vllm import SamplingParams
+
         prompt = self.processor.apply_chat_template(
             messages,
             tokenize=False,
@@ -262,7 +332,11 @@ class llama4(BaseModel):
 
         return generated_text
 
-    def generate_inner_lmdeploy(self, message, dataset=None):
+    def chat_inner_vllm(self, message, dataset=None):
+        messages, images = self._message_to_chat_vllm(message, dataset=dataset)
+        return self._generate_inner_vllm(messages, images)
+
+    def _generate_inner_lmdeploy(self, messages_list):
         from lmdeploy import GenerationConfig
         gen_config = GenerationConfig(
             max_new_tokens=self.generate_kwargs['max_new_tokens'],
@@ -272,11 +346,34 @@ class llama4(BaseModel):
             repetition_penalty=self.generate_kwargs['repetition_penalty'],
         )
         gen_config.random_seed = None
-        messages_list = self.message_to_lmdeploy(message, system_prompt=self.system_prompt)
         assert len(messages_list) == 1
         response = self.model(messages_list, gen_config=gen_config)[0]
         response = response.text
         return response
+
+    def generate_inner_lmdeploy(self, message, dataset=None):
+        messages_list = self.message_to_lmdeploy(message, system_prompt=self.system_prompt)
+        return self._generate_inner_lmdeploy(messages_list)
+
+    def _message_to_chat_lmdeploy(self, message):
+        self._validate_chat(message)
+        history = []
+        if self.system_prompt is not None:
+            history.append({'role': 'system', 'content': self.system_prompt})
+        for turn in message:
+            if turn['role'] == 'user':
+                user_message = self.message_to_lmdeploy(turn['content'])[0][-1]
+                history.append(user_message)
+            else:
+                content = ''.join(
+                    item['value'] for item in turn['content'] if item['type'] == 'text'
+                )
+                history.append({'role': 'assistant', 'content': content})
+        return [history]
+
+    def chat_inner_lmdeploy(self, message, dataset=None):
+        messages_list = self._message_to_chat_lmdeploy(message)
+        return self._generate_inner_lmdeploy(messages_list)
 
     def generate_inner(self, message, dataset=None):
         if self.use_vllm:
@@ -285,3 +382,11 @@ class llama4(BaseModel):
             return self.generate_inner_lmdeploy(message, dataset=dataset)
         else:
             return self.generate_inner_transformers(message, dataset=dataset)
+
+    def chat_inner(self, message, dataset=None):
+        if self.use_vllm:
+            return self.chat_inner_vllm(message, dataset=dataset)
+        elif self.use_lmdeploy:
+            return self.chat_inner_lmdeploy(message, dataset=dataset)
+        else:
+            return self.chat_inner_transformers(message, dataset=dataset)
