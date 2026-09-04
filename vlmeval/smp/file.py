@@ -393,6 +393,16 @@ def last_modified(pth):
     return t
 
 
+def _mime_from_pillow(path):
+    from PIL import Image
+
+    try:
+        with Image.open(path) as image:
+            return Image.MIME.get(image.format, 'unknown')
+    except (OSError, ValueError):
+        return 'unknown'
+
+
 def parse_file(s):
     if osp.exists(s) and s != '.':
         assert osp.isfile(s)
@@ -401,6 +411,8 @@ def parse_file(s):
         if suffix == '.webp':
             return ('image/webp', s)
         mime = mimetypes.types_map.get(suffix, 'unknown')
+        if mime == 'unknown':
+            mime = _mime_from_pillow(s)
         return (mime, s)
     elif s.startswith('data:image/'):
         # To be compatible with OPENAI base64 format
