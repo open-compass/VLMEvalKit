@@ -2,6 +2,33 @@ from functools import partial
 
 from vlmeval.dataset import *
 
+video_eval_pro_dataset = {
+    'VideoEval-Pro-MCQ_16frame': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=16
+    ),
+    'VideoEval-Pro-MCQ_32frame': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=32
+    ),
+    'VideoEval-Pro-MCQ_64frame': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=64
+    ),
+    'VideoEval-Pro-MCQ_1fps': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', fps=1.0
+    ),
+    'VideoEval-Pro-OpenEnded_16frame': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=16
+    ),
+    'VideoEval-Pro-OpenEnded_32frame': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=32
+    ),
+    'VideoEval-Pro-OpenEnded_64frame': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=64
+    ),
+    'VideoEval-Pro-OpenEnded_1fps': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', fps=1.0
+    ),
+}
+
 vcrbench_dataset = {
     'VCRBench_8frame_nopack': partial(VCRBench, dataset='VCR-Bench', nframe=8, pack=False),
     'VCRBench_16frame_nopack': partial(VCRBench, dataset='VCR-Bench', nframe=16, pack=False),
@@ -390,6 +417,7 @@ dsr_dataset = _build_video_variants(dsr_subsets, DSRBench, dsr_variants)
 supported_video_datasets = {}
 
 dataset_groups = [
+    video_eval_pro_dataset,
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset,
     videommev2_dataset, videommmu_dataset,
     longvideobench_dataset, mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
