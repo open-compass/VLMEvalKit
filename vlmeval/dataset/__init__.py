@@ -46,6 +46,7 @@ from .GUI.screenspot_pro import ScreenSpot_Pro
 from .GUI.screenspot_v2 import ScreenSpotV2
 from .GUI.vbgd import VBGD
 from .GUI.venusbench import VenusBench_GD
+from .herbench import HERBench
 from .hipho import HiPhODataset
 from .image_base import ImageBaseDataset, img_root_map
 from .image_caption import ImageCaptionDataset
@@ -342,7 +343,7 @@ VIDEO_DATASET = [
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
-    VideoMMEv2, ReVSI, SISBench
+    VideoMMEv2, ReVSI, SISBench, HERBench
 ]
 
 # add by EASI team

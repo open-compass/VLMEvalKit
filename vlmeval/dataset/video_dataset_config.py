@@ -58,6 +58,18 @@ sis_bench_dataset = {
     'SIS-Bench_1fps': partial(SISBench, dataset='SIS-Bench', fps=1.0),
 }
 
+herbench_dataset = {
+    f'{name}_{suffix}': partial(HERBench, dataset=name, **kwargs)
+    for name in ['HERBench', 'HERBench_lite', 'HERBench_lite_v2']
+    for suffix, kwargs in [
+        ('8frame', dict(nframe=8)),
+        ('16frame', dict(nframe=16)),
+        ('32frame', dict(nframe=32)),
+        ('64frame', dict(nframe=64)),
+        ('1fps', dict(fps=1.0)),
+    ]
+}
+
 videommev2_dataset = {
     # ── No subtitle ──
     'Video-MME-v2_64frame': partial(VideoMMEv2, dataset='Video-MME-v2', nframe=64),
@@ -395,7 +407,8 @@ dataset_groups = [
     longvideobench_dataset, mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
-    video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset
+    video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset,
+    herbench_dataset
 ]
 
 # add by EASI team
