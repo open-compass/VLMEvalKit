@@ -35,27 +35,31 @@ class Pixtral(BaseModel):
         self.model = model
         self.max_tokens = 2048
 
-    def generate_inner(self, message, dataset=None):
+    @staticmethod
+    def _mistral_content(message, allow_images=True):
+        from mistral_common.protocol.instruct.messages import ImageURLChunk, TextChunk
+
+        content = []
+        for item in message:
+            if item['type'] == 'text':
+                content.append(TextChunk(text=item['value']))
+            elif item['type'] == 'image':
+                if not allow_images:
+                    raise ValueError('Pixtral only supports images in user turns.')
+                b64 = encode_image_file_to_base64(item['value'])
+                image_url = f'data:image/jpeg;base64,{b64}'
+                content.append(ImageURLChunk(image_url=image_url))
+        return content
+
+    def _run_chat(self, messages):
         try:
-            from mistral_common.protocol.instruct.messages import (ImageURLChunk, TextChunk,
-                                                                   UserMessage)
             from mistral_common.protocol.instruct.request import ChatCompletionRequest
             from mistral_inference.generate import generate
         except ImportError as err:
             logging.critical('Please install `mistral-inference` and `mistral_common`')
             raise err
 
-        msg_new = []
-        for msg in message:
-            tp, val = msg['type'], msg['value']
-            if tp == 'text':
-                msg_new.append(TextChunk(text=val))
-            elif tp == 'image':
-                b64 = encode_image_file_to_base64(val)
-                image_url = f'data:image/jpeg;base64,{b64}'
-                msg_new.append(ImageURLChunk(image_url=image_url))
-
-        completion_request = ChatCompletionRequest(messages=[UserMessage(content=msg_new)])
+        completion_request = ChatCompletionRequest(messages=messages)
         encoded = self.tokenizer.encode_chat_completion(completion_request)
         images = encoded.images
         tokens = encoded.tokens
@@ -70,3 +74,36 @@ class Pixtral(BaseModel):
 
         result = self.tokenizer.decode(out_tokens[0])
         return result
+
+    def generate_inner(self, message, dataset=None):
+        try:
+            from mistral_common.protocol.instruct.messages import UserMessage
+        except ImportError as err:
+            logging.critical('Please install `mistral-inference` and `mistral_common`')
+            raise err
+
+        content = self._mistral_content(message)
+        return self._run_chat([UserMessage(content=content)])
+
+    def chat_inner(self, message, dataset=None):
+        try:
+            from mistral_common.protocol.instruct.messages import (AssistantMessage, SystemMessage,
+                                                                   UserMessage)
+        except ImportError as err:
+            logging.critical('Please install `mistral-inference` and `mistral_common`')
+            raise err
+
+        messages = []
+        for turn in message:
+            if turn['role'] == 'user':
+                content = self._mistral_content(turn['content'])
+                messages.append(UserMessage(content=content))
+            elif turn['role'] == 'assistant':
+                content = self._mistral_content(turn['content'], allow_images=False)
+                messages.append(AssistantMessage(content=content))
+            elif turn['role'] == 'system':
+                content = self._mistral_content(turn['content'], allow_images=False)
+                messages.append(SystemMessage(content=content))
+            else:
+                raise ValueError(f'Unsupported Pixtral chat role: {turn["role"]}')
+        return self._run_chat(messages)
