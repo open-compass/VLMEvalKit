@@ -9,8 +9,10 @@ while sharing the upstream parquet metadata and video layout.
 
 from __future__ import annotations
 import ast
+import hashlib
 import os
 import os.path as osp
+import random
 import tarfile
 import warnings
 from pathlib import Path
@@ -26,8 +28,11 @@ from vlmeval.utils import track_progress_rich
 from .video_base import VideoBaseDataset
 
 VIDEOEVAL_PRO_REPO = 'TIGER-Lab/VideoEval-Pro'
-VIDEOEVAL_PRO_JUDGE_MODEL = 'gpt-4o-mini'
+VIDEOEVAL_PRO_JUDGE_MODEL = 'gpt-4o-0806'
 VIDEOEVAL_PRO_FAIL_MSG = 'Failed to obtain answer via API.'
+VIDEOEVAL_PRO_IMG_SHORTEST_EDGE = 256
+VIDEOEVAL_PRO_IMG_LONGEST_EDGE = 480
+VIDEOEVAL_PRO_RANDOM_SEED = int(os.environ.get('VIDEOEVAL_PRO_RANDOM_SEED', '0'))
 
 SHORT_ANSWER_SUFFIX = ' Keep the answer short and concise.'
 MCQ_INSTRUCTION = (
@@ -57,28 +62,85 @@ def multiple_choice_prompt(question: str, options) -> str:
     return '\n'.join([MCQ_INSTRUCTION, question, ' '.join(_options_to_list(options))])
 
 
-def build_official_inference_inputs(item: dict, video_path: str, *, using_frames: bool = False,
-                                   frame_paths: list[str] | None = None,
-                                   num_frames: int = 32) -> tuple[list[dict], list[dict]]:
-    """Return the two upstream input lists, preserving media-first ordering."""
-    media_type = 'frames' if using_frames else 'video'
-    media_content = frame_paths if using_frames else video_path
-    media = {
-        'type': media_type,
-        'content': media_content,
-        'metadata': {
-            'video_num_frames': num_frames,
-            'video_sample_type': 'rand',
-            'img_shortest_edge': 256,
-            'img_longest_edge': 480,
-            'max_img_seq_len': 16000,
-            'do_resize': False,
-        },
-    }
-    textqa = [media, {'type': 'text', 'content': f'<video> {short_answer_prompt(item["question"])}'}]
-    mcq = [media, {'type': 'text', 'content': f'<video> '
-                 f'{multiple_choice_prompt(item["question"], item.get("options", []))}'}]
-    return textqa, mcq
+def _get_frame_indices(num_frames: int, vlen: int, sample: str = 'rand',
+                       input_fps: float = 1, max_num_frames: int = -1,
+                       seed: int | None = None) -> list[int]:
+    """Match VideoEval-Pro's frame-index sampling, with optional local seed."""
+    py_random = random.Random(seed) if seed is not None else random
+    np_random = np.random.RandomState(seed) if seed is not None else np.random
+    if sample in ['rand', 'middle']:
+        acc_samples = min(num_frames, vlen)
+        intervals = np.linspace(start=0, stop=vlen, num=acc_samples + 1).astype(int)
+        ranges = []
+        for idx, interval in enumerate(intervals[:-1]):
+            ranges.append((interval, intervals[idx + 1] - 1))
+        if sample == 'rand':
+            try:
+                # Keep the upstream range end semantics exactly (end excluded).
+                frame_indices = [py_random.choice(range(x[0], x[1])) for x in ranges]
+            except Exception:
+                frame_indices = np_random.permutation(vlen)[:acc_samples]
+                frame_indices.sort()
+                frame_indices = list(frame_indices)
+        else:
+            frame_indices = [(x[0] + x[1]) // 2 for x in ranges]
+
+        if len(frame_indices) < num_frames:
+            padded_frame_indices = [frame_indices[-1]] * num_frames
+            padded_frame_indices[:len(frame_indices)] = frame_indices
+            frame_indices = padded_frame_indices
+        return [int(index) for index in frame_indices]
+    if 'fps' in sample:
+        output_fps = float(sample[3:])
+        duration = float(vlen) / input_fps
+        delta = 1 / output_fps
+        frame_seconds = np.arange(0 + delta / 2, duration + delta / 2, delta)
+        frame_indices = np.around(frame_seconds * input_fps).astype(int)
+        frame_indices = [int(index) for index in frame_indices if index < vlen]
+        if max_num_frames > 0 and len(frame_indices) > max_num_frames:
+            frame_indices = frame_indices[:max_num_frames]
+        return frame_indices
+    raise ValueError(f'Unsupported VideoEval-Pro sample type: {sample}')
+
+
+def _case_random_seed(video: str, seed: int | None) -> int | None:
+    """Derive a stable per-video seed while preserving a fixed run seed."""
+    if seed is None:
+        return None
+    digest = hashlib.sha256(f'{seed}:{video}'.encode('utf-8')).digest()
+    return int.from_bytes(digest[:4], byteorder='little', signed=False)
+
+
+def _get_resize_output_image_size(height: int, width: int,
+                                  shortest_edge: int | None,
+                                  longest_edge: int | None) -> tuple[int, int]:
+    """Match VideoEval-Pro's upstream image resize calculation exactly."""
+    if shortest_edge is None and longest_edge is None:
+        return height, width
+
+    min_len = shortest_edge
+    max_len = longest_edge
+    aspect_ratio = width / height
+
+    if width >= height and width > max_len:
+        width = max_len
+        height = int(width / aspect_ratio)
+    elif height > width and height > max_len:
+        height = max_len
+        width = int(height * aspect_ratio)
+    height = max(height, min_len)
+    width = max(width, min_len)
+    return height, width
+
+
+def _resize_video_eval_pro_image(image: Image.Image) -> Image.Image:
+    """Resize one frame with upstream's shortest=256/longest=480 policy."""
+    height, width = _get_resize_output_image_size(
+        image.size[1], image.size[0],
+        VIDEOEVAL_PRO_IMG_SHORTEST_EDGE,
+        VIDEOEVAL_PRO_IMG_LONGEST_EDGE,
+    )
+    return image.resize((width, height), resample=3)
 
 
 def build_judge_prompt(question: str, target: str, predicted_answer: str) -> str:
@@ -184,14 +246,25 @@ class VideoEvalPro(VideoBaseDataset):
     MD5 = ''
     TASK = 'textqa'
 
-    def __init__(self, dataset='VideoEval-Pro', nframe=32, fps=-1, repo_id=VIDEOEVAL_PRO_REPO):
+    def __init__(self, dataset='VideoEval-Pro', nframe=32, fps=-1,
+                 repo_id=VIDEOEVAL_PRO_REPO,
+                 random_seed: int | None = VIDEOEVAL_PRO_RANDOM_SEED):
         if dataset not in self.supported_datasets():
             supported = ', '.join(self.supported_datasets())
             raise ValueError(
                 f'{self.__class__.__name__} expects one of [{supported}], got {dataset!r}'
             )
         self.repo_id = repo_id
+        self.random_seed = random_seed
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
+        # Keep resize- and seed-aware frame caches separate from older caches.
+        seed_label = 'none' if self.random_seed is None else str(self.random_seed)
+        self.frame_root = osp.join(
+            LMUDataRoot(), 'images',
+            f'{dataset}_{VIDEOEVAL_PRO_IMG_SHORTEST_EDGE}x{VIDEOEVAL_PRO_IMG_LONGEST_EDGE}'
+            f'_rand_seed{seed_label}',
+        )
+        os.makedirs(self.frame_root, exist_ok=True)
 
     @classmethod
     def supported_datasets(cls):
@@ -283,23 +356,25 @@ class VideoEvalPro(VideoBaseDataset):
         fps = reader.get_avg_fps()
         vlen = len(reader)
         stem = osp.splitext(osp.basename(str(video)))[0]
+        sample_seed = _case_random_seed(str(video), self.random_seed)
         if self.fps > 0:
-            duration = vlen / fps
-            required = max(1, int(duration * self.fps))
-            step = fps / self.fps
-            indices = [min(vlen - 1, int(i * step)) for i in range(required)]
+            indices = _get_frame_indices(
+                self.nframe, vlen, sample=f'fps{self.fps}', input_fps=fps,
+                seed=sample_seed,
+            )
             frame_paths = self.frame_paths_fps(stem, len(indices))
         else:
             if self.nframe <= 0:
                 raise ValueError('VideoEval-Pro requires a positive nframe or fps for frame input')
-            step = vlen / (self.nframe + 1)
-            indices = [min(vlen - 1, int(i * step)) for i in range(1, self.nframe + 1)]
+            indices = _get_frame_indices(
+                self.nframe, vlen, sample='rand', seed=sample_seed,
+            )
             frame_paths = self.frame_paths(stem)
         if not np.all([osp.exists(path) for path in frame_paths]):
             images = [Image.fromarray(reader[index].asnumpy()) for index in indices]
             for image, path in zip(images, frame_paths):
                 if not osp.exists(path):
-                    image.save(path)
+                    _resize_video_eval_pro_image(image).save(path)
         return frame_paths
 
     def _build_vlmeval_message(self, line, video_llm=False):
@@ -315,8 +390,8 @@ class VideoEvalPro(VideoBaseDataset):
                 metadata={
                     'video_num_frames': self.nframe if self.nframe > 0 else 32,
                     'video_sample_type': 'rand',
-                    'img_shortest_edge': 256,
-                    'img_longest_edge': 480,
+                    'img_shortest_edge': VIDEOEVAL_PRO_IMG_SHORTEST_EDGE,
+                    'img_longest_edge': VIDEOEVAL_PRO_IMG_LONGEST_EDGE,
                     'max_img_seq_len': 16000,
                     'do_resize': False,
                 },
@@ -326,7 +401,7 @@ class VideoEvalPro(VideoBaseDataset):
                 dict(type='image', value=path)
                 for path in self.save_video_frames(line['video'], video_llm=False)
             ]
-        return media_items + [dict(type='text', value=f'<video> {text}')]
+        return media_items + [dict(type='text', value=text)]
 
     def build_prompt(self, line, video_llm=False):
         if isinstance(line, int):
@@ -427,6 +502,6 @@ class VideoEvalPro_OpenEnded(VideoEvalPro):
 
 __all__ = [
     'VideoEvalPro_MCQ', 'VideoEvalPro_OpenEnded',
-    'build_official_inference_inputs', 'build_judge_prompt',
+    'build_judge_prompt',
     'multiple_choice_prompt', 'option_judge', 'short_answer_prompt',
 ]

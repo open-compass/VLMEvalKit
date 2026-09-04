@@ -3,6 +3,9 @@ from functools import partial
 from vlmeval.dataset import *
 
 video_eval_pro_dataset = {
+    'VideoEval-Pro-MCQ_16frame': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=16
+    ),
     'VideoEval-Pro-MCQ_32frame': partial(
         VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=32
     ),
@@ -11,6 +14,9 @@ video_eval_pro_dataset = {
     ),
     'VideoEval-Pro-MCQ_1fps': partial(
         VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', fps=1.0
+    ),
+    'VideoEval-Pro-OpenEnded_16frame': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=16
     ),
     'VideoEval-Pro-OpenEnded_32frame': partial(
         VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=32
