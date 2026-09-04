@@ -222,12 +222,12 @@ class ImageMCQDataset(ImageBaseDataset):
         options = {
             cand: line[cand]
             for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
+            if cand in line and not pd.isna(line[cand]) and str(line[cand]).strip() != ''
         }
         options_prompt = 'Options:\n'
         for key, item in options.items():
             options_prompt += f'{key}. {item}\n'
-        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint']) and str(line['hint']).strip() != '') else None
         prompt = ''
         if hint is not None:
             prompt += f'Hint: {hint}\n'
