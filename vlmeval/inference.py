@@ -206,6 +206,26 @@ def _is_structured_record(v):
     return isinstance(v, dict) and 'prediction' in v and 'extra_records' in v
 
 
+def _unpack_structured_records(data_all, indices):
+    """Split per-sample results into prediction / extra_records columns.
+
+    A sample whose retries are exhausted comes back from `BaseAPI.generate` as
+    a plain string rather than a structured record, so a single run can mix
+    both shapes. Unpack each sample on its own instead of letting one string
+    discard the structured output of every other sample.
+    """
+    predictions, extra_records = [], []
+    for x in indices:
+        value = data_all[x]
+        if _is_structured_record(value):
+            predictions.append(value['prediction'])
+            extra_records.append(value['extra_records'])
+        else:
+            predictions.append(str(value))
+            extra_records.append({})
+    return predictions, extra_records
+
+
 # A wrapper for infer_data, do the pre & post processing
 def infer_data_job(
     model, work_dir, model_name, dataset, verbose=False, api_nproc=4, retry_failed=True, use_vllm=False
@@ -245,9 +265,8 @@ def infer_data_job(
         for x in data['index']:
             assert x in data_all
         if os.getenv('SPLIT_THINK', False):
-            if all(_is_structured_record(data_all[x]) for x in data['index']):
-                prediction = [data_all[x]['prediction'] for x in data['index']]
-                extra_records = [data_all[x]['extra_records'] for x in data['index']]
+            if any(_is_structured_record(data_all[x]) for x in data['index']):
+                prediction, extra_records = _unpack_structured_records(data_all, data['index'])
                 data['extra_records'] = extra_records
             else:
                 prediction = [str(data_all[x]) for x in data['index']]
@@ -274,9 +293,10 @@ def infer_data_job(
         else:
             # data['prediction'] = [str(data_all[x]) for x in data['index']]
             # Add for agent evaluation
-            if all(_is_structured_record(data_all[x]) for x in data['index']):
-                data['prediction'] = [data_all[x]['prediction'] for x in data['index']]
-                data['extra_records'] = [data_all[x]['extra_records'] for x in data['index']]
+            if any(_is_structured_record(data_all[x]) for x in data['index']):
+                predictions, extra_records = _unpack_structured_records(data_all, data['index'])
+                data['prediction'] = predictions
+                data['extra_records'] = extra_records
             else:
                 data['prediction'] = [str(data_all[x]) for x in data['index']]
         if 'image' in data:
