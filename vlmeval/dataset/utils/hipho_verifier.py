@@ -66,6 +66,10 @@ def timeout(timeout_seconds: int = 10):
                     signal.signal(signal.SIGALRM, old_handler)
             return wrapper
         return decorator
+    else:
+        def decorator(func):
+            return func
+        return decorator
 
 
 # units mainly from MathQA
