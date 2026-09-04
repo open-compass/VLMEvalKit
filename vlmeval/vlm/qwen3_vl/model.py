@@ -13,9 +13,12 @@ VLLM_MAX_IMAGE_INPUT_NUM = 24
 
 
 def is_moe_model(model_path: str) -> bool:
-    """Check if the model is a Mixture of Experts model by looking for active-param suffixes like A3B, A17B."""
+    """Check if the model is a Mixture of Experts model by looking for
+    active-param suffixes like A3B, A17B, A95B or MoE names."""
     import re
-    if re.search(r'-A\d+B', model_path):
+    path_lower = model_path.lower()
+    moe_keywords = ('moe', 'flash-next', 'flash_next')
+    if re.search(r'-a\d+b', path_lower) or any(k in path_lower for k in moe_keywords):
         return True
     return False
 
@@ -94,6 +97,11 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         self.nframe = kwargs.pop('nframe', 128)
         self.FRAME_FACTOR = 2
         self.use_audio_in_video = use_audio_in_video
+        self.chat_template_kwargs = kwargs.pop('chat_template_kwargs', {}) or {}
+        if 'enable_thinking' in kwargs:
+            self.chat_template_kwargs['enable_thinking'] = kwargs.pop('enable_thinking')
+        if 'reasoning_effort' in kwargs:
+            self.chat_template_kwargs['reasoning_effort'] = kwargs.pop('reasoning_effort')
 
         assert model_path is not None
         self.model_path = model_path
@@ -120,6 +128,14 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         self.limit_mm_per_prompt = VLLM_MAX_IMAGE_INPUT_NUM
         os.environ['VLLM_WORKER_MULTIPROC_METHOD'] = 'spawn'
         assert self.use_vllm + self.use_lmdeploy <= 1, "You can only set one flag `use_vllm` to True"
+        self.attn_implementation = kwargs.pop('attn_implementation', None)
+        if self.attn_implementation is None:
+            try:
+                import flash_attn  # noqa: F401
+                self.attn_implementation = 'flash_attention_2'
+            except ImportError:
+                self.attn_implementation = 'sdpa'
+
         if self.use_vllm:
             if listinstr(['omni'], self.model_path.lower()):
                 os.environ['VLLM_USE_V1'] = '0'
@@ -152,11 +168,11 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         else:
             if listinstr(['omni'], model_path.lower()):
                 self.model = Qwen3OmniMoeForConditionalGeneration.from_pretrained(
-                    model_path, dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+                    model_path, dtype='auto', device_map='auto', attn_implementation=self.attn_implementation
                 )
             else:
                 self.model = AutoModelForImageTextToText.from_pretrained(
-                    model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+                    model_path, torch_dtype='auto', device_map='auto', attn_implementation=self.attn_implementation
                 )
             self.model.eval()
 
@@ -259,7 +275,15 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
                 use_audio_in_video=self.use_audio_in_video,
             )
         else:
-            text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            if self.chat_template_kwargs:
+                try:
+                    text = self.processor.apply_chat_template(
+                        messages, tokenize=False, add_generation_prompt=True, **self.chat_template_kwargs
+                    )
+                except TypeError:
+                    text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            else:
+                text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
             images, videos, video_kwargs = process_vision_info(
                 messages,
                 image_patch_size=16,
@@ -364,7 +388,15 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
 
-        text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        if self.chat_template_kwargs:
+            try:
+                text = self.processor.apply_chat_template(
+                    messages, tokenize=False, add_generation_prompt=True, **self.chat_template_kwargs
+                )
+            except TypeError:
+                text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        else:
+            text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         if is_omni:
             audios, image_inputs, video_inputs = process_mm_info(messages, use_audio_in_video=self.use_audio_in_video)
         else:
