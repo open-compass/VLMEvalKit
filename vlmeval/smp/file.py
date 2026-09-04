@@ -250,7 +250,7 @@ def _should_convert_to_dataframe(data):
     return False
 
 
-def load(f, fmt=None):
+def load(f, fmt=None, **kwargs):
     def load_pkl(pth):
         return pickle.load(open(pth, 'rb'))
 
@@ -266,13 +266,13 @@ def load(f, fmt=None):
         return data
 
     def load_xlsx(f):
-        return pd.read_excel(f)
+        return pd.read_excel(f, **kwargs)
 
     def load_csv(f):
-        return pd.read_csv(f)
+        return pd.read_csv(f, **kwargs)
 
     def load_tsv(f):
-        return pd.read_csv(f, sep='\t')
+        return pd.read_csv(f, sep='\t', **kwargs)
 
     import validators
     if validators.url(f):

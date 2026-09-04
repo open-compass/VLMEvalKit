@@ -138,6 +138,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
     MODALITY = 'IMAGE'
     DATASET_URL = {}
     DATASET_MD5 = {}
+    TSV_LOAD_KWARGS = {}
     DEFAULT_JUDGE_MODEL: str | None = None
 
     INFER_FAIL_MARKERS = (INFER_FAIL_MSG, )
@@ -260,7 +261,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
                 from ..tools import LOCALIZE
                 LOCALIZE(data_path, local_path)
             data_path = local_path
-        return load(data_path)
+        return load(data_path, **self.TSV_LOAD_KWARGS)
 
     def dump_image(self, line):
         os.makedirs(self.img_root, exist_ok=True)
