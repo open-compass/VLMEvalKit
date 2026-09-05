@@ -38,7 +38,7 @@ from .liquid import LFM2VL
 from .llama4 import llama4
 from .llama_vision import llama_vision
 from .llava import (LLaVA, LLaVA_Next, LLaVA_Next2, LLaVA_OneVision, LLaVA_OneVision_1_5,
-                    LLaVA_OneVision_HF, LLaVA_XTuner)
+                    LLaVA_OneVision_HF, LLaVA_OneVision_VQToken, LLaVA_XTuner)
 from .logics import Logics_Thinking
 from .long_vita import LongVITA
 from .mantis import Mantis
