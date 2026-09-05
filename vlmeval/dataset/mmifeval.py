@@ -10,6 +10,11 @@ from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
 
+# rule_based constraints are dispatched via globals()[func_dict["func"]] (~line 296);
+# the verify funcs live in function_and_compare.py and must be in this module's globals,
+# else every rule_based item raises KeyError.
+from .utils.mmif.function_and_compare import *  # noqa: F401,F403
+
 logger = get_logger(__name__)
 
 aux_data_dict = {}
