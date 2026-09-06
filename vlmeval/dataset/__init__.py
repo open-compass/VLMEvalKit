@@ -123,6 +123,7 @@ from .revsi import ReVSI
 from .robospatialbench import RoboSpatialBench
 from .sarena import SArena
 from .scidocbench import SciDocBench
+from .scimif import SciMIF
 from .sfebench import SFE
 from .SGI_Bench_1_0.deep_research import SGI_Bench_Deep_Research
 from .SGI_Bench_1_0.dry_experiment import SGI_Bench_Dry_Experiment
@@ -322,7 +323,7 @@ IMAGE_DATASET = [
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
-    PerceptionBench, SUPERChemDataset, C4Bench,
+    PerceptionBench, SUPERChemDataset, C4Bench, SciMIF,
 ]
 
 # add by EASI team

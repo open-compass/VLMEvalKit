@@ -50,6 +50,7 @@ rich
 rouge
 scikit-image
 scikit-learn
+selfies
 sentence_transformers
 sentencepiece
 setuptools
