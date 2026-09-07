@@ -23,8 +23,8 @@ from huggingface_hub import snapshot_download
 from PIL import Image
 
 from vlmeval.smp import LMUDataRoot, dump, get_file_extension, get_intermediate_file_path, load
-from .utils import DEBUG_MESSAGE, build_judge
 from vlmeval.utils import track_progress_rich
+from .utils import DEBUG_MESSAGE, build_judge
 from .video_base import VideoBaseDataset
 
 VIDEOEVAL_PRO_REPO = 'TIGER-Lab/VideoEval-Pro'
