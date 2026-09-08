@@ -38,9 +38,13 @@ class Mantis(BaseModel):
 
         try:
             from transformers import AutoModelForVision2Seq, AutoProcessor
+        except ImportError:
+            from transformers import AutoModelForImageTextToText as AutoModelForVision2Seq
+            from transformers import AutoProcessor
         except Exception as e:
             logging.critical(f'{type(e)}: {e}')
             logging.critical("Upgrade transformers to use Mantis's idefics model.\nError: %s" % e)
+            raise e
 
         # inference implementation for attention, can be "sdpa", "eager", "flash_attention_2".
         # Seems FA2 is not effective during inference:
