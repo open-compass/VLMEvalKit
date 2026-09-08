@@ -147,7 +147,7 @@ from .stibench import STIBench
 from .superchem import SUPERChemDataset
 from .tamperbench import MVTamperBench
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
-from .text_mcq import CustomTextMCQDataset, TextMCQDataset
+from .text_mcq import CustomTextMCQDataset, MedXpertQAText, TextMCQDataset
 from .uni_svg import UniSVG
 from .utils import DEBUG_MESSAGE, build_judge, extract_answer_from_item, prefetch_answer
 from .v2pbench import V2PBench
@@ -351,7 +351,8 @@ VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIV
 
 TEXT_DATASET = [
     TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment,
-    SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation, XSTestDataset, FlamesDataset
+    SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation, XSTestDataset, FlamesDataset,
+    MedXpertQAText
 ]
 
 CUSTOM_DATASET = [
