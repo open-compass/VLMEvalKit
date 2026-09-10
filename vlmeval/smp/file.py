@@ -73,7 +73,8 @@ def localize_df(data, dname, nproc=32):
     ret = pool.map(decode_img_omni, tups)
     pool.close()
     data.pop('image')
-    data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
+    if 'image_path' not in data:
+        data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
     return data
 
 
