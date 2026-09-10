@@ -66,6 +66,8 @@ class SlideVQA(ImageBaseDataset):
 
     TYPE = 'VQA'
 
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+
     DATASET_URL = {
         'SLIDEVQA_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/SLIDEVQA_MINI.tsv',
         'SLIDEVQA': 'https://opencompass.openxlab.space/utils/VLMEval/SLIDEVQA.tsv',

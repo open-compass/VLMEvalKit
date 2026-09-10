@@ -10,6 +10,7 @@ from vlmeval.smp import (LMUDataRoot, dump, get_composite_child_eval_file,
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
 from .babyvision import BabyVision
+from .c4_bench import C4Bench
 from .CGAVCounting.cg_av_counting import CGAVCounting
 from .cgbench import (CGBench_MCQ_Grounding, CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded,
                       CGBench_OpenEnded_Mini)
@@ -24,6 +25,7 @@ from .cmmmu import CMMMU
 from .creation import CreationMMBenchDataset
 from .da2k import DA2K
 from .design2code import Design2Code
+from .docscope import DocScope
 from .dream import DREAM
 from .dsrbench import DSRBench
 from .dude import DUDE
@@ -97,6 +99,7 @@ from .mmrarebench import (MMRarebenchCrossmodal, MMRarebenchDiagnosis, MMRareben
 from .mmsafetybench import MMSafetyBenchDataset
 from .mmsibench import MMSIBench, MMSIVideoBench
 from .moat import MOAT
+from .molrecbench_wild import MolRecBenchWildDataset
 from .moviechat1k import MovieChat1k
 from .mrarebench import MRareBenchDiagnosis, MRareBenchEvidenceVerif
 from .mssbench import MSSBenchDataset
@@ -110,6 +113,7 @@ from .omnimat import OmniMat
 from .omnispatialbench import OmniSpatialBench
 from .omtgbench import OMTGBench
 from .ost_bench import OSTDataset
+from .perceptionbench import PerceptionBench
 from .plotqa import PlotQA
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 from .reasonmap_plus import ReasonMap_Plus
@@ -127,6 +131,7 @@ from .SGI_Bench_1_0.experimental_reasoning import SGI_Bench_Experimental_Reasoni
 from .SGI_Bench_1_0.idea_generation import SGI_Bench_Idea_Generation
 from .SGI_Bench_1_0.wet_experiment import SGI_Bench_Wet_Experiment
 from .simplevqa import SimpleVQA
+from .sis_bench import SISBench
 from .sitebench import SiteBenchImage, SiteBenchVideo
 from .siuo import SIUODataset
 from .siuo_gen import SIUOGenDataset
@@ -140,9 +145,10 @@ from .spbench import SPBench
 from .ssi_bench import SSIBenchDataset
 from .starebench import StareBench
 from .stibench import STIBench
+from .superchem import SUPERChemDataset
 from .tamperbench import MVTamperBench
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
-from .text_mcq import CustomTextMCQDataset, TextMCQDataset
+from .text_mcq import CustomTextMCQDataset, MedXpertQAText, TextMCQDataset
 from .uni_svg import UniSVG
 from .utils import DEBUG_MESSAGE, build_judge, extract_answer_from_item, prefetch_answer
 from .v2pbench import V2PBench
@@ -150,6 +156,7 @@ from .vcr import VCRDataset
 from .vcrbench import VCRBench
 from .vdc import VDC
 from .video_concat_dataset import ConcatVideoDataset
+from .video_eval_pro import VideoEvalPro_MCQ, VideoEvalPro_OpenEnded
 from .video_holmes import Video_Holmes
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
 from .videomme import VideoMME
@@ -165,6 +172,7 @@ from .vlmbias import VLMBias
 from .vlrmbench import VLRMBench
 from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
 from .wiki_vqa_bench import WikiVQABench
+from .wildprobe import WildprobeDataset
 from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
@@ -230,6 +238,11 @@ class ConcatDataset(ImageBaseDataset):
         org_line = copy.deepcopy(org_data[org_data['index'] == idx]).iloc[0]
         return self.dataset_map[dname].build_prompt(org_line)
 
+    def get_default_judge_model(self, judge_kwargs=None):
+        if self.dataset_name == 'M4Bench':
+            return 'gpt-4o'
+        return super().get_default_judge_model(judge_kwargs)
+
     def dump_image(self, line):
         # Assert all images are pre-dumped
         assert 'image' not in line
@@ -284,7 +297,8 @@ class ConcatDataset(ImageBaseDataset):
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
-    MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset, DUDE, LongDocURL,
+    MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset, DUDE, DocScope,
+    LongDocURL,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
     OlympiadBench, SeePhys, WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,  # noqa: E501
@@ -309,8 +323,8 @@ IMAGE_DATASET = [
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
-    MRareBenchDiagnosis, MRareBenchEvidenceVerif,
-    BabyVision,
+    MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
+    PerceptionBench, SUPERChemDataset, C4Bench,
 ]
 
 # add by EASI team
@@ -330,7 +344,7 @@ VIDEO_DATASET = [
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
-    VideoMMEv2, ReVSI
+    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded
 ]
 
 # add by EASI team
@@ -338,7 +352,8 @@ VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIV
 
 TEXT_DATASET = [
     TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment,
-    SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation, XSTestDataset, FlamesDataset
+    SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation, XSTestDataset, FlamesDataset,
+    MedXpertQAText
 ]
 
 CUSTOM_DATASET = [

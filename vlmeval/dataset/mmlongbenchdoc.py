@@ -436,6 +436,8 @@ class MMLongBenchDoc(ImageBaseDataset):
 
     TYPE = 'VQA'
 
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+
     DATASET_URL = {
         'MMLongBench_DOC': 'https://opencompass.openxlab.space/utils/VLMEval/MMLongBench_DOC.tsv',
     }

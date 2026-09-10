@@ -17,6 +17,33 @@ def _video_spec(cls, **kwargs):
     )
 
 
+video_eval_pro_dataset = {
+    'VideoEval-Pro-MCQ_16frame': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=16
+    ),
+    'VideoEval-Pro-MCQ_32frame': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=32
+    ),
+    'VideoEval-Pro-MCQ_64frame': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=64
+    ),
+    'VideoEval-Pro-MCQ_1fps': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', fps=1.0
+    ),
+    'VideoEval-Pro-OpenEnded_16frame': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=16
+    ),
+    'VideoEval-Pro-OpenEnded_32frame': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=32
+    ),
+    'VideoEval-Pro-OpenEnded_64frame': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=64
+    ),
+    'VideoEval-Pro-OpenEnded_1fps': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', fps=1.0
+    ),
+}
+
 vcrbench_dataset = {
     'VCRBench_8frame_nopack': _video_spec(VCRBench, dataset='VCR-Bench', nframe=8, pack=False),
     'VCRBench_16frame_nopack': _video_spec(VCRBench, dataset='VCR-Bench', nframe=16, pack=False),
@@ -65,6 +92,12 @@ videomme_dataset = {
     'Video-MME_1fps': _video_spec(VideoMME, dataset='Video-MME', fps=1.0),
     'Video-MME_0.5fps': _video_spec(VideoMME, dataset='Video-MME', fps=0.5),
     'Video-MME_0.5fps_subs': _video_spec(VideoMME, dataset='Video-MME', fps=0.5, use_subtitle=True),
+}
+
+sis_bench_dataset = {
+    'SIS-Bench_8frame': partial(SISBench, dataset='SIS-Bench', nframe=8),
+    'SIS-Bench_32frame': partial(SISBench, dataset='SIS-Bench', nframe=32),
+    'SIS-Bench_1fps': partial(SISBench, dataset='SIS-Bench', fps=1.0),
 }
 
 videommev2_dataset = {
@@ -397,7 +430,9 @@ dsr_variants = [
 ]
 dsr_dataset = _build_video_variants(dsr_subsets, DSRBench, dsr_variants)
 dataset_groups = [
-    mmbench_video_dataset, mvbench_dataset, videomme_dataset, videommev2_dataset, videommmu_dataset,
+    video_eval_pro_dataset,
+    mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset,
+    videommev2_dataset, videommmu_dataset,
     longvideobench_dataset, mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,

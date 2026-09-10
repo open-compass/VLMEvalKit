@@ -40,6 +40,7 @@ def unwrap_hf_pkl(pth, suffix='.mp4'):
 
 
 class Video_Holmes(VideoBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
 
     MD5 = '85bdd91f9b29a99354c23b97ab7c113c'
     SYS = ''
@@ -51,7 +52,6 @@ class Video_Holmes(VideoBaseDataset):
     """  # noqa: E501
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='Video_Holmes', nframe=32, fps=-1):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
@@ -224,7 +224,7 @@ class Video_Holmes(VideoBaseDataset):
         score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.get('model', 'exact_matching')
+            model = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
 
             if model == 'exact_matching':
                 model = None
