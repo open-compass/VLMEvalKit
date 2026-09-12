@@ -161,9 +161,31 @@ def build_model_from_config(cfg, model_name, use_vllm=False):
     return model
 
 
-def build_dataset_from_config(cfg, dataset_name, *, strict=False, extra_kwargs=None):
+def _accepted_init_params(cls):
+    """Collect the keyword parameters a dataset class accepts.
+
+    A dataset class whose ``__init__`` only takes ``**kwargs`` forwards them to
+    its parent, so the parameters of the whole ``__init__`` chain count until an
+    ``__init__`` that does not take ``**kwargs`` is reached.
+    """
     import inspect
 
+    accepted = set()
+    for klass in cls.__mro__:
+        init = klass.__dict__.get('__init__')
+        if init is None:
+            continue
+        params = inspect.signature(init).parameters
+        accepted.update(
+            name for name, p in params.items()
+            if p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY) and name != 'self'
+        )
+        if not any(p.kind == p.VAR_KEYWORD for p in params.values()):
+            break
+    return accepted
+
+
+def build_dataset_from_config(cfg, dataset_name, *, strict=False, extra_kwargs=None):
     import vlmeval.dataset
     config = cp.deepcopy(cfg[dataset_name])
     if config == {}:
@@ -178,12 +200,12 @@ def build_dataset_from_config(cfg, dataset_name, *, strict=False, extra_kwargs=N
             config.setdefault(k, v)
     if hasattr(vlmeval.dataset, cls_name):
         cls = getattr(vlmeval.dataset, cls_name)
-        sig = inspect.signature(cls.__init__)
-        unknown_params = sorted(k for k in config if k not in sig.parameters)
+        accepted = _accepted_init_params(cls)
+        unknown_params = sorted(k for k in config if k not in accepted)
         if strict and unknown_params:
             unknown = ', '.join(unknown_params)
             raise ValueError(f'Unsupported parameter(s) for dataset class {cls_name}: {unknown}')
-        valid_params = {k: v for k, v in config.items() if k in sig.parameters}
+        valid_params = {k: v for k, v in config.items() if k in accepted}
         if getattr(cls, 'MODALITY', None) == 'VIDEO':
             if valid_params.get('fps', 0) > 0 and valid_params.get('nframe', 0) > 0:
                 raise ValueError('fps and nframe should not be set at the same time')
