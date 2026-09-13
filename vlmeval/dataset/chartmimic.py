@@ -1,6 +1,7 @@
 # flake8: noqa
 import base64
 import json
+import logging
 import mimetypes
 import os
 import os.path as osp
@@ -10,6 +11,7 @@ import subprocess
 import sys
 import warnings
 
+import pandas as pd
 from timeout_decorator import timeout
 
 from vlmeval.smp import (LMUDataRoot, download_file, dump, file_size, get_intermediate_file_path,

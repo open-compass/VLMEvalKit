@@ -10,6 +10,7 @@ from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
 from .babyvision import BabyVision
 from .capeval import CAPEval
+from .c4_bench import C4Bench
 from .CGAVCounting.cg_av_counting import CGAVCounting
 from .cgbench import (CGBench_MCQ_Grounding, CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded,
                       CGBench_OpenEnded_Mini)
@@ -147,7 +148,7 @@ from .stibench import STIBench
 from .superchem import SUPERChemDataset
 from .tamperbench import MVTamperBench
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
-from .text_mcq import CustomTextMCQDataset, TextMCQDataset
+from .text_mcq import CustomTextMCQDataset, MedXpertQAText, TextMCQDataset
 from .uni_svg import UniSVG
 from .utils import DEBUG_MESSAGE, build_judge, extract_answer_from_item, prefetch_answer
 from .v2pbench import V2PBench
@@ -155,6 +156,7 @@ from .vcr import VCRDataset
 from .vcrbench import VCRBench
 from .vdc import VDC
 from .video_concat_dataset import ConcatVideoDataset
+from .video_eval_pro import VideoEvalPro_MCQ, VideoEvalPro_OpenEnded
 from .video_holmes import Video_Holmes
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
 from .videomme import VideoMME
@@ -325,7 +327,7 @@ IMAGE_DATASET = [
     BabyVision, PerceptionBench, SUPERChemDataset, CAPEval,
     BabyVision, WildprobeDataset, PerceptionBench, SUPERChemDataset,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
-    PerceptionBench, SUPERChemDataset,
+    PerceptionBench, SUPERChemDataset, C4Bench,
 ]
 
 # add by EASI team
@@ -345,7 +347,7 @@ VIDEO_DATASET = [
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
-    VideoMMEv2, ReVSI, SISBench
+    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded
 ]
 
 # add by EASI team
@@ -353,7 +355,8 @@ VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIV
 
 TEXT_DATASET = [
     TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment,
-    SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation, XSTestDataset, FlamesDataset
+    SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation, XSTestDataset, FlamesDataset,
+    MedXpertQAText
 ]
 
 CUSTOM_DATASET = [
