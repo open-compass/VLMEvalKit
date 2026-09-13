@@ -48,6 +48,7 @@ rdkit
 requests
 rich
 rouge
+rouge-score
 scikit-image
 scikit-learn
 sentence_transformers
