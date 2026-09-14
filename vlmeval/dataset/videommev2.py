@@ -13,7 +13,7 @@ from PIL import Image
 
 from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
                          gpt_key_set, load, md5, modelscope_flag_set)
-from .utils import DEBUG_MESSAGE, build_judge
+from .utils import DEBUG_MESSAGE, build_judge, warn_if_judge_model_changed
 from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -183,6 +183,8 @@ class VideoMMEv2(VideoBaseDataset):
     )
 
     TYPE = 'Video-MCQ'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     def __init__(self, dataset='Video-MME-v2', nframe=64, fps=-1,
                  with_subtitle=False, subtitle_interleave=False, reasoning=False,
@@ -460,8 +462,12 @@ class VideoMMEv2(VideoBaseDataset):
         score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.get('model', 'exact_matching')
-            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+            model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
+            warn_if_judge_model_changed(
+                model,
+                ['chatgpt-0125', 'exact_matching', 'gpt-4-0125'],
+                'Video-MME-v2',
+            )
 
             if model == 'exact_matching':
                 model = None

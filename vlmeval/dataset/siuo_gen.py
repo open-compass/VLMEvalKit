@@ -84,6 +84,8 @@ def _siuo_eff_judge(model, q, pred):
 
 class SIUOGenDataset(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     MODALITY = 'IMAGE'
     DATASET_URL = {'SIUO_GEN': 'https://opencompass.openxlab.space/utils/VLMEval/SIUO_GEN.tsv'}
     DATASET_MD5 = {'SIUO_GEN': '74a41eadede71e932cce9004442cf1a7'}
@@ -105,7 +107,7 @@ class SIUOGenDataset(ImageBaseDataset):
         data = load(eval_file)
         assert 'prediction' in data and 'question' in data
 
-        model_name = judge_kwargs.pop('model', 'gpt-4o-mini')
+        model_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         nproc = judge_kwargs.pop('nproc', 4)
         safe_tmp = get_intermediate_file_path(eval_file, f'_{model_name}_safe', 'pkl')
         eff_tmp = get_intermediate_file_path(eval_file, f'_{model_name}_eff', 'pkl')

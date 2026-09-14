@@ -142,6 +142,10 @@ class SimpleVQA(ImageBaseDataset):
         gpt4_key = os.environ.get('OPENAI_API_KEY', None)
         base_url = os.environ.get('OPENAI_API_BASE', None)
         nproc = judge_kwargs.get('nproc', 16)
+        # ``model`` is the canonical judge argument used by ``run.py``.  The
+        # previous implementation hard-coded ``gpt-4o`` in the request below,
+        # so a user supplied judge model was silently ignored.
+        judge_model = judge_kwargs.get('model') or 'gpt-4o'
 
         client = OpenAI(
             api_key=gpt4_key,
@@ -158,7 +162,7 @@ class SimpleVQA(ImageBaseDataset):
             prompt = COMPARE_ANSWER_PROMPT.format(question=question, answer=answer, candidates=candidates)
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o",
+                    model=judge_model,
                     messages=[{"role": "user", "content": prompt}],
                     temperature=1
                 )

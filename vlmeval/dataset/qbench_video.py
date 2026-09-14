@@ -202,6 +202,7 @@ Please do not add any other answers beyond this.
 
 
 class QBench_Video_VQA(VideoBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-0806'
 
     MD5 = '49e6181b341c934d0b33ec78bdcc0a3d'
 
@@ -216,7 +217,6 @@ Please analyze these frames and provide a detailed and accurate answer from the 
 """  # noqa: E501
 
     TYPE = 'Video-VQA'
-    DEFAULT_JUDGE = ['gpt-4o-0806', 'gpt-4o']
 
     def __init__(self, dataset='qbenchvideo_single_VQA', nframe=0, fps=-1):
         dataset_tsv_name = 'qbenchvideo_single_VQA'
@@ -316,7 +316,7 @@ Please analyze these frames and provide a detailed and accurate answer from the 
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        model = judge_kwargs.setdefault('model', 'gpt-4o-0806')
+        model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
 
         score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
