@@ -25,6 +25,14 @@ MODEL_CLASSES = {
         'densevideo_qwen_dual_plugin.models.qwen2_5_vl_dual_route_floor', 'Qwen2_5_VL_DualRouteFloor',
     ),
 }
+_PROCESS_SIZE_ENV = (
+    'WORLD_SIZE', 'LOCAL_WORLD_SIZE', 'PMI_SIZE', 'OMPI_COMM_WORLD_SIZE',
+    'MV2_COMM_WORLD_SIZE', 'SLURM_NTASKS', 'SLURM_NPROCS',
+)
+_PROCESS_RANK_ENV = (
+    'RANK', 'LOCAL_RANK', 'PMI_RANK', 'OMPI_COMM_WORLD_RANK',
+    'MV2_COMM_WORLD_RANK', 'SLURM_PROCID',
+)
 
 
 def _load_runtime(profile, role):
@@ -50,13 +58,37 @@ def _load_runtime(profile, role):
     return selected, method, model_class, Instance, simple_parse_args_string
 
 
+def _require_single_process(torch_module):
+    """Reject distributed launcher metadata before touching CUDA."""
+    for name in (*_PROCESS_SIZE_ENV, *_PROCESS_RANK_ENV):
+        raw = os.environ.get(name)
+        if raw is None:
+            continue
+        try:
+            value = int(raw)
+        except ValueError as exc:
+            raise ValueError(f'Invalid {name}; GRT profiles require a single process') from exc
+        allowed = (1,) if name in _PROCESS_SIZE_ENV else (
+            (-1, 0) if name == 'LOCAL_RANK' else (0,)
+        )
+        if value not in allowed:
+            raise ValueError(
+                f'{name}={value}; GRT profiles require a single process, '
+                'not a distributed launcher'
+            )
+    distributed = torch_module.distributed
+    if distributed.is_available() and distributed.is_initialized():
+        if distributed.get_world_size() != 1:
+            raise ValueError('Initialized distributed group is not a single process')
+
+
 def _configure_reproduction():
     import numpy as np
     import torch
     if os.environ.get('PYTHONHASHSEED') != '0' or os.environ.get('CUBLAS_WORKSPACE_CONFIG') != ':4096:8':
         raise ValueError('Start Python with PYTHONHASHSEED=0 and CUBLAS_WORKSPACE_CONFIG=:4096:8')
-    distributed = torch.distributed.is_initialized() and torch.distributed.get_world_size() != 1
-    if torch.cuda.device_count() != 1 or int(os.environ.get('WORLD_SIZE', '1')) != 1 or distributed:
+    _require_single_process(torch)
+    if torch.cuda.device_count() != 1:
         raise ValueError('Released GRT profiles require one visible CUDA GPU and one process')
     random.seed(0)
     # Preserve the effective historical evaluator seed tuple: 0,1234,1234,1234.

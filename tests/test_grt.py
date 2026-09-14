@@ -7,12 +7,20 @@ from vlmeval.config import supported_VLM
 from vlmeval.vlm import grt
 
 
-def test_effective_seed_and_single_device_contract(monkeypatch):
-    import numpy as np
-    import torch
+@pytest.fixture
+def reproduction_environment(monkeypatch):
+    for name in (*grt._PROCESS_SIZE_ENV, *grt._PROCESS_RANK_ENV):
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv('PYTHONHASHSEED', '0')
     monkeypatch.setenv('CUBLAS_WORKSPACE_CONFIG', ':4096:8')
+
+
+def test_effective_seed_and_single_device_contract(monkeypatch, reproduction_environment):
+    import numpy as np
+    import torch
     monkeypatch.setenv('WORLD_SIZE', '1')
+    monkeypatch.setenv('SLURM_NTASKS', '1')
+    monkeypatch.setenv('LOCAL_RANK', '-1')
     monkeypatch.setattr(torch.backends.cudnn, 'deterministic', False)
     monkeypatch.setattr(torch.backends.cudnn, 'benchmark', True)
     monkeypatch.setattr(torch.backends.cuda.matmul, 'allow_tf32', True)
@@ -36,6 +44,44 @@ def test_effective_seed_and_single_device_contract(monkeypatch):
         assert not torch.backends.cudnn.benchmark
         assert not torch.backends.cuda.matmul.allow_tf32
         assert not torch.backends.cudnn.allow_tf32
+
+
+@pytest.mark.parametrize('name', grt._PROCESS_SIZE_ENV)
+@pytest.mark.parametrize('value', ['0', '2', 'invalid'])
+def test_distributed_size_metadata_fails_before_cuda(
+    monkeypatch, reproduction_environment, name, value,
+):
+    import torch
+    monkeypatch.setenv(name, value)
+    with mock.patch.object(torch.cuda, 'device_count') as device_count:
+        with pytest.raises(ValueError, match='single process'):
+            grt._configure_reproduction()
+    device_count.assert_not_called()
+
+
+@pytest.mark.parametrize('name', grt._PROCESS_RANK_ENV)
+def test_nonzero_rank_metadata_fails_before_cuda(
+    monkeypatch, reproduction_environment, name,
+):
+    import torch
+    monkeypatch.setenv(name, '1')
+    with mock.patch.object(torch.cuda, 'device_count') as device_count:
+        with pytest.raises(ValueError, match='single process'):
+            grt._configure_reproduction()
+    device_count.assert_not_called()
+
+
+def test_initialized_multiprocess_group_fails_before_cuda(reproduction_environment):
+    import torch
+    with (
+        mock.patch.object(torch.distributed, 'is_available', return_value=True),
+        mock.patch.object(torch.distributed, 'is_initialized', return_value=True),
+        mock.patch.object(torch.distributed, 'get_world_size', return_value=2),
+        mock.patch.object(torch.cuda, 'device_count') as device_count,
+    ):
+        with pytest.raises(ValueError, match='single process'):
+            grt._configure_reproduction()
+    device_count.assert_not_called()
 
 
 @dataclass

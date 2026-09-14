@@ -149,7 +149,7 @@ The released commit below is the installation pin. The shared tested runtime con
 Transformers 4.57.6 / PyTorch 2.9.x with the release's pinned model revisions.
 
 ```bash
-python -m pip install 'dive-bench @ git+https://github.com/Hai-chao-Zhang/DenseVideoUnderstand.git@2a79fcce2707b1eb74648a5ed135c469b17eb4e1'
+python -m pip install 'dive-bench @ git+https://github.com/Hai-chao-Zhang/DenseVideoUnderstand.git@a52c0360de0df175a476e815f4aaa27886131b23'
 export CUDA_VISIBLE_DEVICES=0
 export PYTHONHASHSEED=0
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
