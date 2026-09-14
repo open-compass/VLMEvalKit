@@ -13,11 +13,7 @@ import random
 
 from .base import BaseModel
 
-
-TASKS = {
-    'dive_bench_educational_high_fps', 'dive_bench_high_motion_high_fps',
-    'dive_bench_high_motion_high_fps_preview1000', 'densevideo', 'densevideo_highmotion',
-}
+TASKS = frozenset({'dive_bench_educational_high_fps', 'densevideo'})
 MODEL_CLASSES = {
     'llava_hf': ('lmms_eval.models.llava_hf', 'LlavaHf'),
     'qwen2_5_vl': ('lmms_eval.models.qwen2_5_vl', 'Qwen2_5_VL'),
@@ -35,6 +31,15 @@ _PROCESS_RANK_ENV = (
 )
 
 
+def _require_educational_task(task):
+    if not isinstance(task, str) or task not in TASKS:
+        raise ValueError(
+            'The released GRT profiles are scoped to Educational High-FPS Videos only. '
+            'High-Motion and other task variants are unsupported; '
+            'see docs/en/DIVE-Bench.md. Raw benchmark tasks and stock models remain available.'
+        )
+
+
 def _load_runtime(profile, role):
     try:
         importlib.metadata.version('dive-bench')
@@ -50,6 +55,7 @@ def _load_runtime(profile, role):
     ):
         raise ValueError('GRT runtime profile provenance differs from the audited release')
     selected = profiles['profiles'][profile]
+    _require_educational_task(selected.get('task'))
     method = selected['roles'][role]
     module_name, class_name = MODEL_CLASSES[method['model']]
     model_class = getattr(importlib.import_module(module_name), class_name)
@@ -113,6 +119,7 @@ class GRT(BaseModel):
         if use_vllm:
             raise ValueError('GRT implements vision-token reuse in the Transformers runtime, not vLLM')
         selected, method, model_class, instance_class, parse_args = _load_runtime(profile, role)
+        _require_educational_task(selected.get('task'))
         _configure_reproduction()
         self.profile = profile
         self.role = role
@@ -125,15 +132,17 @@ class GRT(BaseModel):
         self._request_id = 0
 
     def use_custom_prompt(self, dataset):
-        return dataset in TASKS
+        # Returning False here would permit the framework's raw prompt fallback.
+        _require_educational_task(dataset)
+        return True
 
     def build_prompt(self, line, dataset, video_llm=True):
+        _require_educational_task(getattr(dataset, 'dataset_name', None))
         # The released runtime samples the same endpoint-inclusive frames as the target.
         return dataset.build_grt_prompt(line)
 
     def generate_inner(self, message, dataset=None):
-        if dataset not in TASKS:
-            raise ValueError('The released GRT profiles are scoped to DIVE-Bench tasks')
+        _require_educational_task(dataset)
         if self.nframe != 8:
             raise ValueError('GRT frame budget was overridden; released profiles require eight frames')
         videos = [item['value'] for item in message if item['type'] == 'video']

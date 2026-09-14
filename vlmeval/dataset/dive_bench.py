@@ -13,12 +13,9 @@ import pandas as pd
 import portalocker
 
 from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load
-from .utils.dive_bench import (
-    _compute_cer, _compute_exact_match, _compute_token_f1, _compute_wer,
-    _grid_sequence_metrics, _highmotion_count_text, parse_grid_sequence,
-)
+from .utils.dive_bench import (_compute_cer, _compute_exact_match, _compute_token_f1, _compute_wer,
+                               _grid_sequence_metrics, _highmotion_count_text, parse_grid_sequence)
 from .video_base import VideoBaseDataset
-
 
 EDUCATIONAL = 'dive_bench_educational_high_fps'
 HIGH_MOTION = 'dive_bench_high_motion_high_fps'

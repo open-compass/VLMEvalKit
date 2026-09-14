@@ -8,14 +8,11 @@ import pandas as pd
 import pytest
 
 from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE, SUPPORTED_DATASETS, build_dataset
-from vlmeval.dataset.dive_bench import (
-    DIVEBench, EDUCATIONAL, EDUCATIONAL_POST_PROMPT, HIGH_MOTION, PREVIEW,
-    ordered_annotation_sha256, sample_indices,
-)
-from vlmeval.dataset.utils.dive_bench import (
-    _compute_cer, _compute_exact_match, _compute_token_f1, _compute_wer,
-    _grid_sequence_metrics, parse_grid_sequence,
-)
+from vlmeval.dataset.dive_bench import (EDUCATIONAL, EDUCATIONAL_POST_PROMPT, HIGH_MOTION, PREVIEW,
+                                        DIVEBench, ordered_annotation_sha256, sample_indices)
+from vlmeval.dataset.utils.dive_bench import (_compute_cer, _compute_exact_match,
+                                              _compute_token_f1, _compute_wer,
+                                              _grid_sequence_metrics, parse_grid_sequence)
 
 
 @pytest.fixture

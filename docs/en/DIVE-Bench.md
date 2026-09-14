@@ -149,8 +149,13 @@ this track, because several dispatch to a video-only path based on dataset modal
 or use an incompatible sampler. Use an ordered-image model with `VIDEO_LLM=False`;
 this does not claim compatibility with every multi-image model. In particular,
 stock LLaVA-OneVision video wrappers and Qwen's vLLM video path are not supported
-by this generic High-Motion image-input path. GRT uses its eight-frame video
-loader through the custom prompt interface.
+by this generic High-Motion image-input path. The released GRT profiles are
+Educational-only: both Educational task names (`dive_bench_educational_high_fps`
+and `densevideo`) are supported, while all High-Motion aliases and other tasks
+are explicitly rejected before custom prompt construction or generation. This
+restriction applies equally to GRT candidates and their profile-specific control
+roles; it does not remove raw High-Motion tasks or ordinary baseline models.
+The Educational GRT path retains its frozen eight-frame video loader.
 
 There is no inline GPT/MOS score: disabled or failed judge calls are not reported
 as zero-quality observations. The official leaderboard's Open MOS uses a separate

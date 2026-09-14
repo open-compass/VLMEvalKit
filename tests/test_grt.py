@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from unittest import mock
 
@@ -126,7 +127,7 @@ def backend(monkeypatch):
             return ['answer']
 
     def runtime(profile, role):
-        return ({'max_new_tokens': 48 if profile == 'qwen7' else 128},
+        return ({'task': 'densevideo', 'max_new_tokens': 48 if profile == 'qwen7' else 128},
                 {'method': f'{profile}-{role}', 'model_args': 'frozen'}, Backend, Request,
                 lambda args: {'from_frozen_args': args})
 
@@ -183,10 +184,103 @@ def test_model_custom_prompt_uses_dataset_frame_contract(backend):
     model = grt.GRT()
 
     class Dataset:
+        dataset_name = 'dive_bench_educational_high_fps'
+
         def build_grt_prompt(self, row):
             assert row == {'index': 13}
             return ['known aligned video prompt']
 
-    assert model.use_custom_prompt('dive_bench_high_motion_high_fps_preview1000')
-    assert not model.use_custom_prompt('Video-MME')
+    assert model.use_custom_prompt('dive_bench_educational_high_fps')
+    with pytest.raises(ValueError, match='Educational'):
+        model.use_custom_prompt('Video-MME')
     assert model.build_prompt({'index': 13}, Dataset()) == ['known aligned video prompt']
+
+
+UNSUPPORTED_GRT_TASKS = (
+    'dive_bench_high_motion_high_fps',
+    'dive_bench_high_motion_high_fps_preview1000',
+    'densevideo_highmotion',
+    'Video-MME',
+    None,
+    ['densevideo'],
+)
+
+
+@pytest.mark.parametrize('profile', ['route31', 'qwen3', 'qwen7'])
+@pytest.mark.parametrize('role', ['base', 'all', 'candidate'])
+@pytest.mark.parametrize('task', UNSUPPORTED_GRT_TASKS)
+def test_unsupported_task_rejected_before_prompt_or_generation(backend, profile, role, task):
+    model = grt.GRT(profile=profile, role=role)
+
+    class UnreadMessage:
+        def __iter__(self):
+            pytest.fail('An unsupported task must be rejected before reading model inputs')
+
+    class Dataset:
+        dataset_name = task
+
+        def build_grt_prompt(self, row):
+            pytest.fail('An unsupported task must not construct or decode a prompt')
+
+    with pytest.raises(ValueError, match='Educational'):
+        model.use_custom_prompt(task)
+    with pytest.raises(ValueError, match='Educational'):
+        model.build_prompt(object(), Dataset())
+    with pytest.raises(ValueError, match='Educational'):
+        model.generate_inner(UnreadMessage(), dataset=task)
+    assert model.backend.requests == []
+    assert model.backend.task_dict == {'old': {}}
+    assert model._request_id == 0
+
+
+@pytest.mark.parametrize('profile', ['route31', 'qwen3', 'qwen7'])
+@pytest.mark.parametrize('role', ['base', 'all', 'candidate'])
+@pytest.mark.parametrize('task', ['densevideo', 'dive_bench_educational_high_fps'])
+def test_educational_aliases_preserve_all_profile_roles(backend, profile, role, task):
+    model = grt.GRT(profile=profile, role=role)
+    assert model.use_custom_prompt(task)
+    message = [dict(type='video', value='clip.mp4'), dict(type='text', value='Question')]
+    assert model.generate_inner(message, dataset=task) == 'answer'
+    assert model.profile == profile
+    assert model.role == role
+    assert model.backend.task_dict == {'old': {}}
+    assert len(model.backend.requests) == 1
+
+
+@pytest.mark.parametrize('task', UNSUPPORTED_GRT_TASKS)
+def test_runtime_task_binding_rejected_before_cuda_or_backend(backend, monkeypatch, task):
+    valid_runtime = grt._load_runtime
+
+    def wrong_task_runtime(profile, role):
+        selected, *rest = valid_runtime(profile, role)
+        return {'task': task, 'max_new_tokens': selected['max_new_tokens']}, *rest
+
+    configure = mock.Mock()
+    monkeypatch.setattr(grt, '_load_runtime', wrong_task_runtime)
+    monkeypatch.setattr(grt, '_configure_reproduction', configure)
+    with pytest.raises(ValueError, match='Educational'):
+        grt.GRT()
+    configure.assert_not_called()
+    assert backend == []
+
+
+@pytest.mark.parametrize('task', UNSUPPORTED_GRT_TASKS)
+def test_invalid_profile_task_rejected_before_optional_model_import(monkeypatch, task):
+    class Resource:
+        def joinpath(self, name):
+            assert name == 'profiles.json'
+            return self
+
+        def read_text(self):
+            return json.dumps({
+                'schema': 1,
+                'source_commit': '78284318c9c8664df5fc6785410a0a9c4e494436',
+                'profiles': {'route31': {'task': task}},
+            })
+
+    monkeypatch.setattr(grt.importlib.metadata, 'version', lambda name: '0.1.0')
+    monkeypatch.setattr(grt.importlib.resources, 'files', lambda name: Resource())
+    with mock.patch.object(grt.importlib, 'import_module') as import_model:
+        with pytest.raises(ValueError, match='Educational'):
+            grt._load_runtime('route31', 'candidate')
+    import_model.assert_not_called()
