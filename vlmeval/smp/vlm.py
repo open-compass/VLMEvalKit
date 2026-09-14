@@ -156,11 +156,17 @@ def encode_image_file_to_base64(image_path, target_size=-1, fmt='JPEG', max_file
 def decode_base64_to_image(base64_string, target_size=-1):
     image_data = base64.b64decode(base64_string)
     image = Image.open(io.BytesIO(image_data))
-    # Keep grayscale precision while normalizing color/alpha modes for PNG output.
-    if image.mode not in ('1', 'L', 'I', 'I;16', 'RGB'):
+    # Normalize modes the PNG encoder rejects. `I` is included: Pillow deprecated
+    # writing it as PNG and removes support in Pillow 13. 16-bit grayscale stays
+    # integral via `I;16` instead of being collapsed to 8-bit.
+    if image.mode in ('I', 'I;16L', 'I;16B', 'I;16N'):
+        image = image.convert('I;16')
+    elif image.mode not in ('1', 'L', 'I;16', 'RGB'):
         image = image.convert('RGB')
     if target_size > 0:
-        image.thumbnail((target_size, target_size))
+        # reducing_gap=None skips thumbnail's `reduce()` prepass, which rejects
+        # `1` and `I;16` and would raise on downscales of 3x or more.
+        image.thumbnail((target_size, target_size), reducing_gap=None)
     return image
 
 
