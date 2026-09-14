@@ -10,6 +10,30 @@ Code, numeric release bundle and audit:
 The earlier [arXiv paper](https://arxiv.org/abs/2509.14199) covers the educational
 version; it should not be cited as if it contained the later high-motion release.
 
+## High-Motion target/reference hold — 14 September 2026
+
+**All High-Motion quality rankings are withheld**, including previously
+protocol-screened baselines. An independently confirmed check of four canonical
+references found that their archived trajectories match a
+`leftIndexFingerMetacarpal` projection, while the question requests the
+right-hand palm/ring-base target. The affected extent across the 3,243 items and
+the original label constructor remain under review; this does not establish
+that every item is affected.
+
+Successful runtime/smoke checks or reproduction of archived metrics cannot
+resolve this target/reference mismatch or establish High-Motion quality or GRT
+superiority. High-Motion commands below are retained for authorized implementation
+checks, not approved quality comparisons. See the public
+[High-Motion hold and review conditions](https://github.com/Hai-chao-Zhang/DenseVideoUnderstand/blob/release/dive-bench-minimal/docs/HIGHMOTION_TARGET_HOLD.md).
+
+This documentation-only notice changes no task code, data pins, prompts,
+reference labels, sampling, metrics, or task semantics. Educational instructions
+and the frozen runtime installation pin below remain unchanged. Both framework
+integrations remain **Draft PRs**:
+[VLMEvalKit #1686](https://github.com/open-compass/VLMEvalKit/pull/1686) and
+[lmms-eval #1521](https://github.com/EvolvingLMMs-Lab/lmms-eval/pull/1521);
+neither is merged or accepted.
+
 ## Installation
 
 Use Python 3.10 or newer and VLMEvalKit's documented editable installation from
