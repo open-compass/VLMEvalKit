@@ -2651,5 +2651,12 @@ nanovlm_series = {
 
 model_groups.append(nanovlm_series)
 
+grt_series = {
+    'GRT-LLaVA-OneVision-0.5B': partial(vlm.GRT, profile='route31'),
+    'GRT-Qwen2.5-VL-3B': partial(vlm.GRT, profile='qwen3'),
+    'GRT-Qwen2.5-VL-7B': partial(vlm.GRT, profile='qwen7'),
+}
+model_groups.append(grt_series)
+
 for grp in model_groups:
     supported_VLM.update(grp)

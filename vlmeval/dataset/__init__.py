@@ -24,6 +24,7 @@ from .cmmmu import CMMMU
 from .creation import CreationMMBenchDataset
 from .da2k import DA2K
 from .design2code import Design2Code
+from .dive_bench import DIVEBench
 from .docscope import DocScope
 from .dream import DREAM
 from .dsrbench import DSRBench
@@ -334,6 +335,7 @@ IMAGE_DATASET += [
 ]
 
 VIDEO_DATASET = [
+    DIVEBench,
     MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench,
     LongVideoBench, WorldSense, VDC, MovieChat1k, MEGABench,
     MLVU, MLVU_MCQ, MLVU_OpenEnded,
