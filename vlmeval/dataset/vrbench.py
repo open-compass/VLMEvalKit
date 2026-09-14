@@ -902,7 +902,7 @@ def _official_combined_score(mcq_score, openqa_score):
 
 class VRBenchDataset(VideoBaseDataset):
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = 'deepseek-v4-flash-beta'
+    DEFAULT_JUDGE_MODEL = 'deepseek-v4-flash-beta'
     HF_REPO_ID = 'OpenGVLab/VRBench'
 
     def __init__(self, dataset='VRBench', pack=False, nframe=0, fps=-1, prompt='mcq'):
@@ -1404,7 +1404,7 @@ class VRBenchDataset(VideoBaseDataset):
         if not isinstance(data, pd.DataFrame):
             data = pd.DataFrame(data)
 
-        judge_model = judge_kwargs.pop('model', cls.DEFAULT_JUDGE)
+        judge_model = judge_kwargs.pop('model', cls.DEFAULT_JUDGE_MODEL)
         nproc = int(judge_kwargs.pop('nproc', 1) or 1)
         separate = bool(judge_kwargs.pop('separate', False))
         judge_file = get_intermediate_file_path(eval_file, f'_{judge_model}_vrbench_judge', 'jsonl')
