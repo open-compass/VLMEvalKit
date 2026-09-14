@@ -6,7 +6,7 @@ the three GRT profiles selected for the 2026-08-20 public leaderboard.
 
 Project: <https://www.zhanghaichao.xyz/DenseVideoUnderstand/>.
 Code, numeric release bundle and audit:
-<https://github.com/Hai-chao-Zhang/DenseVideoUnderstand/tree/2a79fcce2707b1eb74648a5ed135c469b17eb4e1>.
+<https://github.com/Hai-chao-Zhang/DenseVideoUnderstand/tree/release/dive-bench-minimal>.
 The earlier [arXiv paper](https://arxiv.org/abs/2509.14199) covers the educational
 version; it should not be cited as if it contained the later high-motion release.
 
@@ -41,17 +41,37 @@ Annotations are selected explicitly and checked by SHA-256:
 - Educational: `haichaozhang/DenseVideoEvaluation`, revision
   `5cc61a045c8e5e95d1d9c87e22ccd0f699575aea`, **only** `LPM_videos.parquet`.
   `LPM_slides.parquet` is an identical duplicate and must not be concatenated.
-- High-motion: `haichaozhang/highmotion_densevideounderstand`, `Egodex_traj.parquet`.
-  A public revision has not yet been established; authorized local release bytes
-  are accepted only when they match the recorded SHA-256.
+- High-motion: `haichaozhang/highmotion_densevideounderstand`, revision
+  `d44407f607fdf020c59b816884f06ed6d453cf26`, `Egodex_traj.parquet`.
+  The owner-authenticated Hub file has SHA-256
+  `518e2896749b4d6e957d7e9fb0ae16f75c28954e50ef84303889070253cf8ecd`;
+  the historical local serialization has SHA-256
+  `39f9da7aca9020d79f383953646a5893f09c6f8e5f60433560011280ee987b2d`.
+  Only these two audited byte serializations are accepted. Both contain the
+  same 3,243 ordered task rows, independently checked against content SHA-256
+  `90ee915016105f6a709f391e8a03a6d0e99bc5c908f945cdf7b80d0cb289e789`
+  before selecting the preview. The content fingerprint uses `(video_path, qid,
+  question, answer, frame_count)` and is independent of Parquet metadata.
 
-On the release audit date, educational annotations were gated and high-motion
-data could not be accessed by the tested public/cached-token accounts. These are
-real access prerequisites, not successful-download claims. Accept the educational
-Hub terms and authenticate, or supply authorized local annotation files. This PR
+The educational source is gated. On 2026-09-14, an owner-authenticated audit
+verified that the pinned high-motion source repository is **private** and downloaded
+its annotations; this is not a successful public/anonymous download claim.
+Accept the educational Hub terms and obtain access to the private high-motion
+source, or supply authorized local annotation files. This PR
 does not grant access or redistribute videos. Underlying LPM/YouTube and EgoDex
 assets retain their respective source terms; do not infer a common dataset license
 from the code license. See the release's `docs/DATASET_RELEASE.md` for details.
+
+On 2026-09-14, the owner also configured the **private** canonical
+[`haichaozhang/DIVE-Bench`](https://huggingface.co/datasets/haichaozhang/DIVE-Bench)
+repository at revision `d80461fccf879d5efdeece0edce8608a72d64f10` with exactly two
+annotation configurations: `educational_high_fps` (634 rows) and
+`high_motion_high_fps` (3,243 rows). Named configurations were added to the old
+source cards at revisions `c3ff65dfc37239ebee05bd190cfa5b5126f49146` (educational)
+and `25cc1aeaef5209776625ce4e72a3ba425d4ae929` (high-motion); their non-card
+objects and access settings were unchanged. This adapter retains the original
+immutable source-data pins above. Configured annotations do not establish
+public access, redistribute videos, or certify end-to-end GPU reproduction.
 
 Extract videos under `DIVE_BENCH_DATA_ROOT` while preserving source-relative
 paths, for example:
@@ -148,6 +168,13 @@ other two caps are 128 (route31 separately caps subtitle outputs at 31).
 These three selected profiles were validated on the educational split. Running
 them on high-motion is a new evaluation, **not** a reproduction of the old site's
 `grt_llava_ov_0_5b` historical high-motion row, which used a different wrapper.
+The historical wrapper's frame protocol was not aligned to the eight-frame,
+full-clip reference: the source audit found fewer than eight input frames for
+787 of its first 1,000 clips and a ten-second truncation affecting 148 clips.
+That legacy row is not a fair matched-protocol comparison against eight-frame
+baselines and must not support a claim that GRT outperforms them. These counts
+audit sampling behavior, not a new GPU generation run; no historical scores or
+GRT algorithms are changed here.
 Patch-recompute ratios are not total-model FLOPs reductions; `effective_fps` in
 the release denotes sampling density, not request throughput. CPU tests verify
 registration, annotation handling, metric contracts and the adapter boundary;

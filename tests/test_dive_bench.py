@@ -9,7 +9,8 @@ import pytest
 
 from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE, SUPPORTED_DATASETS, build_dataset
 from vlmeval.dataset.dive_bench import (
-    DIVEBench, EDUCATIONAL, EDUCATIONAL_POST_PROMPT, HIGH_MOTION, PREVIEW, sample_indices,
+    DIVEBench, EDUCATIONAL, EDUCATIONAL_POST_PROMPT, HIGH_MOTION, PREVIEW,
+    ordered_annotation_sha256, sample_indices,
 )
 from vlmeval.dataset.utils.dive_bench import (
     _compute_cer, _compute_exact_match, _compute_token_f1, _compute_wer,
@@ -44,6 +45,8 @@ def release(tmp_path, monkeypatch):
         pd.DataFrame(rows).to_parquet(path)
         key = HIGH_MOTION if high_motion else EDUCATIONAL
         spec = dict(DIVEBench.SPECS[key], sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+        if high_motion:
+            spec['ordered_content_sha256'] = ordered_annotation_sha256(pd.DataFrame(rows))
         monkeypatch.setitem(DIVEBench.SPECS, key, spec)
         return path, root
     return make
@@ -61,6 +64,52 @@ def test_educational_suffix_matches_published_protocol():
         ' Provide the most complete answer possible. For subtitle or OCR questions, '
         'reproduce the relevant text from the video instead of answering with only the video id.'
     )
+
+
+def test_owner_verified_high_motion_source_metadata():
+    spec = DIVEBench.SPECS[HIGH_MOTION]
+    assert spec['revision'] == 'd44407f607fdf020c59b816884f06ed6d453cf26'
+    assert spec['sha256'] == '518e2896749b4d6e957d7e9fb0ae16f75c28954e50ef84303889070253cf8ecd'
+    assert spec['compatible_sha256'] == (
+        '39f9da7aca9020d79f383953646a5893f09c6f8e5f60433560011280ee987b2d',
+    )
+    assert spec['ordered_content_sha256'] == (
+        '90ee915016105f6a709f391e8a03a6d0e99bc5c908f945cdf7b80d0cb289e789'
+    )
+
+
+def test_motion_accepts_only_two_audited_serializations(release, monkeypatch, tmp_path):
+    annotation, root = release(True)
+    alternate = tmp_path / 'compatible.parquet'
+    unexpected = tmp_path / 'unreviewed.parquet'
+    raw = pd.read_parquet(annotation)
+    raw.to_parquet(alternate, compression='gzip')
+    raw.to_parquet(unexpected, compression=None)
+    assert len({hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in (annotation, alternate, unexpected)}) == 3
+    monkeypatch.setitem(DIVEBench.SPECS[HIGH_MOTION], 'compatible_sha256', (
+        hashlib.sha256(alternate.read_bytes()).hexdigest(),
+    ))
+    first = DIVEBench(dataset=PREVIEW, annotation_file=annotation, data_root=root)
+    second = DIVEBench(dataset=PREVIEW, annotation_file=alternate, data_root=root)
+    pd.testing.assert_frame_equal(first.data, second.data)
+    with pytest.raises(ValueError, match='SHA-256'):
+        DIVEBench(dataset=PREVIEW, annotation_file=unexpected, data_root=root)
+
+
+@pytest.mark.parametrize('change', ['reorder', 'tail'])
+def test_motion_content_guard_checks_full_release_before_preview(release, monkeypatch, change):
+    annotation, root = release(True)
+    raw = pd.read_parquet(annotation)
+    if change == 'reorder':
+        raw = raw.iloc[::-1]
+    else:
+        raw.loc[2000, 'question'] = 'A changed question outside the preview'
+    raw.to_parquet(annotation)
+    # Even a byte-allowlisted file must independently match ordered content.
+    monkeypatch.setitem(DIVEBench.SPECS[HIGH_MOTION], 'sha256', hashlib.sha256(annotation.read_bytes()).hexdigest())
+    with pytest.raises(ValueError, match='content/order'):
+        DIVEBench(dataset=PREVIEW, annotation_file=annotation, data_root=root)
 
 
 def test_cached_annotations_are_published_atomically(release, monkeypatch, tmp_path):
@@ -169,8 +218,9 @@ def test_checksum_and_missing_video_fail_closed(release):
         DIVEBench(annotation_file=annotation, data_root=root)
 
 
-def test_hub_download_selects_only_unique_parquet(release, monkeypatch):
-    annotation, root = release()
+@pytest.mark.parametrize('high_motion', [False, True])
+def test_hub_download_selects_only_unique_parquet(release, monkeypatch, high_motion):
+    annotation, root = release(high_motion)
     import huggingface_hub
     calls = []
 
@@ -179,10 +229,11 @@ def test_hub_download_selects_only_unique_parquet(release, monkeypatch):
         return str(annotation)
 
     monkeypatch.setattr(huggingface_hub, 'hf_hub_download', download)
-    DIVEBench(data_root=root)
+    task = HIGH_MOTION if high_motion else EDUCATIONAL
+    DIVEBench(dataset=task, data_root=root)
     assert len(calls) == 1
-    assert calls[0]['filename'] == 'LPM_videos.parquet'
-    assert calls[0]['revision'] == DIVEBench.SPECS[EDUCATIONAL]['revision']
+    assert calls[0]['filename'] == ('Egodex_traj.parquet' if high_motion else 'LPM_videos.parquet')
+    assert calls[0]['revision'] == DIVEBench.SPECS[task]['revision']
 
 
 def test_hub_error_is_not_hidden(release, monkeypatch):

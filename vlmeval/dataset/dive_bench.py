@@ -1,6 +1,7 @@
 """DIVE-Bench: educational text QA and sampled high-motion grid trajectories."""
 
 import hashlib
+import json
 import math
 import os
 import re
@@ -32,6 +33,16 @@ def sample_indices(frame_count, nframe):
     if frame_count <= 0 or nframe <= 0:
         raise ValueError('frame_count and nframe must be positive')
     return np.linspace(0, frame_count - 1, min(nframe, frame_count), dtype=int).tolist()
+
+
+def ordered_annotation_sha256(data):
+    """Fingerprint task content independently of Parquet writer/compression metadata."""
+    rows = [
+        [str(row['video_path']), str(row['qid']), str(row['question']),
+         str(row['answer']), int(row['frame_count'])]
+        for row in data.to_dict('records')
+    ]
+    return hashlib.sha256(json.dumps(rows, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
 
 
 def high_motion_prompt(doc, nframe):
@@ -76,8 +87,12 @@ class DIVEBench(VideoBaseDataset):
         HIGH_MOTION: {
             'repo': 'haichaozhang/highmotion_densevideounderstand',
             'filename': 'Egodex_traj.parquet',
-            'revision': None,  # Public access/revision not established; exact bytes are checked below.
-            'sha256': '39f9da7aca9020d79f383953646a5893f09c6f8e5f60433560011280ee987b2d',
+            'revision': 'd44407f607fdf020c59b816884f06ed6d453cf26',
+            'sha256': '518e2896749b4d6e957d7e9fb0ae16f75c28954e50ef84303889070253cf8ecd',
+            # The historical local file has identical ordered task content but
+            # different Parquet serialization. Do not accept arbitrary rewrites.
+            'compatible_sha256': ('39f9da7aca9020d79f383953646a5893f09c6f8e5f60433560011280ee987b2d',),
+            'ordered_content_sha256': '90ee915016105f6a709f391e8a03a6d0e99bc5c908f945cdf7b80d0cb289e789',
             'rows': 3243,
         },
     }
@@ -117,12 +132,13 @@ class DIVEBench(VideoBaseDataset):
             except Exception as exc:
                 raise RuntimeError(
                     f'Cannot retrieve {spec["repo"]}/{spec["filename"]}. Educational data requires '
-                    'accepted Hub access terms and authentication; high-motion public access is '
-                    'not yet established. Supply an authorized local annotation_file instead.'
+                    'accepted Hub access terms and authentication; the pinned high-motion source '
+                    'repository is private and requires authorized access. Supply an authorized '
+                    'local annotation_file instead.'
                 ) from exc
         annotation = Path(annotation)
         checksum = hashlib.sha256(annotation.read_bytes()).hexdigest()
-        if checksum != spec['sha256']:
+        if checksum not in (spec['sha256'], *spec.get('compatible_sha256', ())):
             raise ValueError('DIVE-Bench annotation SHA-256 mismatch; refusing a different release/order')
         raw = pd.read_parquet(annotation)
         required = ['video_path', 'question', 'answer', 'qid', 'frame_count']
@@ -130,6 +146,8 @@ class DIVEBench(VideoBaseDataset):
             raise ValueError(f'Invalid annotation schema/count; expected {required}, {spec["rows"]} rows')
         if raw[required].isna().any().any():
             raise ValueError('DIVE-Bench annotations contain missing required values')
+        if self.is_high_motion and ordered_annotation_sha256(raw) != spec['ordered_content_sha256']:
+            raise ValueError('High-motion annotation content/order differs from the audited release')
         if self.canonical_name == PREVIEW:
             raw = raw.iloc[:1000]
         data = raw[required].copy().reset_index(drop=True)
