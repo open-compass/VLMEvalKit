@@ -13,20 +13,13 @@ from huggingface_hub import snapshot_download
 from PIL import Image
 from torchvision import transforms
 
-from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
-                         load, md5)
+from vlmeval.smp import dump, get_cache_path, get_file_extension, load, md5
 from vlmeval.smp.file import LMUDataRoot
 from ..utils import DEBUG_MESSAGE, build_judge
 from ..utils.judge_cache import (dump_judge_cache, get_judge_cache_file, get_judge_detail_file,
-                                 get_judge_score_file, has_judge_failure, load_judge_cache)
+                                 get_judge_score_file, is_failed_judge_text, load_judge_cache)
 from ..video_base import VideoBaseDataset
 from .utils import Stack, ToTorchFormatTensor
-
-FAIL_MSG = 'Failed to obtain answer via API.'
-
-
-def egoexo_judge_failed(result):
-    return has_judge_failure(result) or not isinstance(result, str) or result.strip().lower() in ('', 'fail')
 
 
 class EgoExoBench_MCQ(VideoBaseDataset):
@@ -264,11 +257,10 @@ class EgoExoBench_MCQ(VideoBaseDataset):
 
         judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
-        untrusted_legacy_tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
         detail_file = get_judge_detail_file(eval_file, 'extract', judge_name)
         score_file = get_judge_score_file(eval_file, judge_name, 'json')
 
-        res = load_judge_cache(tmp_file, ignored_legacy_files=[untrusted_legacy_tmp_file])
+        res = load_judge_cache(tmp_file)
         data = load(eval_file)
         data_un = data[~pd.isna(data['prediction'])]
         model = None
@@ -293,7 +285,7 @@ class EgoExoBench_MCQ(VideoBaseDataset):
 
             if extract_characters_regex(pred) == '':
                 extract_pred = res.get(idx)
-                if egoexo_judge_failed(extract_pred):
+                if is_failed_judge_text(extract_pred):
                     extract_pred = extract_option(
                         get_model(),
                         data.loc[data['index'] == idx].to_dict(orient='records')[0],
@@ -303,7 +295,7 @@ class EgoExoBench_MCQ(VideoBaseDataset):
                     dump_judge_cache(res, tmp_file)
                 data.loc[data['index'] == idx, 'judge_pred'] = extract_pred
                 data.loc[data['index'] == idx, 'score'] = (
-                    -1 if egoexo_judge_failed(extract_pred) else int(extract_pred == ans)
+                    -1 if is_failed_judge_text(extract_pred) else int(extract_pred == ans)
                 )
             else:
                 extract_pred = extract_characters_regex(pred)

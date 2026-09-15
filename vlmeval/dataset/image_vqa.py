@@ -1970,15 +1970,15 @@ class LLaVABench(ImageBaseDataset):
         if pending:
             model = build_judge(temperature=0.2, system_prompt=system_prompt, **judge_kwargs)
             assert model.working(), 'LLaVABench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
-            tups = [(model, prompt) for prompt in prompts]
+            pending_set = set(pending)
+            tups = [(model, prompt) for idx, prompt in zip(indices, prompts) if idx in pending_set]
             scores = run_cached_tasks(
                 LLaVABench_atomeval,
                 tups,
-                indices,
+                pending,
                 tmp_file,
                 nproc=nproc,
                 chunksize=nproc,
-                failure_fn=llava_judge_failed,
             )
         ordered_scores = [scores.get(idx, (-1, -1)) for idx in indices]
         data['gpt4_score'] = [score[0] if not llava_judge_failed(score) else -1 for score in ordered_scores]
@@ -2021,15 +2021,15 @@ class LLaVABench_KO(ImageBaseDataset):
         if pending:
             model = build_judge(temperature=0.2, system_prompt=system_prompt, **judge_kwargs)
             assert model.working(), 'LLaVABench_KO evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
-            tups = [(model, prompt) for prompt in prompts]
+            pending_set = set(pending)
+            tups = [(model, prompt) for idx, prompt in zip(indices, prompts) if idx in pending_set]
             scores = run_cached_tasks(
                 LLaVABench_atomeval,
                 tups,
-                indices,
+                pending,
                 tmp_file,
                 nproc=nproc,
                 chunksize=nproc,
-                failure_fn=llava_judge_failed,
             )
         ordered_scores = [scores.get(idx, (-1, -1)) for idx in indices]
         data['gpt4_score'] = [score[0] if not llava_judge_failed(score) else -1 for score in ordered_scores]
@@ -2088,7 +2088,6 @@ class VGRPBench(ImageBaseDataset):
                 tmp_file,
                 nproc=nproc,
                 chunksize=nproc,
-                failure_fn=vgrp_judge_failed,
             )
 
         ordered_scores = [scores.get(idx, {}) for idx in indices]
@@ -4408,15 +4407,15 @@ class CoreCognition(ImageBaseDataset):
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-            tasks = [(model, row.to_dict()) for _, row in data.iterrows()]
+            pending_set = set(pending)
+            tasks = [(model, row.to_dict()) for _, row in data.iterrows() if row['index'] in pending_set]
             judged = run_cached_tasks(
                 CoreCognition_eval_single,
                 tasks,
-                indices,
+                pending,
                 tmp_file,
                 nproc=nproc,
                 chunksize=nproc,
-                failure_fn=corecognition_judge_failed,
             )
         ordered_results = [judged.get(idx, {}) for idx in indices]
         data['judge_pred'] = [result.get('matched', 'Fail') for result in ordered_results]

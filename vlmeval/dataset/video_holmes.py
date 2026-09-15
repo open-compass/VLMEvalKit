@@ -9,17 +9,10 @@ import portalocker
 from huggingface_hub import snapshot_download
 from PIL import Image
 
-from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
-                         load, md5, modelscope_flag_set)
+from vlmeval.smp import dump, get_cache_path, get_file_extension, load, md5, modelscope_flag_set
 from .utils.judge_cache import (dump_judge_cache, get_judge_cache_file, get_judge_detail_file,
-                                get_judge_score_file, has_judge_failure, load_judge_cache)
+                                get_judge_score_file, is_failed_judge_text, load_judge_cache)
 from .video_base import VideoBaseDataset
-
-FAIL_MSG = 'Failed to obtain answer via API.'
-
-
-def video_holmes_judge_failed(result):
-    return has_judge_failure(result) or not isinstance(result, str) or result.strip().lower() in ('', 'fail')
 
 
 def unwrap_hf_pkl(pth, suffix='.mp4'):
@@ -225,11 +218,10 @@ class Video_Holmes(VideoBaseDataset):
 
         judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
-        untrusted_legacy_tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
         detail_file = get_judge_detail_file(eval_file, 'extract', judge_name)
         score_file = get_judge_score_file(eval_file, judge_name, 'json')
 
-        res = load_judge_cache(tmp_file, ignored_legacy_files=[untrusted_legacy_tmp_file])
+        res = load_judge_cache(tmp_file)
         data = load(eval_file)
         data_un = data[~pd.isna(data['prediction'])]
 
@@ -238,14 +230,14 @@ class Video_Holmes(VideoBaseDataset):
             pred = str(data.loc[data['index'] == idx, 'prediction'].values[0])
 
             predicted_answer = res.get(idx)
-            if video_holmes_judge_failed(predicted_answer):
+            if is_failed_judge_text(predicted_answer):
                 predicted_answer = extract_option(pred)
                 res[idx] = predicted_answer
                 dump_judge_cache(res, tmp_file)
 
             data.loc[data['index'] == idx, 'judge_pred'] = predicted_answer
             data.loc[data['index'] == idx, 'score'] = (
-                -1 if video_holmes_judge_failed(predicted_answer) else int(predicted_answer == ans)
+                -1 if is_failed_judge_text(predicted_answer) else int(predicted_answer == ans)
             )
 
         rejected = [x for x in data['score'] if x == -1]

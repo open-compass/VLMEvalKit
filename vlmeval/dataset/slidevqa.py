@@ -157,24 +157,22 @@ class SlideVQA(ImageBaseDataset):
         judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         storage = get_judge_detail_file(eval_file, 'extract', judge_name)
         tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
-        legacy_tmp_file = get_judge_named_legacy_cache_file(eval_file, judge_name)
-        legacy_files = [legacy_tmp_file] if legacy_tmp_file is not None else []
+        legacy_file = get_judge_named_legacy_cache_file(eval_file, judge_name)
 
         data = load(eval_file)
         lines = [data.iloc[i] for i in range(len(data))]
         indices = [line['index'] for line in lines]
-        ans = load_judge_cache(tmp_file, legacy_files=legacy_files)
+        ans = load_judge_cache(tmp_file, legacy_file=legacy_file)
         pending = [idx for idx in indices if idx not in ans or MMLongBench_judge_failed(ans[idx])]
         if pending:
             model = build_judge(max_tokens=128, **judge_kwargs)
-            tups = [(model, line) for line in lines]
+            pending_set = set(pending)
+            tups = [(model, line) for line in lines if line['index'] in pending_set]
             ans = run_cached_tasks(
                 MMLongBench_auxeval,
                 tups,
-                indices,
+                pending,
                 tmp_file,
-                legacy_files=legacy_files,
-                failure_fn=MMLongBench_judge_failed,
             )
 
         ordered_results = [ans.get(idx, {}) for idx in indices]
