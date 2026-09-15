@@ -733,6 +733,36 @@
     "dataset_class_name": "QBench_Video",
     "dataset_name": "QBench_Video"
   },
+  "SIS-Bench_1fps": {
+    "build_config": {
+      "class": "SISBench",
+      "dataset": "SIS-Bench",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "SIS-Bench_1fps",
+    "dataset_class_name": "SISBench",
+    "dataset_name": "SIS-Bench"
+  },
+  "SIS-Bench_32frame": {
+    "build_config": {
+      "class": "SISBench",
+      "dataset": "SIS-Bench",
+      "nframe": 32
+    },
+    "dataset_alias_name": "SIS-Bench_32frame",
+    "dataset_class_name": "SISBench",
+    "dataset_name": "SIS-Bench"
+  },
+  "SIS-Bench_8frame": {
+    "build_config": {
+      "class": "SISBench",
+      "dataset": "SIS-Bench",
+      "nframe": 8
+    },
+    "dataset_alias_name": "SIS-Bench_8frame",
+    "dataset_class_name": "SISBench",
+    "dataset_name": "SIS-Bench"
+  },
   "STI-Bench_1fps": {
     "build_config": {
       "class": "STIBench",
@@ -1330,6 +1360,86 @@
     "dataset_alias_name": "Video-MME_8frame_subs",
     "dataset_class_name": "VideoMME",
     "dataset_name": "Video-MME"
+  },
+  "VideoEval-Pro-MCQ_16frame": {
+    "build_config": {
+      "class": "VideoEvalPro_MCQ",
+      "dataset": "VideoEval-Pro-MCQ",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VideoEval-Pro-MCQ_16frame",
+    "dataset_class_name": "VideoEvalPro_MCQ",
+    "dataset_name": "VideoEval-Pro-MCQ"
+  },
+  "VideoEval-Pro-MCQ_1fps": {
+    "build_config": {
+      "class": "VideoEvalPro_MCQ",
+      "dataset": "VideoEval-Pro-MCQ",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VideoEval-Pro-MCQ_1fps",
+    "dataset_class_name": "VideoEvalPro_MCQ",
+    "dataset_name": "VideoEval-Pro-MCQ"
+  },
+  "VideoEval-Pro-MCQ_32frame": {
+    "build_config": {
+      "class": "VideoEvalPro_MCQ",
+      "dataset": "VideoEval-Pro-MCQ",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VideoEval-Pro-MCQ_32frame",
+    "dataset_class_name": "VideoEvalPro_MCQ",
+    "dataset_name": "VideoEval-Pro-MCQ"
+  },
+  "VideoEval-Pro-MCQ_64frame": {
+    "build_config": {
+      "class": "VideoEvalPro_MCQ",
+      "dataset": "VideoEval-Pro-MCQ",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VideoEval-Pro-MCQ_64frame",
+    "dataset_class_name": "VideoEvalPro_MCQ",
+    "dataset_name": "VideoEval-Pro-MCQ"
+  },
+  "VideoEval-Pro-OpenEnded_16frame": {
+    "build_config": {
+      "class": "VideoEvalPro_OpenEnded",
+      "dataset": "VideoEval-Pro-OpenEnded",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VideoEval-Pro-OpenEnded_16frame",
+    "dataset_class_name": "VideoEvalPro_OpenEnded",
+    "dataset_name": "VideoEval-Pro-OpenEnded"
+  },
+  "VideoEval-Pro-OpenEnded_1fps": {
+    "build_config": {
+      "class": "VideoEvalPro_OpenEnded",
+      "dataset": "VideoEval-Pro-OpenEnded",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VideoEval-Pro-OpenEnded_1fps",
+    "dataset_class_name": "VideoEvalPro_OpenEnded",
+    "dataset_name": "VideoEval-Pro-OpenEnded"
+  },
+  "VideoEval-Pro-OpenEnded_32frame": {
+    "build_config": {
+      "class": "VideoEvalPro_OpenEnded",
+      "dataset": "VideoEval-Pro-OpenEnded",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VideoEval-Pro-OpenEnded_32frame",
+    "dataset_class_name": "VideoEvalPro_OpenEnded",
+    "dataset_name": "VideoEval-Pro-OpenEnded"
+  },
+  "VideoEval-Pro-OpenEnded_64frame": {
+    "build_config": {
+      "class": "VideoEvalPro_OpenEnded",
+      "dataset": "VideoEval-Pro-OpenEnded",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VideoEval-Pro-OpenEnded_64frame",
+    "dataset_class_name": "VideoEvalPro_OpenEnded",
+    "dataset_name": "VideoEval-Pro-OpenEnded"
   },
   "VideoMMMU_0.5fps": {
     "build_config": {

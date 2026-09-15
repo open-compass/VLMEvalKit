@@ -111,8 +111,13 @@ class TestDatasetAlias(unittest.TestCase):
         self.assertEqual(spec.build_config['nframe'], 8)
         self.assertFalse(spec.build_config['pack'])
 
-    def test_get_judge_kwargs_matches_mmb_video_logical_and_legacy_names(self):
+    def test_get_judge_kwargs_uses_dataset_default_model(self):
         import run as runner
+
+        class DatasetWithDefaultJudge:
+
+            def get_default_judge_model(self, judge_kwargs=None):
+                return 'gpt-4-turbo'
 
         args = types.SimpleNamespace(
             judge_api_nproc=None,
@@ -129,10 +134,8 @@ class TestDatasetAlias(unittest.TestCase):
             use_vllm=False,
         )
 
-        for dataset_name in ['MMBench-Video', 'MMBench_Video']:
-            with self.subTest(dataset_name=dataset_name):
-                judge_kwargs = runner.get_judge_kwargs(dataset_name, 'Video-VQA', args)
-                self.assertEqual(judge_kwargs['model'], 'gpt-4-turbo')
+        judge_kwargs = runner.get_judge_kwargs(args, dataset=DatasetWithDefaultJudge())
+        self.assertEqual(judge_kwargs['model'], 'gpt-4-turbo')
 
     def test_resolve_preset_alias(self):
         spec = resolve_dataset_spec(

@@ -167,9 +167,32 @@ def _require_non_empty_str(config, key, display_name):
     return value
 
 
-def build_dataset_from_config_dict(config, *, display_name=None, strict=True, extra_kwargs=None):
+def _get_dataset_init_params(cls):
     import inspect
 
+    params = set()
+    accepts_kwargs = False
+    for base in inspect.getmro(cls):
+        if base is object:
+            continue
+        try:
+            sig = inspect.signature(base.__init__)
+        except (TypeError, ValueError):
+            continue
+        for name, param in sig.parameters.items():
+            if name == 'self':
+                continue
+            if param.kind == inspect.Parameter.VAR_KEYWORD:
+                accepts_kwargs = True
+            elif param.kind in {
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
+            }:
+                params.add(name)
+    return params, accepts_kwargs
+
+
+def build_dataset_from_config_dict(config, *, display_name=None, strict=True, extra_kwargs=None):
     import vlmeval.dataset
     display_name = display_name or '<inline>'
     config = cp.deepcopy(config)
@@ -186,12 +209,12 @@ def build_dataset_from_config_dict(config, *, display_name=None, strict=True, ex
             config.setdefault(k, v)
     if hasattr(vlmeval.dataset, cls_name):
         cls = getattr(vlmeval.dataset, cls_name)
-        sig = inspect.signature(cls.__init__)
-        unknown_params = sorted(k for k in config if k not in sig.parameters)
+        supported_params, accepts_kwargs = _get_dataset_init_params(cls)
+        unknown_params = sorted(k for k in config if k not in supported_params)
         if strict and unknown_params:
             unknown = ', '.join(unknown_params)
             raise ValueError(f'Unsupported parameter(s) for dataset class {cls_name}: {unknown}')
-        valid_params = {k: v for k, v in config.items() if k in sig.parameters}
+        valid_params = config if accepts_kwargs else {k: v for k, v in config.items() if k in supported_params}
         if hasattr(cls, 'validate_build_config'):
             cls.validate_build_config(valid_params)
         return cls(**valid_params)

@@ -18,28 +18,28 @@ def _video_spec(cls, **kwargs):
 
 
 video_eval_pro_dataset = {
-    'VideoEval-Pro-MCQ_16frame': partial(
+    'VideoEval-Pro-MCQ_16frame': _video_spec(
         VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=16
     ),
-    'VideoEval-Pro-MCQ_32frame': partial(
+    'VideoEval-Pro-MCQ_32frame': _video_spec(
         VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=32
     ),
-    'VideoEval-Pro-MCQ_64frame': partial(
+    'VideoEval-Pro-MCQ_64frame': _video_spec(
         VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=64
     ),
-    'VideoEval-Pro-MCQ_1fps': partial(
+    'VideoEval-Pro-MCQ_1fps': _video_spec(
         VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', fps=1.0
     ),
-    'VideoEval-Pro-OpenEnded_16frame': partial(
+    'VideoEval-Pro-OpenEnded_16frame': _video_spec(
         VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=16
     ),
-    'VideoEval-Pro-OpenEnded_32frame': partial(
+    'VideoEval-Pro-OpenEnded_32frame': _video_spec(
         VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=32
     ),
-    'VideoEval-Pro-OpenEnded_64frame': partial(
+    'VideoEval-Pro-OpenEnded_64frame': _video_spec(
         VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=64
     ),
-    'VideoEval-Pro-OpenEnded_1fps': partial(
+    'VideoEval-Pro-OpenEnded_1fps': _video_spec(
         VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', fps=1.0
     ),
 }
@@ -95,9 +95,9 @@ videomme_dataset = {
 }
 
 sis_bench_dataset = {
-    'SIS-Bench_8frame': partial(SISBench, dataset='SIS-Bench', nframe=8),
-    'SIS-Bench_32frame': partial(SISBench, dataset='SIS-Bench', nframe=32),
-    'SIS-Bench_1fps': partial(SISBench, dataset='SIS-Bench', fps=1.0),
+    'SIS-Bench_8frame': _video_spec(SISBench, dataset='SIS-Bench', nframe=8),
+    'SIS-Bench_32frame': _video_spec(SISBench, dataset='SIS-Bench', nframe=32),
+    'SIS-Bench_1fps': _video_spec(SISBench, dataset='SIS-Bench', fps=1.0),
 }
 
 videommev2_dataset = {
