@@ -87,14 +87,13 @@ def track_progress_rich(
         nproc: int | None = 1,
         save=None,
         keys=None,
-        save_func=None,
         use_process: bool = False,
         **kwargs) -> list:
 
     from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
     from tqdm import tqdm
-    save_func = save_func or dump
+    save_func = kwargs.pop('save_func', None) or dump
     if save is not None:
         assert osp.exists(osp.dirname(save)) or osp.dirname(save) == ''
         if not osp.exists(save):
