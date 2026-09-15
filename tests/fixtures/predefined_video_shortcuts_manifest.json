@@ -2111,6 +2111,36 @@
     "dataset_class_name": "VsiSuperRecall",
     "dataset_name": "VsiSuperRecall_60mins"
   },
+  "VRBench_16frame": {
+    "build_config": {
+      "class": "VRBenchDataset",
+      "dataset": "VRBench",
+      "nframe": 16
+    },
+    "dataset_alias_name": "VRBench_16frame",
+    "dataset_class_name": "VRBenchDataset",
+    "dataset_name": "VRBench"
+  },
+  "VRBench_32frame": {
+    "build_config": {
+      "class": "VRBenchDataset",
+      "dataset": "VRBench",
+      "nframe": 32
+    },
+    "dataset_alias_name": "VRBench_32frame",
+    "dataset_class_name": "VRBenchDataset",
+    "dataset_name": "VRBench"
+  },
+  "VRBench_64frame": {
+    "build_config": {
+      "class": "VRBenchDataset",
+      "dataset": "VRBench",
+      "nframe": 64
+    },
+    "dataset_alias_name": "VRBench_64frame",
+    "dataset_class_name": "VRBenchDataset",
+    "dataset_name": "VRBench"
+  },
   "WorldSense_0.5fps": {
     "build_config": {
       "class": "WorldSense",

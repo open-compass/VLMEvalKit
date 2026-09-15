@@ -429,6 +429,13 @@ dsr_variants = [
     ("1fps", dict(fps=1.0)),
 ]
 dsr_dataset = _build_video_variants(dsr_subsets, DSRBench, dsr_variants)
+
+vrbench_dataset = {
+    'VRBench_16frame': _video_spec(VRBenchDataset, dataset='VRBench', nframe=16),
+    'VRBench_32frame': _video_spec(VRBenchDataset, dataset='VRBench', nframe=32),
+    'VRBench_64frame': _video_spec(VRBenchDataset, dataset='VRBench', nframe=64),
+}
+
 dataset_groups = [
     video_eval_pro_dataset,
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset,
@@ -442,7 +449,7 @@ dataset_groups = [
 # add by EASI team
 dataset_groups += [
     sitebenchvideo_dataset, mmsi_video_dataset, vsisuper_recall_dataset, vsisuper_count_dataset,
-    sti_dataset, dsr_dataset, revsi_dataset
+    sti_dataset, dsr_dataset, revsi_dataset, vrbench_dataset
 ]
 
 PREDEFINED_DATASET_SPECS = {}

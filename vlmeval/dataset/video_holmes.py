@@ -2,7 +2,6 @@ import json
 import os
 import os.path as osp
 import pickle
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -10,12 +9,10 @@ import portalocker
 from huggingface_hub import snapshot_download
 from PIL import Image
 
-from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
-                         load, md5, modelscope_flag_set)
-from .utils import DEBUG_MESSAGE, build_judge
+from vlmeval.smp import dump, get_cache_path, get_file_extension, load, md5, modelscope_flag_set
+from .utils.judge_cache import (dump_judge_cache, get_judge_cache_file, get_judge_detail_file,
+                                get_judge_score_file, is_failed_judge_text, load_judge_cache)
 from .video_base import VideoBaseDataset
-
-FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 def unwrap_hf_pkl(pth, suffix='.mp4'):
@@ -219,45 +216,38 @@ class Video_Holmes(VideoBaseDataset):
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 
-        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
-        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
-        score_file = get_intermediate_file_path(eval_file, '_score')
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
+        tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
+        detail_file = get_judge_detail_file(eval_file, 'extract', judge_name)
+        score_file = get_judge_score_file(eval_file, judge_name, 'json')
 
-        if not osp.exists(score_file):
-            model = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
+        res = load_judge_cache(tmp_file)
+        data = load(eval_file)
+        data_un = data[~pd.isna(data['prediction'])]
 
-            if model == 'exact_matching':
-                model = None
-            else:
-                model = build_judge(**judge_kwargs)
-                if not model.working():
-                    warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
-                    warnings.warn(DEBUG_MESSAGE)
-                    model = None
-            res = {} if not osp.exists(tmp_file) else load(tmp_file)
-            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+        for idx in data['index']:
+            ans = data.loc[data['index'] == idx, 'answer'].values[0]
+            pred = str(data.loc[data['index'] == idx, 'prediction'].values[0])
 
-            data = load(eval_file)
-            data_un = data[~pd.isna(data['prediction'])]
-
-            for idx in data['index']:
-                ans = data.loc[data['index'] == idx, 'answer'].values[0]
-                pred = str(data.loc[data['index'] == idx, 'prediction'].values[0])
-
+            predicted_answer = res.get(idx)
+            if is_failed_judge_text(predicted_answer):
                 predicted_answer = extract_option(pred)
+                res[idx] = predicted_answer
+                dump_judge_cache(res, tmp_file)
 
-                data.loc[idx, 'score'] = int(predicted_answer == ans)
-
-            rejected = [x for x in data['score'] if x == -1]
-
-            print(
-                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
-                f'failed to obtain the score for another {len(rejected)} questions. '
-                f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
+            data.loc[data['index'] == idx, 'judge_pred'] = predicted_answer
+            data.loc[data['index'] == idx, 'score'] = (
+                -1 if is_failed_judge_text(predicted_answer) else int(predicted_answer == ans)
             )
 
-            dump(data, score_file)
+        rejected = [x for x in data['score'] if x == -1]
+        print(
+            f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
+            f'failed to obtain the score for another {len(rejected)} questions. '
+            f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
+        )
 
-        rating = get_dimension_rating(score_file)
-        dump(rating, tgt_file)
+        dump(data, detail_file)
+        rating = get_dimension_rating(detail_file)
+        dump(rating, score_file)
         return rating

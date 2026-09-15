@@ -170,6 +170,7 @@ from .vladbench import VLADBench
 from .vlm2bench import VLM2Bench
 from .vlmbias import VLMBias
 from .vlrmbench import VLRMBench
+from .vrbench import VRBenchDataset
 from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
 from .wiki_vqa_bench import WikiVQABench
 from .wildprobe import WildprobeDataset
@@ -344,7 +345,7 @@ VIDEO_DATASET = [
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
-    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded
+    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset
 ]
 
 # add by EASI team

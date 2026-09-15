@@ -211,23 +211,35 @@ def hybrid_match(model, prediction, question, question_type):
     # Step 1: Try template matching
     template_result = template_match(pred, question_type)
     if template_result != 'Fail':
-        return template_result
+        return dict(opt=template_result, log='Matched by template.', method='template')
 
     # Step 2: Fall back to LLM matching
     result = llm_match(model, question, prediction, question_type)
-    return result['opt']
+    result['method'] = 'llm'
+    return result
 
 
-def _eval_single_row(args):
-    """Process a single row for parallel execution."""
-    model, row_dict = args
+def CoreCognition_eval_single(model, row_dict):
+    """Evaluate a single row and return detailed judge outputs."""
     prediction = str(row_dict.get('prediction', ''))
     answer = str(row_dict.get('answer', '')).strip().upper()
     question = str(row_dict.get('question', ''))
     question_type = str(row_dict.get('question_type', 'MCQ')).upper()
 
     matched = hybrid_match(model, prediction, question, question_type)
-    return 1 if matched.upper() == answer else 0
+    opt = matched.get('opt', 'Fail').upper()
+    return {
+        'matched': opt,
+        'judge_log': matched.get('log', ''),
+        'judge_method': matched.get('method', 'unknown'),
+        'correct': int(opt == answer),
+    }
+
+
+def _eval_single_row(args):
+    """Process a single row for parallel execution."""
+    model, row_dict = args
+    return CoreCognition_eval_single(model, row_dict)['correct']
 
 
 def CoreCognition_eval(model, data, nproc=4):
