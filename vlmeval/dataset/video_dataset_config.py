@@ -421,6 +421,14 @@ vrbench_dataset = {
     'VRBench_64frame': partial(VRBenchDataset, dataset='VRBench', nframe=64),
 }
 
+favor_bench_dataset = {
+    'FAVOR-Bench_8frame': partial(FavorBench, dataset='FAVOR-Bench', nframe=8),
+    'FAVOR-Bench_16frame': partial(FavorBench, dataset='FAVOR-Bench', nframe=16),
+    'FAVOR-Bench_32frame': partial(FavorBench, dataset='FAVOR-Bench', nframe=32),
+    'FAVOR-Bench_64frame': partial(FavorBench, dataset='FAVOR-Bench', nframe=64),
+    'FAVOR-Bench_1fps': partial(FavorBench, dataset='FAVOR-Bench', fps=1.0),
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
@@ -436,7 +444,7 @@ dataset_groups = [
 # add by EASI team
 dataset_groups += [
     sitebenchvideo_dataset, mmsi_video_dataset, vsisuper_recall_dataset, vsisuper_count_dataset,
-    sti_dataset, dsr_dataset, revsi_dataset, vrbench_dataset
+    sti_dataset, dsr_dataset, revsi_dataset, vrbench_dataset, favor_bench_dataset
 ]
 
 for grp in dataset_groups:
