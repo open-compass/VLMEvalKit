@@ -36,16 +36,6 @@ class Mantis(BaseModel):
             )
             raise e
 
-        try:
-            from transformers import AutoModelForVision2Seq, AutoProcessor
-        except ImportError:
-            from transformers import AutoModelForImageTextToText as AutoModelForVision2Seq
-            from transformers import AutoProcessor
-        except Exception as e:
-            logging.critical(f'{type(e)}: {e}')
-            logging.critical("Upgrade transformers to use Mantis's idefics model.\nError: %s" % e)
-            raise e
-
         # inference implementation for attention, can be "sdpa", "eager", "flash_attention_2".
         # Seems FA2 is not effective during inference:
         # https://discuss.huggingface.co/t/flash-attention-has-no-effect-on-inference/73453/5
@@ -80,6 +70,16 @@ class Mantis(BaseModel):
                     torch_dtype=torch.float16
                 )
         else:
+            try:
+                from transformers import AutoModelForVision2Seq, AutoProcessor
+            except ImportError:
+                from transformers import AutoModelForImageTextToText as AutoModelForVision2Seq
+                from transformers import AutoProcessor
+            except Exception as e:
+                logging.critical(f'{type(e)}: {e}')
+                logging.critical("Upgrade transformers to use Mantis's idefics model.\nError: %s" % e)
+                raise e
+
             self.processor = AutoProcessor.from_pretrained(self.model_path)
             model = AutoModelForVision2Seq.from_pretrained(
                 self.model_path,
