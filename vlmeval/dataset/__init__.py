@@ -35,6 +35,7 @@ from .emma import EMMADataset
 from .eriq import ERIQBench
 from .erqa import ERQADataset
 from .erqabench import ERQABench
+from .favor_bench import FavorBench
 from .flames import FlamesDataset
 from .foxbench import FoxBench
 from .gobench import GOBenchDataset
@@ -344,11 +345,13 @@ VIDEO_DATASET = [
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
-    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset
+    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset, FavorBench
 ]
 
 # add by EASI team
-VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench]  # noqa: E501
+VIDEO_DATASET += [
+    SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench
+]  # noqa: E501
 
 TEXT_DATASET = [
     TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment,
