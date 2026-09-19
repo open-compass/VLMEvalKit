@@ -22,7 +22,7 @@ class MMOral_Uni(ImageBaseDataset):
         'MMOral_Uni': '139e90f132f02e2a87d60eff1c24254a',
     }
 
-    def __init__(self, dataset='MMOral_Uni', skip_noimg=False, categories=None):
+    def __init__(self, dataset='MMOral_Uni', skip_noimg=True, categories=None):
         if dataset != 'MMOral_Uni':
             warnings.warn(
                 'To evaluate on MMOral_Uni, we suggest using `MMOral_Uni` as the dataset name.'
@@ -41,7 +41,11 @@ class MMOral_Uni(ImageBaseDataset):
             line = self.data.iloc[line]
 
         question = line['question']
-        if 'image' in line and str(line['image']) == 'nan':
+        image = line['image'] if 'image' in line else None
+        if image is None or (
+            not isinstance(image, list)
+            and (pd.isna(image) or str(image).strip().lower() == 'nan')
+        ):
             return [dict(type='text', value=question)]
 
         tgt_path = toliststr(line['image_path']) if self.meta_only else self.dump_image(line)
@@ -189,7 +193,7 @@ class MMOral_Uni(ImageBaseDataset):
 
     @classmethod
     def evaluate(cls, eval_file, **judge_kwargs):
-        judge_model_name = judge_kwargs.pop('model', 'gpt-5.4-mini')
+        judge_model_name = judge_kwargs.pop('model', cls.DEFAULT_JUDGE)
         storage = get_intermediate_file_path(eval_file, f'_{judge_model_name}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{judge_model_name}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -198,7 +202,7 @@ class MMOral_Uni(ImageBaseDataset):
             data = load(eval_file)
             model = build_judge(model=judge_model_name, max_tokens=16384, **judge_kwargs)
             assert model.working(), (
-                'MMOral_Uni evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+                'MMOral_Uni evaluation requires a working judge model API\n' + DEBUG_MESSAGE
             )
 
             lines = [data.iloc[i] for i in range(len(data))]
