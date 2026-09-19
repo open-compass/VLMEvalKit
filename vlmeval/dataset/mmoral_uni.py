@@ -16,7 +16,7 @@ class MMOral_Uni(ImageBaseDataset):
 
     DATASET_URL = {
         'MMOral_Uni':
-        'https://huggingface.co/datasets/OralGPT/MMOral-Omni-Bench/resolve/main/MMOral-Omni-Bench.tsv'  # noqa: E501
+        'https://huggingface.co/datasets/OralGPT/MMOral-Uni-Bench/resolve/main/MMOral-Omni-Bench.tsv'  # noqa: E501
     }
     DATASET_MD5 = {
         'MMOral_Uni': '139e90f132f02e2a87d60eff1c24254a',
