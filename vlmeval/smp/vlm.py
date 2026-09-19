@@ -103,7 +103,14 @@ def encode_image_to_base64(img, target_size=-1, fmt='JPEG', max_file_size=1e9):
     if img.mode in ('RGBA', 'P', 'LA'):
         img = img.convert('RGB')
     if target_size > 0:
+        ori_w, ori_h = img.size
         img.thumbnail((target_size, target_size))
+        w, h = img.size
+        if ori_w != w or ori_h != h:
+            logger.warning(
+                f'image size is too large and exceeds `target_size` {target_size}, '
+                f'resize from original size ({ori_w}, {ori_h}) to ({w}, {h})'
+            )
     img_buffer = io.BytesIO()
     img.save(img_buffer, format=fmt)
     image_data = img_buffer.getvalue()
@@ -149,10 +156,14 @@ def encode_image_file_to_base64(image_path, target_size=-1, fmt='JPEG', max_file
 def decode_base64_to_image(base64_string, target_size=-1):
     image_data = base64.b64decode(base64_string)
     image = Image.open(io.BytesIO(image_data))
-    if image.mode in ('RGBA', 'P', 'LA'):
+    if image.mode in ('I;16', 'I;16L', 'I;16B', 'I;16N'):
+        image = image.convert('I')
+    elif image.mode not in ('1', 'L', 'I', 'RGB'):
         image = image.convert('RGB')
     if target_size > 0:
         image.thumbnail((target_size, target_size))
+    if image.mode == 'I':
+        image = image.convert('I;16')
     return image
 
 

@@ -468,23 +468,16 @@ api_models = {
         retry=10,
     ),
     # MiniMax (set MINIMAX_API_KEY)
+    "MiniMax-M3": partial(
+        api.MiniMaxAPI,
+        model="MiniMax-M3",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
     "MiniMax-M2.7": partial(
         api.MiniMaxAPI,
         model="MiniMax-M2.7",
-        temperature=0,
-        max_tokens=2048,
-        retry=10,
-    ),
-    "MiniMax-M2.5": partial(
-        api.MiniMaxAPI,
-        model="MiniMax-M2.5",
-        temperature=0,
-        max_tokens=2048,
-        retry=10,
-    ),
-    "MiniMax-M2.5-highspeed": partial(
-        api.MiniMaxAPI,
-        model="MiniMax-M2.5-highspeed",
         temperature=0,
         max_tokens=2048,
         retry=10,
@@ -952,6 +945,12 @@ minicpm_series = {
     "MiniCPM-V-4": partial(vlm.MiniCPM_V_4, model_path="openbmb/MiniCPM-V-4"),
     "MiniCPM-V-4_5": partial(vlm.MiniCPM_V_4_5, model_path="openbmb/MiniCPM-V-4_5"),
     "MiniCPM-o-4_5": partial(vlm.MiniCPM_o_4_5, model_path="openbmb/MiniCPM-o-4_5"),
+    # Set use_upsize=True to reproduce the reported MiniCPM-V-4.6 evaluation scores.
+    "MiniCPM-V-4_6": partial(vlm.MiniCPM_V_4_6, model_path="openbmb/MiniCPM-V-4.6", use_upsize=False),
+    # Set use_upsize=True to reproduce the reported MiniCPM-V-4.6-Thinking evaluation scores.
+    "MiniCPM-V-4_6-Thinking": partial(
+        vlm.MiniCPM_V_4_6_Thinking, model_path="openbmb/MiniCPM-V-4.6-Thinking", use_upsize=False
+    ),
     "MiniCPM-o-4_5_api": partial(
         api.LMDeployAPI,
         api_base="http://0.0.0.0:8000/v1/chat/completions",

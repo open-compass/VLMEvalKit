@@ -163,7 +163,12 @@ def dump(data, f, **kwargs):
             fout.write('\n'.join(lines))
 
     def dump_xlsx(data, f, **kwargs):
-        data.to_excel(f, index=False, engine='xlsxwriter')
+        with pd.ExcelWriter(
+            f,
+            engine='xlsxwriter',
+            engine_kwargs={'options': {'strings_to_formulas': False}},
+        ) as writer:
+            data.to_excel(writer, index=False)
 
     def dump_csv(data, f, quoting=csv.QUOTE_ALL):
         data.to_csv(f, index=False, encoding='utf-8', quoting=quoting)
@@ -269,6 +274,9 @@ def load(f, fmt=None):
     def load_tsv(f):
         return pd.read_csv(f, sep='\t')
 
+    def load_parquet(f):
+        return pd.read_parquet(f)
+
     import validators
     if validators.url(f):
         tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
@@ -276,7 +284,10 @@ def load(f, fmt=None):
             download_file(f, tgt)
         f = tgt
 
-    handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
+    handlers = dict(
+        pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx,
+        csv=load_csv, tsv=load_tsv, parquet=load_parquet
+    )
     if fmt is not None:
         return handlers[fmt](f)
 

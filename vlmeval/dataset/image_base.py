@@ -138,7 +138,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
     MODALITY = 'IMAGE'
     DATASET_URL = {}
     DATASET_MD5 = {}
-    DEFAULT_JUDGE: str | list = 'gpt-4o-mini'
+    DEFAULT_JUDGE_MODEL: str | None = None
 
     INFER_FAIL_MARKERS = (INFER_FAIL_MSG, )
     JUDGE_FAIL_MARKERS = (INFER_FAIL_MSG, )
@@ -160,10 +160,10 @@ class ImageBaseDataset(metaclass=ABCMeta):
 
         # The image field can store the base64 encoded image or another question index (for saving space)
         if 'image' in data:
-            data['image'] = [str(x) for x in data['image']]
+            data['image'] = [str(x) if not pd.isna(x) else '' for x in data['image']]
             image_map = {x: y for x, y in zip(data['index'], data['image'])}
             for k in image_map:
-                if len(image_map[k]) <= 64:
+                if len(image_map[k]) <= 64 and len(image_map[k]) > 0:
                     idx = image_map[k]
                     assert idx in image_map and len(image_map[idx]) > 64
                     image_map[k] = image_map[idx]
@@ -187,6 +187,16 @@ class ImageBaseDataset(metaclass=ABCMeta):
 
     def __getitem__(self, idx):
         return dict(self.data.iloc[idx])
+
+    def get_default_judge_model(self, judge_kwargs=None):
+        default_model = getattr(self, 'DEFAULT_JUDGE_MODEL', None)
+        if default_model is not None:
+            return default_model
+
+        dataset_type = getattr(self, 'TYPE', None)
+        if dataset_type in ('MCQ', 'Y/N', 'MCQ_MMMU_Pro'):
+            return 'gpt-4o-mini'
+        return None
 
     @classmethod
     def get_judge_file(cls, eval_file: str | Path, judge_model: str | None = None) -> Path | None:

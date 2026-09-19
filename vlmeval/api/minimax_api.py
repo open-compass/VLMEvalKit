@@ -3,7 +3,7 @@ MiniMax API support for text-based LLM evaluation.
 OpenAI-compatible chat completions endpoint.
 Set MINIMAX_API_KEY or pass key=...
 
-Models: MiniMax-M2.7, MiniMax-M2.5, MiniMax-M2.5-highspeed
+Models: MiniMax-M3, MiniMax-M2.7
 API docs: https://platform.minimaxi.com/document/guides/chat-model/text-generation
 """
 import json
@@ -25,7 +25,7 @@ class MiniMaxAPI(BaseAPI):
 
     def __init__(
         self,
-        model: str = "MiniMax-M2.7",
+        model: str = "MiniMax-M3",
         key: str = None,
         api_base: str = None,
         retry: int = 10,

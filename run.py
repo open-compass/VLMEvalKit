@@ -51,7 +51,6 @@ if LOCAL_WORLD_SIZE > 1 and len(GPU_LIST):
     )
 
 
-from vlmeval.api import LMDeployAPI
 from vlmeval.config import supported_VLM
 from vlmeval.dataset import build_dataset
 from vlmeval.dataset.video_dataset_config import supported_video_datasets
@@ -60,8 +59,8 @@ from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, collect_run_benchmark_report,
                          get_eval_file_format, get_logger, get_pred_file_format,
-                         get_pred_file_path, githash, is_prediction_complete, listinstr, load,
-                         load_env, prepare_reuse_files, proxy_set, setup_logger, timestr,
+                         get_pred_file_path, githash, is_prediction_complete, load, load_env,
+                         prepare_reuse_files, proxy_set, setup_logger, timestr,
                          upsert_dataset_status, upsert_run_status)
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
@@ -162,20 +161,30 @@ def build_model_from_config(cfg, model_name, use_vllm=False):
     return model
 
 
-def build_dataset_from_config(cfg, dataset_name):
+def build_dataset_from_config(cfg, dataset_name, *, strict=False, extra_kwargs=None):
     import inspect
 
     import vlmeval.dataset
     config = cp.deepcopy(cfg[dataset_name])
     if config == {}:
-        return supported_video_datasets[dataset_name]()
-    assert 'class' in config
+        if dataset_name not in supported_video_datasets:
+            raise ValueError(f'Empty dataset config {dataset_name} is not a supported video dataset shortcut')
+        return supported_video_datasets[dataset_name](**(extra_kwargs or {}))
+    if 'class' not in config:
+        raise ValueError(f'`class` must be set for dataset config {dataset_name}')
     cls_name = config.pop('class')
+    if extra_kwargs:
+        for k, v in extra_kwargs.items():
+            config.setdefault(k, v)
     if hasattr(vlmeval.dataset, cls_name):
         cls = getattr(vlmeval.dataset, cls_name)
         sig = inspect.signature(cls.__init__)
+        unknown_params = sorted(k for k in config if k not in sig.parameters)
+        if strict and unknown_params:
+            unknown = ', '.join(unknown_params)
+            raise ValueError(f'Unsupported parameter(s) for dataset class {cls_name}: {unknown}')
         valid_params = {k: v for k, v in config.items() if k in sig.parameters}
-        if cls.MODALITY == 'VIDEO':
+        if getattr(cls, 'MODALITY', None) == 'VIDEO':
             if valid_params.get('fps', 0) > 0 and valid_params.get('nframe', 0) > 0:
                 raise ValueError('fps and nframe should not be set at the same time')
             if valid_params.get('fps', 0) <= 0 and valid_params.get('nframe', 0) <= 0:
@@ -185,11 +194,89 @@ def build_dataset_from_config(cfg, dataset_name):
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.dataset`')
 
 
+def apply_supported_vlm_cli_overrides(args):
+    """Apply CLI overrides (retry/verbose/stream) to supported_VLM entries."""
+    for k, v in supported_VLM.items():
+        if not hasattr(v, 'keywords'):
+            continue
+        if 'retry' in v.keywords and args.retry is not None:
+            v.keywords['retry'] = args.retry
+        if 'verbose' in v.keywords and args.verbose is not None:
+            v.keywords['verbose'] = args.verbose
+        if args.stream and getattr(v.func, '__module__', '').startswith('vlmeval.api'):
+            v.keywords['stream'] = True
+        supported_VLM[k] = v
+
+
+def load_data_config(data_config):
+    if data_config is None:
+        return {}
+
+    raw = data_config.strip()
+    if raw == '':
+        return {}
+
+    try:
+        config = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise ValueError('--data-config must be a valid JSON dict string') from e
+
+    if not isinstance(config, dict):
+        raise ValueError('--data-config must be a JSON dict')
+    for name, value in config.items():
+        if not isinstance(name, str):
+            raise ValueError('--data-config keys must be strings')
+        if not isinstance(value, dict):
+            raise ValueError(f'--data-config value for {name} must be a JSON dict')
+        if 'class' in value and not isinstance(value['class'], str):
+            raise ValueError(f'--data-config class for {name} must be a string')
+        if 'dataset' in value and not isinstance(value['dataset'], str):
+            raise ValueError(f'--data-config dataset for {name} must be a string')
+    return config
+
+
+def get_data_config_dataset_name(dataset_name, data_config):
+    if dataset_name in data_config:
+        return data_config[dataset_name].get('dataset', dataset_name)
+    return dataset_name
+
+
+def get_dataset_build_kwargs(dataset_name, model_name, data_config):
+    dataset_kwargs = {}
+    base_name = get_data_config_dataset_name(dataset_name, data_config)
+    if base_name in ['MMLongBench_DOC', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI']:
+        dataset_kwargs['model'] = model_name
+    return dataset_kwargs
+
+
+def build_dataset_from_cli(dataset_name, data_config, dataset_kwargs):
+    if dataset_name in data_config:
+        return build_dataset_from_config(
+            data_config,
+            dataset_name,
+            strict=True,
+            extra_kwargs=dataset_kwargs,
+        )
+    return build_dataset(dataset_name, **dataset_kwargs)
+
+
+def get_api_model_class(model_class):
+    import vlmeval.api
+
+    model_class = model_class or 'LMDeployAPI'
+    if not hasattr(vlmeval.api, model_class):
+        raise ValueError(f'Model class `{model_class}` is not supported in `vlmeval.api`')
+    wrapper = getattr(vlmeval.api, model_class)
+    if not getattr(wrapper, 'is_api', False):
+        raise ValueError(f'Model class `{model_class}` is not an API model wrapper')
+    return wrapper
+
+
 def build_model_from_base_url(args):
-    """Build LMDeployAPI model kwargs from command-line arguments.
+    """Build API model kwargs from command-line arguments.
 
     Used by both local and API modes when --base-url is specified.
-    Returns a dict suitable for LMDeployAPI(**kwargs) or partial(LMDeployAPI, **kwargs).
+    Returns a dict suitable for the selected inference API wrapper.
     """
     model_args = dict(
         model=args.model[0] if isinstance(args.model, list) else args.model,
@@ -206,6 +293,7 @@ def build_model_from_base_url(args):
         verbose=args.verbose,
         video_llm=args.video_llm,
         local_media=args.local_media,
+        stream=args.stream,
     )
     model_args = {k: v for k, v in model_args.items() if v is not None}
     if args.thinker:
@@ -218,15 +306,24 @@ def build_model_from_base_url(args):
             raise ValueError(f'Unable to parse the --extra-body value `{args.extra_body}`') from e
         assert isinstance(extra, dict), '--extra-body must be a valid Python dict'
         model_args.update(extra)
+    if args.stream:
+        model_args['stream'] = True
+        logger.info('Streaming mode enabled (--stream)')
     return model_args
 
 
-def get_judge_kwargs(dataset_name, dataset_type, args):
-    """Determine judge kwargs based on dataset name and type.
+def validate_default_judge_model(model):
+    if model is None:
+        return
+    if not isinstance(model, str) or not model:
+        raise TypeError('A default judge model must be a non-empty string or None.')
 
-    Uses run.py's logic as the canonical source for dataset-specific judge model
-    assignments, with additional entries from run_api.py (Video-MME).
-    Supports both local and API modes with mode-specific fallbacks.
+
+def get_judge_kwargs(args, *, dataset):
+    """Collect runtime judge kwargs after dataset instantiation.
+
+    Explicit ``--judge`` and ``--judge-args.model`` values take precedence over
+    a benchmark-provided default model.
     """
     # Determine nproc with mode-specific fallback
     if args.judge_api_nproc is not None:
@@ -240,13 +337,19 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
     else:
         retry = args.retry
 
+    judge_args = json.loads(args.judge_args) if args.judge_args else {}
     judge_kwargs = {
         'nproc': nproc,
         'verbose': args.verbose,
         'retry': retry,
         'timeout': args.judge_timeout,
-        **(json.loads(args.judge_args) if args.judge_args else {}),
+        **judge_args,
     }
+    # Keep track of whether ``model`` came from --judge-args.  A model in
+    # judge_args is an explicit user choice and must not be confused with a
+    # model that the benchmark resolver may add later.
+    model_from_judge_args = 'model' in judge_args
+    judge_args_model = judge_args.get('model')
 
     if args.judge_base_url:
         judge_kwargs['api_base'] = f"{args.judge_base_url.rstrip('/')}/chat/completions"
@@ -256,69 +359,15 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
     if args.judge is not None:
         judge_kwargs['model'] = args.judge
     else:
-        if dataset_type in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro'] or listinstr(
-            ['moviechat1k', 'mme-reasoning'], dataset_name.lower()
-        ):
-            if listinstr(['WeMath', 'MME-Reasoning'], dataset_name):
-                judge_kwargs['model'] = 'gpt-4o-mini'
-            elif listinstr(['VisualPuzzles'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            elif listinstr(['PuzzleVQA'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            elif listinstr(['VisuLogic'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            else:
-                judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
-            if listinstr(['LLaVABench_KO'], dataset_name):
-                judge_kwargs['model'] = 'gpt-4o-0806'
-            else:
-                judge_kwargs['model'] = 'gpt-4-turbo'
-        elif listinstr(['VGRPBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(
-            ['MathVista', 'MathVerse', 'MathVision', 'LENS', 'DynaMath', 'VL-RewardBench',
-             'LogicVista', 'MOAT', 'OCR_Reasoning', 'VTCBench', 'Asclepius',
-             'MMSafetyBench', 'MSSBench', 'SIUO', 'SIUO_GEN', 'XSTest', 'Flames'], dataset_name
-        ):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['OlympiadBench'], dataset_name):
-            use_api_judger = judge_kwargs.get("olympiad_use_api_judger", False)
-            if use_api_judger:
-                judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(
-            ['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench',
-             'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name
-        ):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['ChartMimic'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['VDC'], dataset_name):
-            judge_kwargs['model'] = 'llama31-8b'
-        elif listinstr(['Video_MMLU_QA', 'Video_MMLU_CAP'], dataset_name):
-            judge_kwargs['model'] = 'qwen-72b'
-        elif listinstr(['MMVMBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['CVQA_EN', 'CVQA_LOC'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['M4Bench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['AyaVisionBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['MathCanvas'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1-2025-04-14'
-        elif listinstr(['MMReason'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['CoreCognition'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['WorldVQA'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-1120'
-        elif listinstr(['Video-MME'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['MaCBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['SciDocBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
+        default_model = dataset.get_default_judge_model(judge_kwargs)
+        validate_default_judge_model(default_model)
+        if default_model is not None and not model_from_judge_args:
+            judge_kwargs['model'] = default_model
+        elif model_from_judge_args:
+            # A dataset-specific resolver is allowed to inspect judge_args,
+            # but its default must not replace an explicitly requested model.
+            # Restore it as well in case a custom resolver mutates kwargs.
+            judge_kwargs['model'] = judge_args_model
 
     if args.use_verifier:
         judge_kwargs['use_verifier'] = True
@@ -361,6 +410,10 @@ You can launch the evaluation by setting either --data and --model or --config.
         or you can check the output of the command `vlmutil dlist all` in the terminal.
     To find all supported video dataset default settings, please refer to the \
         `vlmeval/dataset/video_dataset_config.py` file.
+    You can also pass --data-config to define custom dataset names used by --data:
+        --data Video-MME-custom \
+        --data-config '{"Video-MME-custom": {"class": "VideoMME", "dataset": "Video-MME", "nframe": 16}}'
+    The value of --data-config must be a JSON dict string so evaluation parameters are recorded in argv.
 
 --config:
     Launch the evaluation by specifying the path to the config json file. Sample Json Content:
@@ -428,6 +481,8 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--data', type=str, nargs='+', help='Names of Datasets')
     parser.add_argument('--model', type=str, nargs='+', help='Names of Models')
     parser.add_argument('--config', type=str, help='Path to the Config Json File')
+    parser.add_argument('--data-config', type=str, default=None,
+                        help='Custom dataset configs as a JSON dict string. Keys must match names passed to --data.')
 
     # Work Dir & Mode
     parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
@@ -470,7 +525,9 @@ You can launch the evaluation by setting either --data and --model or --config.
     # Inference Model Args (when --base-url is specified)
     parser.add_argument('--base-url', type=str, default=None,
                         help='Base URL of OpenAI-compatible API (e.g. http://localhost:8080/v1). '
-                             'If set, LMDeployAPI is used for inference without modifying config.py.')
+                             'If set, --model-class is used for inference without modifying config.py.')
+    parser.add_argument('--model-class', type=str, default='LMDeployAPI',
+                        help='API model class in vlmeval.api for inference when --base-url is set.')
     parser.add_argument('--key', type=str, default='sk-admin', help='API key for inference model')
     parser.add_argument('--thinker', action='store_true',
                         help='[Deprecated] Enable thinking mode: doubles timeout and max_tokens.')
@@ -484,6 +541,8 @@ You can launch the evaluation by setting either --data and --model or --config.
                         help='Max time in seconds for a single inference request.')
     parser.add_argument('--custom-prompt', type=str, default=None,
                         help='Manually select a model adapter by name.')
+    parser.add_argument('--stream', action='store_true',
+                        help='Enable streaming responses for OpenAI-compatible API models.')
     parser.add_argument('--extra-body', type=str, default=None,
                         help='Extra inference parameters as json dict string')
     parser.add_argument('--video-llm', action='store_true',
@@ -500,6 +559,10 @@ You can launch the evaluation by setting either --data and --model or --config.
                         help='Debug mode: run evaluation in main process')
 
     args = parser.parse_args()
+    try:
+        args.data_config = load_data_config(args.data_config)
+    except ValueError as e:
+        parser.error(str(e))
     if args.ignore:
         logger.warning('[Deprecated] the `--ignore` flag is deprecated since it is '
                        'the default behavior, use `--keep-failed` to disable it.')
@@ -511,6 +574,7 @@ def run_local_mode(args):
     use_config, cfg = False, None
     if args.config is not None:
         assert args.data is None and args.model is None, '--data and --model should not be set when using --config'
+        assert not args.data_config, '--data-config should not be set when using --config'
         use_config, cfg = True, load(args.config)
         args.model = list(cfg['model'].keys())
         args.data = list(cfg['data'].keys())
@@ -521,7 +585,17 @@ def run_local_mode(args):
         args.work_dir = os.environ['MMEVAL_ROOT']
 
     commit_id = githash(digits=8)
-    eval_id = build_eval_id()
+    if WORLD_SIZE > 1:
+        import torch.distributed as dist
+        dist.init_process_group(
+            backend='nccl',
+            timeout=datetime.timedelta(seconds=int(os.environ.get('DIST_TIMEOUT', 3600)))
+        )
+        eval_id_holder = [build_eval_id() if RANK == 0 else None]
+        dist.broadcast_object_list(eval_id_holder, src=0)
+        eval_id = eval_id_holder[0]
+    else:
+        eval_id = build_eval_id()
     setup_logger(log_file=os.path.join(args.work_dir, 'logs', f'{eval_id}_{timestr()}.log'))
 
     if args.mode == 'eval':
@@ -535,13 +609,7 @@ def run_local_mode(args):
             logger.info(f'--reuse is set, reuse-aux={args.reuse_aux}')
 
     if not use_config:
-        for k, v in supported_VLM.items():
-            if hasattr(v, 'keywords') and 'retry' in v.keywords and args.retry is not None:
-                v.keywords['retry'] = args.retry
-                supported_VLM[k] = v
-            if hasattr(v, 'keywords') and 'verbose' in v.keywords and args.verbose is not None:
-                v.keywords['verbose'] = args.verbose
-                supported_VLM[k] = v
+        apply_supported_vlm_cli_overrides(args)
 
         # If FWD_API is set, will use class `GPT4V` for all API models in the config
         if os.environ.get('FWD_API', None) == '1':
@@ -552,13 +620,6 @@ def run_local_mode(args):
                     kws = supported_VLM[m].keywords
                     supported_VLM[m] = partial(GPT4V, **kws)
                     logger.warning(f'FWD_API is set, will use class `GPT4V` for {m}')
-
-    if WORLD_SIZE > 1:
-        import torch.distributed as dist
-        dist.init_process_group(
-            backend='nccl',
-            timeout=datetime.timedelta(seconds=int(os.environ.get('DIST_TIMEOUT', 3600)))
-        )
 
     for _, model_name in enumerate(args.model):
         logger.info(f'=========== {model_name} ===========')
@@ -589,9 +650,10 @@ def run_local_mode(args):
         if use_config:
             model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
         elif args.base_url:
+            api_model_class = get_api_model_class(args.model_class)
             model_args = build_model_from_base_url(args)
             model_args['model'] = model_name
-            model = LMDeployAPI(**model_args)
+            model = api_model_class(**model_args)
 
         for _, dataset_name in enumerate(args.data):
             logger.info(f'----------- {dataset_name} -----------')
@@ -632,17 +694,15 @@ def run_local_mode(args):
                             )
                         continue
                 else:
-                    dataset_kwargs = {}
-                    if dataset_name in ['MMLongBench_DOC', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI']:
-                        dataset_kwargs['model'] = model_name
+                    dataset_kwargs = get_dataset_build_kwargs(dataset_name, model_name, args.data_config)
 
                     # If distributed, first build the dataset on the main process for doing preparation works
                     if WORLD_SIZE > 1:
                         if RANK == 0:
-                            dataset = build_dataset(dataset_name, **dataset_kwargs)
+                            dataset = build_dataset_from_cli(dataset_name, args.data_config, dataset_kwargs)
                         dist.barrier()
 
-                    dataset = build_dataset(dataset_name, **dataset_kwargs)
+                    dataset = build_dataset_from_cli(dataset_name, args.data_config, dataset_kwargs)
                     if dataset is None:
                         logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                         if RANK == 0:
@@ -655,7 +715,7 @@ def run_local_mode(args):
                             )
                         continue
 
-                judge_kwargs = get_judge_kwargs(dataset_name, dataset.TYPE, args)
+                judge_kwargs = get_judge_kwargs(args, dataset=dataset)
                 judge_model = judge_kwargs.get('model', '')
 
                 if RANK == 0:
@@ -985,10 +1045,13 @@ def run_api_mode(args):
         logger.error("API pipeline does not support multi-process mode (WORLD_SIZE > 1).")
         return
 
+    apply_supported_vlm_cli_overrides(args)
+
     # Build model args (shared across all datasets)
     if args.base_url is not None:
+        api_model_class = get_api_model_class(args.model_class)
         model_args = build_model_from_base_url(args)
-        model_builder = partial(LMDeployAPI, **model_args)
+        model_builder = partial(api_model_class, **model_args)
     else:
         assert model_name in supported_VLM, \
             f'Model "{model_name}" not found in supported_VLM. Consider using --base-url to specify an API endpoint.'
@@ -1017,13 +1080,8 @@ def run_api_mode(args):
         logger.info(f'-------------------- {ds_name} --------------------')
 
         try:
-            dataset_kwargs = {}
-            if ds_name in [
-                'MMLongBench_DOC', 'DUDE', 'DUDE_MINI',
-                'SLIDEVQA', 'SLIDEVQA_MINI',
-            ]:
-                dataset_kwargs['model'] = model_name
-            dataset = build_dataset(ds_name, **dataset_kwargs)
+            dataset_kwargs = get_dataset_build_kwargs(ds_name, model_name, args.data_config)
+            dataset = build_dataset_from_cli(ds_name, args.data_config, dataset_kwargs)
 
             if dataset is None:
                 logger.error(f'Dataset {ds_name} is not valid, will be skipped.')
@@ -1041,7 +1099,7 @@ def run_api_mode(args):
                 logger.info(f'{ds_name} requires special handling, skipped in pipeline.')
                 continue
 
-            judge_kwargs = get_judge_kwargs(ds_name, dataset.TYPE, args)
+            judge_kwargs = get_judge_kwargs(args, dataset=dataset)
             judge_model = judge_kwargs.get('model', '')
             logger.info(f'Judge kwargs: {judge_kwargs}')
 

@@ -2,6 +2,33 @@ from functools import partial
 
 from vlmeval.dataset import *
 
+video_eval_pro_dataset = {
+    'VideoEval-Pro-MCQ_16frame': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=16
+    ),
+    'VideoEval-Pro-MCQ_32frame': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=32
+    ),
+    'VideoEval-Pro-MCQ_64frame': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=64
+    ),
+    'VideoEval-Pro-MCQ_1fps': partial(
+        VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', fps=1.0
+    ),
+    'VideoEval-Pro-OpenEnded_16frame': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=16
+    ),
+    'VideoEval-Pro-OpenEnded_32frame': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=32
+    ),
+    'VideoEval-Pro-OpenEnded_64frame': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', nframe=64
+    ),
+    'VideoEval-Pro-OpenEnded_1fps': partial(
+        VideoEvalPro_OpenEnded, dataset='VideoEval-Pro-OpenEnded', fps=1.0
+    ),
+}
+
 vcrbench_dataset = {
     'VCRBench_8frame_nopack': partial(VCRBench, dataset='VCR-Bench', nframe=8, pack=False),
     'VCRBench_16frame_nopack': partial(VCRBench, dataset='VCR-Bench', nframe=16, pack=False),
@@ -50,6 +77,12 @@ videomme_dataset = {
     'Video-MME_1fps': partial(VideoMME, dataset='Video-MME', fps=1.0),
     'Video-MME_0.5fps': partial(VideoMME, dataset='Video-MME', fps=0.5),
     'Video-MME_0.5fps_subs': partial(VideoMME, dataset='Video-MME', fps=0.5, use_subtitle=True),
+}
+
+sis_bench_dataset = {
+    'SIS-Bench_8frame': partial(SISBench, dataset='SIS-Bench', nframe=8),
+    'SIS-Bench_32frame': partial(SISBench, dataset='SIS-Bench', nframe=32),
+    'SIS-Bench_1fps': partial(SISBench, dataset='SIS-Bench', fps=1.0),
 }
 
 videommev2_dataset = {
@@ -250,6 +283,13 @@ egoexobench_dataset = {
 
 }
 
+revsi_dataset = {
+    'revsi_16_frame': partial(ReVSI, dataset='ReVSI', nframe=16),
+    'revsi_32_frame': partial(ReVSI, dataset='ReVSI', nframe=32),
+    'revsi_64_frame': partial(ReVSI, dataset='ReVSI', nframe=64),
+    'revsi_all_frame': partial(ReVSI, dataset='ReVSI', nframe=None),
+}
+
 dream_1k_dataset = {
     'DREAM-1K_8frame': partial(DREAM, dataset='DREAM-1K', nframe=8),
     'DREAM-1K_64frame': partial(DREAM, dataset='DREAM-1K', nframe=64),
@@ -374,20 +414,38 @@ dsr_variants = [
     ("1fps", dict(fps=1.0)),
 ]
 dsr_dataset = _build_video_variants(dsr_subsets, DSRBench, dsr_variants)
+
+vrbench_dataset = {
+    'VRBench_16frame': partial(VRBenchDataset, dataset='VRBench', nframe=16),
+    'VRBench_32frame': partial(VRBenchDataset, dataset='VRBench', nframe=32),
+    'VRBench_64frame': partial(VRBenchDataset, dataset='VRBench', nframe=64),
+}
+
+favor_bench_dataset = {
+    'FAVOR-Bench_8frame': partial(FavorBench, dataset='FAVOR-Bench', nframe=8),
+    'FAVOR-Bench_16frame': partial(FavorBench, dataset='FAVOR-Bench', nframe=16),
+    'FAVOR-Bench_32frame': partial(FavorBench, dataset='FAVOR-Bench', nframe=32),
+    'FAVOR-Bench_64frame': partial(FavorBench, dataset='FAVOR-Bench', nframe=64),
+    'FAVOR-Bench_1fps': partial(FavorBench, dataset='FAVOR-Bench', fps=1.0),
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
-    mmbench_video_dataset, mvbench_dataset, videomme_dataset, videommev2_dataset, videommmu_dataset,
+    video_eval_pro_dataset,
+    mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset,
+    videommev2_dataset, videommmu_dataset,
     longvideobench_dataset, mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
-    video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset
+    video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset,
+    favor_bench_dataset
 ]
 
 # add by EASI team
 dataset_groups += [
     sitebenchvideo_dataset, mmsi_video_dataset, vsisuper_recall_dataset, vsisuper_count_dataset,
-    sti_dataset, dsr_dataset
+    sti_dataset, dsr_dataset, revsi_dataset, vrbench_dataset
 ]
 
 for grp in dataset_groups:

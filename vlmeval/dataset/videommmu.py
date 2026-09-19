@@ -20,6 +20,42 @@ from .video_base import VideoBaseDataset
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 
+def _unzip_videommmu_archives(pth):
+    import zipfile
+    base_dir = Path(pth)
+    target_dir = base_dir / 'videos'
+    zip_files = sorted(base_dir.glob('*.zip'))
+
+    if not zip_files:
+        if target_dir.exists() and any(target_dir.iterdir()):
+            print('The video file already exists.')
+        else:
+            print('No video zip files found.')
+        return
+
+    target_dir.mkdir(exist_ok=True)
+    target_root = target_dir.resolve()
+    for zip_file in zip_files:
+        with zipfile.ZipFile(str(zip_file), 'r') as zip_ref:
+            for member in zip_ref.namelist():
+                # Check if the member is a file (not a directory)
+                if not member.endswith('/') and not member.startswith('__'):
+                    # Extract the file to the specified directory
+                    target = (target_dir / member).resolve()
+                    try:
+                        target.relative_to(target_root)
+                    except ValueError:
+                        continue
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    if not target.exists():
+                        source = zip_ref.open(member)
+                        tmp_target = target.with_name(f'{target.name}.tmp')
+                        with source, open(tmp_target, 'wb') as target_file:
+                            target_file.write(source.read())
+                        tmp_target.replace(target)
+    print('The video file has been restored and stored from the zip file.')
+
+
 def parse_options(options):
     # Define the option letters based on the number of options
     option_letters = [chr(ord("A") + i) for i in range(len(options))]
@@ -488,34 +524,6 @@ class VideoMMMU(VideoBaseDataset):
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
-
-            def unzip_hf_zip(pth):
-                import zipfile
-                base_dir = Path(pth)
-                target_dir = base_dir / 'videos'
-                target_dir.mkdir(exist_ok=True)
-                zip_files = sorted(base_dir.glob('*.zip'))
-
-                if not target_dir.exists():
-                    for zip_file in zip_files:
-                        with zipfile.ZipFile(str(zip_file), 'r') as zip_ref:
-                            for member in zip_ref.namelist():
-                                # Check if the member is a file (not a directory)
-                                if not member.endswith(
-                                        '/') and not member.startswith('__'):
-                                    # Extract the file to the specified directory
-                                    source = zip_ref.open(member)
-                                    target = target_dir / member
-                                    target.parent.mkdir(exist_ok=True)
-                                    if not target.exists():
-                                        with source, open(target, 'wb'):
-                                            target.write(source.read())
-                    print(
-                        'The video file has been restored and stored from the zip file.'
-                    )
-                else:
-                    print('The video file already exists.')
-
             def generate_tsv(pth):
 
                 data_file = Path(pth) / f'{dataset_name}.tsv'
@@ -570,7 +578,7 @@ class VideoMMMU(VideoBaseDataset):
             else:
                 dataset_path = snapshot_download(repo_id=repo_id,
                                                  repo_type='dataset')
-            unzip_hf_zip(dataset_path)
+            _unzip_videommmu_archives(dataset_path)
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')

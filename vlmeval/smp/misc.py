@@ -251,7 +251,7 @@ def version_cmp(v1, v2, op='eq'):
 
 
 def toliststr(s):
-    if isinstance(s, str) and (s[0] == '[') and (s[-1] == ']'):
+    if isinstance(s, str) and len(s) > 1 and (s[0] == '[') and (s[-1] == ']'):
         return [str(x) for x in eval(s)]
     elif isinstance(s, str):
         return [s]

@@ -58,12 +58,12 @@ class MLVU(ConcatVideoDataset):
 
 
 class MLVU_MCQ(VideoBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'chatgpt-0125'
 
     MD5 = 'bb5c37e7cf8d43fc9a25c23d2b4633f5'
     BASE_SYS = 'Carefully watch this video and pay attention to every detail. '
     SYS = BASE_SYS + 'Based on your observations, select the best option that accurately addresses the question.'
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='MLVU_MCQ', nframe=0, fps=-1):
         self.type_data_list = {
@@ -220,7 +220,7 @@ class MLVU_MCQ(VideoBaseDataset):
         score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.setdefault('model', 'chatgpt-0125')
+            model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
 
             if model == 'exact_matching':
                 model = None
@@ -275,6 +275,7 @@ class MLVU_MCQ(VideoBaseDataset):
 
 
 class MLVU_OpenEnded(VideoBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'gpt-4-0125'
 
     MD5 = 'cee573a3627c6ac434ded704c60511ba'
     BASE_SYS = 'Carefully watch this video and pay attention to every detail. '
@@ -417,10 +418,21 @@ class MLVU_OpenEnded(VideoBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
 
-        model = judge_kwargs['model'] if 'model' in judge_kwargs else judge_kwargs.setdefault('model', 'gpt-4-0125')
-        if model != 'gpt-4-0125':
-            print('MLVU Open Ended default using gpt-4-0125! So judge model is changed to gpt-4-0125')
-            judge_kwargs['model'] = 'gpt-4-0125'
+        default_model = self.DEFAULT_JUDGE_MODEL
+        model = judge_kwargs.get('model')
+        if model is None:
+            model = default_model
+        if model != default_model:
+            print(
+                f'MLVU Open Ended default using {default_model}! '
+                f'So judge model is changed to {default_model}'
+            )
+            model = default_model
+        # Keep the kwargs passed to build_judge and the model embedded in the
+        # cache names in sync.  Previously ``model`` retained the user value
+        # after the evaluator forced the default, causing cache files to be
+        # labelled with a model that was never used.
+        judge_kwargs['model'] = model
 
         score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
