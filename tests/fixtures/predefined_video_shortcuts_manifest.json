@@ -340,6 +340,60 @@
     "dataset_class_name": "EgoExoBench_MCQ",
     "dataset_name": "EgoExoBench_MCQ"
   },
+  "FAVOR-Bench_16frame": {
+    "build_config": {
+      "class": "FavorBench",
+      "dataset": "FAVOR-Bench",
+      "fps": -1,
+      "nframe": 16
+    },
+    "dataset_alias_name": "FAVOR-Bench_16frame",
+    "dataset_class_name": "FavorBench",
+    "dataset_name": "FAVOR-Bench"
+  },
+  "FAVOR-Bench_1fps": {
+    "build_config": {
+      "class": "FavorBench",
+      "dataset": "FAVOR-Bench",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "FAVOR-Bench_1fps",
+    "dataset_class_name": "FavorBench",
+    "dataset_name": "FAVOR-Bench"
+  },
+  "FAVOR-Bench_32frame": {
+    "build_config": {
+      "class": "FavorBench",
+      "dataset": "FAVOR-Bench",
+      "fps": -1,
+      "nframe": 32
+    },
+    "dataset_alias_name": "FAVOR-Bench_32frame",
+    "dataset_class_name": "FavorBench",
+    "dataset_name": "FAVOR-Bench"
+  },
+  "FAVOR-Bench_64frame": {
+    "build_config": {
+      "class": "FavorBench",
+      "dataset": "FAVOR-Bench",
+      "fps": -1,
+      "nframe": 64
+    },
+    "dataset_alias_name": "FAVOR-Bench_64frame",
+    "dataset_class_name": "FavorBench",
+    "dataset_name": "FAVOR-Bench"
+  },
+  "FAVOR-Bench_8frame": {
+    "build_config": {
+      "class": "FavorBench",
+      "dataset": "FAVOR-Bench",
+      "fps": -1,
+      "nframe": 8
+    },
+    "dataset_alias_name": "FAVOR-Bench_8frame",
+    "dataset_class_name": "FavorBench",
+    "dataset_name": "FAVOR-Bench"
+  },
   "LongVideoBench_0.5fps": {
     "build_config": {
       "class": "LongVideoBench",
