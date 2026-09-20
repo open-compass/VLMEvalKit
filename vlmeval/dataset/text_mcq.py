@@ -5,10 +5,11 @@ import warnings
 
 import pandas as pd
 
-from vlmeval.smp import dump, load
+from vlmeval.smp import download_file, dump, md5
 from vlmeval.smp.file import LMUDataRoot, file_size, get_intermediate_file_path
 from .text_base import TextBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
+from .utils.multiple_choice import load_mcq_eval_data, load_mcq_table
 
 
 class TextMCQDataset(TextBaseDataset):
@@ -17,6 +18,27 @@ class TextMCQDataset(TextBaseDataset):
     DATASET_URL = {}
 
     DATASET_MD5 = {}
+
+    def prepare_tsv(self, url, file_md5=None):
+        data_root = LMUDataRoot()
+        os.makedirs(data_root, exist_ok=True)
+        update_flag = False
+        file_name = url.split('/')[-1]
+        data_path = osp.join(data_root, file_name)
+        if osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
+            pass
+        else:
+            warnings.warn('The dataset tsv is not downloaded')
+            download_file(url, data_path)
+            update_flag = True
+
+        if file_size(data_path, 'GB') > 1:
+            local_path = data_path.replace('.tsv', '_local.tsv')
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
+                from ..tools import LOCALIZE
+                LOCALIZE(data_path, local_path)
+            data_path = local_path
+        return load_mcq_table(data_path)
 
     def build_prompt(self, line):
 
@@ -77,7 +99,7 @@ class TextMCQDataset(TextBaseDataset):
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         # If not choice label, then use lower case
@@ -100,7 +122,7 @@ class TextMCQDataset(TextBaseDataset):
         # load split
         eval_name_result = get_intermediate_file_path(eval_file, f'_{name_str}_result')
         dump(data, eval_name_result)
-        data = load(eval_name_result)
+        data = load_mcq_eval_data(eval_name_result)
 
         # May have different report acc functions for different datasets
         if 'MMT' in dataset:
@@ -138,4 +160,4 @@ class CustomTextMCQDataset(TextMCQDataset):
                 from ..tools import LOCALIZE
                 LOCALIZE(data_path, local_path)
             data_path = local_path
-        return load(data_path)
+        return load_mcq_table(data_path)

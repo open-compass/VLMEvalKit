@@ -18,6 +18,7 @@ from vlmeval.smp import (LMUDataRoot, download_file, dump, file_size, get_cache_
                          localize_df, md5, toliststr)
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
+from .utils.multiple_choice import load_mcq_eval_data, load_mcq_table
 
 MMMB_URLS = {
     'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
@@ -208,6 +209,43 @@ class ImageMCQDataset(ImageBaseDataset):
     DATASET_MD5.update(MMMB_MD5)
     DATASET_MD5.update(MTL_MMBench_MD5)
 
+    def prepare_tsv(self, url, file_md5=None):
+        data_root = LMUDataRoot()
+        os.makedirs(data_root, exist_ok=True)
+        update_flag = False
+        file_name_legacy = url.split('/')[-1]
+        file_name = f"{self.dataset_name}.tsv"
+        data_path_legacy = osp.join(data_root, file_name_legacy)
+        data_path = osp.join(data_root, file_name)
+
+        self.data_path = data_path
+        if osp.exists(data_path):
+            if file_md5 is None or md5(data_path) == file_md5:
+                pass
+            else:
+                warnings.warn(f'The tsv file is in {data_root}, but the md5 does not match, will re-download')
+                download_file(url, data_path)
+                update_flag = True
+        else:
+            if osp.exists(data_path_legacy) and (file_md5 is None or md5(data_path_legacy) == file_md5):
+                warnings.warn(
+                    'Due to a modification in #1055, the local target file name has changed. '
+                    f'We detected the tsv file with legacy name {data_path_legacy} exists and will do the rename. '
+                )
+                import shutil
+                shutil.move(data_path_legacy, data_path)
+            else:
+                download_file(url, data_path)
+                update_flag = True
+
+        if file_size(data_path, 'GB') > 1:
+            local_path = data_path.replace('.tsv', '_local.tsv')
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
+                from ..tools import LOCALIZE
+                LOCALIZE(data_path, local_path)
+            data_path = local_path
+        return load_mcq_table(data_path)
+
     def build_prompt(self, line):
 
         if isinstance(line, int):
@@ -267,7 +305,7 @@ class ImageMCQDataset(ImageBaseDataset):
 
         circular = False
         if listinstr(['mmbench', 'ccbench', 'circular', 'mmcr'], dataset.lower()):
-            data = load(eval_file)
+            data = load_mcq_eval_data(eval_file)
             data['index'] = [int(x) for x in data['index']]
             dump(data, eval_file)
             circular = True
@@ -287,7 +325,7 @@ class ImageMCQDataset(ImageBaseDataset):
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         # If not choice label, then use lower case
@@ -310,7 +348,7 @@ class ImageMCQDataset(ImageBaseDataset):
         # load split
         eval_record = get_intermediate_file_path(eval_file, f'_{name_str}_result')
         dump(data, eval_record)
-        data = load(eval_record)
+        data = load_mcq_eval_data(eval_record)
 
         # May have different report acc functions for different datasets
         if 'MMT' in dataset:
@@ -330,7 +368,7 @@ class ImageMCQDataset(ImageBaseDataset):
             acc_map = {}
             acc_map['circular'] = acc
             # Vanilla Circ0 Acc
-            data = load(eval_file)
+            data = load_mcq_eval_data(eval_file)
             data['index'] = [int(x) for x in data['index']]
             if 'g_index' in data:
                 data['g_index'] = [int(x) for x in data['g_index']]
@@ -341,13 +379,13 @@ class ImageMCQDataset(ImageBaseDataset):
             result_file = get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_result', 'pkl')
             data0 = mcq_vanilla_eval(model, circ0, meta, nproc, result_file, self.dataset_name)
             dump(data0, get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_circ0_result'))
-            data = load(get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_circ0_result'))
+            data = load_mcq_eval_data(get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_circ0_result'))
             acc_map['vanilla_0'] = report_acc(data)
             # Vanilla ALL Acc
-            data = load(eval_file)
+            data = load_mcq_eval_data(eval_file)
             dataall = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
             dump(dataall, get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_all_result'))
-            data = load(get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_all_result'))
+            data = load_mcq_eval_data(get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_all_result'))
             acc_map['vanilla_all'] = report_acc(data)
             # Merge & Print the Evaluation Results
             for k, v in acc_map.items():
@@ -393,7 +431,7 @@ class ImageMCQDataset(ImageBaseDataset):
         if circular:
             raise ValueError("circular is not supported for verifier evaluation")
 
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         # If not choice label, then use lower case
@@ -434,7 +472,7 @@ class ImageMCQDataset(ImageBaseDataset):
         def report_acc_verifier(result_file):
             from collections import defaultdict
 
-            data = load(result_file)
+            data = load_mcq_eval_data(result_file)
             tot = defaultdict(lambda: 0)
             hit = defaultdict(lambda: 0)
             lt = len(data)
@@ -650,7 +688,7 @@ class MMMUProDataset(MMMUDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         if 'COT' in self.dataset_name:
-            data = load(eval_file)
+            data = load_mcq_eval_data(eval_file)
             data['prediction'] = [self.cot_postproc(x) for x in data['prediction']]
             tgt = get_intermediate_file_path(eval_file, '_cotpost')
             dump(data, tgt)
@@ -786,7 +824,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
                     from ..tools import LOCALIZE
                     LOCALIZE(data_path, local_path)
                 data_path = local_path
-            return load(data_path)
+            return load_mcq_table(data_path)
         elif dataset == 'GMAI-MMBench_TEST':
             dfs = []
             for part_num in range(1, 12):
@@ -802,7 +840,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
                     LOCALIZE(tsv_path, local_path)
                 tsv_path = local_path
                 # 加载数据
-                df = load(tsv_path)
+                df = load_mcq_table(tsv_path)
                 dfs.append(df)
             # 合并所有数据
             data = pd.concat(dfs, ignore_index=True)
@@ -857,7 +895,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
         result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
 
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         # If not choice label, then use lower case
@@ -876,7 +914,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
         # load split
         dump(data, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
-        data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        data = load_mcq_eval_data(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
 
         acc = report_acc(data)
 
@@ -1018,7 +1056,7 @@ class MMERealWorld(ImageMCQDataset):
 
                 LOCALIZE(data_path, local_path)
             data_path = local_path
-        return load(data_path)
+        return load_mcq_table(data_path)
 
     def post_build(self, dataset):
         self.TYPE = 'MMERealWorld'
@@ -1061,7 +1099,7 @@ class MMERealWorld(ImageMCQDataset):
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
-            data = load(eval_file)
+            data = load_mcq_eval_data(eval_file)
             cnt_rejected = 0
             data_un = data[~pd.isna(data['prediction'])]
 
@@ -1237,7 +1275,7 @@ class CVBench(ImageMCQDataset):
 
         result_file = get_intermediate_file_path(eval_file, f"_{model_name}_result", "pkl")
 
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data = data.sort_values(by="index")
         data["prediction"] = [str(x) for x in data["prediction"]]
         # If not choice label, then use lower case
@@ -1263,7 +1301,7 @@ class CVBench(ImageMCQDataset):
             model, data, meta, nproc, result_file, self.dataset_name
         )
         dump(data, get_intermediate_file_path(eval_file, f"_{model_name}_result"))
-        data = load(get_intermediate_file_path(eval_file, f"_{model_name}_result"))
+        data = load_mcq_eval_data(get_intermediate_file_path(eval_file, f"_{model_name}_result"))
 
         if all(data["split"] == "2D"):  # 2D
             acc = self.report_accuracy(data)
@@ -1329,7 +1367,7 @@ class HRBenchDataset(ImageMCQDataset):
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         # If not choice label, then use lower case
@@ -1351,7 +1389,7 @@ class HRBenchDataset(ImageMCQDataset):
             return acc
         data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
         dump(data, get_intermediate_file_path(eval_file, f'_{name_str}_result'))
-        data = load(get_intermediate_file_path(eval_file, f'_{name_str}_result'))
+        data = load_mcq_eval_data(get_intermediate_file_path(eval_file, f'_{name_str}_result'))
 
         acc = report_acc_hrbench(data)
 
@@ -1371,7 +1409,7 @@ class CustomMCQDataset(ImageMCQDataset):
                 from ..tools import LOCALIZE
                 LOCALIZE(data_path, local_path)
             data_path = local_path
-        return load(data_path)
+        return load_mcq_table(data_path)
 
 
 class NaturalBenchDataset(ImageMCQDataset):
@@ -1413,7 +1451,7 @@ class NaturalBenchDataset(ImageMCQDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.naturalbench import extract_answer, get_scores
 
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data = data.sort_values(by='index')
         predictions = [str(x) for x in data['prediction']]
         answers = [str(x) for x in data['answer']]
@@ -1988,7 +2026,7 @@ class TDBench(ImageMCQDataset):
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         # If not choice label, then use lower case
@@ -2053,7 +2091,7 @@ class MicroBench(ImageMCQDataset):
                 LOCALIZE(tsv_path, local_path)
             tsv_path = local_path
             # 加载数据
-            df = load(tsv_path)
+            df = load_mcq_table(tsv_path)
             dfs.append(df)
         # 合并所有数据
         data = pd.concat(dfs, ignore_index=True)
@@ -2115,7 +2153,7 @@ class XLRSBench(ImageMCQDataset):
 
             tsv_path = local_path
             # 加载数据
-            df = load_jsonl(tsv_path) if tsv_path.endswith('.jsonl') else load(tsv_path)
+            df = load_jsonl(tsv_path) if tsv_path.endswith('.jsonl') else load_mcq_table(tsv_path)
             dfs.append(df)
         # 合并所有数据
         data = pd.concat(dfs, ignore_index=True)
@@ -2173,7 +2211,7 @@ class XLRSBench(ImageMCQDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from vlmeval.utils import track_progress_rich
 
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data['prediction'] = [str(x) for x in data['prediction']]
         task_stats = {}
         micro_metric = {'correct': 0, 'total': 0}
@@ -2316,7 +2354,7 @@ class OmniEarthMCQBench(ImageMCQDataset):
 
             tsv_path = local_path
             # 加载数据
-            df = load_jsonl(tsv_path) if tsv_path.endswith('.jsonl') else load(tsv_path)
+            df = load_jsonl(tsv_path) if tsv_path.endswith('.jsonl') else load_mcq_table(tsv_path)
             dfs.append(df)
         # 合并所有数据
         data = pd.concat(dfs, ignore_index=True)
@@ -2372,7 +2410,7 @@ class OmniEarthMCQBench(ImageMCQDataset):
             return "".join(matches)
 
     def evaluate(self, eval_file, **judge_kwargs):
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data['prediction'] = [str(x) for x in data['prediction']]
         task_stats = {}
         micro_metric = {"correct": 0, "total": 0}
@@ -2456,7 +2494,7 @@ class OmniMedVQA(ImageMCQDataset):
                 LOCALIZE(tsv_path, local_path)
             tsv_path = local_path
             # 加载数据
-            df = load(tsv_path)
+            df = load_mcq_table(tsv_path)
             dfs.append(df)
         # 合并所有数据
         data = pd.concat(dfs, ignore_index=True)
@@ -2570,7 +2608,7 @@ class VLMBlind(ImageMCQDataset):
         return False
 
     def evaluate(self, eval_file, **judge_kwargs):
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         task_stats = {}
 
         for index, data_item in data.iterrows():
@@ -2685,7 +2723,7 @@ class _3DSRBench(ImageMCQDataset):
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         for k in data.keys():
@@ -2866,7 +2904,7 @@ class AffordanceDataset(ImageMCQDataset):
 
         # load split
         dump(df, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
-        df = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        df = load_mcq_eval_data(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
 
         acc = df['match'].mean()
         print(f"准确率(ACC): {acc * 100:.2f}%")
@@ -2944,7 +2982,7 @@ class TreeBench(ImageMCQDataset):
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
-            data = load(eval_file)
+            data = load_mcq_eval_data(eval_file)
             cnt_rejected = 0
             data_un = data[~pd.isna(data['prediction'])]
 
@@ -3226,7 +3264,7 @@ class TopViewRS(ImageMCQDataset):
 
         result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
 
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
 
@@ -3244,7 +3282,7 @@ class TopViewRS(ImageMCQDataset):
         data = mcq_topviewrs_eval(model, data, meta, nproc, result_file, self.dataset_name)
         eval_record = eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}')
         dump(data, eval_record)
-        data = load(eval_record)
+        data = load_mcq_eval_data(eval_record)
         acc = report_topviewrs_acc(data)
         score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
         dump(acc, score_file)

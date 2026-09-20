@@ -7,12 +7,53 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp import (cn_string, d2df, dump, get_logger, get_pred_file_format, istype, load,
-                         timestr)
+from vlmeval.smp import (cn_string, d2df, dump, get_file_extension, get_logger,
+                         get_pred_file_format, istype, load, timestr)
 from vlmeval.smp.vlm import build_option_str
 from vlmeval.utils import can_infer, can_infer_lego, track_progress_rich
 
 logger = get_logger(__name__)
+
+MCQ_TABLE_EXTENSIONS = {'tsv', 'csv', 'xlsx', 'xls'}
+
+
+def _preserve_option_text(value):
+    return np.nan if value == '' else value
+
+
+def _mcq_option_converters():
+    return {
+        candidate: _preserve_option_text
+        for candidate in string.ascii_uppercase
+    }
+
+
+def load_mcq_table(path):
+    path = str(path)
+    ext = get_file_extension(path).lower()
+    kwargs = {'converters': _mcq_option_converters()}
+
+    if ext == 'tsv':
+        return pd.read_csv(path, sep='\t', **kwargs)
+    if ext == 'csv':
+        return pd.read_csv(path, **kwargs)
+    if ext in {'xlsx', 'xls'}:
+        return pd.read_excel(path, **kwargs)
+
+    return load(path)
+
+
+def load_mcq_eval_data(path):
+    path = str(path)
+    ext = get_file_extension(path).lower()
+    if ext in MCQ_TABLE_EXTENSIONS:
+        data = load_mcq_table(path)
+    else:
+        data = load(path)
+    if not isinstance(data, pd.DataFrame):
+        data = pd.DataFrame(data)
+    return data
+
 
 MMB_abbrs = {
     'coarse_perception': 'CP',
@@ -572,7 +613,7 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
     tmp_ext = get_pred_file_format()
     tmp_pth = f'/tmp/{timestr()}.{tmp_ext}'
     dump(data_main, tmp_pth)
-    data_main = load(tmp_pth)
+    data_main = load_mcq_eval_data(tmp_pth)
     indices = data_main['index']
     data_main['hit'] = [result[i]['hit'] for i in indices]
     data_main['log'] = [result[i]['log'] for i in indices]

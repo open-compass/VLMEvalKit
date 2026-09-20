@@ -9,8 +9,9 @@ import os.path as osp
 import pandas as pd
 from huggingface_hub import snapshot_download
 
-from vlmeval.smp import dump, get_cache_path, load
+from vlmeval.smp import dump, get_cache_path
 from .image_mcq import ImageMCQDataset
+from .utils.multiple_choice import load_mcq_eval_data, load_mcq_table
 
 
 class MedqbenchMCQDataset(ImageMCQDataset):
@@ -67,7 +68,7 @@ class MedqbenchMCQDataset(ImageMCQDataset):
             raise FileNotFoundError(f"Data file not found: {data_path}")
 
         print(f"Loading MedQ-Bench data file: {data_path}")
-        data = load(data_path)
+        data = load_mcq_table(data_path)
 
         # Set data_root for image loading
         self.data_root = data_root
@@ -167,7 +168,7 @@ class MedqbenchMCQDataset(ImageMCQDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
 
         correct = 0
         total = len(data)

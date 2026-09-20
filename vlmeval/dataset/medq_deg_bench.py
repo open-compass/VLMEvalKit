@@ -4,8 +4,9 @@ import os.path as osp
 import pandas as pd
 from huggingface_hub import snapshot_download
 
-from vlmeval.smp import dump, get_cache_path, get_intermediate_file_path, load
+from vlmeval.smp import dump, get_cache_path, get_intermediate_file_path
 from .image_mcq import ImageMCQDataset
+from .utils.multiple_choice import load_mcq_eval_data, load_mcq_table
 
 
 class MedQDEGBenchDataset(ImageMCQDataset):
@@ -55,7 +56,7 @@ class MedQDEGBenchDataset(ImageMCQDataset):
         if not os.path.exists(data_path):
             raise FileNotFoundError(f'Data file not found: {data_path}')
 
-        data = load(data_path)
+        data = load_mcq_table(data_path)
         self.data_root = data_root
 
         if 'index' in data.columns:
@@ -98,7 +99,7 @@ class MedQDEGBenchDataset(ImageMCQDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
 
         assert 'answer' in data.columns and 'prediction' in data.columns
 

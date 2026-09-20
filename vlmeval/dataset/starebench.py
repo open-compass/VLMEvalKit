@@ -11,8 +11,9 @@ import pandas as pd
 from huggingface_hub import snapshot_download
 from PIL import Image
 
-from vlmeval.smp import get_cache_path, load, modelscope_flag_set, toliststr
+from vlmeval.smp import get_cache_path, modelscope_flag_set, toliststr
 from .image_mcq import ImageMCQDataset
+from .utils.multiple_choice import load_mcq_eval_data
 
 
 class StareBench(ImageMCQDataset):
@@ -440,7 +441,7 @@ class StareBench(ImageMCQDataset):
         result_file, xlsx_path, acc_tsv_path = build_eval_paths(eval_file, judge_tag)
 
         # 1. load raw results
-        data = load(eval_file)
+        data = load_mcq_eval_data(eval_file)
         if isinstance(data, list):
             data = pd.DataFrame(data)
         if 'index' in data.columns:
