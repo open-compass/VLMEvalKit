@@ -399,13 +399,27 @@ def last_modified(pth):
     return t
 
 
-def parse_file(s):
+def parse_file(s, **kwargs):
+    """Parse media values, using local paths as the audio intermediate protocol."""
+    from .audio import (UnsupportedAudioSourceError, audio_mime_type, infer_audio_mime_type,
+                        resolve_media_source)
+
+    audio_max_file_size = kwargs.get('audio_max_file_size')
+    probe_remote_audio = kwargs.get('probe_remote_audio', False)
+
+    def resolve_audio(value):
+        path = resolve_media_source(value, max_file_size=audio_max_file_size)
+        return audio_mime_type(path, default=None), path
+
     if osp.exists(s) and s != '.':
         assert osp.isfile(s)
         suffix = osp.splitext(s)[1].lower()
         # 添加对webp的支持
         if suffix == '.webp':
             return ('image/webp', s)
+        audio_mime = infer_audio_mime_type(s)
+        if audio_mime is not None:
+            return resolve_audio(s)
         mime = mimetypes.types_map.get(suffix, 'unknown')
         return (mime, s)
     elif s.startswith('data:image/'):
@@ -420,11 +434,18 @@ def parse_file(s):
         tgt = osp.join(dname, md5(b64) + '.png')
         decode_base64_to_image_file(b64, tgt)
         return parse_file(tgt)
+    elif s.lower().startswith('data:audio/'):
+        audio_mime = infer_audio_mime_type(s)
+        if audio_mime is not None:
+            return resolve_audio(s)
+        return (None, s)
     elif validators.url(s):
         suffix = osp.splitext(s)[1].lower()
         # 添加对webp的支持
         if suffix == '.webp':
             mime = 'image/webp'
+        elif infer_audio_mime_type(s) is not None:
+            return resolve_audio(s)
         elif suffix in mimetypes.types_map:
             mime = mimetypes.types_map[suffix]
             dname = osp.join(LMUDataRoot(), 'files')
@@ -432,6 +453,11 @@ def parse_file(s):
             tgt = osp.join(dname, md5(s) + suffix)
             download_file(s, tgt)
             return (mime, tgt)
+        elif probe_remote_audio:
+            try:
+                return resolve_audio(s)
+            except UnsupportedAudioSourceError:
+                return 'url', s
         else:
             return ('url', s)
 

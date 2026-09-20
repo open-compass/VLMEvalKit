@@ -23,7 +23,7 @@ from vlmeval.utils.mp_util import (async_recv_process_message, async_wait_proces
 logger = get_logger(__name__)
 
 FAIL_MSG = 'Failed to obtain answer via API.'
-DatasetType = Literal["image", "video", "mt"]
+DatasetType = Literal["image", "video", "audio", "mt"]
 
 
 def _eval_subprocess_target(
@@ -375,6 +375,8 @@ class APIEvalPipeline:
         with self.file_locks[dataset_name]:
             if 'image' in cfg.dataset_obj.data:
                 dataset_data = cfg.dataset_obj.data.drop('image', axis=1)
+            elif 'audio' in cfg.dataset_obj.data:
+                dataset_data = cfg.dataset_obj.data.drop('audio', axis=1)
             else:
                 dataset_data = cfg.dataset_obj.data.copy()
 
@@ -484,7 +486,7 @@ class APIEvalPipeline:
                 tasks_generated = await self._produce_video_tasks(cfg, existing_results)
             elif dataset_type == "mt":
                 tasks_generated = await self._produce_mt_tasks(cfg, existing_results)
-            else:  # image
+            else:  # image or audio
                 tasks_generated = await self._produce_image_tasks(cfg, existing_results)
 
             # Skip evaluation if no prompt is built.
@@ -510,12 +512,13 @@ class APIEvalPipeline:
         logger.info(f"🚀 Queue ready. Total pending tasks: {self.total_tasks_generated}")
 
     async def _produce_image_tasks(self, cfg: DatasetConfig, existing_results: dict) -> int:
-        """Produce image dataset inference task."""
+        """Produce image or audio dataset inference tasks."""
         model = cfg.model_obj
         dataset = cfg.dataset_obj
         dataset_name = cfg.dataset_name
+        dataset_type = cfg.dataset_type
 
-        if hasattr(model, 'set_dump_image'):
+        if dataset_type == "image" and hasattr(model, 'set_dump_image'):
             model.set_dump_image(dataset.dump_image)
 
         use_custom_prompt = (
@@ -553,7 +556,7 @@ class APIEvalPipeline:
                 model_name=cfg.model_name,
                 sample_index=idx_str,
                 prompt_struct=prompt_struct,
-                dataset_type="image"
+                dataset_type=dataset_type
             )
             await self.queue.put(task)
             tasks_generated += 1
