@@ -318,7 +318,7 @@ class CGAVCounting(VideoBaseDataset):
         vid_fps = vid.get_avg_fps()
         n_frames = len(vid)
 
-        if num_frames > 0 and fps < 0:
+        if num_frames > 0 and fps <= 0:
             step_size = len(vid) / (num_frames + 1)
             indices = [int(i * step_size) for i in range(1, num_frames + 1)]
 
