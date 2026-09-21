@@ -166,7 +166,7 @@ def dump(data, f, **kwargs):
         with pd.ExcelWriter(
             f,
             engine='xlsxwriter',
-            engine_kwargs={'options': {'strings_to_formulas': False}},
+            engine_kwargs={'options': {'strings_to_formulas': False, 'strings_to_urls': False}},
         ) as writer:
             data.to_excel(writer, index=False)
 
