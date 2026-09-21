@@ -1,4 +1,5 @@
 import copy as cp
+import os
 
 import numpy as np
 import pandas as pd
@@ -75,6 +76,7 @@ class ConcatVideoDataset(VideoBaseDataset):
             data_sub.pop('index')
             data_sub['index'] = data_sub.pop('original_index')
             data_sub.pop('SUB_DATASET')
+            os.makedirs(os.path.dirname(tgt), exist_ok=True)
             dump(data_sub, tgt)
         # Then, evaluate each dataset separately
         results_all = {}
