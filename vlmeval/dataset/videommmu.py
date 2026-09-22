@@ -667,7 +667,7 @@ class VideoMMMU(VideoBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
-        storage = get_intermediate_file_path(eval_file, '_score')
+        storage = get_intermediate_file_path(eval_file, '_score', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage):
