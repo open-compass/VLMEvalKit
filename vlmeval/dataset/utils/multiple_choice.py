@@ -604,7 +604,7 @@ def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):
     matches = re.search(r'[ABCDE]', s)
     if matches is None:
         for choice in choices:
-            if s.lower() in choice.lower():
+            if choice.lower() in s.lower():
                 return choice[1]
         return ''
     return matches[0]
