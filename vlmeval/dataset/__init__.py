@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from vlmeval.smp import (LMUDataRoot, dump, get_composite_child_eval_file,
-                         get_intermediate_file_path, load, localize_df, toliststr)
+                         get_intermediate_file_path, load, localize_df, read_ok, toliststr)
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
 from .babyvision import BabyVision
@@ -250,6 +250,10 @@ class ConcatDataset(ImageBaseDataset):
         assert 'image' not in line
         assert 'image_path' in line
         tgt_path = toliststr(line['image_path'])
+        if not all(read_ok(path) for path in tgt_path):
+            img_root = self.dataset_map[line['SUB_DATASET']].img_root
+            tgt_path = [osp.join(img_root, path) for path in tgt_path]
+            assert all(read_ok(path) for path in tgt_path), f'Could not find images: {tgt_path}'
         return tgt_path
 
     @classmethod
