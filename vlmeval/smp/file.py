@@ -266,13 +266,13 @@ def load(f, fmt=None):
         return data
 
     def load_xlsx(f):
-        return pd.read_excel(f)
+        return pd.read_excel(f, keep_default_na=False, na_values=[''])
 
     def load_csv(f):
-        return pd.read_csv(f)
+        return pd.read_csv(f, keep_default_na=False, na_values=[''])
 
     def load_tsv(f):
-        return pd.read_csv(f, sep='\t')
+        return pd.read_csv(f, sep='\t', keep_default_na=False, na_values=[''])
 
     def load_parquet(f):
         return pd.read_parquet(f)

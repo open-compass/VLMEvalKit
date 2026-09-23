@@ -322,7 +322,7 @@ def eval_score(gt, pred, answer_type):
         except Exception:
             pred = ''
         score = is_float_equal(gt, pred, include_percentage=True, is_close=True)
-    elif answer_type == 'Str':
+    elif answer_type in ['Str', 'None']:
         gt = get_clean_string(gt)
         pred = get_clean_string(pred)
         if is_exact_match(gt):
