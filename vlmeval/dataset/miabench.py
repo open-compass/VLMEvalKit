@@ -102,6 +102,8 @@ def get_score_dict(data, score_raw):
 class MIABench(ImageBaseDataset):
     TYPE = 'VQA'
 
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+
     DATASET_URL = {
         'MIA-Bench': 'https://opencompass.openxlab.space/utils/VLMEval/Mia-Bench.tsv',
     }
@@ -111,7 +113,7 @@ class MIABench(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        judge_name = judge_kwargs.pop('model', 'gpt-4o')
+        judge_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
 
         model = build_judge(model=judge_name, **judge_kwargs)
 

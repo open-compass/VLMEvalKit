@@ -781,11 +781,13 @@ class SciDocBench(ImageBaseDataset):
 
     TYPE = 'VQA'
 
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
-        'SciDocBench': 'https://opencompass.openxlab.space/utils/VLMEvalKit/SciDocBench.tsv',
+        'SciDocBench': 'https://opencompass.openxlab.space/utils/VLMEval/SciDocBench.tsv',
     }
     DATASET_MD5 = {
-        'SciDocBench': None,
+        'SciDocBench': '31cbebfc13b886b33963728ad3715728',
     }
 
     def dump_image(self, line):
@@ -856,7 +858,7 @@ class SciDocBench(ImageBaseDataset):
         global _judge_model
 
         nproc = judge_kwargs.pop('nproc', 4)
-        model_name = judge_kwargs.get('model', 'gpt-5.4-mini')
+        model_name = judge_kwargs.setdefault('model', cls.DEFAULT_JUDGE_MODEL)
 
         storage = get_intermediate_file_path(eval_file, f'_{model_name}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}', 'pkl')

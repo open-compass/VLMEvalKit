@@ -19,7 +19,7 @@ getcontext().prec = 50
 
 class OmniMat(ImageBaseDataset):
     TYPE = 'VQA'
-    DEFAULT_JUDGE = 'gemini-2.5-flash'
+    DEFAULT_JUDGE_MODEL = 'gemini-2.5-flash'
 
     DATASET_URL = {
         'OmniMat_QA': '',
@@ -48,6 +48,11 @@ class OmniMat(ImageBaseDataset):
     @classmethod
     def supported_datasets(cls):
         return list(cls.DATASET_URL)
+
+    def get_default_judge_model(self, judge_kwargs=None):
+        if getattr(self, 'dataset_name', None) == 'OmniMat_QA':
+            return super().get_default_judge_model(judge_kwargs)
+        return None
 
     def load_data(self, dataset):
         candidates = [
@@ -112,7 +117,7 @@ class OmniMat(ImageBaseDataset):
 
         judge_kwargs = dict(judge_kwargs)
         nproc = judge_kwargs.pop('nproc', 4)
-        judge_model = judge_kwargs.pop('model', self.DEFAULT_JUDGE)
+        judge_model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         if judge_model == 'exact_matching':
             raise ValueError('OmniMat_QA requires an LLM judge; exact_matching is not supported.')
         judge = build_judge(model=judge_model, **judge_kwargs)

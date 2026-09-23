@@ -22,7 +22,29 @@ from vlmeval.smp import (LMUDataRoot, d2df, decode_base64_to_image_file, downloa
 from ..utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
+from .utils.judge_cache import (get_judge_cache_file, get_judge_detail_file, get_judge_score_file,
+                                load_judge_cache, run_cached_tasks)
 from .utils.vqa_eval import istype
+
+
+def llava_judge_failed(result):
+    return (
+        not isinstance(result, (list, tuple)) or len(result) != 2
+        or any(not isinstance(score, (int, float, np.number)) or score < 0 for score in result)
+    )
+
+
+def vgrp_judge_failed(result):
+    required = {'perception_correct', 'answer_correct', 'number_of_samples'}
+    return not isinstance(result, dict) or not required.issubset(result)
+
+
+def corecognition_judge_failed(result):
+    required = {'matched', 'judge_log', 'judge_method', 'correct'}
+    if not isinstance(result, dict) or not required.issubset(result):
+        return True
+    matched = result['matched']
+    return not isinstance(matched, str) or matched.upper() == 'FAIL'
 
 
 class ImageVQADataset(ImageBaseDataset):
@@ -241,6 +263,9 @@ class VizWiz(ImageBaseDataset):
 
 class VTCBench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     _DATASET_PATH = "https://huggingface.co/datasets/MLLM-CL/VTCBench"
     # Dataset URL mapping - points to different splits of HuggingFace dataset
     DATASET_URL = {
@@ -571,6 +596,9 @@ class OCRBench(ImageBaseDataset):
 
 class MathVista(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MathVista_MINI':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'
@@ -700,6 +728,9 @@ class MathVista(ImageBaseDataset):
 
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MathVerse_MINI':
         'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
@@ -842,6 +873,9 @@ class MathVerse(ImageBaseDataset):
 
 class MathVision(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MathVision':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVision.tsv',
@@ -984,6 +1018,9 @@ class MathVision(ImageBaseDataset):
 
 class LENS(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'LENS-CN-QA':
         'https://huggingface.co/datasets/songlier/LENS/resolve/main/LENS-CN-QA.tsv',
@@ -1115,6 +1152,7 @@ class LENS(ImageBaseDataset):
 
 class Physics_yale(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     DATASET_URL = {
         'atomic_dataset':
         'https://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
@@ -1128,8 +1166,8 @@ class Physics_yale(ImageBaseDataset):
         'https://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
         'https://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
-        'Physics_blankim': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
-        'Physics': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
+        'Physics_blankim': 'http://opencompass.oss-cn-shanghai.aliyuncs.com/utils/VLMEval/Physics_blankim.tsv',
+        'Physics': 'http://opencompass.oss-cn-shanghai.aliyuncs.com/utils/VLMEval/Physics.tsv'
     }
     DATASET_MD5 = {
         'atomic_dataset': 'b927fae6bcc6163b0bd89041e4421c70',
@@ -1139,7 +1177,7 @@ class Physics_yale(ImageBaseDataset):
         'quantum_dataset': 'd2610f9938ad1e848259ccbcd5ac3acf',
         'statistics_dataset': '78242aa2431a477782b5b3de1c18d633',
         'Physics_blankim': 'b4136f27f09339698f636111c07824e9',
-        'Physics': '528d66b7365f9d4db2b58fdeadeade71'
+        'Physics': 'c27c6228fca6a2e8b450fc5da7279ea2'
     }
 
     def __init__(self, dataset='Physics', skip_noimg=False):
@@ -1159,8 +1197,8 @@ class Physics_yale(ImageBaseDataset):
 
         # The image field can store the base64 encoded image or another question index (for saving space)
         if 'image' in data:
-            images = [toliststr(x) for x in data['image']]
-            data['image'] = [x[0] if len(x) == 1 else x for x in images]
+            images = [toliststr(x) if not pd.isna(x) else None for x in data['image']]
+            data['image'] = [x[0] if x is not None and len(x) == 1 else x for x in images]
             self.meta_only = False
 
         if 'image_path' in data:
@@ -1183,6 +1221,8 @@ class Physics_yale(ImageBaseDataset):
 
         if self.meta_only:
             tgt_path = toliststr(line['image_path'])
+        elif pd.isna(line['image']):
+            tgt_path = None
         else:
             tgt_path = self.dump_image(line)
 
@@ -1223,7 +1263,7 @@ class Physics_yale(ImageBaseDataset):
             model = os.path.basename(os.environ.get('LOCAL_LLM'))
             print(f'Using local model as judge model for PHYSICS: {model}')
         else:
-            model = judge_kwargs.setdefault('model', 'gpt-4o-mini')
+            model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -1272,6 +1312,13 @@ class Physics_yale(ImageBaseDataset):
 
 class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
+
+    def get_default_judge_model(self, judge_kwargs=None):
+        judge_kwargs = judge_kwargs or {}
+        if judge_kwargs.get('olympiad_use_api_judger', False):
+            return 'gpt-4o-mini'
+        return super().get_default_judge_model(judge_kwargs)
+
     DATASET_URL = {
         'OlympiadBench':
         'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench.tsv',
@@ -1589,6 +1636,7 @@ class OlympiadBench(ImageBaseDataset):
 
 class SeePhys(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'deepseek'
     DATASET_URL = {
         'SeePhys':
         'https://huggingface.co/datasets/SeePhys/SeePhys/resolve/main/data_vlmevalkit/SeePhys_total.tsv',
@@ -1655,7 +1703,7 @@ class SeePhys(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.seephys import eval_acc, extract
 
-        model = judge_kwargs.pop('model', 'deepseek')
+        model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -1702,18 +1750,20 @@ class SeePhys(ImageBaseDataset):
 
 class LogicVista(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'LogicVista':
         'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
     }
     DATASET_MD5 = {'LogicVista': '41c5d33adf33765c399e0e6ae588c061'}
-    DEFAULT_JUDGE = ['gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini']
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.logicvista import LogicVista_auxeval, evaluate_logicvista
 
         # model = judge_kwargs['model']
-        model = judge_kwargs.get('model', 'exact_matching')
+        model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         name_str_map = {
             'gpt-4-0125': 'gpt4',
             'gpt-4-turbo': 'gpt4-turbo',
@@ -1891,6 +1941,9 @@ class MME_CoT(ImageBaseDataset):
 
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+
     DATASET_URL = {
         'LLaVABench':
         'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'
@@ -1901,30 +1954,37 @@ class LLaVABench(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.llavabench import LLaVABench_atomeval, LLaVABench_score, build_prompt
 
-        record_file = get_intermediate_file_path(eval_file, '_openai_result')
-        score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
+        tmp_file = get_judge_cache_file(eval_file, 'eval', judge_name)
+        record_file = get_judge_detail_file(eval_file, 'eval', judge_name)
+        score_file = get_judge_score_file(eval_file, judge_name, 'csv')
         nproc = judge_kwargs.pop('nproc', 4)
         system_prompt = 'You are a helpful and precise assistant for checking the quality of the answer.'
 
-        if not osp.exists(record_file):
-            data = load(eval_file)
-            lines = [data.iloc[i] for i in range(len(data))]
-            model = build_judge(temperature=0.2,
-                                system_prompt=system_prompt,
-                                **judge_kwargs)
+        data = load(eval_file)
+        lines = [data.iloc[i] for i in range(len(data))]
+        indices = data['index'].tolist() if 'index' in data.columns else list(range(len(data)))
+        prompts = [build_prompt(line) for line in lines]
+        scores = load_judge_cache(tmp_file)
+        pending = [idx for idx in indices if idx not in scores or llava_judge_failed(scores[idx])]
+        if pending:
+            model = build_judge(temperature=0.2, system_prompt=system_prompt, **judge_kwargs)
             assert model.working(), 'LLaVABench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            pending_set = set(pending)
+            tups = [(model, prompt) for idx, prompt in zip(indices, prompts) if idx in pending_set]
+            scores = run_cached_tasks(
+                LLaVABench_atomeval,
+                tups,
+                pending,
+                tmp_file,
+                nproc=nproc,
+                chunksize=nproc,
+            )
+        ordered_scores = [scores.get(idx, (-1, -1)) for idx in indices]
+        data['gpt4_score'] = [score[0] if not llava_judge_failed(score) else -1 for score in ordered_scores]
+        data['score'] = [score[1] if not llava_judge_failed(score) else -1 for score in ordered_scores]
+        dump(data, record_file)
 
-            prompts = [build_prompt(line) for line in lines]
-            tups = [(model, prompt) for prompt in prompts]
-            scores = track_progress_rich(LLaVABench_atomeval,
-                                         tups,
-                                         nproc=nproc,
-                                         chunksize=nproc)
-            data['gpt4_score'] = [x[0] for x in scores]
-            data['score'] = [x[1] for x in scores]
-            dump(data, record_file)
-
-        data = load(record_file)
         ret = LLaVABench_score(data).round(1)
         dump(ret, score_file)
         return ret
@@ -1932,6 +1992,8 @@ class LLaVABench(ImageBaseDataset):
 
 class LLaVABench_KO(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-0806'
+
     DATASET_URL = {
         'LLaVABench_KO':
         'https://huggingface.co/datasets/NCSOFT/K-LLaVA-W/resolve/main/LLaVABench_KO.tsv'
@@ -1943,30 +2005,37 @@ class LLaVABench_KO(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.llavabench import LLaVABench_atomeval, LLaVABench_score, build_prompt_ko
 
-        record_file = get_intermediate_file_path(eval_file, '_openai_result')
-        score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
+        tmp_file = get_judge_cache_file(eval_file, 'eval', judge_name)
+        record_file = get_judge_detail_file(eval_file, 'eval', judge_name)
+        score_file = get_judge_score_file(eval_file, judge_name, 'csv')
         nproc = judge_kwargs.pop('nproc', 4)
         system_prompt = 'You are a helpful and precise assistant for checking the quality of the answer.'
 
-        if not osp.exists(record_file):
-            data = load(eval_file)
-            lines = [data.iloc[i] for i in range(len(data))]
-            model = build_judge(temperature=0.2,
-                                system_prompt=system_prompt,
-                                **judge_kwargs)
+        data = load(eval_file)
+        lines = [data.iloc[i] for i in range(len(data))]
+        indices = data['index'].tolist() if 'index' in data.columns else list(range(len(data)))
+        prompts = [build_prompt_ko(line) for line in lines]
+        scores = load_judge_cache(tmp_file)
+        pending = [idx for idx in indices if idx not in scores or llava_judge_failed(scores[idx])]
+        if pending:
+            model = build_judge(temperature=0.2, system_prompt=system_prompt, **judge_kwargs)
             assert model.working(), 'LLaVABench_KO evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            pending_set = set(pending)
+            tups = [(model, prompt) for idx, prompt in zip(indices, prompts) if idx in pending_set]
+            scores = run_cached_tasks(
+                LLaVABench_atomeval,
+                tups,
+                pending,
+                tmp_file,
+                nproc=nproc,
+                chunksize=nproc,
+            )
+        ordered_scores = [scores.get(idx, (-1, -1)) for idx in indices]
+        data['gpt4_score'] = [score[0] if not llava_judge_failed(score) else -1 for score in ordered_scores]
+        data['score'] = [score[1] if not llava_judge_failed(score) else -1 for score in ordered_scores]
+        dump(data, record_file)
 
-            prompts = [build_prompt_ko(line) for line in lines]
-            tups = [(model, prompt) for prompt in prompts]
-            scores = track_progress_rich(LLaVABench_atomeval,
-                                         tups,
-                                         nproc=nproc,
-                                         chunksize=nproc)
-            data['gpt4_score'] = [x[0] for x in scores]
-            data['score'] = [x[1] for x in scores]
-            dump(data, record_file)
-
-        data = load(record_file)
         ret = LLaVABench_score(data).round(1)
         dump(ret, score_file)
         return ret
@@ -1974,6 +2043,8 @@ class LLaVABench_KO(ImageBaseDataset):
 
 class VGRPBench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     DATASET_URL = {
         'VGRPBench':
@@ -1987,46 +2058,43 @@ class VGRPBench(ImageBaseDataset):
         from .utils.vgrpbench.evaluation import (VGRPBench_atomeval, VGRPBench_get_system_prompt,
                                                  VGRPBench_score, build_prompt)
 
-        record_file = get_intermediate_file_path(eval_file, '_openai_result')
-        score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
+        tmp_file = get_judge_cache_file(eval_file, 'eval', judge_name)
+        record_file = get_judge_detail_file(eval_file, 'eval', judge_name)
+        score_file = get_judge_score_file(eval_file, judge_name, 'csv')
 
         nproc = judge_kwargs.pop('nproc', 4)
 
-        if not osp.exists(record_file):
-            data = load(eval_file)
-            lines = [data.iloc[i] for i in range(len(data))]
+        data = load(eval_file)
+        lines = [data.iloc[i] for i in range(len(data))]
+        indices = data['index'].tolist() if 'index' in data.columns else list(range(len(data)))
+        system_prompts = [VGRPBench_get_system_prompt(line) for line in lines]
+        prompts = [build_prompt(line) for line in lines]
+        scores = load_judge_cache(tmp_file)
+        pending = [idx for idx in indices if idx not in scores or vgrp_judge_failed(scores[idx])]
+        if pending:
+            pending_set = set(pending)
+            tups = []
+            for idx, system_prompt, prompt, line in zip(indices, system_prompts, prompts, lines):
+                if idx not in pending_set:
+                    continue
+                model = build_judge(temperature=0.0, system_prompt=system_prompt, **judge_kwargs)
+                tups.append((model, prompt, line))
 
-            system_prompts = [
-                VGRPBench_get_system_prompt(line) for line in lines
-            ]
+            scores = run_cached_tasks(
+                VGRPBench_atomeval,
+                tups,
+                pending,
+                tmp_file,
+                nproc=nproc,
+                chunksize=nproc,
+            )
 
-            models = [
-                build_judge(temperature=0.0,
-                            system_prompt=system_prompt,
-                            **judge_kwargs) for system_prompt in system_prompts
-            ]
-
-            prompts = [build_prompt(line) for line in lines]
-
-            tups = [(model, prompt, line)
-                    for model, prompt, line in zip(models, prompts, lines)]
-
-            # Original parallel processing
-            scores = track_progress_rich(VGRPBench_atomeval,
-                                         tups,
-                                         nproc=nproc,
-                                         chunksize=nproc)
-
-            data['perception_correct'] = [
-                x['perception_correct'] for x in scores
-            ]
-            data['answer_correct'] = [x['answer_correct'] for x in scores]
-            data['number_of_samples'] = [
-                x['number_of_samples'] for x in scores
-            ]
-            dump(data, record_file)
-
-        data = load(record_file)
+        ordered_scores = [scores.get(idx, {}) for idx in indices]
+        data['perception_correct'] = [score.get('perception_correct', 0) for score in ordered_scores]
+        data['answer_correct'] = [score.get('answer_correct', 0) for score in ordered_scores]
+        data['number_of_samples'] = [score.get('number_of_samples', 0) for score in ordered_scores]
+        dump(data, record_file)
 
         ret = VGRPBench_score(data).round(1)
         dump(ret, score_file)
@@ -2036,6 +2104,9 @@ class VGRPBench(ImageBaseDataset):
 
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+
     DATASET_URL = {
         'MMVet':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
@@ -2956,6 +3027,7 @@ class MMNIAH(ImageBaseDataset):
 class MMSci_Captioning(ImageBaseDataset):
 
     TYPE = 'MMSci_Captioning'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-0806'
     DATASET_URL = {
         'MMSci_DEV_Captioning_image_only':
         'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_Captioning_image_only.tsv',  # noqa: E501
@@ -2967,7 +3039,6 @@ class MMSci_Captioning(ImageBaseDataset):
         'MMSci_DEV_Captioning_image_only': '0f5f0fd7ff383699fbd2203a4659d3e8',
         'MMSci_DEV_Captioning_with_abs': 'ae4a9b88166153efd74e28c989e4a484'
     }
-    DEFAULT_JUDGE = ['gpt-4o-0806', 'gemini-1.5-pro-exp-0801']
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mmsci import fact_score_generate  # noqa: F401
@@ -3042,7 +3113,7 @@ class MMSci_Captioning(ImageBaseDataset):
             if isinstance(references[0], str):
                 references = [[r] for r in references]
 
-            model = judge_kwargs.pop('model', 'gpt-4o-0806')
+            model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
             nproc = judge_kwargs.pop('nproc', 4)
             # not supported gemini-1.5-pro-exp-0801 as judge model yet、
             judge_model = build_judge(model=model, **judge_kwargs)
@@ -3141,6 +3212,8 @@ class BMMR(ImageBaseDataset):
 
 
 class TDBenchGrounding(ImageVQADataset):
+    DEFAULT_JUDGE_MODEL = 'centroid'
+
     DATASET_URL = {
         'tdbench_grounding_rot0':
         'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot0.tsv',  # noqa: E501
@@ -3161,7 +3234,7 @@ class TDBenchGrounding(ImageVQADataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.tdbench import evaluate_bbox, extract_bbox_from_string, rotational_eval
-        method = judge_kwargs.get('model', 'centroid')
+        method = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         assert method in ['centroid',
                           'iou'], '--judge should be either centroid or iou'
 
@@ -3315,6 +3388,9 @@ class CountBenchQA(ImageVQADataset):
 
 class OCR_Reasoning(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {
         'OCR_Reasoning':
         'https://opencompass.openxlab.space/utils/VLMEval/OCR_Reasoning.tsv'
@@ -3607,6 +3683,8 @@ class Omni3DBench(ImageBaseDataset):
 
 class MMEReasoning(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     DATASET_URL = {'MME-Reasoning': 'https://huggingface.co/datasets/U4R/MME-Reasoning/blob/main/MME_Reasoning.tsv'}
     DATASET_MD = {'MME-Reasoning': 'b243f44778782d3821523689f6b40a1e'}
 
@@ -3635,7 +3713,7 @@ class MMEReasoning(ImageBaseDataset):
         from .utils.mme_reasoning import (FAIL_MSG, MMEReasoning_acc, MMEReasoning_extract,  # noqa
                                           MMEReasoning_openeval, mme_reasoning_eval_functions)
 
-        model = judge_kwargs.get('model', 'gpt-4o-mini')
+        model = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract')
         tmp_file_extract = get_intermediate_file_path(eval_file, f'_{model}_extract_tmp')
         score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
@@ -3802,6 +3880,9 @@ class MMEReasoning(ImageBaseDataset):
 
 class MMVMBench(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+
     DATASET_URL = {
         'MMVMBench':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVMBench.tsv'
@@ -3984,6 +4065,9 @@ class OCRBench_v2(ImageBaseDataset):
 
 class AyaVisionBench(ImageVQADataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
+
     DATASET_URL = {
         "AyaVisionBench":
             "https://huggingface.co/datasets/timothycdc/"
@@ -4063,6 +4147,9 @@ class AyaVisionBench(ImageVQADataset):
 
 class MathCanvas(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1-2025-04-14'
+
     DATASET_URL = {
         "MathCanvas-Bench":
         "https://huggingface.co/datasets/shiwk24/MathCanvas-Bench/resolve/main/MathCanvas_Bench_VLMEvalKit.tsv"
@@ -4135,32 +4222,31 @@ class MathCanvas(ImageBaseDataset):
             "temperature": 0.0,
         })
 
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
         config = {'hint': self.HINT, 'judge_kwargs': judge_kwargs}
         config_file = get_intermediate_file_path(eval_file, '_config')
         with open(config_file, 'w', encoding='utf-8') as f:
             json.dump(config, f, ensure_ascii=False, indent=4)
 
-        detailed_results_file = get_intermediate_file_path(eval_file, '_meta')
-        if not os.path.exists(detailed_results_file):
-            print("Evaluating with judge, this may take a while...")
-            eval_results_list = evaluate_with_judge(eval_file, self.data, **judge_kwargs)
-            with open(detailed_results_file, 'w', encoding='utf-8') as f:
-                json.dump(eval_results_list, f, ensure_ascii=False, indent=4)
-        else:
-            print(f"Loading existing evaluation results from {detailed_results_file}")
-            eval_results_list = load(detailed_results_file)
+        tmp_file = get_judge_cache_file(eval_file, 'eval', judge_name)
+        detailed_results_file = get_judge_detail_file(eval_file, 'eval', judge_name, 'pkl')
+        print("Evaluating missing or failed samples with judge, if any...")
+        eval_results_list = evaluate_with_judge(eval_file, self.data, cache_file=tmp_file, **judge_kwargs)
+        dump(eval_results_list, detailed_results_file)
 
         summary_dict = summarize_mathcanvas_results(eval_results_list)
 
-        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
-        with open(score_file, 'w', encoding='utf-8') as f:
-            json.dump(summary_dict, f, ensure_ascii=False, indent=4)
+        score_file = get_judge_score_file(eval_file, judge_name, 'json')
+        dump(summary_dict, score_file)
 
         return summary_dict
 
 
 class MMReason(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
+
     mini_path = 'https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true'
     DATASET_URL = {
         'MMReason_testmini': mini_path,
@@ -4256,6 +4342,8 @@ class MMReason(ImageBaseDataset):
 class CoreCognition(ImageBaseDataset):
     TYPE = 'VQA'
 
+    DEFAULT_JUDGE_MODEL = 'gpt-4.1'
+
     DATASET_URL = {
         'CoreCognition': 'https://huggingface.co/datasets/ZTWHHH/CoreCognition/resolve/main/CoreCognition.tsv'
     }
@@ -4286,23 +4374,14 @@ class CoreCognition(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         assert os.path.exists(eval_file), '{} does not exist!'.format(eval_file)
-        from .utils.corecognition import CoreCognition_acc, CoreCognition_eval
+        from .utils.corecognition import CoreCognition_acc, CoreCognition_eval_single
 
         nproc = judge_kwargs.pop('nproc', 4)
-        model = judge_kwargs.get('model', 'exact_matching')
-        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4o-mini': 'gpt4omini', 'gpt-4.1': 'gpt41'}
-        name_str = name_str_map[model] if model in name_str_map else model
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
 
-        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
-        if osp.exists(score_file):
-            acc = load(score_file)
-            return acc
-
-        model = build_judge(**judge_kwargs)
-        if not model.working():
-            warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
-            warnings.warn(DEBUG_MESSAGE)
-            model = None
+        tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
+        detail_file = get_judge_detail_file(eval_file, 'extract', judge_name)
+        score_file = get_judge_score_file(eval_file, judge_name, 'csv')
 
         data = load(eval_file)
         data = data.sort_values(by='index')
@@ -4319,11 +4398,31 @@ class CoreCognition(ImageBaseDataset):
         meta_merge = meta[['index', 'answer', 'category', 'l2-category', 'question_type']]
         data = data.merge(meta_merge, on='index', how='left')
 
-        # Evaluate predictions using hybrid matching with parallel processing
-        data['correct'] = CoreCognition_eval(model, data, nproc=nproc)
-
-        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result')
-        dump(data, result_file)
+        indices = data['index'].tolist()
+        judged = load_judge_cache(tmp_file)
+        pending = [idx for idx in indices if idx not in judged or corecognition_judge_failed(judged[idx])]
+        if pending:
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+            pending_set = set(pending)
+            tasks = [(model, row.to_dict()) for _, row in data.iterrows() if row['index'] in pending_set]
+            judged = run_cached_tasks(
+                CoreCognition_eval_single,
+                tasks,
+                pending,
+                tmp_file,
+                nproc=nproc,
+                chunksize=nproc,
+            )
+        ordered_results = [judged.get(idx, {}) for idx in indices]
+        data['judge_pred'] = [result.get('matched', 'Fail') for result in ordered_results]
+        data['judge_log'] = [result.get('judge_log', '') for result in ordered_results]
+        data['judge_method'] = [result.get('judge_method', 'failed') for result in ordered_results]
+        data['correct'] = [result.get('correct', 0) for result in ordered_results]
+        dump(data, detail_file)
 
         # Calculate accuracy
         acc = CoreCognition_acc(data)

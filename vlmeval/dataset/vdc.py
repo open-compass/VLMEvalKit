@@ -128,6 +128,7 @@ class VDC(VideoBaseDataset):
     MD5 = ''
 
     TYPE = 'Video-VQA'
+    DEFAULT_JUDGE_MODEL = 'llama31-8b'
 
     def __init__(self, dataset='VDC', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)

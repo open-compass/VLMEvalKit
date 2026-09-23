@@ -57,7 +57,7 @@ class LongDocURL(ImageBaseDataset):
 
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DEFAULT_JUDGE = 'gpt-5.4-2026-03-05'
+    DEFAULT_JUDGE_MODEL = 'gpt-5.4-2026-03-05'
     SYSTEM_PROMPT = (
         'You are an expert in visual document question-answering, '
         'please answer our questions based on the given images.\n'
@@ -366,7 +366,7 @@ class LongDocURL(ImageBaseDataset):
     def evaluate(cls, eval_file, **judge_kwargs):
         logger = get_logger('Evaluation')
         data = load(eval_file)
-        model_name = judge_kwargs.pop('model', cls.DEFAULT_JUDGE)
+        model_name = judge_kwargs.pop('model', cls.DEFAULT_JUDGE_MODEL)
         data = cls._extract_predictions(eval_file, data, model_name, judge_kwargs)
         scores = []
         detail_rows = []

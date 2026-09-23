@@ -1,3 +1,4 @@
+import inspect
 import os
 import os.path as osp
 import warnings
@@ -23,10 +24,31 @@ logger = get_logger(__name__)
 class VideoBaseDataset(metaclass=ABCMeta):
 
     MODALITY = 'VIDEO'
-    DEFAULT_JUDGE: str | list = 'gpt-4o-mini'
+    DEFAULT_JUDGE_MODEL: str | None = None
 
     INFER_FAIL_MARKERS = (INFER_FAIL_MSG, )
     JUDGE_FAIL_MARKERS = (INFER_FAIL_MSG, )
+
+    @classmethod
+    def validate_build_config(cls, config: dict) -> None:
+        sig = inspect.signature(cls.__init__)
+
+        def get_sampling_value(name, fallback):
+            if name in config:
+                value = config[name]
+            else:
+                param = sig.parameters.get(name)
+                value = param.default if param is not None and param.default is not inspect._empty else fallback
+            if value is None:
+                raise ValueError(f'{name} should not be None')
+            return value
+
+        fps = get_sampling_value('fps', -1)
+        nframe = get_sampling_value('nframe', 0)
+        if fps > 0 and nframe > 0:
+            raise ValueError('fps and nframe should not be set at the same time')
+        if fps <= 0 and nframe <= 0:
+            warnings.warn('fps and nframe is not set, disable frame split (Use video file directly.)', stacklevel=2)
 
     def __init__(self,
                  dataset='MMBench-Video',
@@ -80,6 +102,16 @@ class VideoBaseDataset(metaclass=ABCMeta):
         else:
             assert idx < len(self.data)
             return dict(self.data.iloc[idx])
+
+    def get_default_judge_model(self, judge_kwargs=None):
+        default_model = getattr(self, 'DEFAULT_JUDGE_MODEL', None)
+        if default_model is not None:
+            return default_model
+
+        dataset_type = getattr(self, 'TYPE', None)
+        if dataset_type in ('MCQ', 'Y/N', 'MCQ_MMMU_Pro'):
+            return 'gpt-4o-mini'
+        return None
 
     def frame_paths(self, video):
         frame_root = osp.join(self.frame_root, video)
