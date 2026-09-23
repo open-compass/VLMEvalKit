@@ -487,7 +487,7 @@ class SUPERChemDataset(ImageBaseDataset):
         'SUPERChem': SUPERCHEM_MD5,
         'SUPERChem_text': SUPERCHEM_MD5,
     }
-    DEFAULT_JUDGE = 'gemini-2.5-pro'
+    DEFAULT_JUDGE_MODEL = 'gemini-2.5-pro'
     force_use_dataset_prompt = True
 
     def __init__(self, dataset='SUPERChem', skip_noimg=False, limit=None):
@@ -677,7 +677,7 @@ class SUPERChemDataset(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         judge_kwargs = self._apply_official_judge_reasoning_effort(eval_file, judge_kwargs)
-        judge_model_name = judge_kwargs.get('model', self.DEFAULT_JUDGE)
+        judge_model_name = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         self._validate_judge_model_name(judge_model_name)
         acc = self.evaluate_accuracy(eval_file)
         rpf = self.evaluate_cot(eval_file, **judge_kwargs)
@@ -723,7 +723,7 @@ class SUPERChemDataset(ImageBaseDataset):
 
     def evaluate_cot(self, eval_file, **judge_kwargs):
         judge_kwargs = self._apply_official_judge_reasoning_effort(eval_file, judge_kwargs)
-        judge_model_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE)
+        judge_model_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         self._validate_judge_model_name(judge_model_name)
 
         nproc = judge_kwargs.pop('nproc', 4)
@@ -775,9 +775,9 @@ class SUPERChemDataset(ImageBaseDataset):
         return rpf
 
     def _validate_judge_model_name(self, judge_model_name):
-        if judge_model_name != self.DEFAULT_JUDGE:
+        if judge_model_name != self.DEFAULT_JUDGE_MODEL:
             raise ValueError(
-                f'SUPERChem official CoT judge is {self.DEFAULT_JUDGE}; got {judge_model_name}. '
+                f'SUPERChem official CoT judge is {self.DEFAULT_JUDGE_MODEL}; got {judge_model_name}. '
                 'Use evaluate_accuracy directly for judge-free pass@1, or use the official judge model for RPF.'
             )
 

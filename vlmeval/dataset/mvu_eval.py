@@ -66,10 +66,20 @@ def check_model_output(output_text, true_answer):
 class MVUEval(VideoBaseDataset):
 
     TYPE = 'MVU-Eval'
+    DEFAULT_NFRAME = 16
+
+    @classmethod
+    def validate_build_config(cls, config: dict) -> None:
+        config = dict(config)
+        nframe = config.get('nframe', 0)
+        fps = config.get('fps', -1)
+        if nframe == 0 and fps == -1:
+            config['nframe'] = cls.DEFAULT_NFRAME
+        super().validate_build_config(config)
 
     def __init__(self, dataset='MVU-Eval', pack=False, nframe=0, fps=-1):
         if nframe == 0 and fps == -1:
-            nframe = 16
+            nframe = self.DEFAULT_NFRAME
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
     # ===================== 1) Data Download & Preprocessing =====================

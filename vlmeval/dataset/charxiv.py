@@ -103,6 +103,8 @@ def qid2category(mode: str) -> Tuple[Dict[int, str], str]:
 
 
 class CharXiv(ImageBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+
     TYPE = "VQA"
     DATASET_URL = {
         "CharXiv_descriptive_val": "https://opencompass.openxlab.space/utils/VLMEval/CharXiv_descriptive_val.tsv",
@@ -194,7 +196,7 @@ class CharXiv(ImageBaseDataset):
         if "LOCAL_LLM" in os.environ:
             judge_model = os.path.basename(os.environ.get("LOCAL_LLM"))
         else:
-            judge_model = judge_kwargs.pop("model", "gpt-4o-mini")
+            judge_model = judge_kwargs.pop("model", self.DEFAULT_JUDGE_MODEL)
 
         if judge_model != "gpt-4o-mini":
             warnings.warn(

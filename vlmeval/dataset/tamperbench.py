@@ -30,6 +30,7 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 class MVTamperBench(VideoBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'chatgpt-0125'
 
     BASENAME = "MVTamperBench"
     MD5 = {
@@ -41,7 +42,6 @@ class MVTamperBench(VideoBaseDataset):
 """
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='MVTamperBench', nframe=0, fps=-1):
         self.dataset_name = dataset
@@ -477,7 +477,7 @@ class MVTamperBench(VideoBaseDataset):
         action_metrics_file = get_intermediate_file_path(eval_file, '_action_f1')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.setdefault('model', 'chatgpt-0125')
+            model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
 
             if model == 'exact_matching':
                 model = None
