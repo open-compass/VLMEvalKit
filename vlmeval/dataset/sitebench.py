@@ -204,6 +204,9 @@ class SiteBenchImage(SiteBenchBase, ImageMCQDataset):
         'SiteBenchImage': '59a2ada248b743c1d7b2f89dd5afcdc3'
     }
 
+    def __init__(self, dataset='SiteBenchImage', skip_noimg=True):
+        super().__init__(dataset=dataset, skip_noimg=skip_noimg)
+
     def prepare_tsv(self, url, file_md5=None):
         data = super().prepare_tsv(url, file_md5)
 
@@ -370,7 +373,7 @@ class SiteBenchVideo(SiteBenchBase, VideoBaseDataset):
             'n_frames': video_nframes,
         }
 
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
             indices = np.linspace(0, video_nframes - 1, self.nframe, dtype=int).tolist()
             # Use os.path.relpath for robust relative path extraction
             frame_paths = self.frame_paths(rel_video_path)

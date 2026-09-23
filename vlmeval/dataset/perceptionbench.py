@@ -124,7 +124,7 @@ class PerceptionBench(ImageBaseDataset):
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
     DATASET_URL = {PERCEPTIONBENCH_DATASET: PERCEPTIONBENCH_URL}
-    DEFAULT_JUDGE = 'gpt-oss-120b'
+    DEFAULT_JUDGE_MODEL = 'gpt-oss-120b'
     force_use_dataset_prompt = True
 
     def __init__(self, dataset=PERCEPTIONBENCH_DATASET, skip_noimg=False):
@@ -252,7 +252,7 @@ class PerceptionBench(ImageBaseDataset):
         data['prediction'] = [str(x) if pd.notna(x) else '' for x in data['prediction']]
         data['answer'] = [_reference_answer(x) for x in data['answer']]
 
-        judge_model_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE)
+        judge_model_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         nproc = int(judge_kwargs.pop('nproc', 16))
         judge_kwargs.setdefault('retry', 4)
         judge_kwargs.setdefault('temperature', 0.3)

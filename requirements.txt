@@ -44,6 +44,7 @@ protobuf
 pylatexenc==2.10
 python-dotenv
 qwen_vl_utils
+rdkit
 requests
 rich
 rouge

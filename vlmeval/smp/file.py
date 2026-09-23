@@ -166,7 +166,7 @@ def dump(data, f, **kwargs):
         with pd.ExcelWriter(
             f,
             engine='xlsxwriter',
-            engine_kwargs={'options': {'strings_to_formulas': False}},
+            engine_kwargs={'options': {'strings_to_formulas': False, 'strings_to_urls': False}},
         ) as writer:
             data.to_excel(writer, index=False)
 
@@ -266,13 +266,16 @@ def load(f, fmt=None):
         return data
 
     def load_xlsx(f):
-        return pd.read_excel(f)
+        return pd.read_excel(f, keep_default_na=False, na_values=[''])
 
     def load_csv(f):
-        return pd.read_csv(f)
+        return pd.read_csv(f, keep_default_na=False, na_values=[''])
 
     def load_tsv(f):
-        return pd.read_csv(f, sep='\t')
+        return pd.read_csv(f, sep='\t', keep_default_na=False, na_values=[''])
+
+    def load_parquet(f):
+        return pd.read_parquet(f)
 
     import validators
     if validators.url(f):
@@ -281,7 +284,10 @@ def load(f, fmt=None):
             download_file(f, tgt)
         f = tgt
 
-    handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
+    handlers = dict(
+        pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx,
+        csv=load_csv, tsv=load_tsv, parquet=load_parquet
+    )
     if fmt is not None:
         return handlers[fmt](f)
 
@@ -704,6 +710,13 @@ def get_intermediate_file_path(eval_file, suffix, target_format=None):
             target_format = get_pred_file_format()
 
     return eval_file.replace(f'.{original_ext}', f'{suffix}.{target_format}')
+
+
+def get_composite_child_eval_file(eval_file, child_name):
+    path = Path(eval_file)
+    stem = path.stem
+    child_stem = f'_{stem}_SUB_{child_name}'
+    return str(path.with_name(f'{child_stem}{path.suffix}'))
 
 
 def prepare_reuse_files(

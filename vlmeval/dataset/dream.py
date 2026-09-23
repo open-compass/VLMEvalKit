@@ -53,13 +53,24 @@ RELATIONSHIP_PROMPT = (
 
 
 class DREAM(VideoBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     TYPE = 'DREAM-1K'
     MD5 = 'e8f0a486429bb6c27806bc0669e0d8b2'
+    DEFAULT_NFRAME = 8
+
+    @classmethod
+    def validate_build_config(cls, config: dict) -> None:
+        config = dict(config)
+        nframe = config.get('nframe', 0)
+        fps = config.get('fps', -1)
+        if nframe == 0 and fps == -1:
+            config['nframe'] = cls.DEFAULT_NFRAME
+        super().validate_build_config(config)
 
     def __init__(self, dataset='DREAM-1K', pack=False, nframe=0, fps=-1):
         if nframe == 0 and fps == -1:
-            nframe = 8
+            nframe = self.DEFAULT_NFRAME
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
     def prepare_dataset(self, dataset):
@@ -193,7 +204,7 @@ class DREAM(VideoBaseDataset):
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], \
             'eval_file should be an xlsx, json, or tsv file'
 
-        model_name = judge_kwargs.get('model', 'gpt-4o')
+        model_name = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         judge_kwargs['model'] = model_name
         nproc = judge_kwargs.get('nproc', 4)
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}_tmp', 'pkl')

@@ -33,7 +33,7 @@ def get_gpu_list():
 RANK = int(os.environ.get('RANK', 0))
 WORLD_SIZE = int(os.environ.get('WORLD_SIZE', 1))
 LOCAL_WORLD_SIZE = int(os.environ.get("LOCAL_WORLD_SIZE", 1))
-LOCAL_RANK = int(os.environ.get("LOCAL_RANK", 1))
+LOCAL_RANK = int(os.environ.get("LOCAL_RANK", 0))
 
 GPU_LIST = get_gpu_list()
 if LOCAL_WORLD_SIZE > 1 and len(GPU_LIST):
@@ -51,18 +51,16 @@ if LOCAL_WORLD_SIZE > 1 and len(GPU_LIST):
     )
 
 
-from vlmeval.api import LMDeployAPI
 from vlmeval.config import supported_VLM
 from vlmeval.dataset import build_dataset
-from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, collect_run_benchmark_report,
                          get_eval_file_format, get_logger, get_pred_file_format,
-                         get_pred_file_path, githash, is_prediction_complete, listinstr, load,
-                         load_env, prepare_reuse_files, proxy_set, setup_logger, timestr,
-                         upsert_dataset_status, upsert_run_status)
+                         get_pred_file_path, githash, is_prediction_complete, load, load_env,
+                         prepare_reuse_files, proxy_set, resolve_dataset_spec, setup_logger,
+                         timestr, upsert_dataset_status, upsert_run_status)
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 logger = get_logger(__name__)
@@ -162,37 +160,92 @@ def build_model_from_config(cfg, model_name, use_vllm=False):
     return model
 
 
-def build_dataset_from_config(cfg, dataset_name, *, strict=False, extra_kwargs=None):
+def _require_non_empty_str(config, key, display_name):
+    value = config.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f'`{key}` must be set to a non-empty string for dataset config {display_name}')
+    return value
+
+
+def _get_dataset_init_params(cls):
     import inspect
 
+    params = set()
+    accepts_kwargs = False
+    for base in inspect.getmro(cls):
+        if base is object:
+            continue
+        try:
+            sig = inspect.signature(base.__init__)
+        except (TypeError, ValueError):
+            continue
+        for name, param in sig.parameters.items():
+            if name == 'self':
+                continue
+            if param.kind == inspect.Parameter.VAR_KEYWORD:
+                accepts_kwargs = True
+            elif param.kind in {
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
+            }:
+                params.add(name)
+    return params, accepts_kwargs
+
+
+def build_dataset_from_config_dict(config, *, display_name=None, strict=True, extra_kwargs=None):
     import vlmeval.dataset
-    config = cp.deepcopy(cfg[dataset_name])
+    display_name = display_name or '<inline>'
+    config = cp.deepcopy(config)
     if config == {}:
-        if dataset_name not in supported_video_datasets:
-            raise ValueError(f'Empty dataset config {dataset_name} is not a supported video dataset shortcut')
-        return supported_video_datasets[dataset_name](**(extra_kwargs or {}))
-    if 'class' not in config:
-        raise ValueError(f'`class` must be set for dataset config {dataset_name}')
-    cls_name = config.pop('class')
+        raise ValueError(
+            f'Empty dataset config {display_name} is not supported. '
+            'Use direct --data shortcut or set a preset explicitly.'
+        )
+    cls_name = _require_non_empty_str(config, 'class', display_name)
+    _require_non_empty_str(config, 'dataset', display_name)
+    config.pop('class')
     if extra_kwargs:
         for k, v in extra_kwargs.items():
             config.setdefault(k, v)
     if hasattr(vlmeval.dataset, cls_name):
         cls = getattr(vlmeval.dataset, cls_name)
-        sig = inspect.signature(cls.__init__)
-        unknown_params = sorted(k for k in config if k not in sig.parameters)
+        supported_params, accepts_kwargs = _get_dataset_init_params(cls)
+        unknown_params = sorted(k for k in config if k not in supported_params)
         if strict and unknown_params:
             unknown = ', '.join(unknown_params)
             raise ValueError(f'Unsupported parameter(s) for dataset class {cls_name}: {unknown}')
-        valid_params = {k: v for k, v in config.items() if k in sig.parameters}
-        if getattr(cls, 'MODALITY', None) == 'VIDEO':
-            if valid_params.get('fps', 0) > 0 and valid_params.get('nframe', 0) > 0:
-                raise ValueError('fps and nframe should not be set at the same time')
-            if valid_params.get('fps', 0) <= 0 and valid_params.get('nframe', 0) <= 0:
-                raise ValueError('fps and nframe should be set at least one valid value')
+        valid_params = config if accepts_kwargs else {k: v for k, v in config.items() if k in supported_params}
+        if hasattr(cls, 'validate_build_config'):
+            cls.validate_build_config(valid_params)
         return cls(**valid_params)
     else:
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.dataset`')
+
+
+def build_dataset_from_config(cfg, dataset_name, *, strict=True, extra_kwargs=None):
+    return build_dataset_from_config_dict(
+        cfg[dataset_name],
+        display_name=dataset_name,
+        strict=strict,
+        extra_kwargs=extra_kwargs,
+    )
+
+
+def build_dataset_from_spec(spec, extra_kwargs=None):
+    if spec.source in {'explicit_config', 'preset_config', 'predefined_shortcut'}:
+        return build_dataset_from_config_dict(
+            spec.build_config,
+            display_name=spec.dataset_alias_name,
+            strict=True,
+            extra_kwargs=extra_kwargs,
+        )
+    return build_dataset(spec.dataset_name, **(extra_kwargs or {}))
+
+
+def get_effective_dataset_class_name(spec, dataset):
+    if dataset is not None:
+        return dataset.__class__.__name__
+    return spec.dataset_class_name
 
 
 def apply_supported_vlm_cli_overrides(args):
@@ -236,43 +289,35 @@ def load_data_config(data_config):
     return config
 
 
-def get_data_config_dataset_name(dataset_name, data_config):
-    if dataset_name in data_config:
-        return data_config[dataset_name].get('dataset', dataset_name)
-    return dataset_name
-
-
-def get_judge_dataset_name(dataset_name, data_config):
-    base_name = get_data_config_dataset_name(dataset_name, data_config)
-    if base_name == dataset_name:
-        return dataset_name
-    return f'{dataset_name} {base_name} {base_name.replace("-", "_")}'
-
-
-def get_dataset_build_kwargs(dataset_name, model_name, data_config):
+def get_dataset_build_kwargs(dataset_name, model_name):
     dataset_kwargs = {}
-    base_name = get_data_config_dataset_name(dataset_name, data_config)
-    if base_name in ['MMLongBench_DOC', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI']:
+    if dataset_name in ['MMLongBench_DOC', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI']:
         dataset_kwargs['model'] = model_name
     return dataset_kwargs
 
 
 def build_dataset_from_cli(dataset_name, data_config, dataset_kwargs):
-    if dataset_name in data_config:
-        return build_dataset_from_config(
-            data_config,
-            dataset_name,
-            strict=True,
-            extra_kwargs=dataset_kwargs,
-        )
-    return build_dataset(dataset_name, **dataset_kwargs)
+    spec = resolve_dataset_spec(dataset_name, data_config)
+    return build_dataset_from_spec(spec, extra_kwargs=dataset_kwargs)
+
+
+def get_api_model_class(model_class):
+    import vlmeval.api
+
+    model_class = model_class or 'LMDeployAPI'
+    if not hasattr(vlmeval.api, model_class):
+        raise ValueError(f'Model class `{model_class}` is not supported in `vlmeval.api`')
+    wrapper = getattr(vlmeval.api, model_class)
+    if not getattr(wrapper, 'is_api', False):
+        raise ValueError(f'Model class `{model_class}` is not an API model wrapper')
+    return wrapper
 
 
 def build_model_from_base_url(args):
-    """Build LMDeployAPI model kwargs from command-line arguments.
+    """Build API model kwargs from command-line arguments.
 
     Used by both local and API modes when --base-url is specified.
-    Returns a dict suitable for LMDeployAPI(**kwargs) or partial(LMDeployAPI, **kwargs).
+    Returns a dict suitable for the selected inference API wrapper.
     """
     model_args = dict(
         model=args.model[0] if isinstance(args.model, list) else args.model,
@@ -308,12 +353,18 @@ def build_model_from_base_url(args):
     return model_args
 
 
-def get_judge_kwargs(dataset_name, dataset_type, args):
-    """Determine judge kwargs based on dataset name and type.
+def validate_default_judge_model(model):
+    if model is None:
+        return
+    if not isinstance(model, str) or not model:
+        raise TypeError('A default judge model must be a non-empty string or None.')
 
-    Uses run.py's logic as the canonical source for dataset-specific judge model
-    assignments, with additional entries from run_api.py (Video-MME).
-    Supports both local and API modes with mode-specific fallbacks.
+
+def get_judge_kwargs(args, *, dataset):
+    """Collect runtime judge kwargs after dataset instantiation.
+
+    Explicit ``--judge`` and ``--judge-args.model`` values take precedence over
+    a benchmark-provided default model.
     """
     # Determine nproc with mode-specific fallback
     if args.judge_api_nproc is not None:
@@ -327,13 +378,19 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
     else:
         retry = args.retry
 
+    judge_args = json.loads(args.judge_args) if args.judge_args else {}
     judge_kwargs = {
         'nproc': nproc,
         'verbose': args.verbose,
         'retry': retry,
         'timeout': args.judge_timeout,
-        **(json.loads(args.judge_args) if args.judge_args else {}),
+        **judge_args,
     }
+    # Keep track of whether ``model`` came from --judge-args.  A model in
+    # judge_args is an explicit user choice and must not be confused with a
+    # model that the benchmark resolver may add later.
+    model_from_judge_args = 'model' in judge_args
+    judge_args_model = judge_args.get('model')
 
     if args.judge_base_url:
         judge_kwargs['api_base'] = f"{args.judge_base_url.rstrip('/')}/chat/completions"
@@ -343,73 +400,15 @@ def get_judge_kwargs(dataset_name, dataset_type, args):
     if args.judge is not None:
         judge_kwargs['model'] = args.judge
     else:
-        if dataset_type in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro'] or listinstr(
-            ['moviechat1k', 'mme-reasoning'], dataset_name.lower()
-        ):
-            if listinstr(['WeMath', 'MME-Reasoning'], dataset_name):
-                judge_kwargs['model'] = 'gpt-4o-mini'
-            elif listinstr(['VisualPuzzles'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            elif listinstr(['PuzzleVQA'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            elif listinstr(['VisuLogic'], dataset_name):
-                judge_kwargs['model'] = 'exact_matching'
-            else:
-                judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
-            if listinstr(['LLaVABench_KO'], dataset_name):
-                judge_kwargs['model'] = 'gpt-4o-0806'
-            else:
-                judge_kwargs['model'] = 'gpt-4-turbo'
-        elif listinstr(['VGRPBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(
-            ['MathVista', 'MathVerse', 'MathVision', 'LENS', 'DynaMath', 'VL-RewardBench',
-             'LogicVista', 'MOAT', 'OCR_Reasoning', 'VTCBench', 'Asclepius',
-             'MMSafetyBench', 'MSSBench', 'SIUO', 'SIUO_GEN', 'XSTest', 'Flames'], dataset_name
-        ):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['OlympiadBench'], dataset_name):
-            use_api_judger = judge_kwargs.get("olympiad_use_api_judger", False)
-            if use_api_judger:
-                judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(
-            ['MMLongBench_32K', 'MMLongBench_128K', 'MMLongBench_256K', 'MMLongBench_512K'], dataset_name
-        ):
-            judge_kwargs['model'] = 'gpt-5.5-2026-04-24'
-        elif listinstr(
-            ['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench',
-             'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name
-        ):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['ChartMimic'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['VDC'], dataset_name):
-            judge_kwargs['model'] = 'llama31-8b'
-        elif listinstr(['Video_MMLU_QA', 'Video_MMLU_CAP'], dataset_name):
-            judge_kwargs['model'] = 'qwen-72b'
-        elif listinstr(['MMVMBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['CVQA_EN', 'CVQA_LOC'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['M4Bench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o'
-        elif listinstr(['AyaVisionBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['MathCanvas'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1-2025-04-14'
-        elif listinstr(['MMReason'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['CoreCognition'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4.1'
-        elif listinstr(['WorldVQA'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-1120'
-        elif listinstr(['Video-MME'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['MaCBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
-        elif listinstr(['SciDocBench'], dataset_name):
-            judge_kwargs['model'] = 'gpt-4o-mini'
+        default_model = dataset.get_default_judge_model(judge_kwargs)
+        validate_default_judge_model(default_model)
+        if default_model is not None and not model_from_judge_args:
+            judge_kwargs['model'] = default_model
+        elif model_from_judge_args:
+            # A dataset-specific resolver is allowed to inspect judge_args,
+            # but its default must not replace an explicitly requested model.
+            # Restore it as well in case a custom resolver mutates kwargs.
+            judge_kwargs['model'] = judge_args_model
 
     if args.use_verifier:
         judge_kwargs['use_verifier'] = True
@@ -452,10 +451,12 @@ You can launch the evaluation by setting either --data and --model or --config.
         or you can check the output of the command `vlmutil dlist all` in the terminal.
     To find all supported video dataset default settings, please refer to the \
         `vlmeval/dataset/video_dataset_config.py` file.
-    You can also pass --data-config to define custom dataset names used by --data:
+    You can also pass --data-config to define output aliases used by --data:
         --data Video-MME-custom \
         --data-config '{"Video-MME-custom": {"class": "VideoMME", "dataset": "Video-MME", "nframe": 16}}'
     The value of --data-config must be a JSON dict string so evaluation parameters are recorded in argv.
+    The custom name is only used for output artifacts; dataset logic uses the `dataset` field.
+    Output aliases must use only letters, digits, ".", "_", and "-", and start with a letter or digit.
 
 --config:
     Launch the evaluation by specifying the path to the config json file. Sample Json Content:
@@ -485,7 +486,9 @@ You can launch the evaluation by setting either --data and --model or --config.
                 "class": "ImageMCQDataset",
                 "dataset": "MMBench_DEV_EN_V11"
             },
-            "MMBench_Video_8frame_nopack": {},
+            "MMBench_Video_8frame_nopack": {
+                "preset": "MMBench_Video_8frame_nopack"
+            },
             "Video-MME_16frame_subs": {
                 "class": "VideoMME",
                 "dataset": "Video-MME",
@@ -500,16 +503,19 @@ You can launch the evaluation by setting either --data and --model or --config.
     - `class`: The class name of the model, which should be a class in `vlmeval.vlm` or `vlmeval.api`.
     - Other keys are specific to the model, please refer to the corresponding class.
     - Tip: The defined model in the `supported_VLM` of `vlmeval/config.py` can be used as a shortcut.
-    For `data`, the key is the name of the dataset (should be the same as the `dataset` field in most cases, \
-        except for video datasets), and the value is a dictionary containing the following keys:
+    For `data`, the key is an output alias. It must use only letters, digits, ".", "_", and "-", and start with \
+        a letter or digit. It is used for prediction files, status entries, reuse artifacts, \
+        and symlinks. Dataset logic uses the `dataset` field in the value, or the referenced predefined `preset`.
+        The value is a dictionary containing the following keys:
     - `class`: The class name of the dataset, which should be a class in `vlmeval.dataset`.
     - `dataset`: The name of the dataset, which should be a string that is accepted by the `dataset` argument of the \
         corresponding class.
     - Other keys are specific to the dataset, please refer to the corresponding class.
-    - Tip: The defined dataset in the `supported_video_datasets` of `vlmeval/dataset/video_dataset_config.py` \
-        can be used as a shortcut.
+    - Tip: Predefined video shortcuts can be used directly via `--data Video-MME_8frame`, or reused by an \
+        output alias with `{"preset": "Video-MME_8frame"}`. Empty dict shortcut configs are not supported.
 
-    The keys in the `model` and `data` fields will be used for naming the prediction files and evaluation results.
+    The keys in the `model` field and output aliases in the `data` field will be used for naming the prediction \
+    files and evaluation results.
     When launching with `--config`, args for API VLMs, such as `--retry`, `--verbose`, will be ignored.
 
 --api-mode:
@@ -524,7 +530,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--model', type=str, nargs='+', help='Names of Models')
     parser.add_argument('--config', type=str, help='Path to the Config Json File')
     parser.add_argument('--data-config', type=str, default=None,
-                        help='Custom dataset configs as a JSON dict string. Keys must match names passed to --data.')
+                        help='Custom dataset configs as a JSON dict string. Keys are output aliases passed to --data.')
 
     # Work Dir & Mode
     parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
@@ -567,7 +573,9 @@ You can launch the evaluation by setting either --data and --model or --config.
     # Inference Model Args (when --base-url is specified)
     parser.add_argument('--base-url', type=str, default=None,
                         help='Base URL of OpenAI-compatible API (e.g. http://localhost:8080/v1). '
-                             'If set, LMDeployAPI is used for inference without modifying config.py.')
+                             'If set, --model-class is used for inference without modifying config.py.')
+    parser.add_argument('--model-class', type=str, default='LMDeployAPI',
+                        help='API model class in vlmeval.api for inference when --base-url is set.')
     parser.add_argument('--key', type=str, default='sk-admin', help='API key for inference model')
     parser.add_argument('--thinker', action='store_true',
                         help='[Deprecated] Enable thinking mode: doubles timeout and max_tokens.')
@@ -690,12 +698,21 @@ def run_local_mode(args):
         if use_config:
             model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
         elif args.base_url:
+            api_model_class = get_api_model_class(args.model_class)
             model_args = build_model_from_base_url(args)
             model_args['model'] = model_name
-            model = LMDeployAPI(**model_args)
+            model = api_model_class(**model_args)
 
-        for _, dataset_name in enumerate(args.data):
-            logger.info(f'----------- {dataset_name} -----------')
+        data_config_for_alias = cfg['data'] if use_config else args.data_config
+        for _, data_entry_name in enumerate(args.data):
+            spec = resolve_dataset_spec(data_entry_name, data_config_for_alias)
+            dataset_name = spec.dataset_name
+            dataset_alias_name = spec.dataset_alias_name
+            dataset_class_name = spec.dataset_class_name
+            if dataset_alias_name == dataset_name:
+                logger.info(f'----------- {dataset_name} -----------')
+            else:
+                logger.info(f'----------- {dataset_alias_name} ({dataset_name}) -----------')
             if WORLD_SIZE > 1:
                 dist.barrier()
 
@@ -705,57 +722,45 @@ def run_local_mode(args):
 
             try:
                 result_file = get_pred_file_path(
-                    str(pred_root), model_name, dataset_name, use_env_format=True)
+                    str(pred_root), model_name, dataset_alias_name, use_env_format=True)
                 if RANK == 0:
                     upsert_dataset_status(
                         run_dir=pred_root,
                         model_name=model_name,
-                        dataset_name=dataset_name,
+                        dataset_name=dataset_alias_name,
+                        resolved_dataset_name=dataset_name,
+                        dataset_alias_name=dataset_alias_name,
+                        dataset_class_name=dataset_class_name,
                         prediction_file=result_file,
                         status='pending',
                     )
 
-                if use_config:
-                    if WORLD_SIZE > 1:
-                        if RANK == 0:
-                            dataset = build_dataset_from_config(cfg['data'], dataset_name)
-                        dist.barrier()
-                    dataset = build_dataset_from_config(cfg['data'], dataset_name)
-                    if dataset is None:
-                        logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
-                        if RANK == 0:
-                            upsert_dataset_status(
-                                run_dir=pred_root,
-                                model_name=model_name,
-                                dataset_name=dataset_name,
-                                status='done',
-                                skip_reason='invalid_dataset',
-                            )
-                        continue
-                else:
-                    dataset_kwargs = get_dataset_build_kwargs(dataset_name, model_name, args.data_config)
+                dataset_kwargs = get_dataset_build_kwargs(dataset_name, model_name)
 
-                    # If distributed, first build the dataset on the main process for doing preparation works
-                    if WORLD_SIZE > 1:
-                        if RANK == 0:
-                            dataset = build_dataset_from_cli(dataset_name, args.data_config, dataset_kwargs)
-                        dist.barrier()
+                # If distributed, first build the dataset on the main process for doing preparation works
+                if WORLD_SIZE > 1:
+                    if RANK == 0:
+                        dataset = build_dataset_from_spec(spec, extra_kwargs=dataset_kwargs)
+                    dist.barrier()
 
-                    dataset = build_dataset_from_cli(dataset_name, args.data_config, dataset_kwargs)
-                    if dataset is None:
-                        logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
-                        if RANK == 0:
-                            upsert_dataset_status(
-                                run_dir=pred_root,
-                                model_name=model_name,
-                                dataset_name=dataset_name,
-                                status='done',
-                                skip_reason='invalid_dataset',
-                            )
-                        continue
+                dataset = build_dataset_from_spec(spec, extra_kwargs=dataset_kwargs)
+                dataset_class_name = get_effective_dataset_class_name(spec, dataset)
+                if dataset is None:
+                    logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
+                    if RANK == 0:
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
+                            dataset_alias_name=dataset_alias_name,
+                            dataset_class_name=dataset_class_name,
+                            status='done',
+                            skip_reason='invalid_dataset',
+                        )
+                    continue
 
-                judge_dataset_name = get_judge_dataset_name(dataset_name, args.data_config)
-                judge_kwargs = get_judge_kwargs(judge_dataset_name, dataset.TYPE, args)
+                judge_kwargs = get_judge_kwargs(args, dataset=dataset)
                 judge_model = judge_kwargs.get('model', '')
 
                 if RANK == 0:
@@ -763,7 +768,7 @@ def run_local_mode(args):
                         pred_root_meta=pred_root_meta,
                         eval_id=eval_id,
                         model_name=model_name,
-                        dataset_name=dataset_name,
+                        dataset_name=dataset_alias_name,
                         dataset=dataset,
                         result_file=result_file,
                         reuse=args.reuse,
@@ -775,7 +780,10 @@ def run_local_mode(args):
                     upsert_dataset_status(
                         run_dir=pred_root,
                         model_name=model_name,
-                        dataset_name=dataset_name,
+                        dataset_name=dataset_alias_name,
+                        resolved_dataset_name=dataset_name,
+                        dataset_alias_name=dataset_alias_name,
+                        dataset_class_name=dataset_class_name,
                         source_run=reuse_ctx['source_eval_id'],
                         judge_model=judge_model,
                         reuse_aux=args.reuse_aux,
@@ -803,7 +811,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='done',
                             skip_reason=skip_reason,
                         )
@@ -817,7 +826,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='infer',
                         )
                     # Perform the Inference
@@ -828,6 +838,8 @@ def run_local_mode(args):
                             model_name=model_name,
                             dataset=dataset,
                             result_file=result_file,
+                            dataset_name=dataset_name,
+                            dataset_alias_name=dataset_alias_name,
                             verbose=args.verbose,
                             api_nproc=args.api_nproc,
                             use_vllm=args.use_vllm,
@@ -838,6 +850,9 @@ def run_local_mode(args):
                             work_dir=pred_root,
                             model_name=model_name,
                             dataset=dataset,
+                            result_file=result_file,
+                            dataset_name=dataset_name,
+                            dataset_alias_name=dataset_alias_name,
                             verbose=args.verbose,
                             api_nproc=args.api_nproc,
                             retry_failed=not args.keep_failed,
@@ -848,6 +863,9 @@ def run_local_mode(args):
                             work_dir=pred_root,
                             model_name=model_name,
                             dataset=dataset,
+                            result_file=result_file,
+                            dataset_name=dataset_name,
+                            dataset_alias_name=dataset_alias_name,
                             verbose=args.verbose,
                             api_nproc=args.api_nproc,
                             retry_failed=not args.keep_failed,
@@ -862,7 +880,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='eval',
                         )
                     # Prepare Submission Files for MMMU_TEST AND MMT-Bench_ALL
@@ -873,7 +892,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='done',
                             skip_reason='official_submission_only_mmmu_test',
                         )
@@ -886,7 +906,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='done',
                             skip_reason='official_submission_only_mmt_bench',
                         )
@@ -897,7 +918,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='done',
                             skip_reason='mode_infer',
                         )
@@ -909,7 +931,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='done',
                             skip_reason='evaluation_not_supported_for_dataset',
                         )
@@ -920,7 +943,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='done',
                             skip_reason='external_submission_required',
                         )
@@ -931,7 +955,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='done',
                             skip_reason='test_split_without_ground_truth',
                         )
@@ -945,7 +970,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='done',
                             skip_reason='mmbench_evaluation_requires_official_server',
                         )
@@ -974,7 +1000,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='done',
                             metrics_source=summary_eval_results,
                             dataset_obj=dataset,
@@ -983,7 +1010,8 @@ def run_local_mode(args):
                         upsert_dataset_status(
                             run_dir=pred_root,
                             model_name=model_name,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
                             status='done',
                             skip_reason='evaluate_returned_none',
                         )
@@ -996,7 +1024,7 @@ def run_local_mode(args):
                     files = [
                         path for path in pred_root.iterdir()
                         if path.is_file() and (
-                            f'{model_name}_{dataset_name}' in path.name or path.name == 'status.json'
+                            f'{model_name}_{dataset_alias_name}' in path.name or path.name == 'status.json'
                         )
                     ]
                     # Exclude temporary intermediate files
@@ -1014,13 +1042,17 @@ def run_local_mode(args):
                         link_addr.symlink_to(rel_target)
 
             except Exception as e:
-                logger.exception(f'Model {model_name} x Dataset {dataset_name} combination failed: {e}, '
-                                 'skipping this combination.')
+                logger.exception(
+                    f'Model {model_name} x Dataset {dataset_alias_name} ({dataset_name}) combination failed: {e}, '
+                    'skipping this combination.')
                 if RANK == 0:
                     upsert_dataset_status(
                         run_dir=pred_root,
                         model_name=model_name,
-                        dataset_name=dataset_name,
+                        dataset_name=dataset_alias_name,
+                        resolved_dataset_name=dataset_name,
+                        dataset_alias_name=dataset_alias_name,
+                        dataset_class_name=dataset_class_name,
                         status='done',
                         error_message=str(e),
                     )
@@ -1089,8 +1121,9 @@ def run_api_mode(args):
 
     # Build model args (shared across all datasets)
     if args.base_url is not None:
+        api_model_class = get_api_model_class(args.model_class)
         model_args = build_model_from_base_url(args)
-        model_builder = partial(LMDeployAPI, **model_args)
+        model_builder = partial(api_model_class, **model_args)
     else:
         assert model_name in supported_VLM, \
             f'Model "{model_name}" not found in supported_VLM. Consider using --base-url to specify an API endpoint.'
@@ -1115,12 +1148,20 @@ def run_api_mode(args):
     # Prepare all datasets
     dataset_configs: List[DatasetConfig] = []
 
-    for ds_name in args.data:
-        logger.info(f'-------------------- {ds_name} --------------------')
+    for data_entry_name in args.data:
+        spec = resolve_dataset_spec(data_entry_name, args.data_config)
+        ds_name = spec.dataset_name
+        dataset_alias_name = spec.dataset_alias_name
+        dataset_class_name = spec.dataset_class_name
+        if dataset_alias_name == ds_name:
+            logger.info(f'-------------------- {ds_name} --------------------')
+        else:
+            logger.info(f'-------------------- {dataset_alias_name} ({ds_name}) --------------------')
 
         try:
-            dataset_kwargs = get_dataset_build_kwargs(ds_name, model_name, args.data_config)
-            dataset = build_dataset_from_cli(ds_name, args.data_config, dataset_kwargs)
+            dataset_kwargs = get_dataset_build_kwargs(ds_name, model_name)
+            dataset = build_dataset_from_spec(spec, extra_kwargs=dataset_kwargs)
+            dataset_class_name = get_effective_dataset_class_name(spec, dataset)
 
             if dataset is None:
                 logger.error(f'Dataset {ds_name} is not valid, will be skipped.')
@@ -1128,7 +1169,7 @@ def run_api_mode(args):
 
             # Prepare the result file.
             result_file = get_pred_file_path(
-                pred_root, model_name, ds_name, use_env_format=True)
+                pred_root, model_name, dataset_alias_name, use_env_format=True)
 
             # Skip special datasets.
             if ds_name in ['MMMU_TEST']:
@@ -1138,8 +1179,7 @@ def run_api_mode(args):
                 logger.info(f'{ds_name} requires special handling, skipped in pipeline.')
                 continue
 
-            judge_dataset_name = get_judge_dataset_name(ds_name, args.data_config)
-            judge_kwargs = get_judge_kwargs(judge_dataset_name, dataset.TYPE, args)
+            judge_kwargs = get_judge_kwargs(args, dataset=dataset)
             judge_model = judge_kwargs.get('model', '')
             logger.info(f'Judge kwargs: {judge_kwargs}')
 
@@ -1147,7 +1187,7 @@ def run_api_mode(args):
                 pred_root_meta=str(work_dir),
                 eval_id=eval_id,
                 model_name=model_name,
-                dataset_name=ds_name,
+                dataset_name=dataset_alias_name,
                 dataset=dataset,
                 result_file=result_file,
                 reuse=args.reuse,
@@ -1159,7 +1199,10 @@ def run_api_mode(args):
             upsert_dataset_status(
                 run_dir=pred_root,
                 model_name=model_name,
-                dataset_name=ds_name,
+                dataset_name=dataset_alias_name,
+                resolved_dataset_name=ds_name,
+                dataset_alias_name=dataset_alias_name,
+                dataset_class_name=dataset_class_name,
                 prediction_file=result_file,
                 source_run=reuse_ctx['source_eval_id'],
                 judge_model=judge_model,
@@ -1178,13 +1221,16 @@ def run_api_mode(args):
                     upsert_dataset_status(
                         run_dir=pred_root,
                         model_name=model_name,
-                        dataset_name=ds_name,
+                        dataset_name=dataset_alias_name,
+                        resolved_dataset_name=ds_name,
+                        dataset_alias_name=dataset_alias_name,
+                        dataset_class_name=dataset_class_name,
                         status='done',
                         skip_reason=skip_reason,
                     )
                 except Exception as summary_err:
                     logger.warning(
-                        f'Failed to update status.json for {model_name} x {ds_name}: {summary_err}'
+                        f'Failed to update status.json for {model_name} x {dataset_alias_name}: {summary_err}'
                     )
                 continue
 
@@ -1197,6 +1243,8 @@ def run_api_mode(args):
                 dataset_type = 'image'
             dataset_config = DatasetConfig(
                 dataset_name=ds_name,
+                dataset_alias_name=dataset_alias_name,
+                dataset_class_name=dataset_class_name,
                 dataset_obj=dataset,
                 dataset_type=dataset_type,
                 model_obj=model_builder(),
@@ -1209,7 +1257,7 @@ def run_api_mode(args):
             dataset_configs.append(dataset_config)
 
         except Exception as e:
-            logger.exception(f'Failed to prepare dataset {ds_name}: {e}')
+            logger.exception(f'Failed to prepare dataset {dataset_alias_name} ({ds_name}): {e}')
             continue
 
     # Create and run pipeline

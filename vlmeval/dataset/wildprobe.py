@@ -205,7 +205,7 @@ def _parse_judge_reason(response):
 class WildprobeDataset(ImageBaseDataset):
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DEFAULT_JUDGE = 'gpt-5.2'
+    DEFAULT_JUDGE_MODEL = 'gpt-5.2'
     DATASET_URL = {
         'wildprobe_multiimg_reasoning': 'WILDPROBE_MULTIIMG_REASONING_DATA_PATH',
     }
@@ -283,7 +283,7 @@ class WildprobeDataset(ImageBaseDataset):
         data['prediction'] = [str(x) if pd.notna(x) else '' for x in data['prediction']]
         data['answer'] = [str(x) if pd.notna(x) else '' for x in data['answer']]
 
-        judge_model = judge_kwargs.pop('model', self.DEFAULT_JUDGE)
+        judge_model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         safe_model = _safe_model_name(judge_model)
         storage = get_intermediate_file_path(eval_file, f'_{safe_model}_reason_judge')
         tmp_file = get_intermediate_file_path(eval_file, f'_{safe_model}_reason_judge_tmp', 'pkl')

@@ -11,9 +11,9 @@ from PIL import Image
 
 from vlmeval.smp import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
                          load, md5, modelscope_flag_set)
-from ..utils.cgbench import post_process, unzip_hf_zip
+from ..utils.cgbench import unzip_hf_zip
 from ..video_base import VideoBaseDataset
-from .utils import get_timestampes, rating_func
+from .utils import get_timestampes, post_process, rating_func
 
 
 class CGAVCounting(VideoBaseDataset):
@@ -318,7 +318,7 @@ class CGAVCounting(VideoBaseDataset):
         vid_fps = vid.get_avg_fps()
         n_frames = len(vid)
 
-        if num_frames > 0 and fps < 0:
+        if num_frames > 0 and fps <= 0:
             step_size = len(vid) / (num_frames + 1)
             indices = [int(i * step_size) for i in range(1, num_frames + 1)]
 
