@@ -1,10 +1,8 @@
 import unittest
 
-from vlmeval.dataset.utils.ccocr_evaluator.doc_parsing_evaluator import (
-    CustomConfig,
-    ParsingEvaluator,
-    TableTree,
-)
+from vlmeval.dataset.utils.ccocr_evaluator.doc_parsing_evaluator import (CustomConfig,
+                                                                         ParsingEvaluator,
+                                                                         TableTree)
 
 
 class TestCCOCREvaluator(unittest.TestCase):
@@ -22,7 +20,9 @@ class TestCCOCREvaluator(unittest.TestCase):
         predicted = "a" * content_length
         ground_truth = "a" * (content_length - 1) + "b"
 
-        score = ParsingEvaluator("doc_parsing").eval_doc({"sample": predicted}, {"sample": ground_truth})
+        score = ParsingEvaluator("doc_parsing").eval_doc(
+            {"sample": predicted}, {"sample": ground_truth}
+        )
 
         self.assertAlmostEqual(score, 1 - 1 / content_length)
 
