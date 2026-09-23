@@ -70,6 +70,7 @@ class ActiveVisionDataset(ImageBaseDataset):
     DATASET_URL = {'ActiveVision': ''}
     DATASET_MD5 = {}
     HF_REPO = 'activevisionai/ActiveVision'
+    force_use_dataset_prompt = True
 
     def load_data(self, dataset):
         data_root = LMUDataRoot()
