@@ -1,7 +1,7 @@
 import re
 from collections import deque
 
-import nltk
+import editdistance
 from apted import APTED, Config
 from apted.helpers import Tree
 from tqdm import tqdm
@@ -67,7 +67,9 @@ class CustomConfig(Config):
             return 1.0
         if node1.tag == "td":
             if node1.content or node2.content:
-                return nltk.edit_distance(node1.content, node2.content) / max(len(node1.content), len(node2.content))
+                return editdistance.eval(node1.content, node2.content) / max(
+                    len(node1.content), len(node2.content)
+                )
         return 0.0
 
 
@@ -100,7 +102,6 @@ class TEDS(object):
 
     def load_html_tree(self, node, parent=None):
         """Converts HTML tree to the format required by apted"""
-        global __tokens__
         if node.tag == "td":
             if self.structure_only:
                 cell = []
@@ -197,7 +198,7 @@ class ParsingEvaluator(BaseMetric):
             pred = pred.replace(' ', '').replace('\n', '')
             gt = gt.replace(' ', '').replace('\n', '')
 
-            edit_dist = nltk.edit_distance(pred, gt) / max(len(pred), len(gt))
+            edit_dist = editdistance.eval(pred, gt) / max(len(pred), len(gt))
             results.append(1 - edit_dist)
 
         score = sum(results) / len(results)
@@ -244,9 +245,14 @@ class ParsingEvaluator(BaseMetric):
                 pred = pred.replace("\n", " ").replace("```latex", "").replace("```", "").replace("\t", " ").replace(" ", "")  # noqa: E501
                 gt = gt.replace(" ", "")
             elif op_name == 'molecular':
-                pred = pred.replace("\n", "").replace(" ", "").replace("<smiles>", "").replace("</smiles>", "")
+                pred = (
+                    pred.replace("\n", "")
+                    .replace(" ", "")
+                    .replace("<smiles>", "")
+                    .replace("</smiles>", "")
+                )
                 gt = gt.replace(" ", "")
-            edit_dist = nltk.edit_distance(pred, gt) / max(len(pred), len(gt))
+            edit_dist = editdistance.eval(pred, gt) / max(len(pred), len(gt))
             results.append(1 - edit_dist)
         score = sum(results) / len(results)
         return score
