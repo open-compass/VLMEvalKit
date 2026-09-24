@@ -62,3 +62,13 @@ def test_parse_file_keeps_unknown_for_non_image(tmp_path):
     file_path.write_text('not an image')
 
     assert module.parse_file(str(file_path)) == ('unknown', str(file_path))
+
+
+def test_parse_file_keeps_unknown_when_pillow_rejects_image(tmp_path):
+    module = _load_file_module()
+    image_path = tmp_path / 'extensionless-image'
+    image_path.write_bytes(b'image')
+
+    error = Image.DecompressionBombError('image exceeds Pillow safety limit')
+    with mock.patch.object(Image, 'open', side_effect=error):
+        assert module.parse_file(str(image_path)) == ('unknown', str(image_path))

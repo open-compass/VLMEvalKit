@@ -399,7 +399,7 @@ def _mime_from_pillow(path):
     try:
         with Image.open(path) as image:
             return Image.MIME.get(image.format, 'unknown')
-    except (OSError, ValueError):
+    except Exception:
         return 'unknown'
 
 
