@@ -1,6 +1,6 @@
 import re
 
-import tqdm
+from import trange
 
 from vlmeval.smp import dump, get_intermediate_file_path, load
 from .image_base import ImageBaseDataset
@@ -53,7 +53,7 @@ class Spatial457(ImageBaseDataset):
             "L5_collision_correct": 0,
         }
 
-        for i in tqdm(range(len(lines))):
+        for i in trange(len(lines)):
 
             line = lines[i]
             index = int(line["index"])
