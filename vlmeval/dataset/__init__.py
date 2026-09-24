@@ -7,6 +7,7 @@ import pandas as pd
 
 from vlmeval.smp import (LMUDataRoot, dump, get_composite_child_eval_file,
                          get_intermediate_file_path, load, localize_df, read_ok, toliststr)
+from .activevision import ActiveVisionDataset
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
 from .babyvision import BabyVision
@@ -330,7 +331,7 @@ IMAGE_DATASET = [
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
-    PerceptionBench, SUPERChemDataset, C4Bench,
+    PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset,
 ]
 
 # add by EASI team
