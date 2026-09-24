@@ -137,7 +137,7 @@ class ActiveVisionDataset(ImageBaseDataset):
         data['extracted'] = preds
         data['hit'] = hits
 
-        storage = get_intermediate_file_path(eval_file, '_score', 'xlsx')
+        storage = get_intermediate_file_path(eval_file, '_score')
         detail = data.copy()
         if 'image' in detail:
             detail = detail.drop(columns=['image'])
