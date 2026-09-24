@@ -182,6 +182,8 @@ class DoubaoVLWrapper(BaseAPI):
         payload = dict(model=self.endpoint, messages=input_msgs, max_tokens=max_tokens, temperature=temperature)
         try:
             response = self.client.chat.completions.create(**payload)
+            if not response.choices or response.choices[0].message is None:
+                raise ValueError("LLM returned empty or filtered response")
             answer = response.choices[0].message.content.strip()
             ret_code = 0
         except Exception as err:
