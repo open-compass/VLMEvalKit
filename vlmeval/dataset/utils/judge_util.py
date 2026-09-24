@@ -30,6 +30,9 @@ def build_judge(**kwargs):
     from vlmeval.api import HFChatModel, OpenAIWrapper, SiliconFlowAPI
     model = kwargs.pop('model', None)
     kwargs.pop('nproc', None)
+    # eval-only flags, not API parameters
+    kwargs.pop('use_vllm', None)
+    kwargs.pop('use_verifier', None)
     load_env()
     LOCAL_LLM = os.environ.get('LOCAL_LLM', None)
     if LOCAL_LLM is None:
