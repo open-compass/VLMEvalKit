@@ -40,7 +40,6 @@ def infer_data_api(
         data = data[data['index'].isin(index_set)]
 
     model = supported_VLM[model_name]() if isinstance(model, str) else model
-    assert getattr(model, 'is_api', False)
     if hasattr(model, 'set_dump_image'):
         model.set_dump_image(dataset.dump_image)
 
@@ -152,7 +151,8 @@ def infer_data(
         os.environ['WORLD_SIZE'] = ws_bak
 
     is_api = getattr(model, 'is_api', False)
-    if is_api:
+    use_concurrent = is_api or api_nproc > 1
+    if use_concurrent:
         lt, indices = len(data), list(data['index'])
         supp = infer_data_api(
             model=model,
