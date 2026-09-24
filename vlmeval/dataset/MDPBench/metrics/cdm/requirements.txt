@@ -1,0 +1,5 @@
+gradio==4.16.0    # optional
+matplotlib
+numpy<2.0.0
+scikit-image<=0.20.0
+tqdm
