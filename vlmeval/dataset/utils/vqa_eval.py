@@ -234,7 +234,7 @@ def anls_compute(groundtruth, prediction):
     gt_answer = ' '.join(groundtruth.strip().lower().split())
     det_answer = ' '.join(prediction.strip().lower().split())
     dist = levenshtein_distance(gt_answer, det_answer)
-    length = max(len(groundtruth.upper()), len(prediction.upper()))
+    length = max(len(gt_answer), len(det_answer))
     values = 0.0 if length == 0 else float(dist) / float(length)
     return values
 
