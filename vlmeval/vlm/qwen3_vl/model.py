@@ -223,7 +223,26 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             content.append(item)
         return content
 
-    def generate_inner_transformers(self, message, dataset=None):
+    def _prepare_chat(self, message, dataset=None):
+        if not message or message[-1]['role'] != 'user':
+            raise ValueError('Qwen3-VL chat history must end with a user turn.')
+
+        messages = []
+        if self.system_prompt is not None:
+            messages.append({'role': 'system', 'content': self.system_prompt})
+        for index, turn in enumerate(message):
+            expected_role = 'user' if index % 2 == 0 else 'assistant'
+            if turn['role'] != expected_role:
+                raise ValueError('Qwen3-VL chat history must alternate user and assistant turns.')
+            if turn['role'] == 'assistant' and any(item['type'] != 'text' for item in turn['content']):
+                raise ValueError('Qwen3-VL only supports text in assistant turns.')
+            messages.append({
+                'role': turn['role'],
+                'content': self._prepare_content(turn['content'], dataset=dataset),
+            })
+        return messages
+
+    def _generate_inner_transformers(self, messages):
         is_omni = listinstr(['omni'], self.model_path.lower())
         if is_omni:
             try:
@@ -238,10 +257,6 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
                 logging.critical("Please install it via 'pip install qwen-vl-utils'")
                 raise err
 
-        messages = []
-        if self.system_prompt is not None:
-            messages.append({'role': 'system', 'content': self.system_prompt})
-        messages.append({'role': 'user', 'content': self._prepare_content(message, dataset=dataset)})
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
 
@@ -341,7 +356,17 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             print(f'\033[32m{response}\033[0m')
         return response
 
-    def generate_inner_vllm(self, message, dataset=None):
+    def generate_inner_transformers(self, message, dataset=None):
+        messages = self._prepare_chat([
+            {'role': 'user', 'content': message},
+        ], dataset=dataset)
+        return self._generate_inner_transformers(messages)
+
+    def chat_inner_transformers(self, message, dataset=None):
+        messages = self._prepare_chat(message, dataset=dataset)
+        return self._generate_inner_transformers(messages)
+
+    def _generate_inner_vllm(self, messages):
         from vllm import SamplingParams
         is_omni = listinstr(['omni'], self.model_path.lower())
         if is_omni:
@@ -357,10 +382,6 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
                 logging.critical("qwen_vl_utils not found, 'pip install qwen-vl-utils'")
                 raise err
 
-        messages = []
-        if self.system_prompt is not None:
-            messages.append({'role': 'system', 'content': self.system_prompt})
-        messages.append({'role': 'user', 'content': self._prepare_content(message, dataset=dataset)})
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
 
@@ -427,8 +448,24 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             print(f'\033[32m{generated_text}\033[0m')
         return generated_text
 
+    def generate_inner_vllm(self, message, dataset=None):
+        messages = self._prepare_chat([
+            {'role': 'user', 'content': message},
+        ], dataset=dataset)
+        return self._generate_inner_vllm(messages)
+
+    def chat_inner_vllm(self, message, dataset=None):
+        messages = self._prepare_chat(message, dataset=dataset)
+        return self._generate_inner_vllm(messages)
+
     def generate_inner(self, message, dataset=None):
         if self.use_vllm:
             return self.generate_inner_vllm(message, dataset=dataset)
         else:
             return self.generate_inner_transformers(message, dataset=dataset)
+
+    def chat_inner(self, message, dataset=None):
+        if self.use_vllm:
+            return self.chat_inner_vllm(message, dataset=dataset)
+        else:
+            return self.chat_inner_transformers(message, dataset=dataset)
