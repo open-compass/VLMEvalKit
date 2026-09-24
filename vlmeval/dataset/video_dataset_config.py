@@ -444,7 +444,13 @@ favor_bench_dataset = {
     'FAVOR-Bench_1fps': _video_spec(FavorBench, dataset='FAVOR-Bench', fps=1.0),
 }
 
+dive_bench_dataset = {
+    name: partial(DIVEBench, dataset=name, nframe=8)
+    for name in DIVEBench.supported_datasets()
+}
+
 dataset_groups = [
+    dive_bench_dataset,
     video_eval_pro_dataset,
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset,
     videommev2_dataset, videommmu_dataset,
