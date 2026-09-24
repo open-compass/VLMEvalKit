@@ -1014,18 +1014,6 @@ def eval_reasoning(judge_model, prediction, question):
 _judge_model = None
 
 
-def _env_flag(name, default=False):
-    value = os.environ.get(name)
-    if value is None:
-        return default
-    normalized = value.strip().lower()
-    if normalized in {'1', 'true', 'yes', 'on'}:
-        return True
-    if normalized in {'0', 'false', 'no', 'off'}:
-        return False
-    raise ValueError(f'{name} must be one of 1/0, true/false, yes/no, or on/off.')
-
-
 def _configure_judge_transport(judge_kwargs):
     """Use only transport options supported by upstream VLMEvalKit."""
     judge_kwargs.setdefault('temperature', 0.0)
@@ -1078,8 +1066,8 @@ def _eval_one_item(item_json):
 
     Returns (answer_score, reasoning_score, note). Formal evaluation only uses
     the final answer and leaves ``reasoning_score`` unset. The reasoning trace
-    can be audited separately by setting ``SCIDOC_EVAL_REASONING_DIAGNOSTIC=1``;
-    that diagnostic never changes the answer score.
+    can be audited separately by enabling ``enable_reasoning_diagnostic`` on
+    the dataset; that diagnostic never changes the answer score.
     """
     item = json.loads(item_json)
     prediction = str(item.get('prediction', ''))
@@ -1173,7 +1161,9 @@ class SciDocBench(ImageBaseDataset):
         'SciDocBench': '2507953151fa2cc0dbbe363ab65bc870',
     }
 
-    def __init__(self, dataset='SciDocBench', skip_noimg=True):
+    def __init__(self, dataset='SciDocBench', skip_noimg=True,
+                 enable_reasoning_diagnostic=False):
+        self.enable_reasoning_diagnostic = enable_reasoning_diagnostic
         super().__init__(dataset=dataset, skip_noimg=skip_noimg)
         self._ensure_document_images()
 
@@ -1279,19 +1269,21 @@ class SciDocBench(ImageBaseDataset):
         msgs.append(dict(type='text', value=question))
         return msgs
 
-    @classmethod
-    def evaluate(cls, eval_file, **judge_kwargs):
+    def evaluate(self, eval_file, **judge_kwargs):
         global _judge_model
 
         nproc = judge_kwargs.pop('nproc', 4)
         judge_kwargs = _configure_judge_transport(judge_kwargs)
-        model_name = judge_kwargs.get('model', cls.DEFAULT_JUDGE_MODEL)
+        model_name = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         _configure_content_cache(judge_kwargs, model_name)
+        scorer_version = SCORER_VERSION
+        if self.enable_reasoning_diagnostic:
+            scorer_version = f'{scorer_version}_reasoning_diagnostic'
 
         storage = get_intermediate_file_path(
-            eval_file, f'_{model_name}_{SCORER_VERSION}')
+            eval_file, f'_{model_name}_{scorer_version}')
         tmp_file = get_intermediate_file_path(
-            eval_file, f'_{model_name}_{SCORER_VERSION}', 'pkl')
+            eval_file, f'_{model_name}_{scorer_version}', 'pkl')
 
         if osp.exists(storage):
             logger.info(f'Scoring file {storage} already exists, will reuse.')
@@ -1300,8 +1292,6 @@ class SciDocBench(ImageBaseDataset):
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
-            enable_reasoning_diagnostic = _env_flag(
-                'SCIDOC_EVAL_REASONING_DIAGNOSTIC', default=False)
             # Qwen thinking templates inject the opening tag into the prompt,
             # so it is absent from decoded predictions. Detect that convention
             # once per inference artifact and treat rows without ``</think>``
@@ -1328,7 +1318,7 @@ class SciDocBench(ImageBaseDataset):
                 for col in data.columns:
                     item[col] = _json_safe_value(line[col])
                 item['_expect_think_end'] = expect_think_end
-                item['_enable_reasoning_diagnostic'] = enable_reasoning_diagnostic
+                item['_enable_reasoning_diagnostic'] = self.enable_reasoning_diagnostic
                 tups.append(json.dumps(item, ensure_ascii=False))
 
             # Load checkpoint and skip already-evaluated items
@@ -1476,7 +1466,7 @@ class SciDocBench(ImageBaseDataset):
 
         summary = pd.DataFrame(summary_rows)
         score_file = get_intermediate_file_path(
-            eval_file, f'_acc_{SCORER_VERSION}', 'csv')
+            eval_file, f'_acc_{scorer_version}', 'csv')
         dump(summary, score_file)
         logger.info(f'SciDocBench evaluation finished. Results saved to {score_file}')
         logger.info(f'\n{summary.to_string(index=False)}')
