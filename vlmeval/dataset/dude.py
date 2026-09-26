@@ -36,6 +36,8 @@ def DUDE_acc(result_file):
         item = data.iloc[i]
         if isinstance(item['answer'], float) and math.isnan(item['answer']):
             item['answer'] = 'Not answerable'
+        if isinstance(item['pred'], float) and math.isnan(item['pred']):
+            item['pred'] = ''
 
         item['answer'] = item['answer'].lower()
         item['pred'] = item['pred'].lower()
