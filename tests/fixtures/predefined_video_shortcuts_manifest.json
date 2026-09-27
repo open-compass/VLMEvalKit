@@ -2396,5 +2396,58 @@
     "dataset_alias_name": "revsi_all_frame",
     "dataset_class_name": "ReVSI",
     "dataset_name": "ReVSI"
+  },
+  "Video-Index_1fps": {
+    "build_config": {
+      "class": "VideoIndex",
+      "dataset": "Video-Index",
+      "fps": 1.0,
+      "max_frames": 512
+    },
+    "dataset_alias_name": "Video-Index_1fps",
+    "dataset_class_name": "VideoIndex",
+    "dataset_name": "Video-Index"
+  },
+  "Video-Index_8frame": {
+    "build_config": {
+      "class": "VideoIndex",
+      "dataset": "Video-Index",
+      "fps": -1,
+      "nframe": 8
+    },
+    "dataset_alias_name": "Video-Index_8frame",
+    "dataset_class_name": "VideoIndex",
+    "dataset_name": "Video-Index"
+  },
+  "Video-Index_32frame": {
+    "build_config": {
+      "class": "VideoIndex",
+      "dataset": "Video-Index",
+      "fps": -1,
+      "nframe": 32
+    },
+    "dataset_alias_name": "Video-Index_32frame",
+    "dataset_class_name": "VideoIndex",
+    "dataset_name": "Video-Index"
+  },
+  "Video-Index_64frame": {
+    "build_config": {
+      "class": "VideoIndex",
+      "dataset": "Video-Index",
+      "fps": -1,
+      "nframe": 64
+    },
+    "dataset_alias_name": "Video-Index_64frame",
+    "dataset_class_name": "VideoIndex",
+    "dataset_name": "Video-Index"
+  },
+  "Video-Index_Blind": {
+    "build_config": {
+      "class": "VideoIndex",
+      "dataset": "Video-Index_Blind"
+    },
+    "dataset_alias_name": "Video-Index_Blind",
+    "dataset_class_name": "VideoIndex",
+    "dataset_name": "Video-Index_Blind"
   }
 }
