@@ -39,8 +39,8 @@ class VideoIndex(VideoBaseDataset):
 
     TYPE = 'Video-MCQ'
     DEFAULT_JUDGE_MODEL = None
-    HF_REPO_ID = 'GMLRVigil/Video-Index'
-    ITEMS_FILENAME = 'items/meta_benchmark.jsonl'
+    HF_REPO_ID = 'Video-Index/Video-Index'
+    ITEMS_FILENAME = 'items/test.jsonl'
     N_ITEMS = 840
 
     @classmethod
