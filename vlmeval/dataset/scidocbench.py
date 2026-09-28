@@ -909,7 +909,7 @@ def _prepare_judge_template(judge_prompt):
     return f'{SCIDOC_JUDGE_POLICY}\n\nTask-specific rubric:\n{template}'
 
 
-def _cached_judge_generate(judge_model, message):
+def _cached_judge_generate(judge_model, message, response_validator=None):
     if not _judge_cache_path:
         return judge_model.generate(message, temperature=0)
     cache_key = hashlib.sha256(
@@ -928,7 +928,8 @@ def _cached_judge_generate(judge_model, message):
 
     try:
         cached = lookup()
-        if cached is not None:
+        if (cached is not None
+                and (response_validator is None or response_validator(cached))):
             return cached
     except sqlite3.Error as error:
         logger.warning('SciDocBench judge cache read failed: %s', error)
@@ -943,12 +944,16 @@ def _cached_judge_generate(judge_model, message):
         try:
             try:
                 cached = lookup()
-                if cached is not None:
+                if (cached is not None
+                        and (response_validator is None
+                             or response_validator(cached))):
                     return cached
             except sqlite3.Error as error:
                 logger.warning('SciDocBench judge cache recheck failed: %s', error)
 
             response = judge_model.generate(message, temperature=0)
+            if response_validator is not None and not response_validator(response):
+                return response
             try:
                 with sqlite3.connect(_judge_cache_path, timeout=60) as connection:
                     connection.execute(
@@ -968,7 +973,12 @@ def _cached_judge_generate(judge_model, message):
 def eval_judge(judge_model, prediction, answer, prompt, judge_prompt=None):
     template = _prepare_judge_template(judge_prompt)
     message = template.format(prompt=prompt, answer=answer, prediction=prediction)
-    raw = _cached_judge_generate(judge_model, message)
+    raw = _cached_judge_generate(
+        judge_model,
+        message,
+        response_validator=lambda response: not _parse_judge_response(
+            response)[1].startswith('Failed to parse valid judge response:'),
+    )
     return _parse_judge_response(raw)
 
 
@@ -1006,7 +1016,12 @@ def _parse_reasoning_response(raw: str) -> tuple:
 def eval_reasoning(judge_model, prediction, question):
     message = SCIDOC_REASONING_CHECK_PROMPT.format(
         prompt=question, prediction=prediction)
-    raw = _cached_judge_generate(judge_model, message)
+    raw = _cached_judge_generate(
+        judge_model,
+        message,
+        response_validator=lambda response: not _parse_reasoning_response(
+            response)[1].startswith('Failed to parse reasoning response:'),
+    )
     return _parse_reasoning_response(raw)
 
 
@@ -1059,6 +1074,43 @@ def _parse_field(raw, fallback):
     return raw if isinstance(raw, dict) else fallback
 
 
+INFERENCE_FAILURE_NOTE = 'API failure after configured retries; scored as zero.'
+ANSWER_EVAL_FAILURE_MARKERS = (
+    INFERENCE_FAILURE_NOTE,
+    'Eval error:',
+    'Failed to parse valid judge response:',
+    'Not evaluated',
+    'Unknown eval_method:',
+)
+REASONING_EVAL_FAILURE_MARKERS = (
+    INFERENCE_FAILURE_NOTE,
+    'Reasoning eval error:',
+    'Failed to parse reasoning response:',
+    'Reasoning diagnostic is not enabled for this question.',
+)
+
+
+def _cache_result_is_reusable(result, failure_markers):
+    """Check only whether a current-format result note marks an eval failure."""
+    if not isinstance(result, (list, tuple)) or len(result) != 2:
+        return False
+    note = result[1]
+    return not any(marker in str(note) for marker in failure_markers)
+
+
+def _scored_result_is_reusable(result_df, include_reasoning):
+    """Check whether a completed per-sample result has no evaluator failures."""
+    if not isinstance(result_df, pd.DataFrame) or 'eval_note' not in result_df:
+        return False
+    failure_markers = ANSWER_EVAL_FAILURE_MARKERS
+    if include_reasoning:
+        failure_markers += REASONING_EVAL_FAILURE_MARKERS
+    for note in result_df['eval_note']:
+        if any(marker in str(note) for marker in failure_markers):
+            return False
+    return True
+
+
 def _eval_one_item(judge_model, item_json):
     """Evaluate the final answer for one sample."""
     item = json.loads(item_json)
@@ -1076,7 +1128,7 @@ def _eval_one_item(judge_model, item_json):
     # persistent API failures cannot consume judge requests or be mistaken for
     # a substantive response.
     if 'Failed to obtain answer via API' in prediction:
-        return 0.0, 'API failure after configured retries; scored as zero.'
+        return 0.0, INFERENCE_FAILURE_NOTE
 
     answer = _parse_field(item.get('answer', '{}'), item.get('answer', ''))
 
@@ -1125,7 +1177,7 @@ def _eval_one_reasoning(judge_model, item_json):
 
     prediction = str(item.get('prediction', ''))
     if 'Failed to obtain answer via API' in prediction:
-        return 0.0, 'API failure after configured retries; scored as zero.'
+        return 0.0, INFERENCE_FAILURE_NOTE
 
     try:
         return eval_reasoning(
@@ -1283,9 +1335,19 @@ class SciDocBench(ImageBaseDataset):
         reasoning_tmp_file = get_intermediate_file_path(
             eval_file, f'_{model_name}_{REASONING_DIAGNOSTIC_VERSION}', 'pkl')
 
+        reuse_storage = False
         if osp.exists(storage):
-            logger.info(f'Scoring file {storage} already exists, will reuse.')
-        else:
+            result_df = load(storage)
+            reuse_storage = _scored_result_is_reusable(
+                result_df, self.enable_reasoning_diagnostic)
+            if reuse_storage:
+                logger.info(f'Scoring file {storage} already exists, will reuse.')
+            else:
+                logger.warning(
+                    f'Scoring file {storage} contains failed evaluations; '
+                    'invalid cases will be retried.')
+
+        if not reuse_storage:
             data = load(eval_file)
 
             lt = len(data)
@@ -1324,11 +1386,29 @@ class SciDocBench(ImageBaseDataset):
             ans = {}
             if osp.exists(answer_tmp_file):
                 ans = load(answer_tmp_file)
+                if not isinstance(ans, dict):
+                    logger.warning(
+                        f'Ignoring malformed answer cache {answer_tmp_file}.')
+                    ans = {}
+                reusable_count = sum(
+                    _cache_result_is_reusable(
+                        value, ANSWER_EVAL_FAILURE_MARKERS)
+                    for value in ans.values()
+                )
                 logger.info(
-                    f'Loaded {len(ans)} cached answer results from {answer_tmp_file}')
+                    f'Loaded {reusable_count}/{len(ans)} reusable answer results '
+                    f'from {answer_tmp_file}')
 
-            remaining_tups = [x for x, i in zip(tups, indices) if i not in ans]
-            remaining_indices = [i for i in indices if i not in ans]
+            remaining_tups = [
+                item_json for item_json, sid in zip(tups, indices)
+                if not _cache_result_is_reusable(
+                    ans.get(sid), ANSWER_EVAL_FAILURE_MARKERS)
+            ]
+            remaining_indices = [
+                sid for sid in indices
+                if not _cache_result_is_reusable(
+                    ans.get(sid), ANSWER_EVAL_FAILURE_MARKERS)
+            ]
 
             if len(remaining_indices):
                 answer_tasks = [
@@ -1349,15 +1429,28 @@ class SciDocBench(ImageBaseDataset):
             if self.enable_reasoning_diagnostic:
                 if osp.exists(reasoning_tmp_file):
                     reasoning_ans = load(reasoning_tmp_file)
+                    if not isinstance(reasoning_ans, dict):
+                        logger.warning(
+                            f'Ignoring malformed reasoning cache '
+                            f'{reasoning_tmp_file}.')
+                        reasoning_ans = {}
+                    reusable_count = sum(
+                        _cache_result_is_reusable(
+                            value, REASONING_EVAL_FAILURE_MARKERS)
+                        for value in reasoning_ans.values()
+                    )
                     logger.info(
-                        f'Loaded {len(reasoning_ans)} cached reasoning results '
+                        f'Loaded {reusable_count}/{len(reasoning_ans)} reusable '
+                        'reasoning results '
                         f'from {reasoning_tmp_file}')
 
                 reasoning_tups = []
                 reasoning_indices = []
                 for item_json, line, sid in zip(tups, lines, indices):
                     if (_pair_qid(line) in REASONING_QIDS
-                            and sid not in reasoning_ans):
+                            and not _cache_result_is_reusable(
+                                reasoning_ans.get(sid),
+                                REASONING_EVAL_FAILURE_MARKERS)):
                         reasoning_tups.append(item_json)
                         reasoning_indices.append(sid)
 
@@ -1376,32 +1469,29 @@ class SciDocBench(ImageBaseDataset):
                     for k, v in zip(reasoning_indices, new_results):
                         reasoning_ans[k] = v
 
-            # Build result rows in original order. Tolerate legacy 3-tuples
-            # from caches created before answer and reasoning evaluation were
-            # separated.
+            # Build result rows in original order.
             results = []
             for line in lines:
                 sid = str(line['index'])
                 cached = ans.get(sid)
-                if cached is None:
-                    answer_score, note = 0.0, 'Not evaluated'
-                elif len(cached) == 3:
-                    answer_score, _, note = cached
+                if not _cache_result_is_reusable(
+                        cached, ANSWER_EVAL_FAILURE_MARKERS):
+                    answer_score, note = 0.0, 'Not evaluated after retry'
                 else:
                     answer_score, note = cached
 
                 reasoning_score = None
                 reasoning_cached = reasoning_ans.get(sid)
-                if reasoning_cached is not None:
+                if _cache_result_is_reusable(
+                        reasoning_cached, REASONING_EVAL_FAILURE_MARKERS):
                     reasoning_score, reasoning_note = reasoning_cached
-                    if reasoning_score is None:
-                        score_text = 'not evaluated'
-                    else:
-                        score_text = f'{reasoning_score:.2f}'
                     note = (
-                        f'answer={answer_score:.2f}, reasoning={score_text}; '
+                        f'answer={answer_score:.2f}, reasoning={reasoning_score:.2f}; '
                         f'{note}; reasoning: {reasoning_note}'
                     )
+                elif (self.enable_reasoning_diagnostic
+                      and _pair_qid(line) in REASONING_QIDS):
+                    note = f'{note}; reasoning: Not evaluated after retry'
                 results.append({
                     'index': sid,
                     'qid': line.get('qid', ''),
@@ -1417,10 +1507,13 @@ class SciDocBench(ImageBaseDataset):
                 })
 
             result_df = pd.DataFrame(results)
-            dump(result_df, storage)
-
-        # Load from storage and aggregate
-        result_df = load(storage)
+            if _scored_result_is_reusable(
+                    result_df, self.enable_reasoning_diagnostic):
+                dump(result_df, storage)
+            else:
+                logger.warning(
+                    'SciDocBench evaluation still contains failed cases after '
+                    'retry; the scoring file will not be cached.')
 
         def _mean_pct(series):
             vals = series.dropna()
