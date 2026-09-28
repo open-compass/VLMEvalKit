@@ -1474,21 +1474,24 @@ class SciDocBench(ImageBaseDataset):
             for line in lines:
                 sid = str(line['index'])
                 cached = ans.get(sid)
-                if not _cache_result_is_reusable(
-                        cached, ANSWER_EVAL_FAILURE_MARKERS):
-                    answer_score, note = 0.0, 'Not evaluated after retry'
-                else:
+                if isinstance(cached, (list, tuple)) and len(cached) == 2:
                     answer_score, note = cached
+                else:
+                    answer_score, note = 0.0, 'Not evaluated after retry'
 
                 reasoning_score = None
                 reasoning_cached = reasoning_ans.get(sid)
-                if _cache_result_is_reusable(
-                        reasoning_cached, REASONING_EVAL_FAILURE_MARKERS):
+                if (isinstance(reasoning_cached, (list, tuple))
+                        and len(reasoning_cached) == 2):
                     reasoning_score, reasoning_note = reasoning_cached
-                    note = (
-                        f'answer={answer_score:.2f}, reasoning={reasoning_score:.2f}; '
-                        f'{note}; reasoning: {reasoning_note}'
-                    )
+                    if reasoning_score is None:
+                        note = f'{note}; reasoning: {reasoning_note}'
+                    else:
+                        note = (
+                            f'answer={answer_score:.2f}, '
+                            f'reasoning={reasoning_score:.2f}; '
+                            f'{note}; reasoning: {reasoning_note}'
+                        )
                 elif (self.enable_reasoning_diagnostic
                       and _pair_qid(line) in REASONING_QIDS):
                     note = f'{note}; reasoning: Not evaluated after retry'
@@ -1507,13 +1510,7 @@ class SciDocBench(ImageBaseDataset):
                 })
 
             result_df = pd.DataFrame(results)
-            if _scored_result_is_reusable(
-                    result_df, self.enable_reasoning_diagnostic):
-                dump(result_df, storage)
-            else:
-                logger.warning(
-                    'SciDocBench evaluation still contains failed cases after '
-                    'retry; the scoring file will not be cached.')
+            dump(result_df, storage)
 
         def _mean_pct(series):
             vals = series.dropna()
