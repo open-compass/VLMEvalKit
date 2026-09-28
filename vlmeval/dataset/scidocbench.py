@@ -1,21 +1,14 @@
 import base64
-import hashlib
 import json
 import os
 import os.path as osp
 import re
-import sqlite3
 import subprocess
 import sys
 import tempfile
 
 import pandas as pd
 from huggingface_hub import snapshot_download
-
-try:
-    import fcntl
-except ImportError:  # pragma: no cover - Windows fallback
-    fcntl = None
 
 from vlmeval.smp import (LMUDataRoot, decode_base64_to_image_file, dump,
                          get_intermediate_file_path, get_logger, load, read_ok, toliststr)
@@ -41,9 +34,6 @@ REASONING_QIDS = {
 
 SCORER_VERSION = 'rules_v5_final_answer_only'
 REASONING_DIAGNOSTIC_VERSION = 'reasoning_diagnostic_v1'
-# Rule-only fixes do not invalidate deterministic LLM-judge responses. Keep the
-# judge cache namespace stable until the judge prompt or transport changes.
-JUDGE_CACHE_VERSION = 'final_answer_v1'
 
 # Only tasks whose question and reference define a closed, mechanical contract
 # are routed to Python. Every unlisted task, including unreviewed json_match
@@ -789,7 +779,7 @@ def eval_exec_match(prediction: str, answer: dict) -> tuple:
     except subprocess.TimeoutExpired:
         return 0.0, "Execution timed out (>30s)"
     except Exception as e:
-        return 0.0, f"Eval error: {e}"
+        return 0.0, f"SciDocBench answer evaluation error: {e}"
     finally:
         for p in (ref_out, pred_out, embedded_input_path):
             if not p:
@@ -894,10 +884,6 @@ Respond with a JSON object only, no extra text:
 "reasoning_note": "<brief explanation, no newlines>"}}"""
 
 
-_judge_cache_path = None
-_judge_cache_namespace = JUDGE_CACHE_VERSION
-
-
 def _prepare_judge_template(judge_prompt):
     template = judge_prompt if judge_prompt else SCIDOC_JUDGE_PROMPT
     template = re.sub(
@@ -909,76 +895,10 @@ def _prepare_judge_template(judge_prompt):
     return f'{SCIDOC_JUDGE_POLICY}\n\nTask-specific rubric:\n{template}'
 
 
-def _cached_judge_generate(judge_model, message, response_validator=None):
-    if not _judge_cache_path:
-        return judge_model.generate(message, temperature=0)
-    cache_key = hashlib.sha256(
-        f'{_judge_cache_namespace}\0{message}'.encode('utf-8')).hexdigest()
-
-    def lookup():
-        with sqlite3.connect(_judge_cache_path, timeout=60) as connection:
-            connection.execute(
-                'CREATE TABLE IF NOT EXISTS judge_cache '
-                '(cache_key TEXT PRIMARY KEY, response TEXT NOT NULL)')
-            row = connection.execute(
-                'SELECT response FROM judge_cache WHERE cache_key = ?',
-                (cache_key,),
-            ).fetchone()
-            return row[0] if row is not None else None
-
-    try:
-        cached = lookup()
-        if (cached is not None
-                and (response_validator is None or response_validator(cached))):
-            return cached
-    except sqlite3.Error as error:
-        logger.warning('SciDocBench judge cache read failed: %s', error)
-
-    lock_dir = f'{_judge_cache_path}.locks'
-    if fcntl is None:
-        response = judge_model.generate(message, temperature=0)
-        return response
-    os.makedirs(lock_dir, exist_ok=True)
-    with open(osp.join(lock_dir, f'{cache_key}.lock'), 'a', encoding='utf-8') as lock_file:
-        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
-        try:
-            try:
-                cached = lookup()
-                if (cached is not None
-                        and (response_validator is None
-                             or response_validator(cached))):
-                    return cached
-            except sqlite3.Error as error:
-                logger.warning('SciDocBench judge cache recheck failed: %s', error)
-
-            response = judge_model.generate(message, temperature=0)
-            if response_validator is not None and not response_validator(response):
-                return response
-            try:
-                with sqlite3.connect(_judge_cache_path, timeout=60) as connection:
-                    connection.execute(
-                        'CREATE TABLE IF NOT EXISTS judge_cache '
-                        '(cache_key TEXT PRIMARY KEY, response TEXT NOT NULL)')
-                    connection.execute(
-                        'INSERT OR REPLACE INTO judge_cache(cache_key, response) VALUES (?, ?)',
-                        (cache_key, response),
-                    )
-            except sqlite3.Error as error:
-                logger.warning('SciDocBench judge cache write failed: %s', error)
-            return response
-        finally:
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
-
-
 def eval_judge(judge_model, prediction, answer, prompt, judge_prompt=None):
     template = _prepare_judge_template(judge_prompt)
     message = template.format(prompt=prompt, answer=answer, prediction=prediction)
-    raw = _cached_judge_generate(
-        judge_model,
-        message,
-        response_validator=lambda response: not _parse_judge_response(
-            response)[1].startswith('Failed to parse valid judge response:'),
-    )
+    raw = judge_model.generate(message)
     return _parse_judge_response(raw)
 
 
@@ -989,9 +909,12 @@ def _parse_reasoning_response(raw: str) -> tuple:
         nh = obj.get("no_hallucination")
         if ic is None or nh is None:
             return None
-        score = (float(ic) + float(nh)) / 2.0
+        ic, nh = float(ic), float(nh)
+        if not (0.0 <= ic <= 1.0 and 0.0 <= nh <= 1.0):
+            return None
+        score = (ic + nh) / 2.0
         note = obj.get("reasoning_note", "")
-        return score, f"ic={float(ic):.2f}, nh={float(nh):.2f}; {note}"
+        return score, f"ic={ic:.2f}, nh={nh:.2f}; {note}"
 
     try:
         result = _extract(json.loads(raw))
@@ -1009,19 +932,15 @@ def _parse_reasoning_response(raw: str) -> tuple:
     nh_m = re.search(r'"no_hallucination"\s*:\s*([0-9.]+)', raw)
     if ic_m and nh_m:
         ic, nh = float(ic_m.group(1)), float(nh_m.group(1))
-        return (ic + nh) / 2.0, f"[regex] ic={ic:.2f}, nh={nh:.2f}"
+        if 0.0 <= ic <= 1.0 and 0.0 <= nh <= 1.0:
+            return (ic + nh) / 2.0, f"[regex] ic={ic:.2f}, nh={nh:.2f}"
     return 0.0, f"Failed to parse reasoning response: {raw}"
 
 
 def eval_reasoning(judge_model, prediction, question):
     message = SCIDOC_REASONING_CHECK_PROMPT.format(
         prompt=question, prediction=prediction)
-    raw = _cached_judge_generate(
-        judge_model,
-        message,
-        response_validator=lambda response: not _parse_reasoning_response(
-            response)[1].startswith('Failed to parse reasoning response:'),
-    )
+    raw = judge_model.generate(message)
     return _parse_reasoning_response(raw)
 
 
@@ -1032,27 +951,6 @@ def _configure_judge_transport(judge_kwargs):
     judge_kwargs.setdefault('temperature', 0.0)
     logger.info('SciDocBench judge temperature: %s', judge_kwargs['temperature'])
     return judge_kwargs
-
-
-def _configure_content_cache(judge_kwargs, model_name):
-    global _judge_cache_path, _judge_cache_namespace
-
-    value = os.environ.get('SCIDOC_JUDGE_CONTENT_CACHE', 'auto').strip()
-    if value.lower() in {'', '0', 'false', 'off', 'none'}:
-        _judge_cache_path = None
-    else:
-        if value.lower() == 'auto':
-            value = osp.abspath(osp.join('.cache', 'scidocbench_judge_cache.sqlite3'))
-        _judge_cache_path = osp.expanduser(value)
-        os.makedirs(osp.dirname(_judge_cache_path) or '.', exist_ok=True)
-    _judge_cache_namespace = json.dumps({
-        'scorer_version': JUDGE_CACHE_VERSION,
-        'model': model_name,
-        'api_base': judge_kwargs.get('api_base', judge_kwargs.get('base_url')),
-        'temperature': judge_kwargs.get('temperature', 0),
-    }, sort_keys=True)
-    logger.info('SciDocBench content-addressed judge cache: %s',
-                _judge_cache_path or 'disabled')
 
 
 def _resolve_eval_method(item):
@@ -1077,14 +975,14 @@ def _parse_field(raw, fallback):
 INFERENCE_FAILURE_NOTE = 'API failure after configured retries; scored as zero.'
 ANSWER_EVAL_FAILURE_MARKERS = (
     INFERENCE_FAILURE_NOTE,
-    'Eval error:',
+    'SciDocBench answer evaluation error:',
     'Failed to parse valid judge response:',
-    'Not evaluated',
+    'Not evaluated after retry',
     'Unknown eval_method:',
 )
 REASONING_EVAL_FAILURE_MARKERS = (
     INFERENCE_FAILURE_NOTE,
-    'Reasoning eval error:',
+    'SciDocBench reasoning evaluation error:',
     'Failed to parse reasoning response:',
     'Reasoning diagnostic is not enabled for this question.',
 )
@@ -1164,7 +1062,7 @@ def _eval_one_item(judge_model, item_json):
         else:
             answer_score, note = 0.0, f"Unknown eval_method: {eval_method}"
     except Exception as e:
-        return 0.0, f"Eval error: {e}"
+        return 0.0, f"SciDocBench answer evaluation error: {e}"
 
     return answer_score, note
 
@@ -1186,7 +1084,7 @@ def _eval_one_reasoning(judge_model, item_json):
             str(item.get('question', '')),
         )
     except Exception as e:
-        return None, f"Reasoning eval error: {e}"
+        return None, f"SciDocBench reasoning evaluation error: {e}"
 
 
 # ── Dataset class ────────────────────────────────────────────────────────────
@@ -1323,7 +1221,6 @@ class SciDocBench(ImageBaseDataset):
         judge_kwargs.setdefault('max_tokens', 8192)
         model_name = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         judge_model = build_judge(**judge_kwargs)
-        _configure_content_cache(judge_kwargs, model_name)
         scorer_version = SCORER_VERSION
         if self.enable_reasoning_diagnostic:
             scorer_version = f'{scorer_version}_{REASONING_DIAGNOSTIC_VERSION}'

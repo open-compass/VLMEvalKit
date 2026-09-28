@@ -49,16 +49,46 @@ def test_reasoning_worker_runs_only_the_reasoning_judge(monkeypatch):
     assert scidocbench._eval_one_reasoning(judge, item) == (0.75, 'reasoning note')
 
 
+def test_reasoning_parser_rejects_out_of_range_scores():
+    valid = json.dumps({
+        'internal_consistency': 1.0,
+        'no_hallucination': 0.5,
+        'reasoning_note': 'valid',
+    })
+    assert scidocbench._parse_reasoning_response(valid) == (
+        0.75, 'ic=1.00, nh=0.50; valid')
+
+    invalid_responses = [
+        json.dumps({
+            'internal_consistency': 2.0,
+            'no_hallucination': 0.5,
+            'reasoning_note': 'invalid',
+        }),
+        'prefix "internal_consistency": 0.5, '
+        '"no_hallucination": 2.0 suffix',
+    ]
+    for raw in invalid_responses:
+        score, note = scidocbench._parse_reasoning_response(raw)
+        assert score == 0.0
+        assert note.startswith('Failed to parse reasoning response:')
+
+
 def test_cache_reuse_depends_only_on_failure_note():
     assert scidocbench._cache_result_is_reusable(
         (2.0, 'completed'), scidocbench.ANSWER_EVAL_FAILURE_MARKERS)
     assert scidocbench._cache_result_is_reusable(
         (-1.0, 'completed'), scidocbench.REASONING_EVAL_FAILURE_MARKERS)
     assert not scidocbench._cache_result_is_reusable(
-        (0.0, 'Eval error: temporary'),
+        (0.0, 'SciDocBench answer evaluation error: temporary'),
+        scidocbench.ANSWER_EVAL_FAILURE_MARKERS)
+    assert scidocbench._cache_result_is_reusable(
+        (0.0, 'The note discusses a generic Eval error: example.'),
         scidocbench.ANSWER_EVAL_FAILURE_MARKERS)
     assert not scidocbench._cache_result_is_reusable(
-        (0.0, 'Reasoning eval error: temporary'),
+        (0.0, 'SciDocBench reasoning evaluation error: temporary'),
+        scidocbench.REASONING_EVAL_FAILURE_MARKERS)
+    assert scidocbench._cache_result_is_reusable(
+        (0.0, 'The note discusses a generic Reasoning eval error: example.'),
         scidocbench.REASONING_EVAL_FAILURE_MARKERS)
     assert not scidocbench._cache_result_is_reusable(
         (0.0, scidocbench.INFERENCE_FAILURE_NOTE),
@@ -115,7 +145,6 @@ def test_reasoning_diagnostic_uses_separate_progress_cache(monkeypatch):
     monkeypatch.setattr(scidocbench, 'dump', fake_dump)
     monkeypatch.setattr(
         scidocbench, 'get_intermediate_file_path', _intermediate_file)
-    monkeypatch.setattr(scidocbench, '_configure_content_cache', lambda *args: None)
     monkeypatch.setattr(scidocbench, 'build_judge', fake_build_judge)
     monkeypatch.setattr(scidocbench, 'track_progress_rich', fake_progress)
 
@@ -176,7 +205,7 @@ def test_failed_cached_evaluations_are_retried(monkeypatch):
     api_failure = scidocbench.INFERENCE_FAILURE_NOTE
     saved = {
         answer_cache: {
-            '0': (0.0, 'Eval error: temporary failure'),
+            '0': (0.0, 'SciDocBench answer evaluation error: temporary failure'),
             '1': (0.0, api_failure),
         },
         reasoning_cache: {
@@ -185,7 +214,7 @@ def test_failed_cached_evaluations_are_retried(monkeypatch):
         },
         storage: pd.DataFrame({
             'score': [0.0],
-            'eval_note': ['Eval error: temporary failure'],
+            'eval_note': ['SciDocBench answer evaluation error: temporary failure'],
             'pair_qid': ['euler-stratification_001'],
             'reasoning_score': [None],
         }),
@@ -213,7 +242,6 @@ def test_failed_cached_evaluations_are_retried(monkeypatch):
     monkeypatch.setattr(scidocbench, 'dump', fake_dump)
     monkeypatch.setattr(
         scidocbench, 'get_intermediate_file_path', _intermediate_file)
-    monkeypatch.setattr(scidocbench, '_configure_content_cache', lambda *args: None)
     monkeypatch.setattr(scidocbench, 'build_judge', lambda **kwargs: object())
     monkeypatch.setattr(scidocbench, 'track_progress_rich', fake_progress)
 
@@ -254,8 +282,9 @@ def test_failed_retry_is_saved_with_original_notes(monkeypatch):
         f'{scidocbench.REASONING_DIAGNOSTIC_VERSION}',
     )
     saved = {}
-    answer_error = 'Eval error: answer retry still failed'
-    reasoning_error = 'Reasoning eval error: reasoning retry still failed'
+    answer_error = 'SciDocBench answer evaluation error: answer retry still failed'
+    reasoning_error = (
+        'SciDocBench reasoning evaluation error: reasoning retry still failed')
 
     def fake_load(path):
         return data if path == eval_file else saved[path]
@@ -277,7 +306,6 @@ def test_failed_retry_is_saved_with_original_notes(monkeypatch):
     monkeypatch.setattr(scidocbench, 'dump', fake_dump)
     monkeypatch.setattr(
         scidocbench, 'get_intermediate_file_path', _intermediate_file)
-    monkeypatch.setattr(scidocbench, '_configure_content_cache', lambda *args: None)
     monkeypatch.setattr(scidocbench, 'build_judge', lambda **kwargs: object())
     monkeypatch.setattr(scidocbench, 'track_progress_rich', fake_progress)
 
