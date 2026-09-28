@@ -40,6 +40,7 @@ REASONING_QIDS = {
 }
 
 SCORER_VERSION = 'rules_v5_final_answer_only'
+REASONING_DIAGNOSTIC_VERSION = 'reasoning_diagnostic_v1'
 # Rule-only fixes do not invalidate deterministic LLM-judge responses. Keep the
 # judge cache namespace stable until the judge prompt or transport changes.
 JUDGE_CACHE_VERSION = 'final_answer_v1'
@@ -1011,9 +1012,6 @@ def eval_reasoning(judge_model, prediction, question):
 
 # ── Parallel evaluation helper ───────────────────────────────────────────────
 
-_judge_model = None
-
-
 def _configure_judge_transport(judge_kwargs):
     """Use only transport options supported by upstream VLMEvalKit."""
     judge_kwargs.setdefault('temperature', 0.0)
@@ -1061,14 +1059,8 @@ def _parse_field(raw, fallback):
     return raw if isinstance(raw, dict) else fallback
 
 
-def _eval_one_item(item_json):
-    """Evaluate a single sample. Called by track_progress_rich.
-
-    Returns (answer_score, reasoning_score, note). Formal evaluation only uses
-    the final answer and leaves ``reasoning_score`` unset. The reasoning trace
-    can be audited separately by enabling ``enable_reasoning_diagnostic`` on
-    the dataset; that diagnostic never changes the answer score.
-    """
+def _eval_one_item(judge_model, item_json):
+    """Evaluate the final answer for one sample."""
     item = json.loads(item_json)
     prediction = str(item.get('prediction', ''))
     final_answer = _extract_final_answer(
@@ -1077,23 +1069,14 @@ def _eval_one_item(item_json):
     )
     eval_method = _resolve_eval_method(item)
     qid = _pair_qid(item)
-    has_reasoning_contract = (
-        bool(item.get('_enable_reasoning_diagnostic', False))
-        and qid in REASONING_QIDS
-    )
 
     # Formal benchmark policy: after the inference backend has exhausted its
     # configured retries, keep the sample in the denominator and score the
-    # failed prediction as zero.  Do this before any answer/reasoning judge
-    # calls so persistent API failures cannot consume judge requests or be
-    # mistaken for a substantive response.
+    # failed prediction as zero. Do this before any answer judge calls so
+    # persistent API failures cannot consume judge requests or be mistaken for
+    # a substantive response.
     if 'Failed to obtain answer via API' in prediction:
-        reasoning_score = 0.0 if has_reasoning_contract else None
-        return (
-            0.0,
-            reasoning_score,
-            'API failure after configured retries; scored as zero.',
-        )
+        return 0.0, 'API failure after configured retries; scored as zero.'
 
     answer = _parse_field(item.get('answer', '{}'), item.get('answer', ''))
 
@@ -1123,22 +1106,35 @@ def _eval_one_item(item_json):
             answer_str = (json.dumps(answer, ensure_ascii=False)
                           if isinstance(answer, (dict, list)) else str(answer))
             answer_score, note = eval_judge(
-                _judge_model, final_answer, answer_str, question, judge_prompt)
+                judge_model, final_answer, answer_str, question, judge_prompt)
         elif eval_method == 'exec_match':
             answer_score, note = eval_exec_match(final_answer, answer)
         else:
             answer_score, note = 0.0, f"Unknown eval_method: {eval_method}"
-
-        reasoning_score = None
-        if has_reasoning_contract and _judge_model is not None:
-            reasoning_score, reason_note = eval_reasoning(
-                _judge_model, prediction, question)
-            note = (f"answer={answer_score:.2f}, reasoning={reasoning_score:.2f}; "
-                    f"{note}; reasoning: {reason_note}")
     except Exception as e:
-        return 0.0, None, f"Eval error: {e}"
+        return 0.0, f"Eval error: {e}"
 
-    return answer_score, reasoning_score, note
+    return answer_score, note
+
+
+def _eval_one_reasoning(judge_model, item_json):
+    """Audit the reasoning for one whitelisted sample."""
+    item = json.loads(item_json)
+    if _pair_qid(item) not in REASONING_QIDS:
+        return None, 'Reasoning diagnostic is not enabled for this question.'
+
+    prediction = str(item.get('prediction', ''))
+    if 'Failed to obtain answer via API' in prediction:
+        return 0.0, 'API failure after configured retries; scored as zero.'
+
+    try:
+        return eval_reasoning(
+            judge_model,
+            prediction,
+            str(item.get('question', '')),
+        )
+    except Exception as e:
+        return None, f"Reasoning eval error: {e}"
 
 
 # ── Dataset class ────────────────────────────────────────────────────────────
@@ -1270,20 +1266,22 @@ class SciDocBench(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        global _judge_model
-
         nproc = judge_kwargs.pop('nproc', 4)
         judge_kwargs = _configure_judge_transport(judge_kwargs)
+        judge_kwargs.setdefault('max_tokens', 8192)
         model_name = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
+        judge_model = build_judge(**judge_kwargs)
         _configure_content_cache(judge_kwargs, model_name)
         scorer_version = SCORER_VERSION
         if self.enable_reasoning_diagnostic:
-            scorer_version = f'{scorer_version}_reasoning_diagnostic'
+            scorer_version = f'{scorer_version}_{REASONING_DIAGNOSTIC_VERSION}'
 
         storage = get_intermediate_file_path(
             eval_file, f'_{model_name}_{scorer_version}')
-        tmp_file = get_intermediate_file_path(
-            eval_file, f'_{model_name}_{scorer_version}', 'pkl')
+        answer_tmp_file = get_intermediate_file_path(
+            eval_file, f'_{model_name}_{SCORER_VERSION}', 'pkl')
+        reasoning_tmp_file = get_intermediate_file_path(
+            eval_file, f'_{model_name}_{REASONING_DIAGNOSTIC_VERSION}', 'pkl')
 
         if osp.exists(storage):
             logger.info(f'Scoring file {storage} already exists, will reuse.')
@@ -1318,44 +1316,92 @@ class SciDocBench(ImageBaseDataset):
                 for col in data.columns:
                     item[col] = _json_safe_value(line[col])
                 item['_expect_think_end'] = expect_think_end
-                item['_enable_reasoning_diagnostic'] = self.enable_reasoning_diagnostic
                 tups.append(json.dumps(item, ensure_ascii=False))
 
-            # Load checkpoint and skip already-evaluated items
+            # Answer scoring and reasoning diagnostics have independent
+            # checkpoints so enabling the optional diagnostic does not
+            # invalidate or duplicate formal answer scoring.
             ans = {}
-            if osp.exists(tmp_file):
-                ans = load(tmp_file)
-                logger.info(f'Loaded {len(ans)} cached results from {tmp_file}')
+            if osp.exists(answer_tmp_file):
+                ans = load(answer_tmp_file)
+                logger.info(
+                    f'Loaded {len(ans)} cached answer results from {answer_tmp_file}')
 
             remaining_tups = [x for x, i in zip(tups, indices) if i not in ans]
             remaining_indices = [i for i in indices if i not in ans]
 
             if len(remaining_indices):
-                _judge_model = build_judge(max_tokens=8192, **judge_kwargs)
+                answer_tasks = [
+                    (judge_model, item_json) for item_json in remaining_tups
+                ]
                 new_results = track_progress_rich(
                     _eval_one_item,
-                    remaining_tups,
+                    answer_tasks,
                     nproc=nproc,
                     chunksize=nproc,
                     keys=remaining_indices,
-                    save=tmp_file,
+                    save=answer_tmp_file,
                 )
                 for k, v in zip(remaining_indices, new_results):
                     ans[k] = v
 
-            # Build result rows in original order. Tolerate legacy 2-tuple
-            # cached entries from older runs.
+            reasoning_ans = {}
+            if self.enable_reasoning_diagnostic:
+                if osp.exists(reasoning_tmp_file):
+                    reasoning_ans = load(reasoning_tmp_file)
+                    logger.info(
+                        f'Loaded {len(reasoning_ans)} cached reasoning results '
+                        f'from {reasoning_tmp_file}')
+
+                reasoning_tups = []
+                reasoning_indices = []
+                for item_json, line, sid in zip(tups, lines, indices):
+                    if (_pair_qid(line) in REASONING_QIDS
+                            and sid not in reasoning_ans):
+                        reasoning_tups.append(item_json)
+                        reasoning_indices.append(sid)
+
+                if reasoning_indices:
+                    reasoning_tasks = [
+                        (judge_model, item_json) for item_json in reasoning_tups
+                    ]
+                    new_results = track_progress_rich(
+                        _eval_one_reasoning,
+                        reasoning_tasks,
+                        nproc=nproc,
+                        chunksize=nproc,
+                        keys=reasoning_indices,
+                        save=reasoning_tmp_file,
+                    )
+                    for k, v in zip(reasoning_indices, new_results):
+                        reasoning_ans[k] = v
+
+            # Build result rows in original order. Tolerate legacy 3-tuples
+            # from caches created before answer and reasoning evaluation were
+            # separated.
             results = []
             for line in lines:
                 sid = str(line['index'])
                 cached = ans.get(sid)
                 if cached is None:
-                    answer_score, reasoning_score, note = 0.0, None, 'Not evaluated'
+                    answer_score, note = 0.0, 'Not evaluated'
                 elif len(cached) == 3:
-                    answer_score, reasoning_score, note = cached
+                    answer_score, _, note = cached
                 else:
                     answer_score, note = cached
-                    reasoning_score = None
+
+                reasoning_score = None
+                reasoning_cached = reasoning_ans.get(sid)
+                if reasoning_cached is not None:
+                    reasoning_score, reasoning_note = reasoning_cached
+                    if reasoning_score is None:
+                        score_text = 'not evaluated'
+                    else:
+                        score_text = f'{reasoning_score:.2f}'
+                    note = (
+                        f'answer={answer_score:.2f}, reasoning={score_text}; '
+                        f'{note}; reasoning: {reasoning_note}'
+                    )
                 results.append({
                     'index': sid,
                     'qid': line.get('qid', ''),
