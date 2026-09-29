@@ -65,7 +65,8 @@ class Spatial457(ImageBaseDataset):
             # parse the answer
             pred_try_1 = re.search(r"Answer': '(.*?)'", line["prediction"])
             pred_try_2 = re.search(r'Answer": "(.*?)"', line["prediction"])
-            pred_try_3 = re.search(r"Answer': (\d)", line["prediction"])
+            pred_try_3 = re.search(r"Answer': (\d+)", line["prediction"])
+            pred_try_4 = re.search(r'Answer": (\d+)', line["prediction"])
 
             if pred_try_1:
                 pred = pred_try_1.group(1)
@@ -73,6 +74,8 @@ class Spatial457(ImageBaseDataset):
                 pred = pred_try_2.group(1)
             elif pred_try_3:
                 pred = pred_try_3.group(1)
+            elif pred_try_4:
+                pred = pred_try_4.group(1)
             else:
                 if self.ROBUST:
                     pred = line['prediction']
