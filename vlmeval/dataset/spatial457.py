@@ -1,6 +1,6 @@
 import re
 
-from import trange
+from tqdm import trange
 
 from vlmeval.smp import dump, get_intermediate_file_path, load
 from .image_base import ImageBaseDataset
