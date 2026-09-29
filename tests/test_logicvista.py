@@ -59,8 +59,8 @@ class TestLogicVistaAnswerExtraction(unittest.TestCase):
         self.assertEqual(len(judge.calls), 1)
         self.assertIn('option labels chosen (letters or numbers)', judge.calls[0][0])
 
-    def test_normalizes_case_order_and_separators(self):
-        judge = FakeJudge(['c, a'])
+    def test_normalizes_multi_answer_order(self):
+        judge = FakeJudge(['CA'])
         line = {
             'question': 'Select all correct answers from A-D',
             'prediction': 'A and C',
@@ -70,10 +70,10 @@ class TestLogicVistaAnswerExtraction(unittest.TestCase):
         result = self.logicvista.LogicVista_auxeval(judge, line)
 
         self.assertEqual(result['hit'], 1)
-        self.assertEqual(result['res'], 'c, a')
+        self.assertEqual(result['res'], 'CA')
 
-    def test_retries_explanatory_output_and_logs_actual_response(self):
-        judge = FakeJudge(['I choose 3', '3'])
+    def test_retries_invalid_output_and_logs_actual_response(self):
+        judge = FakeJudge(['Answer', '3'])
         line = {
             'question': 'Which answer is correct? Select from 1-5',
             'prediction': '<answer>3</answer>',
@@ -84,7 +84,7 @@ class TestLogicVistaAnswerExtraction(unittest.TestCase):
 
         self.assertEqual(result['hit'], 1)
         self.assertEqual(len(judge.calls), 2)
-        self.assertIn('output is I choose 3, failed to parse.', result['log'])
+        self.assertIn('output is Answer, failed to parse.', result['log'])
 
     def test_valid_wrong_choice_is_scored_incorrect(self):
         judge = FakeJudge(['D'])

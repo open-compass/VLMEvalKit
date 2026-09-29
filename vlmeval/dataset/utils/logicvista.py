@@ -1,4 +1,3 @@
-import re
 from collections import defaultdict
 
 import pandas as pd
@@ -7,21 +6,6 @@ import pandas as pd
 from vlmeval.smp.file import load
 
 FAIL_MSG = 'Failed to obtain answer via API.'
-
-
-def normalize_logicvista_answer(value):
-    """Normalize a judge answer while rejecting explanatory text."""
-    text = str(value).strip()
-    if re.fullmatch(r'[A-Za-z0-9]+', text):
-        compact = text
-    else:
-        choices = re.split(r'[\s,;]+', text)
-        if not choices or any(len(choice) != 1 or not choice.isalnum() for choice in choices):
-            return None
-        compact = ''.join(choices)
-    if not compact:
-        return None
-    return ''.join(sorted(compact.lower()))
 
 
 def build_prompt_logicvista(line):
@@ -59,18 +43,19 @@ def LogicVista_auxeval(model, line):
     print(prompt)
     log = ''
     retry = 5
-    answer = normalize_logicvista_answer(line['answer'])
+    answer = line['answer'].split(", ")
+    answer = ''.join(sorted(choice.lower() for choice in answer))
 
     for i in range(retry):
         res = model.generate(prompt, temperature=i * 0.5)
-        extracted = normalize_logicvista_answer(res)
 
         if FAIL_MSG in res:
             log += f'Try {i}: output is {res}, failed to parse.\n'
-        elif extracted is None:
+        elif not ((res.isupper() and res.isalpha()) or res.isdigit()):
             log += f'Try {i}: output is {res}, failed to parse.\n'
         else:
             log += 'Succeed'
+            extracted = ''.join(sorted(res.lower()))
             return dict(log=log, res=res, hit=int(extracted == answer))
     log += 'All 5 retries failed.\n'
     return dict(log=log, res='', hit=0)
