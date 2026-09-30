@@ -1055,6 +1055,10 @@ llava_series = {
     "llava-onevision-qwen2-0.5b-ov-hf": partial(
         vlm.LLaVA_OneVision_HF, model_path="llava-hf/llava-onevision-qwen2-0.5b-ov-hf"
     ),
+    "VQToken-LLaVA-OneVision-0.5B": partial(
+        vlm.LLaVA_OneVision_VQToken,
+        model_path="haichaozhang/VQ-Token-llava-ov-0.5b",
+    ),
     "llava-onevision-qwen2-0.5b-si-hf": partial(
         vlm.LLaVA_OneVision_HF, model_path="llava-hf/llava-onevision-qwen2-0.5b-si-hf"
     ),
