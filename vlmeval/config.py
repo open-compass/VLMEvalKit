@@ -2424,10 +2424,17 @@ qianfanvl_series = {
 }
 
 lfm2vl_series = {
-    "LFM2-VL-450M": partial(vlm.LFM2VL, model_path="LiquidAI/LFM2-VL-450M"),
-    "LFM2-VL-1.6B": partial(vlm.LFM2VL, model_path="LiquidAI/LFM2-VL-1.6B"),
-    "LFM2-VL-3B": partial(vlm.LFM2VL, model_path="LiquidAI/LFM2-VL-3B"),
-    "LFM2.5-VL-1.6B": partial(vlm.LFM2VL, model_path="LiquidAI/LFM2.5-VL-1.6B"),
+    "LFM2-VL-450M": partial(
+        vlm.LFM2VL, model_path="LiquidAI/LFM2-VL-450M", use_custom_prompt=False,
+    ),
+    "LFM2-VL-1.6B": partial(
+        vlm.LFM2VL, model_path="LiquidAI/LFM2-VL-1.6B", use_custom_prompt=False,
+    ),
+    "LFM2-VL-3B": partial(vlm.LFM2VL, model_path="LiquidAI/LFM2-VL-3B", use_custom_prompt=False),
+    "LFM2.5-VL-1.6B": partial(
+        vlm.LFM2VL, model_path="LiquidAI/LFM2.5-VL-1.6B", use_custom_prompt=False,
+    ),
+    "LFM2.5-VL-3B": partial(vlm.LFM2VL, model_path="LiquidAI/LFM2.5-VL-3B"),
 }
 
 covt_series = {

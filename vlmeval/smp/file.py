@@ -166,7 +166,7 @@ def dump(data, f, **kwargs):
         with pd.ExcelWriter(
             f,
             engine='xlsxwriter',
-            engine_kwargs={'options': {'strings_to_formulas': False}},
+            engine_kwargs={'options': {'strings_to_formulas': False, 'strings_to_urls': False}},
         ) as writer:
             data.to_excel(writer, index=False)
 
@@ -266,13 +266,13 @@ def load(f, fmt=None):
         return data
 
     def load_xlsx(f):
-        return pd.read_excel(f)
+        return pd.read_excel(f, keep_default_na=False, na_values=[''])
 
     def load_csv(f):
-        return pd.read_csv(f)
+        return pd.read_csv(f, keep_default_na=False, na_values=[''])
 
     def load_tsv(f):
-        return pd.read_csv(f, sep='\t')
+        return pd.read_csv(f, sep='\t', keep_default_na=False, na_values=[''])
 
     def load_parquet(f):
         return pd.read_parquet(f)
@@ -399,6 +399,16 @@ def last_modified(pth):
     return t
 
 
+def _mime_from_pillow(path):
+    from PIL import Image
+
+    try:
+        with Image.open(path) as image:
+            return Image.MIME.get(image.format, 'unknown')
+    except Exception:
+        return 'unknown'
+
+
 def parse_file(s):
     if osp.exists(s) and s != '.':
         assert osp.isfile(s)
@@ -407,6 +417,8 @@ def parse_file(s):
         if suffix == '.webp':
             return ('image/webp', s)
         mime = mimetypes.types_map.get(suffix, 'unknown')
+        if mime == 'unknown':
+            mime = _mime_from_pillow(s)
         return (mime, s)
     elif s.startswith('data:image/'):
         # To be compatible with OPENAI base64 format
@@ -710,6 +722,13 @@ def get_intermediate_file_path(eval_file, suffix, target_format=None):
             target_format = get_pred_file_format()
 
     return eval_file.replace(f'.{original_ext}', f'{suffix}.{target_format}')
+
+
+def get_composite_child_eval_file(eval_file, child_name):
+    path = Path(eval_file)
+    stem = path.stem
+    child_stem = f'_{stem}_SUB_{child_name}'
+    return str(path.with_name(f'{child_stem}{path.suffix}'))
 
 
 def prepare_reuse_files(

@@ -8,6 +8,31 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+try:
+    from pandas._libs.parsers import STR_NA_VALUES as PANDAS_DEFAULT_NA_VALUES
+except ImportError:
+    PANDAS_DEFAULT_NA_VALUES = {
+        '',
+        '#N/A',
+        '#N/A N/A',
+        '#NA',
+        '-1.#IND',
+        '-1.#QNAN',
+        '-NaN',
+        '-nan',
+        '1.#IND',
+        '1.#QNAN',
+        '<NA>',
+        'N/A',
+        'NA',
+        'NULL',
+        'NaN',
+        'None',
+        'n/a',
+        'nan',
+        'null',
+    }
+
 from vlmeval.smp import (LMUDataRoot, decode_base64_to_image_file, download_file, file_size,
                          istype, load, md5, mmqa_display, read_ok, toliststr)
 from vlmeval.smp.file import INFER_FAIL_MSG, RUN_STATUS_NAME, _prediction_table, fetch_aux_files
@@ -49,6 +74,12 @@ def _choose_primary_metric_key(metrics: dict[str, Any]) -> str | None:
 
     scored.sort(key=lambda item: (-item[0], item[1]))
     return scored[0][1]
+
+
+def restore_image_default_na(data):
+    if isinstance(data, pd.DataFrame) and 'image' in data:
+        data['image'] = data['image'].replace(list(PANDAS_DEFAULT_NA_VALUES), np.nan)
+    return data
 
 
 def _count_markers_in_obj(obj: Any, markers: tuple[str, ...]) -> int:
@@ -150,6 +181,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
         self.img_root = osp.join(ROOT, 'images', img_root_map(dataset))
 
         data = self.load_data(dataset)
+        data = restore_image_default_na(data)
         self.skip_noimg = skip_noimg
         if skip_noimg and 'image' in data:
             data = data[~pd.isna(data['image'])]

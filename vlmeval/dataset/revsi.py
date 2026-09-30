@@ -95,6 +95,13 @@ class ReVSI(VideoBaseDataset):
 
     TYPE = 'Video-VQA'
 
+    @classmethod
+    def validate_build_config(cls, config: dict) -> None:
+        nframe = config.get('nframe', None)
+        if nframe in [None, "all", "all_frame"]:
+            return
+        super().validate_build_config(config)
+
     def __init__(self, dataset='ReVSI', pack=False, nframe=None, **kwargs):
         if nframe in [None, "all", "all_frame"]:
             self.frame_subset = "all_frame"
@@ -146,7 +153,7 @@ class ReVSI(VideoBaseDataset):
         frame_key = os.path.join(self.frame_subset, os.path.splitext(video)[0])
         vid = decord.VideoReader(vid_path)
         video_fps = vid.get_avg_fps()
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
             step_size = len(vid) / (self.nframe + 1)
             indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
             frame_paths = self.frame_paths(frame_key)

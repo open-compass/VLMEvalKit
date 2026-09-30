@@ -135,7 +135,8 @@ class InferenceTask:
     sample_index: str
     prompt_struct: Any     # Constructed prompt
 
-    dataset_name: str      # Dataset name (for naming task)
+    dataset_name: str      # Logical dataset name passed to model APIs.
+    dataset_alias_name: str
     model_name: str        # Model name (for naming task)
     dataset_type: DatasetType = "image"
 
@@ -143,7 +144,7 @@ class InferenceTask:
 @dataclass
 class DatasetConfig:
     """Dataset Config and Status."""
-    dataset_name: str
+    dataset_name: str  # Logical dataset name.
     dataset_obj: Any  # The constructed dataset.
 
     model_name: str
@@ -152,6 +153,8 @@ class DatasetConfig:
     work_dir: str
     result_file: str
     judge_kwargs: dict  # judge model parameters.
+    dataset_alias_name: str | None = None
+    dataset_class_name: str | None = None
     verbose: bool = False
 
     dataset_type: DatasetType = "image"
@@ -177,6 +180,8 @@ class DatasetConfig:
     results_dict: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
+        if self.dataset_alias_name is None:
+            self.dataset_alias_name = self.dataset_name
         self.total_samples = len(self.dataset_obj.data)
 
 
@@ -223,11 +228,11 @@ class APIEvalPipeline:
         # The inference tasks queue (Prefetch 20% data).
         self.queue = asyncio.Queue(maxsize=int(concurrency * 1.2))
         self.states: Dict[str, DatasetConfig] = {
-            cfg.dataset_name: cfg for cfg in dataset_configs
+            cfg.dataset_alias_name: cfg for cfg in dataset_configs
         }
         # File locks to save checkpoints threading-safety.
         self.file_locks: Dict[str, threading.Lock] = {
-            cfg.dataset_name: threading.Lock() for cfg in dataset_configs
+            cfg.dataset_alias_name: threading.Lock() for cfg in dataset_configs
         }
 
         # Runtime status
@@ -240,22 +245,25 @@ class APIEvalPipeline:
             Path(cfg.work_dir).mkdir(parents=True, exist_ok=True)
             if not self.run_eval:
                 cfg.eval_status = EvalStatus.Skipped
-            self._upsert_dataset_status(cfg.dataset_name, status='pending')
+            self._upsert_dataset_status(cfg.dataset_alias_name, status='pending')
 
     def _upsert_dataset_status(
         self,
-        dataset_name: str,
+        dataset_alias_name: str,
         status: str,
         metrics_source=None,
         skip_reason: str | None = None,
         error_message: str | None = None,
     ) -> None:
-        cfg = self.states[dataset_name]
+        cfg = self.states[dataset_alias_name]
         try:
             summary_kwargs = dict(
                 run_dir=cfg.work_dir,
                 model_name=cfg.model_name,
-                dataset_name=dataset_name,
+                dataset_name=dataset_alias_name,
+                resolved_dataset_name=cfg.dataset_name,
+                dataset_alias_name=dataset_alias_name,
+                dataset_class_name=cfg.dataset_class_name,
                 status=status,
             )
             if metrics_source is not None:
@@ -268,13 +276,13 @@ class APIEvalPipeline:
             upsert_dataset_status(**summary_kwargs)
         except Exception as summary_err:
             logger.warning(
-                f'Failed to update status.json for {cfg.model_name} x {dataset_name}: {summary_err}'
+                f'Failed to update status.json for {cfg.model_name} x {dataset_alias_name}: {summary_err}'
             )
 
     def _release_dataset_memory(self, cfg: DatasetConfig):
         """Release dataset after evaluation."""
         import gc
-        dataset_name = cfg.dataset_name
+        dataset_name = cfg.dataset_alias_name
 
         if hasattr(cfg.dataset_obj, 'data') and cfg.dataset_obj.data is not None:
             try:
@@ -309,25 +317,25 @@ class APIEvalPipeline:
         except Exception as e:
             logger.warning(f"Failed to shutdown executors: {e}")
 
-    def _get_checkpoint_file(self, dataset_name: str) -> Path:
-        cfg = self.states[dataset_name]
-        return Path(cfg.work_dir) / f"{cfg.model_name}_{dataset_name}_checkpoint.pkl"
+    def _get_checkpoint_file(self, dataset_alias_name: str) -> Path:
+        cfg = self.states[dataset_alias_name]
+        return Path(cfg.work_dir) / f"{cfg.model_name}_{dataset_alias_name}_checkpoint.pkl"
 
-    def _load_checkpoint(self, dataset_name: str) -> Dict[str, Any]:
+    def _load_checkpoint(self, dataset_alias_name: str) -> Dict[str, Any]:
         """Load finished inference result from previous runs."""
-        cfg = self.states[dataset_name]
+        cfg = self.states[dataset_alias_name]
         results = {}
 
         # 1. Try to load checkpoint at first.
-        checkpoint_file = self._get_checkpoint_file(dataset_name)
+        checkpoint_file = self._get_checkpoint_file(dataset_alias_name)
         if checkpoint_file.exists():
             try:
                 results = load(str(checkpoint_file))
                 if self.retry_failed:
                     results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
-                logger.info(f"   [{dataset_name}] Loaded {len(results)} results from checkpoint")
+                logger.info(f"   [{dataset_alias_name}] Loaded {len(results)} results from checkpoint")
             except Exception as e:
-                logger.warning(f"   [{dataset_name}] Failed to load checkpoint: {e}")
+                logger.warning(f"   [{dataset_alias_name}] Failed to load checkpoint: {e}")
 
         # Try to load from the result file.
         result_path = Path(cfg.result_file)
@@ -347,18 +355,18 @@ class APIEvalPipeline:
                             for idx, pred in zip(data['index'], data['prediction'])
                         }
                     results.update(existing_results)
-                    logger.info(f"   [{dataset_name}] Loaded {len(existing_results)} "
+                    logger.info(f"   [{dataset_alias_name}] Loaded {len(existing_results)} "
                                 "results from result file")
             except Exception as e:
-                logger.warning(f"   [{dataset_name}] Failed to load result file: {e}")
+                logger.warning(f"   [{dataset_alias_name}] Failed to load result file: {e}")
 
         return results
 
-    def _save_checkpoint(self, dataset_name: str, result: dict):
+    def _save_checkpoint(self, dataset_alias_name: str, result: dict):
         """Save results to checkpoint file threading-safety."""
-        checkpoint_file = self._get_checkpoint_file(dataset_name)
+        checkpoint_file = self._get_checkpoint_file(dataset_alias_name)
 
-        with self.file_locks[dataset_name]:
+        with self.file_locks[dataset_alias_name]:
             if checkpoint_file.exists():
                 results = load(str(checkpoint_file))
             else:
@@ -368,11 +376,11 @@ class APIEvalPipeline:
 
             dump(results, str(checkpoint_file))
 
-    def _save_final_result(self, dataset_name: str) -> bool:
+    def _save_final_result(self, dataset_alias_name: str) -> bool:
         """Save the final inference result file."""
-        cfg = self.states[dataset_name]
+        cfg = self.states[dataset_alias_name]
 
-        with self.file_locks[dataset_name]:
+        with self.file_locks[dataset_alias_name]:
             if 'image' in cfg.dataset_obj.data:
                 dataset_data = cfg.dataset_obj.data.drop('image', axis=1)
             else:
@@ -386,7 +394,7 @@ class APIEvalPipeline:
 
             if missing_indices:
                 logger.warning(
-                    f"   [{dataset_name}] Missing results for {len(missing_indices)} samples: "
+                    f"   [{dataset_alias_name}] Missing results for {len(missing_indices)} samples: "
                     f"{missing_indices[:5]}{'...' if len(missing_indices) > 5 else ''}"
                 )
                 return False
@@ -395,22 +403,22 @@ class APIEvalPipeline:
             dataset_data['prediction'] = predictions
 
             dump(dataset_data, cfg.result_file)
-            logger.info(f"   [{dataset_name}] Saved final results to {cfg.result_file}")
+            logger.info(f"   [{dataset_alias_name}] Saved final results to {cfg.result_file}")
 
             # Delete checkpoint file.
-            checkpoint_file = self._get_checkpoint_file(dataset_name)
+            checkpoint_file = self._get_checkpoint_file(dataset_alias_name)
             if checkpoint_file.exists():
                 checkpoint_file.unlink()
 
             return True
 
-    def _create_symlinks(self, dataset_name: str):
+    def _create_symlinks(self, dataset_alias_name: str):
         """Create symbolic links for dataset results in the model base directory.
 
         Links are created as relative paths so that moving the output root
         directory does not break them.
         """
-        cfg = self.states[dataset_name]
+        cfg = self.states[dataset_alias_name]
         pred_root = Path(cfg.work_dir)
         model_base_dir = pred_root.parent
 
@@ -420,7 +428,7 @@ class APIEvalPipeline:
             for f in pred_root.iterdir():
                 if not f.is_file():
                     continue
-                if f'{cfg.model_name}_{dataset_name}' not in f.name:
+                if f'{cfg.model_name}_{dataset_alias_name}' not in f.name:
                     continue
                 # Skip temporary intermediate files
                 if f.name.endswith(('_checkpoint.pkl', '_PREV.pkl', '_structs.pkl')):
@@ -431,24 +439,24 @@ class APIEvalPipeline:
                     link_addr.unlink()
                 link_addr.symlink_to(rel_target)
         except Exception as e:
-            logger.warning(f"   [{dataset_name}] Failed to create symlinks: {e}")
+            logger.warning(f"   [{dataset_alias_name}] Failed to create symlinks: {e}")
 
     async def _producer(self):
         """Generate all samples to inference."""
         logger.info("📦 Initializing tasks and checking checkpoints...")
 
         for cfg in self.dataset_configs:
-            dataset_name = cfg.dataset_name
+            dataset_alias_name = cfg.dataset_alias_name
             dataset_type = cfg.dataset_type
 
             logger.info(
-                f"   [{dataset_name}] Start build prompt [type={dataset_type}]"
+                f"   [{dataset_alias_name}] Start build prompt [type={dataset_type}]"
             )
             if self.run_infer:
-                self._upsert_dataset_status(dataset_name, status='infer')
+                self._upsert_dataset_status(dataset_alias_name, status='infer')
 
             # 1. Try to load checkpoint
-            existing_results = self._load_checkpoint(dataset_name)
+            existing_results = self._load_checkpoint(dataset_alias_name)
             skipped = len(existing_results)
             cfg.results_dict = existing_results
             cfg.processed = len(existing_results)
@@ -457,26 +465,26 @@ class APIEvalPipeline:
             # 2. Check whether to need infer.
             if not self.run_infer or cfg.processed == cfg.total_samples:
                 if cfg.processed < cfg.total_samples:
-                    logger.warning(f"   [{dataset_name}] is incompleted "
+                    logger.warning(f"   [{dataset_alias_name}] is incompleted "
                                    f"({cfg.processed}/{cfg.total_samples}). "
                                    "The evaluation may be inaccurate.")
                 else:
-                    logger.info(f"   [{dataset_name}] All samples completed "
+                    logger.info(f"   [{dataset_alias_name}] All samples completed "
                                 f"({cfg.processed}/{cfg.total_samples}). "
                                 "Will trigger eval directly.")
                 # Save result file if not exists.
                 if not Path(cfg.result_file).exists():
-                    self._save_final_result(dataset_name)
-                self._create_symlinks(dataset_name)
+                    self._save_final_result(dataset_alias_name)
+                self._create_symlinks(dataset_alias_name)
                 if cfg.eval_status == EvalStatus.Skipped:
                     self._upsert_dataset_status(
-                        dataset_name,
+                        dataset_alias_name,
                         status='done',
                         skip_reason='mode_infer',
                     )
                 else:
                     # Trigger evaluation.
-                    asyncio.create_task(self._trigger_eval(dataset_name))
+                    asyncio.create_task(self._trigger_eval(dataset_alias_name))
                 continue
 
             # 3. Dispatch according to dataset type.
@@ -491,14 +499,14 @@ class APIEvalPipeline:
             if tasks_generated == 0:
                 cfg.eval_status = EvalStatus.Skipped
                 self._upsert_dataset_status(
-                    dataset_name,
+                    dataset_alias_name,
                     status='done',
                     skip_reason='no_inference_tasks_generated',
                 )
 
             self.total_tasks_generated += tasks_generated
             logger.info(
-                f"   [{dataset_name}] Generated {tasks_generated} tasks "
+                f"   [{dataset_alias_name}] Generated {tasks_generated} tasks "
                 f"(Skipped {skipped}) [type={dataset_type}]"
             )
 
@@ -514,6 +522,7 @@ class APIEvalPipeline:
         model = cfg.model_obj
         dataset = cfg.dataset_obj
         dataset_name = cfg.dataset_name
+        dataset_alias_name = cfg.dataset_alias_name
 
         if hasattr(model, 'set_dump_image'):
             model.set_dump_image(dataset.dump_image)
@@ -523,9 +532,9 @@ class APIEvalPipeline:
             and model.use_custom_prompt(dataset_name)
         )
         if use_custom_prompt:
-            logger.info(f"   [{dataset_name}] Using model custom prompt")
+            logger.info(f"   [{dataset_alias_name}] Using model custom prompt")
         else:
-            logger.info(f"   [{dataset_name}] Using vanilla dataset prompt")
+            logger.info(f"   [{dataset_alias_name}] Using vanilla dataset prompt")
 
         tasks_generated = 0
         for i in range(len(dataset)):
@@ -542,7 +551,7 @@ class APIEvalPipeline:
                     prompt_struct = dataset.build_prompt(item)
             except Exception as e:
                 import traceback
-                logger.error(f"   [{dataset_name}] Failed to build prompt "
+                logger.error(f"   [{dataset_alias_name}] Failed to build prompt "
                              f"for sample {idx_str}: {repr(e)}")
                 logger.debug(traceback.format_exception(e))
                 # Skip dataset if has fatal sample.
@@ -550,6 +559,7 @@ class APIEvalPipeline:
 
             task = InferenceTask(
                 dataset_name=dataset_name,
+                dataset_alias_name=dataset_alias_name,
                 model_name=cfg.model_name,
                 sample_index=idx_str,
                 prompt_struct=prompt_struct,
@@ -564,7 +574,8 @@ class APIEvalPipeline:
         """Produce video dataset inference task."""
         dataset = cfg.dataset_obj
         dataset_name = cfg.dataset_name
-        process_name = f"{dataset_name} prompt process"
+        dataset_alias_name = cfg.dataset_alias_name
+        process_name = f"{dataset_alias_name} prompt process"
 
         model = cfg.model_obj
         if cfg.video_llm is not None:
@@ -572,7 +583,7 @@ class APIEvalPipeline:
         else:
             video_llm = getattr(model, 'VIDEO_LLM', False)
 
-        logger.info(f"   [{dataset_name}] Video mode: video_llm={video_llm}")
+        logger.info(f"   [{dataset_alias_name}] Video mode: video_llm={video_llm}")
 
         parent_conn, child_conn = mp.Pipe(duplex=True)
         process = mp.Process(
@@ -586,7 +597,7 @@ class APIEvalPipeline:
             child_conn.close()
             raise
         child_conn.close()
-        self.producer_processes[dataset_name] = process
+        self.producer_processes[dataset_alias_name] = process
 
         tasks_generated = 0
         try:
@@ -611,7 +622,7 @@ class APIEvalPipeline:
                         continue
                 except Exception as e:
                     import traceback
-                    logger.error(f"   [{dataset_name}] Failed to build prompt "
+                    logger.error(f"   [{dataset_alias_name}] Failed to build prompt "
                                  f"for sample {idx_str}: {repr(e)}")
                     logger.debug(traceback.format_exception(e))
                     # Skip dataset if has fatal sample.
@@ -619,6 +630,7 @@ class APIEvalPipeline:
 
                 task = InferenceTask(
                     dataset_name=dataset_name,
+                    dataset_alias_name=dataset_alias_name,
                     model_name=cfg.model_name,
                     sample_index=idx_str,
                     prompt_struct=prompt_struct,
@@ -627,7 +639,7 @@ class APIEvalPipeline:
                 await self.queue.put(task)
                 tasks_generated += 1
         finally:
-            self.producer_processes.pop(dataset_name, None)
+            self.producer_processes.pop(dataset_alias_name, None)
             if process.is_alive():
                 try:
                     parent_conn.send(None)
@@ -644,8 +656,9 @@ class APIEvalPipeline:
         """Produce multi-turns dataset inference task."""
         dataset = cfg.dataset_obj
         dataset_name = cfg.dataset_name
+        dataset_alias_name = cfg.dataset_alias_name
 
-        logger.info(f"   [{dataset_name}] Multi-turn dialogue mode")
+        logger.info(f"   [{dataset_alias_name}] Multi-turn dialogue mode")
 
         tasks_generated = 0
         for i in range(len(dataset)):
@@ -659,7 +672,7 @@ class APIEvalPipeline:
                 prompt_struct = dataset.build_prompt(item)
             except Exception as e:
                 import traceback
-                logger.error(f"   [{dataset_name}] Failed to build prompt "
+                logger.error(f"   [{dataset_alias_name}] Failed to build prompt "
                              f"for sample {idx_str}: {repr(e)}")
                 logger.debug(traceback.format_exception(e))
                 # Skip dataset if has fatal sample.
@@ -667,6 +680,7 @@ class APIEvalPipeline:
 
             task = InferenceTask(
                 dataset_name=dataset_name,
+                dataset_alias_name=dataset_alias_name,
                 model_name=cfg.model_name,
                 sample_index=idx_str,
                 prompt_struct=prompt_struct,
@@ -688,7 +702,7 @@ class APIEvalPipeline:
                 break
 
             self.active_workers += 1
-            cfg = self.states[task.dataset_name]
+            cfg = self.states[task.dataset_alias_name]
             try:
                 model = cfg.model_obj
                 start_time = time.time()
@@ -720,7 +734,7 @@ class APIEvalPipeline:
                     "index": task.sample_index,
                     "prediction": output
                 }
-                self._save_checkpoint(task.dataset_name, result_item)
+                self._save_checkpoint(task.dataset_alias_name, result_item)
 
                 # Update status
                 cfg.results_dict[task.sample_index] = output
@@ -734,19 +748,19 @@ class APIEvalPipeline:
                     if len(output_preview) > 100:
                         output_preview = output_preview[:100] + '...'
                     logger.info(
-                        f"[{task.dataset_name}] Sample {task.sample_index}: "
+                        f"[{task.dataset_alias_name}] Sample {task.sample_index}: "
                         f"{output_preview} (took {inference_time:.2f}s)")
 
                 # Save final result and create symlinks when all samples are done.
                 if cfg.processed == cfg.total_samples:
-                    self._save_final_result(task.dataset_name)
-                    self._create_symlinks(task.dataset_name)
+                    self._save_final_result(task.dataset_alias_name)
+                    self._create_symlinks(task.dataset_alias_name)
                     if cfg.eval_status == EvalStatus.Pending:
-                        asyncio.create_task(self._trigger_eval(task.dataset_name))
+                        asyncio.create_task(self._trigger_eval(task.dataset_alias_name))
                     else:
                         if cfg.eval_status == EvalStatus.Skipped:
                             self._upsert_dataset_status(
-                                task.dataset_name,
+                                task.dataset_alias_name,
                                 status='done',
                                 skip_reason='mode_infer',
                             )
@@ -755,16 +769,16 @@ class APIEvalPipeline:
 
             except Exception as e:
                 logger.error(
-                    f"❌ Worker error on {task.dataset_name}/{task.sample_index}: {e}",
+                    f"❌ Worker error on {task.dataset_alias_name}/{task.sample_index}: {e}",
                     exc_info=True
                 )
             finally:
                 self.active_workers -= 1
                 self.queue.task_done()
 
-    async def _trigger_eval(self, dataset_name: str):
+    async def _trigger_eval(self, dataset_alias_name: str):
         """Evaluate the specified dataset."""
-        cfg = self.states[dataset_name]
+        cfg = self.states[dataset_alias_name]
 
         # Avoid multiple trigger.
         if cfg.eval_status != EvalStatus.Pending:
@@ -772,22 +786,22 @@ class APIEvalPipeline:
 
         cfg.eval_status = EvalStatus.Running
         cfg.eval_start_time = time.time()
-        self._upsert_dataset_status(dataset_name, status='eval')
+        self._upsert_dataset_status(dataset_alias_name, status='eval')
 
         # Create evaluation log.
         eval_log_dir = Path(cfg.work_dir) / 'eval_logs'
         eval_log_dir.mkdir(parents=True, exist_ok=True)
-        eval_log_path = str(eval_log_dir / f"{cfg.model_name}_{dataset_name}_eval.log")
-        logger.info(f"    [{dataset_name}] Trigger evaluation.")
+        eval_log_path = str(eval_log_dir / f"{cfg.model_name}_{dataset_alias_name}_eval.log")
+        logger.info(f"    [{dataset_alias_name}] Trigger evaluation.")
 
         if self.debug:
-            await self._run_eval_in_main_process(dataset_name)
+            await self._run_eval_in_main_process(dataset_alias_name)
         else:
-            await self._run_eval_in_subprocess(dataset_name, eval_log_path)
+            await self._run_eval_in_subprocess(dataset_alias_name, eval_log_path)
 
-    async def _run_eval_in_main_process(self, dataset_name: str):
-        cfg = self.states[dataset_name]
-        logger.info(f"🔔 [Eval Start - Debug Mode] {dataset_name}")
+    async def _run_eval_in_main_process(self, dataset_alias_name: str):
+        cfg = self.states[dataset_alias_name]
+        logger.info(f"🔔 [Eval Start - Debug Mode] {dataset_alias_name}")
 
         def run_eval():
             try:
@@ -801,20 +815,20 @@ class APIEvalPipeline:
 
         try:
             eval_result = run_eval()
-            self._handle_eval_result(dataset_name, eval_result)
+            self._handle_eval_result(dataset_alias_name, eval_result)
 
         except Exception as e:
             cfg.eval_status = EvalStatus.Error
             cfg.eval_duration = time.time() - cfg.eval_start_time
-            logger.error(f"❌ [Eval Failed] {dataset_name}: {e}")
+            logger.error(f"❌ [Eval Failed] {dataset_alias_name}: {e}")
             self._upsert_dataset_status(
-                dataset_name,
+                dataset_alias_name,
                 status='done',
                 error_message=str(e),
             )
 
-    async def _run_eval_in_subprocess(self, dataset_name: str, eval_log_path: str):
-        cfg = self.states[dataset_name]
+    async def _run_eval_in_subprocess(self, dataset_alias_name: str, eval_log_path: str):
+        cfg = self.states[dataset_alias_name]
         process = None
         parent_conn = None
         child_conn = None
@@ -840,55 +854,55 @@ class APIEvalPipeline:
                     child_conn.close()
                     raise
                 child_conn.close()
-                self.eval_processes[dataset_name] = process
+                self.eval_processes[dataset_alias_name] = process
 
                 eval_result = await async_recv_process_message(
                     parent_conn,
                     process,
-                    f"{dataset_name} eval process",
+                    f"{dataset_alias_name} eval process",
                 )
                 await async_wait_process(process)
                 if process.exitcode != 0:
                     raise RuntimeError(
                         f"evaluation process exited with code {process.exitcode}"
                     )
-                self._handle_eval_result(dataset_name, eval_result, eval_log_path)
+                self._handle_eval_result(dataset_alias_name, eval_result, eval_log_path)
 
         except Exception as e:
             cfg.eval_status = EvalStatus.Error
             cfg.eval_duration = time.time() - cfg.eval_start_time
             logger.error(
-                f"❌ [Eval Failed] {dataset_name}: {e}\n"
+                f"❌ [Eval Failed] {dataset_alias_name}: {e}\n"
                 f"   Check log file: {eval_log_path}"
             )
             self._upsert_dataset_status(
-                dataset_name,
+                dataset_alias_name,
                 status='done',
                 error_message=str(e),
             )
         finally:
-            self.eval_processes.pop(dataset_name, None)
+            self.eval_processes.pop(dataset_alias_name, None)
             if process is not None and process.is_alive():
                 terminate_processes(
                     [process],
-                    name=f"{dataset_name} eval process",
+                    name=f"{dataset_alias_name} eval process",
                     logger=logger,
                 )
             if parent_conn is not None:
                 parent_conn.close()
 
     def _handle_eval_result(self,
-                            dataset_name: str,
+                            dataset_alias_name: str,
                             eval_result: dict | pd.DataFrame,
                             eval_log_path: str | None = None):
         """After evaluation"""
-        cfg = self.states[dataset_name]
+        cfg = self.states[dataset_alias_name]
 
         if eval_result['success']:
             cfg.eval_status = EvalStatus.Done
             cfg.eval_duration = time.time() - cfg.eval_start_time
             logger.info(
-                f"✅ [Eval Finish] {dataset_name} (Took {cfg.eval_duration:.1f}s)"
+                f"✅ [Eval Finish] {dataset_alias_name} (Took {cfg.eval_duration:.1f}s)"
             )
 
             # Print evaluation result.
@@ -897,22 +911,22 @@ class APIEvalPipeline:
                 logger.info(f"   Results: {json.dumps(result, indent=2, default=str)}")
             else:
                 logger.info(f"   Results:\n{result}")
-            self._upsert_dataset_status(dataset_name, status='done', metrics_source=result)
+            self._upsert_dataset_status(dataset_alias_name, status='done', metrics_source=result)
         else:
             cfg.eval_status = EvalStatus.Error
             cfg.eval_duration = time.time() - cfg.eval_start_time
             logger.error(
-                f"❌ [Eval Failed] {dataset_name}: {eval_result['error']}\n"
+                f"❌ [Eval Failed] {dataset_alias_name}: {eval_result['error']}\n"
                 f"   Check log file: {eval_log_path}"
             )
             self._upsert_dataset_status(
-                dataset_name,
+                dataset_alias_name,
                 status='done',
                 error_message=eval_result['error'],
             )
 
         # Update symlinks to capture evaluation output files.
-        self._create_symlinks(dataset_name)
+        self._create_symlinks(dataset_alias_name)
         # Release dataset data after evaluation.
         self._release_dataset_memory(cfg)
 
@@ -934,7 +948,7 @@ class APIEvalPipeline:
                     logger.info(f'Infer task queue: {self.queue.qsize()}')
                     logger.info(f'Active workers: {self.active_workers}')
                 if not all_eval_done:
-                    logger.info(', '.join(f'{cfg.dataset_name}: {cfg.eval_status.name}'
+                    logger.info(', '.join(f'{cfg.dataset_alias_name}: {cfg.eval_status.name}'
                                           for cfg in self.states.values()))
                 self._log_snapshot()
                 last_log = time.time()
@@ -976,7 +990,7 @@ class APIEvalPipeline:
                 eval_str = f"Done ({cfg.eval_duration:.1f}s)"
 
             # Format output
-            name_str = cfg.dataset_name[:20].ljust(20)
+            name_str = cfg.dataset_alias_name[:20].ljust(20)
             line = [name_str, f"Infer: {infer_str} | Eval: {eval_str:<20}"]
             lines.append(line)
 

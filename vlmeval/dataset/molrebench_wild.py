@@ -208,12 +208,16 @@ class MolRecBenchWildDataset(ImageBaseDataset):
             # The official converter keys records by the molecule image name,
             # while VLMEvalKit uses the TSV's integer index during inference.
             'index': sample_ids,
+            # ``convert_dataframe`` reads the track from a required column
+            # rather than a keyword argument, so every row carries this run's
+            # track.
+            'track': [self.track] * len(sample_ids),
             'prediction': [prediction_map[index] for index in selected_indices],
         })
 
         from .utils.molrecbench_wild import convert_dataframe, score_records
 
-        converted, _ = convert_dataframe(selected, track=self.track)
+        converted, _ = convert_dataframe(selected)
         selected_set = set(sample_ids)
         ground_truth = [row for row in self._ground_truth if row['id'] in selected_set]
         result = score_records(

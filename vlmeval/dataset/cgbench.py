@@ -374,7 +374,7 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
         if clue_intervals is not None:
             merged_intervals = merge_intervals(clue_intervals)
 
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 indices = sample_frames_clue_average(merged_intervals, num_frames, vid_fps)
                 frame_paths = self.clue_frame_paths(uid, len(indices))
 
@@ -396,7 +396,7 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
                 frame_paths = self.clue_frame_paths_fps(uid, len(indices), fps)
 
         else:
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 step_size = len(vid) / (num_frames + 1)
                 indices = [int(i * step_size) for i in range(1, num_frames + 1)]
 
@@ -702,7 +702,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
         if clue_intervals is not None:
             merged_intervals = merge_intervals(clue_intervals)
 
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 indices = sample_frames_clue_average(merged_intervals, num_frames, vid_fps)
                 frame_paths = self.clue_frame_paths(uid, len(indices))
 
@@ -724,7 +724,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
                 frame_paths = self.clue_frame_paths_fps(uid, len(indices), fps)
 
         else:
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 step_size = len(vid) / (num_frames + 1)
                 indices = [int(i * step_size) for i in range(1, num_frames + 1)]
                 frame_paths = self.frame_paths(uid)
@@ -1256,7 +1256,7 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
         if clue_intervals is not None:
             merged_intervals = merge_intervals(clue_intervals)
 
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 indices = sample_frames_clue_average(merged_intervals, num_frames, vid_fps)
                 frame_paths = self.clue_frame_paths(uid, len(indices))
 
@@ -1278,7 +1278,7 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
                 frame_paths = self.clue_frame_paths_fps(uid, len(indices), fps)
 
         else:
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 step_size = len(vid) / (num_frames + 1)
                 indices = [int(i * step_size) for i in range(1, num_frames + 1)]
 
@@ -1583,7 +1583,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
         if clue_intervals is not None:
             merged_intervals = merge_intervals(clue_intervals)
 
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 indices = sample_frames_clue_average(merged_intervals, num_frames, vid_fps)
                 frame_paths = self.clue_frame_paths(uid, len(indices))
 
@@ -1605,7 +1605,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
                 frame_paths = self.clue_frame_paths_fps(uid, len(indices), fps)
 
         else:
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 step_size = len(vid) / (num_frames + 1)
                 indices = [int(i * step_size) for i in range(1, num_frames + 1)]
                 frame_paths = self.frame_paths(uid)

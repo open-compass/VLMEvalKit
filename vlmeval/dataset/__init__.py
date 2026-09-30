@@ -5,7 +5,9 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, localize_df, toliststr
+from vlmeval.smp import (LMUDataRoot, dump, get_composite_child_eval_file,
+                         get_intermediate_file_path, load, localize_df, read_ok, toliststr)
+from .activevision import ActiveVisionDataset
 from .asclepius import Asclepius
 from .av_speakerbench import AVSpeakerBench
 from .babyvision import BabyVision
@@ -36,6 +38,7 @@ from .emma import EMMADataset
 from .eriq import ERIQBench
 from .erqa import ERQADataset
 from .erqabench import ERQABench
+from .favor_bench import FavorBench
 from .flames import FlamesDataset
 from .foxbench import FoxBench
 from .gobench import GOBenchDataset
@@ -170,6 +173,7 @@ from .vladbench import VLADBench
 from .vlm2bench import VLM2Bench
 from .vlmbias import VLMBias
 from .vlrmbench import VLRMBench
+from .vrbench import VRBenchDataset
 from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
 from .wiki_vqa_bench import WikiVQABench
 from .wildprobe import WildprobeDataset
@@ -177,8 +181,6 @@ from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
 from .xstest import XSTestDataset
-
-from .video_dataset_config import supported_video_datasets  # isort: skip
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -250,6 +252,10 @@ class ConcatDataset(ImageBaseDataset):
         assert 'image' not in line
         assert 'image_path' in line
         tgt_path = toliststr(line['image_path'])
+        if not all(read_ok(path) for path in tgt_path):
+            img_root = self.dataset_map[line['SUB_DATASET']].img_root
+            tgt_path = [osp.join(img_root, path) for path in tgt_path]
+            assert all(read_ok(path) for path in tgt_path), f'Could not find images: {tgt_path}'
         return tgt_path
 
     @classmethod
@@ -259,9 +265,11 @@ class ConcatDataset(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         # First, split the eval_file by dataset
         data_all = load(eval_file)
+        child_eval_files = {}
         for dname in self.datasets:
-            tgt = eval_file.replace(self.dataset_name, dname)
-            data_sub = data_all[data_all['SUB_DATASET'] == dname]
+            tgt = get_composite_child_eval_file(eval_file, dname)
+            child_eval_files[dname] = tgt
+            data_sub = data_all[data_all['SUB_DATASET'] == dname].copy()
             data_sub.pop('index')
             data_sub['index'] = data_sub.pop('original_index')
             data_sub.pop('SUB_DATASET')
@@ -271,7 +279,7 @@ class ConcatDataset(ImageBaseDataset):
         dict_all = {}
         # One of the vars will be used to aggregate results
         for dname in self.datasets:
-            tgt = eval_file.replace(self.dataset_name, dname)
+            tgt = child_eval_files[dname]
             res = self.dataset_map[dname].evaluate(tgt, **judge_kwargs)
             if isinstance(res, pd.DataFrame):
                 res['DATASET'] = [dname] * len(res)
@@ -327,7 +335,7 @@ IMAGE_DATASET = [
     BabyVision, PerceptionBench, SUPERChemDataset, CAPEval,
     BabyVision, WildprobeDataset, PerceptionBench, SUPERChemDataset,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
-    PerceptionBench, SUPERChemDataset, C4Bench,
+    PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset,
 ]
 
 # add by EASI team
@@ -347,11 +355,13 @@ VIDEO_DATASET = [
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
-    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded
+    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset, FavorBench
 ]
 
 # add by EASI team
-VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench]  # noqa: E501
+VIDEO_DATASET += [
+    SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench
+]  # noqa: E501
 
 TEXT_DATASET = [
     TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment,
@@ -414,9 +424,7 @@ def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
 
 def build_dataset(dataset_name, **kwargs):
     for cls in DATASET_CLASSES:
-        if dataset_name in supported_video_datasets:
-            return supported_video_datasets[dataset_name](**kwargs)
-        elif dataset_name in cls.supported_datasets():
+        if dataset_name in cls.supported_datasets():
             return cls(dataset=dataset_name, **kwargs)
 
     warnings.warn(f'Dataset {dataset_name} is not officially supported. ')

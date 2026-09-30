@@ -138,7 +138,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
         indices = []
 
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
             indices = np.linspace(0, video_nframes - 1, self.nframe, dtype=int).tolist()
             frame_paths = self.frame_paths(video_path)
 
