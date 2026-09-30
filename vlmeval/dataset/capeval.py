@@ -485,7 +485,7 @@ def records_to_score_df(records, *, judge_model=None, prompt_version=None, evalu
 class CAPEval(ImageBaseDataset):
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    DEFAULT_JUDGE = 'qwen-72b'
+    DEFAULT_JUDGE_MODEL = 'qwen-72b'
     force_use_dataset_prompt = True
     DATASET_URL = {'CAPEval': f'https://huggingface.co/datasets/{HF_REPO}'}
     DATASET_MD5 = {}
@@ -532,7 +532,9 @@ class CAPEval(ImageBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)
         judge_kwargs.pop('use_vllm', None)
         judge_kwargs.pop('use_verifier', None)
-        judge_model = judge_kwargs.pop('model', None) or self.DEFAULT_JUDGE
+        judge_model = judge_kwargs.pop('model', None) or self.DEFAULT_JUDGE_MODEL
+        judge_kwargs.setdefault('temperature', 0.0)
+        judge_kwargs.setdefault('max_tokens', 8192)
         cache_tag = f'{_safe_model_name(judge_model)}_{PROMPT_VERSION}_{EVALUATOR_VERSION}'
         storage = get_intermediate_file_path(eval_file, f'_{cache_tag}_judge', 'json')
         tmp_file = get_intermediate_file_path(eval_file, f'_{cache_tag}_judge_tmp', 'pkl')
@@ -550,12 +552,11 @@ class CAPEval(ImageBaseDataset):
         todo = pending_units(units, ans)
         if todo:
             model = build_judge(
-                model=judge_model, temperature=0.0,
-                system_prompt=SINGLE_PASS_SYSTEM, max_tokens=8192, **judge_kwargs,
+                model=judge_model, system_prompt=SINGLE_PASS_SYSTEM, **judge_kwargs,
             )
             assert model.working(), (
                 'CAPEval evaluation requires a working judge API '
-                f'(default --judge {self.DEFAULT_JUDGE}).\n' + DEBUG_MESSAGE
+                f'(default --judge {self.DEFAULT_JUDGE_MODEL}).\n' + DEBUG_MESSAGE
             )
             tups = [
                 (model, build_single_pass_user_prompt(u['caption'], u['checklist_items']),
