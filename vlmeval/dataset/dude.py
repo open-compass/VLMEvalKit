@@ -218,3 +218,4 @@ class DUDE(ImageBaseDataset):
         logger.info(f'DUDE successfully finished evaluating {eval_file}, results saved in {score_pth}')
         logger.info('Score: ')
         logger.info(score)
+        return score
