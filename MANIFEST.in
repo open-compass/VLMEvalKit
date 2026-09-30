@@ -1,0 +1,1 @@
+recursive-include vlmeval *.yaml *.yml *.json *.jsonl *.txt *.md *.csv *.tsv *.png *.jpg *.jpeg *.gif *.svg *.toml *.cfg *.ini
