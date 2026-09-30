@@ -91,6 +91,7 @@ from .video_llm import (Chatunivi, LLaMAVID, PLLaVA, VideoChat2_HD, VideoChatGPT
                         VideoLLaVA_HF)
 from .vila import NVILA, VILA
 from .vintern_chat import VinternChat
+from .visionpsy import VisionPsy
 from .visualglm import VisualGLM
 from .vita import VITA, VITAQwen2
 from .vlaa_thinker import VLAAThinkerChat
