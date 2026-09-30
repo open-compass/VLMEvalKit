@@ -120,6 +120,9 @@ class KimiVL(BaseModel):
         messages = [
             {'role': 'user', 'content': prompt}
         ]
+        return self._generate_from_messages(messages, images, dataset=dataset)
+
+    def _generate_from_messages(self, messages, images, dataset=None):
         text = self.processor.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt")
         inputs = self.processor(
             images=images, text=text,
@@ -142,3 +145,14 @@ class KimiVL(BaseModel):
             if dataset in ["MMMU_DEV_VAL", "MMStar"]:
                 response = extract_boxed_content(response)
         return response
+
+    def chat_inner(self, message, dataset=None):
+        assert len(message) % 2 == 1 and message[-1]['role'] == 'user'
+
+        messages = []
+        images = []
+        for turn in message:
+            content, turn_images = self.message_to_promptimg(turn['content'], dataset=dataset)
+            messages.append({'role': turn['role'], 'content': content})
+            images.extend(turn_images)
+        return self._generate_from_messages(messages, images, dataset=dataset)

@@ -55,3 +55,32 @@ class Phi4Multimodal(BaseModel):
             generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )[0]
         return response
+
+    def chat_inner(self, message, dataset=None):
+        assert len(message) % 2 == 1 and message[-1]['role'] == 'user'
+
+        prompt = ''
+        images = []
+        for turn in message:
+            prompt += f"<|{turn['role']}|>"
+            for item in turn['content']:
+                if item['type'] == 'image':
+                    images.append(Image.open(item['value']).convert('RGB'))
+                    prompt += f'<|image_{len(images)}|>'
+                elif item['type'] == 'text':
+                    prompt += item['value']
+            prompt += '<|end|>'
+        prompt += '<|assistant|>'
+
+        inputs = self.processor(text=prompt, images=images, return_tensors='pt').to('cuda')
+        generate_ids = self.model.generate(
+            **inputs,
+            max_new_tokens=1000,
+            generation_config=self.generation_config,
+        )
+        generate_ids = generate_ids[:, inputs['input_ids'].shape[1]:]
+        return self.processor.batch_decode(
+            generate_ids,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )[0]
