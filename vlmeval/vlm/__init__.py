@@ -23,6 +23,7 @@ from .flash_vl import FlashVL
 from .gemma import Gemma3, Gemma4, PaliGemma
 from .granite_docling import DOCLING
 from .granite_vision import GraniteVision3
+from .grt import GRT
 from .h2ovl_mississippi import H2OVLChat
 from .hawk_vl import HawkVL
 from .idefics import IDEFICS, IDEFICS2
