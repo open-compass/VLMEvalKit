@@ -113,20 +113,30 @@ class Gemma3(BaseModel):
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
 
-    def message2pipeline(self, message):
+    def _chat_message2pipeline(self, message):
         ret = []
         if hasattr(self, 'system_prompt') and self.system_prompt is not None:
             ret = [
                 dict(role='system', content=[dict(type='text', text=self.system_prompt)])
             ]
-        content = []
-        for m in message:
-            if m['type'] == 'text':
-                content.append(dict(type='text', text=m['value']))
-            elif m['type'] == 'image':
-                content.append(dict(type='image', url=m['value']))
-        ret.append(dict(role='user', content=content))
+        for turn in message:
+            if turn['role'] not in ['user', 'assistant']:
+                raise ValueError(f'Unsupported Gemma 3 chat role: {turn["role"]}')
+            content = []
+            for item in turn['content']:
+                if item['type'] == 'text':
+                    content.append(dict(type='text', text=item['value']))
+                elif item['type'] == 'image':
+                    if turn['role'] != 'user':
+                        raise ValueError('Gemma 3 only supports images in user turns.')
+                    content.append(dict(type='image', url=item['value']))
+            ret.append(dict(role=turn['role'], content=content))
         return ret
+
+    def message2pipeline(self, message):
+        return self._chat_message2pipeline([
+            dict(role='user', content=message),
+        ])
 
     def encode_image(self, image_path):
         mime_type, _ = guess_type(image_path)
@@ -156,7 +166,6 @@ class Gemma3(BaseModel):
     def message_to_promptimg_vllm(self, message, dataset=None):
         processed_message = []
         images = []
-        num_images = 0
         for item in message:
             if item['type'] == 'text':
                 processed_message.append({
@@ -164,7 +173,7 @@ class Gemma3(BaseModel):
                     "text": item['value']
                 })
             elif item['type'] == 'image':
-                if num_images < self.limit_mm_per_prompt:
+                if len(images) < self.limit_mm_per_prompt:
                     image_path = item['value']
                     encoded_image = self.encode_image(image_path)
                     image = Image.open(BytesIO(base64.b64decode(encoded_image)))
@@ -174,16 +183,50 @@ class Gemma3(BaseModel):
                         "image": "",
                     })
                     images.append(image)
-                    num_images += 1
-        if num_images >= self.limit_mm_per_prompt:
+        if len([item for item in message if item['type'] == 'image']) > self.limit_mm_per_prompt:
             logging.warning(
                 f"Number of images exceeds the limit of {self.limit_mm_per_prompt}."
                 f"Only the first {self.limit_mm_per_prompt} images will be used."
             )
         return processed_message, images
 
-    def generate_inner_transformers(self, message, dataset=None):
-        messages = self.message2pipeline(message)
+    def _chat_message2pipeline_vllm(self, message):
+        ret = []
+        if hasattr(self, 'system_prompt') and self.system_prompt is not None:
+            ret.append(dict(
+                role='system',
+                content=[dict(type='text', text=self.system_prompt)],
+            ))
+
+        images = []
+        image_count = 0
+        for turn in message:
+            if turn['role'] not in ['user', 'assistant']:
+                raise ValueError(f'Unsupported Gemma 3 chat role: {turn["role"]}')
+            content = []
+            for item in turn['content']:
+                if item['type'] == 'text':
+                    content.append(dict(type='text', text=item['value']))
+                elif item['type'] == 'image':
+                    if turn['role'] != 'user':
+                        raise ValueError('Gemma 3 only supports images in user turns.')
+                    image_count += 1
+                    if len(images) < self.limit_mm_per_prompt:
+                        encoded_image = self.encode_image(item['value'])
+                        image = Image.open(BytesIO(base64.b64decode(encoded_image)))
+                        image.load()
+                        content.append(dict(type='image', image=''))
+                        images.append(image)
+            ret.append(dict(role=turn['role'], content=content))
+
+        if image_count > self.limit_mm_per_prompt:
+            logging.warning(
+                f"Number of images exceeds the limit of {self.limit_mm_per_prompt}."
+                f"Only the first {self.limit_mm_per_prompt} images will be used."
+            )
+        return ret, images
+
+    def _generate_transformers_messages(self, messages):
         inputs = self.processor.apply_chat_template(
             messages, add_generation_prompt=True, tokenize=True,
             return_dict=True, return_tensors="pt",
@@ -195,15 +238,19 @@ class Gemma3(BaseModel):
             generation = self.model.generate(**inputs, **self.kwargs)
             generation = generation[0][input_len:]
 
-        decoded = self.processor.decode(generation, skip_special_tokens=True)
-        return decoded
+        return self.processor.decode(generation, skip_special_tokens=True)
 
-    def generate_inner_vllm(self, message, dataset=None):
+    def generate_inner_transformers(self, message, dataset=None):
+        messages = self.message2pipeline(message)
+        return self._generate_transformers_messages(messages)
+
+    def chat_inner_transformers(self, message, dataset=None):
+        messages = self._chat_message2pipeline(message)
+        return self._generate_transformers_messages(messages)
+
+    def _generate_vllm_messages(self, messages, images):
         from vllm import SamplingParams
-        prompt, images = self.message_to_promptimg_vllm(message, dataset=dataset)
-        messages = [
-            {'role': 'user', 'content': prompt}
-        ]
+
         prompt = self.processor.apply_chat_template(
             messages,
             tokenize=False,
@@ -220,15 +267,32 @@ class Gemma3(BaseModel):
             },
             sampling_params=sampling_params
         )
-        for o in outputs:
-            generated_text = o.outputs[0].text
+        for output in outputs:
+            generated_text = output.outputs[0].text
         return generated_text
+
+    def generate_inner_vllm(self, message, dataset=None):
+        prompt, images = self.message_to_promptimg_vllm(message, dataset=dataset)
+        messages = [
+            {'role': 'user', 'content': prompt}
+        ]
+        return self._generate_vllm_messages(messages, images)
+
+    def chat_inner_vllm(self, message, dataset=None):
+        messages, images = self._chat_message2pipeline_vllm(message)
+        return self._generate_vllm_messages(messages, images)
 
     def generate_inner(self, message, dataset=None):
         if self.use_vllm:
             return self.generate_inner_vllm(message, dataset=dataset)
         else:
             return self.generate_inner_transformers(message, dataset=dataset)
+
+    def chat_inner(self, message, dataset=None):
+        if self.use_vllm:
+            return self.chat_inner_vllm(message, dataset=dataset)
+        else:
+            return self.chat_inner_transformers(message, dataset=dataset)
 
 
 class Gemma4(BaseModel):
