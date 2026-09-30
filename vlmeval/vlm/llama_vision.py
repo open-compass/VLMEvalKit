@@ -134,15 +134,29 @@ class llama_vision(BaseModel):
         message.extend([dict(type='image', value=s) for s in tgt_path])
         return message
 
-    def generate_inner(self, message, dataset=None):
-        payload, images = [], []
-        for msg in message:
-            if msg['type'] == 'text':
-                payload.append({'type': 'text', 'text': msg['value']})
-            else:
-                payload.append({'type': 'image'})
-                images.append(Image.open(msg['value']))
-        messages = [{'role': 'user', 'content': payload}]
+    def _prepare_chat(self, message):
+        if not message or message[-1]['role'] != 'user':
+            raise ValueError('Llama Vision chat history must end with a user turn.')
+
+        messages, images = [], []
+        for index, turn in enumerate(message):
+            expected_role = 'user' if index % 2 == 0 else 'assistant'
+            if turn['role'] != expected_role:
+                raise ValueError('Llama Vision chat history must alternate user and assistant turns.')
+
+            payload = []
+            for item in turn['content']:
+                if item['type'] == 'text':
+                    payload.append({'type': 'text', 'text': item['value']})
+                elif item['type'] == 'image':
+                    if turn['role'] != 'user':
+                        raise ValueError('Llama Vision only supports images in user turns.')
+                    payload.append({'type': 'image'})
+                    images.append(Image.open(item['value']).convert('RGB'))
+            messages.append({'role': turn['role'], 'content': payload})
+        return messages, images
+
+    def _generate_from_chat(self, messages, images, dataset=None):
         input_text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
         inputs = self.processor(images, input_text, return_tensors='pt').to(self.device)
         if not self.use_custom_prompt(dataset):
@@ -154,3 +168,11 @@ class llama_vision(BaseModel):
             self.kwargs['max_new_tokens'] = 2048
         output = self.model.generate(**inputs, **self.kwargs)
         return self.processor.decode(output[0][inputs['input_ids'].shape[1]:]).replace('<|eot_id|>', '')
+
+    def generate_inner(self, message, dataset=None):
+        messages, images = self._prepare_chat([{'role': 'user', 'content': message}])
+        return self._generate_from_chat(messages, images, dataset=dataset)
+
+    def chat_inner(self, message, dataset=None):
+        messages, images = self._prepare_chat(message)
+        return self._generate_from_chat(messages, images, dataset=dataset)
