@@ -82,6 +82,7 @@ from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
 # Add by EASI team
 from .megabench import MEGABench
 from .memlens import MemLens
+from .metbench import METBenchImage, METBenchText
 from .miabench import MIABench
 from .mindcubebench import MindCubeBench
 from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
@@ -302,6 +303,7 @@ class ConcatDataset(ImageBaseDataset):
 
 # Add new supported dataset class here
 IMAGE_DATASET = [
+    METBenchImage,
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
     MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset, DUDE, DocScope,
@@ -360,6 +362,7 @@ VIDEO_DATASET += [
 ]  # noqa: E501
 
 TEXT_DATASET = [
+    METBenchText,
     TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment,
     SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation, XSTestDataset, FlamesDataset,
     MedXpertQAText
