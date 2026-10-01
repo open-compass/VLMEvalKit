@@ -84,7 +84,16 @@ def compute_mcq_score(df: pd.DataFrame) -> pd.DataFrame:
         gt = can_match_option(gt_raw)
 
         preds_extracted.append(pred)
-        acc.append(exact_match(pred, gt))
+        # ``can_match_option`` returns the boolean ``False`` when no option letter
+        # can be extracted. ``exact_match`` stringifies both sides, so a failed
+        # prediction next to a failed ground truth compares ``"false" == "false"``
+        # and would be rewarded as a perfect hit. An item whose ground truth (or
+        # prediction) cannot be parsed to an option letter is never correct, so
+        # grade those items explicitly as wrong.
+        if pred is False or gt is False:
+            acc.append(0.)
+        else:
+            acc.append(exact_match(pred, gt))
 
     df = df.copy()
     df['pred_extracted'] = preds_extracted
