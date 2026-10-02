@@ -42,28 +42,54 @@ class E3VQA(ImageMCQDataset):
             return ".webp"
         return ".img"
 
+    # def _save_image(self, image, stem):
+    #     raw = image.get("bytes")
+    #     src_path = image.get("path")
+    #
+    #     if raw is not None:
+    #         ext = self._get_extension(raw)
+    #         filename = f"{stem}{ext}"
+    #         path = osp.join(self.img_root, filename)
+    #
+    #         if not osp.exists(path):
+    #             with open(path, "wb") as f:
+    #                 f.write(raw)
+    #
+    #         return filename
+    #
+    #     if src_path is not None:
+    #         ext = osp.splitext(src_path)[1] or ".jpg"
+    #         filename = f"{stem}{ext}"
+    #         path = osp.join(self.img_root, filename)
+    #
+    #         if not osp.exists(path):
+    #             shutil.copy2(src_path, path)
+    #
+    #         return filename
+    #
+    #     raise ValueError(f"Could not load image for {stem}")
+
     def _save_image(self, image, stem):
+
+        import io
+        from PIL import Image as PILImage
         raw = image.get("bytes")
         src_path = image.get("path")
 
-        if raw is not None:
-            ext = self._get_extension(raw)
-            filename = f"{stem}{ext}"
-            path = osp.join(self.img_root, filename)
+        filename = f"{stem}.jpg"
+        path = osp.join(self.img_root, filename)
 
+        if raw is not None:
             if not osp.exists(path):
-                with open(path, "wb") as f:
-                    f.write(raw)
+                img = PILImage.open(io.BytesIO(raw)).convert("RGB")
+                img.save(path, format="JPEG", quality=85)
 
             return filename
 
         if src_path is not None:
-            ext = osp.splitext(src_path)[1] or ".jpg"
-            filename = f"{stem}{ext}"
-            path = osp.join(self.img_root, filename)
-
             if not osp.exists(path):
-                shutil.copy2(src_path, path)
+                img = PILImage.open(src_path).convert("RGB")
+                img.save(path, format="JPEG", quality=85)
 
             return filename
 
@@ -164,6 +190,7 @@ class E3VQA(ImageMCQDataset):
         )
 
         prompt = (
+            f"{SYSTEM_PROMPT}\n"
             f"Question:\n{line['question']}\n\n"
             f"Choices:\n{formatted_options}\n\n"
             "Only one option is correct.\n"
