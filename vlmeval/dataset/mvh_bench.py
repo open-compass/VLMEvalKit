@@ -7,7 +7,9 @@ import shutil
 import pandas as pd
 
 from .image_base import ImageBaseDataset
-
+import re
+from collections import defaultdict
+from vlmeval.smp import dump, get_intermediate_file_path, load
 
 SHUFFLE_SEED = 2025
 
@@ -253,6 +255,205 @@ class MVHBench(ImageBaseDataset):
             dict(type="text", value=prompt),
         ]
 
+    @staticmethod
+    def _parse_mc(response):
+        response = str(response).strip()
+
+        match = re.search(
+            r"(?:^|[\s(\[])([ABC])(?:[\s)\].,:]|$)",
+            response,
+            flags=re.IGNORECASE,
+        )
+
+        return match.group(1).upper() if match else ""
+
+    @staticmethod
+    def _parse_binary(response):
+        matches = {
+            x.lower()
+            for x in re.findall(
+                r"\b(yes|no)\b",
+                str(response),
+                flags=re.IGNORECASE,
+            )
+        }
+
+        if len(matches) != 1:
+            return ""
+
+        return next(iter(matches)).capitalize()
+
+    @staticmethod
+    def _group_accuracy(data, index_sets):
+        hits = []
+
+        for _, group in data.groupby("group_id"):
+            records = {
+                int(row["question_index"]): bool(row["correct"])
+                for _, row in group.iterrows()
+            }
+
+            for indices in index_sets:
+                if all(i in records for i in indices):
+                    hits.append(
+                        all(records[i] for i in indices)
+                    )
+
+        if not hits:
+            return float("nan")
+
+        return 100.0 * sum(hits) / len(hits)
+
+    @classmethod
+    def _metrics_for_type(cls, data):
+        mc = data[data["question_type"] == "mc"]
+        binary = data[data["question_type"] == "binary"]
+
+        mc_acc = (
+            100.0 * mc["correct"].mean()
+            if len(mc)
+            else float("nan")
+        )
+
+        mc_pacc = cls._group_accuracy(
+            mc,
+            [(0, 1)],
+        )
+
+        binary_acc = (
+            100.0 * binary["correct"].mean()
+            if len(binary)
+            else float("nan")
+        )
+
+        binary_pacc = cls._group_accuracy(
+            binary,
+            [(2, 3), (4, 5)],
+        )
+
+        binary_qacc = cls._group_accuracy(
+            binary,
+            [(2, 3, 4, 5)],
+        )
+
+        mc_errors = (~mc["correct"]).sum()
+
+        aer = (
+            100.0
+            * mc["adversarial_hit"].sum()
+            / mc_errors
+            if mc_errors
+            else 0.0
+        )
+
+        binary_errors = (~binary["correct"]).sum()
+
+        yer = (
+            100.0
+            * binary["false_yes"].sum()
+            / binary_errors
+            if binary_errors
+            else 0.0
+        )
+
+        mvh_score = (
+            mc_acc
+            + mc_pacc
+            + binary_acc
+            + binary_pacc
+            + binary_qacc
+        )
+
+        return {
+            "mc_acc": mc_acc,
+            "mc_pacc": mc_pacc,
+            "aer": aer,
+            "binary_acc": binary_acc,
+            "binary_pacc": binary_pacc,
+            "binary_qacc": binary_qacc,
+            "yer": yer,
+            "mvh_score": mvh_score,
+        }
+
     def evaluate(self, eval_file, **judge_kwargs):
-        # Implemented in the next step.
-        raise NotImplementedError
+        data = load(eval_file)
+
+        data["prediction"] = data["prediction"].astype(str)
+
+        parsed = []
+        correct = []
+        adversarial_hit = []
+        false_yes = []
+
+        for _, row in data.iterrows():
+            if row["question_type"] == "mc":
+                pred = self._parse_mc(row["prediction"])
+
+                parsed.append(pred)
+                correct.append(pred == row["answer"])
+                adversarial_hit.append(
+                    pred == row["adversarial"]
+                )
+                false_yes.append(False)
+
+            else:
+                pred = self._parse_binary(row["prediction"])
+
+                parsed.append(pred)
+                correct.append(pred == row["answer"])
+                adversarial_hit.append(False)
+                false_yes.append(
+                    pred == "Yes"
+                    and row["answer"] == "No"
+                )
+
+        data["parsed_answer"] = parsed
+        data["correct"] = correct
+        data["adversarial_hit"] = adversarial_hit
+        data["false_yes"] = false_yes
+
+        detail_file = get_intermediate_file_path(
+            eval_file,
+            "_result",
+        )
+        dump(data, detail_file)
+
+        if self.dataset_name in [
+            "MVHBench_CrossView",
+            "MVHBench_CrossInstance",
+        ]:
+            metrics = self._metrics_for_type(data)
+
+        else:
+            metrics = {}
+
+            for mvh_type in [
+                "cross_instance",
+                "cross_view",
+            ]:
+                subset = data[
+                    data["mvh_type"] == mvh_type
+                ]
+
+                type_metrics = self._metrics_for_type(
+                    subset
+                )
+
+                for key, value in type_metrics.items():
+                    metrics[f"{mvh_type}_{key}"] = value
+
+            metrics["mvh_score"] = (
+                metrics["cross_instance_mvh_score"]
+                + metrics["cross_view_mvh_score"]
+            )
+
+        result = pd.DataFrame([metrics])
+
+        score_file = get_intermediate_file_path(
+            eval_file,
+            "_acc",
+            "csv",
+        )
+        dump(result, score_file)
+
+        return result
