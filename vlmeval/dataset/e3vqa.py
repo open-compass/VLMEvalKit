@@ -8,6 +8,22 @@ import pandas as pd
 from .image_mcq import ImageMCQDataset
 
 
+SYSTEM_PROMPT = (
+    "You are a helpful assistant.\n"
+    "You are provided with two visual inputs in sequence, each captured from a different perspective:\n"
+    "1. The view from the camera worn by the user ('I').\n"
+    "2. The view captured by an external camera observing the user ('I').\n\n"
+    "The first image shows what the user ('I') sees from their perspective.\n"
+    "The user's ('My') full body cannot be visible; you may only see parts of their body, "
+    "like their hand, foot, or arm, or in some cases, none of the user's body at all.\n\n"
+    "The second image shows both the user and the environment from a third-person perspective "
+    "with a broad view.\n"
+    "The user's ('My') full body is visible, but due to the fixed viewpoint, some parts may not be visible.\n\n"
+    "These two images capture the same event at the same time.\n"
+    "Your task is to analyze both images along with the question and provide the most accurate "
+    "response based on the visual information from both perspectives.\n"
+)
+
 class E3VQA(ImageMCQDataset):
 
     DATASET_URL = {
