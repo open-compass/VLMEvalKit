@@ -28,6 +28,8 @@ class E3VQA(ImageMCQDataset):
 
     DATASET_URL = {
         "E3VQA": "None",
+        "E3VQA_EgoExo4D": "None",
+        "E3VQA_LEMMA": "None",
     }
 
     @staticmethod
@@ -70,7 +72,11 @@ class E3VQA(ImageMCQDataset):
     def load_data(self, dataset):
         from datasets import Image, load_dataset
 
-        assert dataset == "E3VQA"
+        assert dataset in [
+            "E3VQA",
+            "E3VQA_EgoExo4D",
+            "E3VQA_LEMMA",
+        ]
 
         os.makedirs(self.img_root, exist_ok=True)
 
@@ -78,6 +84,17 @@ class E3VQA(ImageMCQDataset):
             "SNU-ISLAB/E3VQA",
             split="test",
         )
+
+        if dataset == "E3VQA_EgoExo4D":
+            ds = ds.filter(
+                lambda source: source == "Ego-Exo4D",
+                input_columns=["source"],
+            )
+        elif dataset == "E3VQA_LEMMA":
+            ds = ds.filter(
+                lambda source: source == "LEMMA",
+                input_columns=["source"],
+            )
 
         # Access the original encoded image bytes without decoding/re-encoding.
         ds = ds.cast_column("ego", Image(decode=False))
@@ -116,7 +133,6 @@ class E3VQA(ImageMCQDataset):
                     "D": options[3],
                     "answer": answer_letter,
                     "source": example["source"],
-                    "e3_category": example["category"],
                     "perspective": example["perspective"],
                     "l2-category": (
                         "egoexo4d"
