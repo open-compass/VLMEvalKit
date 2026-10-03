@@ -24,6 +24,7 @@ SYSTEM_PROMPT = (
     "response based on the visual information from both perspectives.\n"
 )
 
+
 class E3VQA(ImageMCQDataset):
 
     force_use_dataset_prompt = True
@@ -70,8 +71,6 @@ class E3VQA(ImageMCQDataset):
             return filename
 
         raise ValueError(f"Could not load image for {stem}")
-
-
 
     def load_data(self, dataset):
         from datasets import Image, load_dataset
