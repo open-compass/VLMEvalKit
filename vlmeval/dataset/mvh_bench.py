@@ -27,6 +27,12 @@ class MVHBench(ImageBaseDataset):
         "MVHBench_Val": "None",
     }
 
+    @classmethod
+    def report_primary_metric(cls, metrics):
+        if isinstance(metrics, dict) and "mvh_score" in metrics:
+            return {"mvh_score": metrics["mvh_score"]}
+        return super().report_primary_metric(metrics)
+
     @staticmethod
     def _get_extension(data):
         if data.startswith(b"\xff\xd8\xff"):
