@@ -2,23 +2,22 @@ import hashlib
 import os
 import os.path as osp
 import random
+import re
 import shutil
 
 import pandas as pd
 
-from .image_base import ImageBaseDataset
-import re
-from collections import defaultdict
 from vlmeval.smp import dump, get_intermediate_file_path, load
+from vlmeval.utils import can_infer
+from .image_base import ImageBaseDataset
 
 SHUFFLE_SEED = 2025
 
 
 class MVHBench(ImageBaseDataset):
 
-    # MVH-Bench mixes MCQ and binary QA.
-    # Use a custom type so model-specific MCQ/VQA prompts do not override
-    # the benchmark prompt.
+    # Always use the benchmark prompt (MC + binary QA mixed).
+    force_use_dataset_prompt = True
     TYPE = "MVH"
 
     DATASET_URL = {
@@ -256,16 +255,10 @@ class MVHBench(ImageBaseDataset):
         ]
 
     @staticmethod
-    def _parse_mc(response):
-        response = str(response).strip()
-
-        match = re.search(
-            r"(?:^|[\s(\[])([ABC])(?:[\s)\].,:]|$)",
-            response,
-            flags=re.IGNORECASE,
-        )
-
-        return match.group(1).upper() if match else ""
+    def _parse_mc(response, choices):
+        # choices: {"A": ..., "B": ..., "C": ...}
+        pred = can_infer(str(response), dict(choices))
+        return pred if pred in ("A", "B", "C") else ""
 
     @staticmethod
     def _parse_binary(response):
@@ -387,8 +380,10 @@ class MVHBench(ImageBaseDataset):
 
         for _, row in data.iterrows():
             if row["question_type"] == "mc":
-                pred = self._parse_mc(row["prediction"])
-
+                pred = self._parse_mc(
+                    row["prediction"],
+                    {c: row[c] for c in "ABC"},
+                )
                 parsed.append(pred)
                 correct.append(pred == row["answer"])
                 adversarial_hit.append(

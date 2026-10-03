@@ -182,6 +182,7 @@ from .worldvqa import WorldVQA
 from .xstest import XSTestDataset
 from .mvh_bench import MVHBench
 
+
 class ConcatDataset(ImageBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
     # Each single dataset should not have a field named `SUB_DATASET`
