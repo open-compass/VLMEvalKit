@@ -38,7 +38,6 @@ from .eriq import ERIQBench
 from .erqa import ERQADataset
 from .erqabench import ERQABench
 from .favor_bench import FavorBench
-from .timelens_bench import TimeLensBench
 from .flames import FlamesDataset
 from .foxbench import FoxBench
 from .gobench import GOBenchDataset
@@ -152,6 +151,7 @@ from .superchem import SUPERChemDataset
 from .tamperbench import MVTamperBench
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
 from .text_mcq import CustomTextMCQDataset, MedXpertQAText, TextMCQDataset
+from .timelens_bench import TimeLensBench
 from .uni_svg import UniSVG
 from .utils import DEBUG_MESSAGE, build_judge, extract_answer_from_item, prefetch_answer
 from .v2pbench import V2PBench
