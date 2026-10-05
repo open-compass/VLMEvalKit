@@ -26,6 +26,7 @@ from .cmmmu import CMMMU
 from .creation import CreationMMBenchDataset
 from .da2k import DA2K
 from .design2code import Design2Code
+from .docatlas import DocAtlasBench
 from .docscope import DocScope
 from .dream import DREAM
 from .dsrbench import DSRBench
@@ -331,7 +332,7 @@ IMAGE_DATASET = [
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
-    PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset,
+    PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset, DocAtlasBench,
 ]
 
 # add by EASI team
