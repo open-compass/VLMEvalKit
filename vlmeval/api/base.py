@@ -158,6 +158,7 @@ class BaseAPI:
     def chat(self, messages, **kwargs1):
         """The main function for multi-turn chatting. Will call `chat_inner` with the preprocessed input messages."""
         assert hasattr(self, 'chat_inner'), 'The API model should has the `chat_inner` method. '
+        messages = cp.deepcopy(messages)
         for msg in messages:
             assert isinstance(msg, dict) and 'role' in msg and 'content' in msg, msg
             assert self.check_content(msg['content']) in ['str', 'dict', 'liststr', 'listdict'], msg
@@ -226,6 +227,7 @@ class BaseAPI:
         Returns:
             str: The generated answer of the Failed Message if failed to obtain answer.
         """
+        message = cp.deepcopy(message)
         if self.check_content(message) == 'listdict':
             message = self.preprocess_message_with_role(message)
 
