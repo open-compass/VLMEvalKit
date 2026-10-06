@@ -217,7 +217,7 @@ class OpenAIWrapper(BaseAPI):
                 self.api_base = os.environ.get('BOYUE_API_BASE')
                 self.key = os.environ.get('BOYUE_API_KEY')
 
-        logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
+        logger.info(f'Using API Base: {self.api_base}')
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
