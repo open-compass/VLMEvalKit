@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from vlmeval.config import supported_VLM
 from vlmeval.smp import (dump, get_pred_file_path, get_rank_and_world_size, load,
-                         resolve_dataset_alias_name)
+                         load_prediction_file, resolve_dataset_alias_name)
 from vlmeval.utils import track_progress_rich
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -257,7 +257,7 @@ def infer_data_job_video(model,
     if osp.exists(result_file):
         if retry_failed:
             if rank == 0:
-                data = load(result_file)
+                data = load_prediction_file(result_file)
                 results = {k: v for k, v in zip(data['index'], data['prediction'])}
                 results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
                 if len(results) == len(data):
