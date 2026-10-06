@@ -70,7 +70,7 @@ def infer_data_api(
     if osp.exists(out_file):
         res = load(out_file)
         if retry_failed:
-            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+            res = {k: v for k, v in res.items() if FAIL_MSG not in str(v)}
 
     structs = [s for i, s in zip(indices, structs) if str(i) not in res]
     indices = [i for i in indices if str(i) not in res]
