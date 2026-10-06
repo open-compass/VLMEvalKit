@@ -1,5 +1,4 @@
 import ast
-import itertools
 import json
 import os
 import os.path as osp
@@ -424,18 +423,15 @@ class ScreenSpot(ImageBaseDataset):
         final_score_dict['Overall_Accuracy'] = np.mean([x > 0 for x in full_stats]) * 100
         final_score_dict['Format_Err_Rate'] = np.mean([x < 0 for x in full_stats]) * 100
         # Calculate the Accuracy of Text / Icon
-        text_stats = [v for k, v in stats.items() if k.endswith('text') for x in v]
-        text_stats = itertools.chain(*text_stats)
+        text_stats = [x for k, v in stats.items() if k.endswith('text') for x in v]
         final_score_dict['Text_Accuracy'] = np.mean([x > 0 for x in text_stats]) * 100
-        icon_stats = [v for k, v in stats.items() if k.endswith('icon') for x in v]
-        icon_stats = itertools.chain(*icon_stats)
+        icon_stats = [x for k, v in stats.items() if k.endswith('icon') for x in v]
         final_score_dict['Icon_Accuracy'] = np.mean([x > 0 for x in icon_stats]) * 100
         # Calculate the Accuracy of Each Category
         if 'category' in data:
             cates = list(set(data['category']))
             for c in cates:
-                sub_stats = [v for k, v in stats.items() if k.split(":")[0] == c for x in v]
-                sub_stats = itertools.chain(*sub_stats)
+                sub_stats = [x for k, v in stats.items() if k.split(":")[0] == c for x in v]
                 final_score_dict[c + '_Accuracy'] = np.mean([x > 0 for x in sub_stats]) * 100
 
         score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
