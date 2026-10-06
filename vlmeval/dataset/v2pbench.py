@@ -98,7 +98,7 @@ Please analyze these images and provide the answer to the question about the vid
             data_file = osp.join(pth, f'{dataset_name}.tsv')
             data = load(data_file)
             for video_pth in data['video_path']:
-                if not osp.exists(osp.join(pth, video_pth)):
+                if not osp.exists(osp.join(pth, 'videos', video_pth)):
                     return False
             return True
 
@@ -134,7 +134,8 @@ Please analyze these images and provide the answer to the question about the vid
             message.append(dict(type='image', value=vp_frame_path))
             return message
         else:
-            frames = self.save_video_frames(line['video_path'])
+            frame_key = relative_video_path
+            frames = self.save_video_frames(frame_key, video_path=video_path)
             sys_prompt = self.FRAMES_TMPL_NOPACK.format(len(frames))
             message = [dict(type='text', value=sys_prompt)]
             for im in frames:
