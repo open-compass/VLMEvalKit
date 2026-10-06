@@ -332,6 +332,10 @@ class OpenAIWrapper(BaseAPI):
             if self.verbose:
                 logger.error(response.text if hasattr(response, 'text') else response)
 
+        finally:
+            if stream:
+                response.close()
+
         return ret_code, answer, response
 
     def get_image_token_len(self, img_path, detail='low'):
