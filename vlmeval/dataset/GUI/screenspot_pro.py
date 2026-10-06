@@ -46,7 +46,7 @@ def parse_bbox_aguvis(response):
     if match:
         click_point = [float(match.group(1)), float(match.group(2))]
     else:
-        click_point = [0.0, 0.0]
+        raise ValueError('Response does not contain a click point with both x and y coordinates.')
     return click_point
 
 
