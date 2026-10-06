@@ -80,6 +80,8 @@ Please directly reply with your response to the only question.
     def prepare_dataset(self, dataset_name='MMBench-Video', repo_id='opencompass/MMBench-Video'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
+            if not osp.exists(data_file):
+                return False
             if md5(data_file) != self.MD5:
                 return False
             data = load(data_file)

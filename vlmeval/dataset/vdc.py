@@ -163,6 +163,8 @@ class VDC(VideoBaseDataset):
     def prepare_dataset(self, dataset_name='VDC', repo_id='Enxin/VLMEval-VDC'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
+            if not osp.exists(data_file):
+                return False
             if md5(data_file) != self.MD5:
                 return False
             data = load(data_file)
