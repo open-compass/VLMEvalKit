@@ -52,14 +52,28 @@ class TestMMNIAHAnswerListRoundtrip(unittest.TestCase):
             with mock.patch.object(module, 'load', return_value=data), \
                     mock.patch.dict(sys.modules, {'vlmeval.dataset.utils.mmniah': helper}):
                 results.append(module.MMNIAH.evaluate('predictions.tsv'))
-        self.assertEqual(results[0]['count-image'], 2 / 3)
+        self.assertEqual(results[0]['count-image'], 0.5)
         self.assertEqual(results[1]['count-image'], results[0]['count-image'])
         self.assertEqual(results[1]['total'], results[0]['total'])
 
-    def test_other_answer_categories_preserve_existing_behavior(self):
+    def test_count_text_list_matching_survives_tsv_roundtrip(self):
         module, helper = load_mmniah()
-        data = pd.DataFrame({'category': ['find-image', 'count-text'], 'answer': ['0', 'two'],
-                             'prediction': ['A', 'two']})
+        native = pd.DataFrame({'category': ['count-text'] * 3, 'answer': [[1, 2]] * 3,
+                               'prediction': ['[1, 2]', '[1, 3]', '[3, 4]']})
+        restored = pd.read_csv(io.StringIO(native.to_csv(sep='\t', index=False)), sep='\t')
+        results = []
+        for data in [native, restored]:
+            with mock.patch.object(module, 'load', return_value=data), \
+                    mock.patch.dict(sys.modules, {'vlmeval.dataset.utils.mmniah': helper}):
+                results.append(module.MMNIAH.evaluate('predictions.tsv'))
+        self.assertEqual(results[0]['count-text'], 0.5)
+        self.assertEqual(results[1]['count-text'], results[0]['count-text'])
+        self.assertEqual(results[1]['total'], results[0]['total'])
+
+    def test_non_counting_answer_categories_preserve_existing_behavior(self):
+        module, helper = load_mmniah()
+        data = pd.DataFrame({'category': ['find-image', 'find-text'], 'answer': ['0', 'target'],
+                             'prediction': ['A', 'target']})
         with mock.patch.object(module, 'load', return_value=data), \
                 mock.patch.dict(sys.modules, {'vlmeval.dataset.utils.mmniah': helper}):
             result = module.MMNIAH.evaluate('predictions.tsv')

@@ -2942,11 +2942,11 @@ class MMNIAH(ImageBaseDataset):
             category = line['category']
             if category in ['visual-reasoning', 'find-image']:
                 answers = int(answers)
-            elif category == 'count-image' and isinstance(answers, str) and answers.strip().startswith('['):
+            elif category in ['count-text', 'count-image'] and not isinstance(answers, list):
                 answers = json.loads(answers)
-            if is_correct(answers, predict):
-                MMNIAH_score[category] += 1
-                MMNIAH_score['total'] += 1
+            score = is_correct(answers, predict)
+            MMNIAH_score[category] += score
+            MMNIAH_score['total'] += score
             MMNIAH_num[category] += 1
             MMNIAH_num['total'] += 1
 
