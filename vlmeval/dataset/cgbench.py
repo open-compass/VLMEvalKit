@@ -13,7 +13,7 @@ from vlmeval.smp import (LMUDataRoot, dump, get_cache_path, get_file_extension,
                          get_intermediate_file_path, load, md5, modelscope_flag_set)
 from vlmeval.utils import track_progress_rich
 from .utils import build_judge
-from .utils.cgbench import (eval_open_first, eval_open_second, get_dimention_rating_mcq_grouding,
+from .utils.cgbench import (eval_open_first, eval_open_second, get_dimension_rating_mcq_grounding,
                             get_timestampes, merge_intervals, milliseconds_to_seconds,
                             post_process, sample_frames_clue_average, save_clue_video_frames,
                             save_step_1_steps, save_step_2_steps, sys_prompt_open_eval_step_1,
@@ -482,7 +482,7 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
 
         dump(data, score_file)
 
-        rating = get_dimention_rating_mcq_grouding(score_file)
+        rating = get_dimension_rating_mcq_grounding(score_file)
 
         dump(rating, tgt_file)
 
@@ -773,7 +773,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
 
-        from .utils.cgbench import get_dimention_rating_open_ended, post_process_open
+        from .utils.cgbench import get_dimension_rating_open_ended, post_process_open
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
@@ -893,7 +893,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
         dump(data, score_file)
 
-        rating = get_dimention_rating_open_ended(score_file)
+        rating = get_dimension_rating_open_ended(score_file)
 
         dump(rating, tgt_file)
 
@@ -1364,7 +1364,7 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
 
         dump(data, score_file)
 
-        rating = get_dimention_rating_mcq_grouding(score_file)
+        rating = get_dimension_rating_mcq_grounding(score_file)
 
         dump(rating, tgt_file)
 
@@ -1654,7 +1654,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
 
-        from .utils.cgbench import get_dimention_rating_open_ended, post_process_open
+        from .utils.cgbench import get_dimension_rating_open_ended, post_process_open
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
@@ -1772,7 +1772,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
         dump(data, score_file)
 
-        rating = get_dimention_rating_open_ended(score_file)
+        rating = get_dimension_rating_open_ended(score_file)
 
         dump(rating, tgt_file)
 
