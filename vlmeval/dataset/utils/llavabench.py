@@ -30,10 +30,7 @@ def parse_score(review):
         score_pair = score_pair.replace(',', ' ')
         sp = score_pair.split()
         if len(sp) == 2:
-            scores = [float(sp[0]), float(sp[1])]
-            if np.isfinite(scores).all():
-                return scores
-            return [-1, -1]
+            return [float(sp[0]), float(sp[1])]
         else:
             logger.error('Invalid score pair: %s', review)
             return [-1, -1]

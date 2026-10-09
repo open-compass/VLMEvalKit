@@ -37,7 +37,7 @@ class TestLLaVABenchImport(unittest.TestCase):
         for reply in ['8  9', '8\t9', ' 8,  9 ']:
             self.assertEqual(module.parse_score(reply), [8.0, 9.0])
         for reply in ['nan 9', '8 inf']:
-            self.assertEqual(module.parse_score(reply), [-1, -1])
+            self.assertFalse(np.isfinite(module.parse_score(reply)).all())
         for reply in ['bad', 'eight nine']:
             with self.assertLogs(module.logger, level='ERROR') as logs:
                 self.assertEqual(module.parse_score(reply), [-1, -1])
@@ -45,6 +45,14 @@ class TestLLaVABenchImport(unittest.TestCase):
         data = pd.DataFrame([{'category': 'conv', 'gpt4_score': 8.0, 'score': 9.0}])
         result = module.LLaVABench_score(data)
         np.testing.assert_allclose(result['Relative Score (main)'], [112.5, 112.5])
+
+    def test_judge_validation_rejects_only_invalid_or_nonfinite_scores(self):
+        from vlmeval.dataset.image_vqa import llava_judge_failed
+
+        for scores in [[float('nan'), 9.0], [8.0, float('inf')], [-1.0, 9.0]]:
+            self.assertTrue(llava_judge_failed(scores))
+        for scores in [[0.0, 9.0], [8.0, 11.0]]:
+            self.assertFalse(llava_judge_failed(scores))
 
 
 if __name__ == '__main__':
