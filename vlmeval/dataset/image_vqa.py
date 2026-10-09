@@ -31,7 +31,12 @@ from .utils.vqa_eval import istype
 def llava_judge_failed(result):
     return (
         not isinstance(result, (list, tuple)) or len(result) != 2
-        or any(not isinstance(score, (int, float, np.number)) or score < 0 for score in result)
+        or any(
+            not isinstance(score, (int, float, np.number))
+            or not np.isfinite(score)
+            or score < 0
+            for score in result
+        )
     )
 
 
