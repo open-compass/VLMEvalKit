@@ -91,7 +91,7 @@ def HFCacheRoot():
     cache_list = ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE', 'HF_HOME']
     for cache_name in cache_list:
         if cache_name in os.environ and osp.exists(os.environ[cache_name]):
-            if os.environ[cache_name].split('/')[-1] == 'hub':
+            if cache_name in ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE']:
                 return os.environ[cache_name]
             else:
                 return osp.join(os.environ[cache_name], 'hub')

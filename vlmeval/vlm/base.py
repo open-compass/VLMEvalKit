@@ -120,7 +120,7 @@ class BaseModel:
 
     def chat(self, messages, dataset=None):
         """The main function for multi-turn chatting. Will call `chat_inner` with the preprocessed input messages."""
-        assert hasattr(self, 'chat_inner'), 'The API model should has the `chat_inner` method. '
+        assert hasattr(self, 'chat_inner'), 'The API model should have the `chat_inner` method. '
         for msg in messages:
             assert isinstance(msg, dict) and 'role' in msg and 'content' in msg, msg
             assert self.check_content(msg['content']) in ['str', 'dict', 'liststr', 'listdict'], msg

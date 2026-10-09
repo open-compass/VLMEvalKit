@@ -1,5 +1,6 @@
 import random
 from collections import defaultdict
+from math import isfinite
 
 import pandas as pd
 
@@ -74,7 +75,7 @@ def MMOral_opg_auxeval(model, line):
         score = float_cvt(output)
         if score is None:
             log += f'Try {i}: output is {output}, failed to parse.\n'
-        elif score < 0 or score > 1:
+        elif not isfinite(score) or score < 0 or score > 1:
             log += f'Try {i}: output is {output}, invalid score: {score}.\n'
         else:
             log += 'Succeed'
