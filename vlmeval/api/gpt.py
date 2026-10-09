@@ -331,7 +331,6 @@ class OpenAIWrapper(BaseAPI):
             logger.error(f'{type(err)}: {err}')
             if self.verbose:
                 logger.error(response.text if hasattr(response, 'text') else response)
-
         finally:
             if stream:
                 response.close()
