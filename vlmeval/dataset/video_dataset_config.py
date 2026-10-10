@@ -444,6 +444,32 @@ favor_bench_dataset = {
     'FAVOR-Bench_1fps': _video_spec(FavorBench, dataset='FAVOR-Bench', fps=1.0),
 }
 
+timelens_bench_dataset = {
+    # Official setting of TimeLens-Bench: 2 fps (frame-list models get the same frames with timestamps).
+    'Charades-TimeLens_2fps': _video_spec(TimeLensBench, dataset='Charades-TimeLens', fps=2.0),
+    'ActivityNet-TimeLens_2fps': _video_spec(TimeLensBench, dataset='ActivityNet-TimeLens', fps=2.0),
+    'QVHighlights-TimeLens_2fps': _video_spec(TimeLensBench, dataset='QVHighlights-TimeLens', fps=2.0),
+    'Charades-TimeLens_1fps': _video_spec(TimeLensBench, dataset='Charades-TimeLens', fps=1.0),
+    'ActivityNet-TimeLens_1fps': _video_spec(TimeLensBench, dataset='ActivityNet-TimeLens', fps=1.0),
+    'QVHighlights-TimeLens_1fps': _video_spec(TimeLensBench, dataset='QVHighlights-TimeLens', fps=1.0),
+}
+
+vue_tr_dataset = {
+    # Videos are YouTube videos to download beforehand (see VUETR); '-Vision' keeps the visual queries.
+    'VUE-TR_1fps': _video_spec(VUETR, dataset='VUE-TR', fps=1.0),
+    'VUE-TR_128frame': _video_spec(VUETR, dataset='VUE-TR', nframe=128, fps=-1),
+    'VUE-TR_256frame': _video_spec(VUETR, dataset='VUE-TR', nframe=256, fps=-1),
+    'VUE-TR-Vision_1fps': _video_spec(VUETR, dataset='VUE-TR-Vision', fps=1.0),
+    'VUE-TR-Vision_128frame': _video_spec(VUETR, dataset='VUE-TR-Vision', nframe=128, fps=-1),
+    'VUE-TR-Vision_256frame': _video_spec(VUETR, dataset='VUE-TR-Vision', nframe=256, fps=-1),
+    'VUE-TR-V2_1fps': _video_spec(VUETR, dataset='VUE-TR-V2', fps=1.0),
+    'VUE-TR-V2_128frame': _video_spec(VUETR, dataset='VUE-TR-V2', nframe=128, fps=-1),
+    'VUE-TR-V2_256frame': _video_spec(VUETR, dataset='VUE-TR-V2', nframe=256, fps=-1),
+    'VUE-TR-V2-Vision_1fps': _video_spec(VUETR, dataset='VUE-TR-V2-Vision', fps=1.0),
+    'VUE-TR-V2-Vision_128frame': _video_spec(VUETR, dataset='VUE-TR-V2-Vision', nframe=128, fps=-1),
+    'VUE-TR-V2-Vision_256frame': _video_spec(VUETR, dataset='VUE-TR-V2-Vision', nframe=256, fps=-1),
+}
+
 dataset_groups = [
     video_eval_pro_dataset,
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset,
@@ -452,7 +478,7 @@ dataset_groups = [
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
     video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset,
-    favor_bench_dataset
+    favor_bench_dataset, timelens_bench_dataset, vue_tr_dataset
 ]
 
 # add by EASI team
