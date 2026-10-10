@@ -11,6 +11,7 @@ import re
 import shutil
 import time
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import numpy as np
 import pandas as pd
@@ -433,12 +434,9 @@ def parse_file(s):
         decode_base64_to_image_file(b64, tgt)
         return parse_file(tgt)
     elif validators.url(s):
-        suffix = osp.splitext(s)[1].lower()
-        # 添加对webp的支持
-        if suffix == '.webp':
-            mime = 'image/webp'
-        elif suffix in mimetypes.types_map:
-            mime = mimetypes.types_map[suffix]
+        suffix = osp.splitext(urlsplit(s).path)[1].lower()
+        mime = 'image/webp' if suffix == '.webp' else mimetypes.types_map.get(suffix)
+        if mime is not None:
             dname = osp.join(LMUDataRoot(), 'files')
             os.makedirs(dname, exist_ok=True)
             tgt = osp.join(dname, md5(s) + suffix)
