@@ -128,12 +128,14 @@ def MMBenchOfficialServer(dataset_name):
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, np.integer):
+        if isinstance(obj,
+                      (np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, np.int64,
+                       np.uint8, np.uint16, np.uint32, np.uint64)):
             return int(obj)
-        elif isinstance(obj, np.floating):
+        elif isinstance(obj, (np.float16, np.float32, np.float64)):
             return float(obj)
-        elif isinstance(obj, np.complexfloating):
-            return {'real': float(obj.real), 'imag': float(obj.imag)}
+        elif isinstance(obj, (np.complex64, np.complex128)):
+            return {'real': obj.real, 'imag': obj.imag}
         elif isinstance(obj, (np.ndarray,)):
             return obj.tolist()
         elif isinstance(obj, (np.bool_)):
