@@ -176,6 +176,7 @@ from .vrbench import VRBenchDataset
 from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
 from .wiki_vqa_bench import WikiVQABench
 from .wildprobe import WildprobeDataset
+from .spatial_scene_bench import SpatialSceneBench
 from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
@@ -338,7 +339,7 @@ IMAGE_DATASET = [
 IMAGE_DATASET += [
     MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
     SparBench, SpatialVizBench, SpatialDISE, StareBench, OmniSpatialBench, ERQABench, RoboSpatialBench, RefSpatialBench,  # noqa: E501
-    SPBench, ERIQBench, DA2K
+    SPBench, ERIQBench, DA2K, SpatialSceneBench
 ]
 
 VIDEO_DATASET = [
