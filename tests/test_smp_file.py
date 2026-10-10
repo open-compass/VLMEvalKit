@@ -1,7 +1,9 @@
 import functools
+import http.server
 import importlib.util
 import logging
 import sys
+import threading
 import types
 from unittest import mock
 
@@ -10,6 +12,7 @@ from PIL import Image
 
 @functools.lru_cache(maxsize=1)
 def _load_file_module():
+    importlib.import_module('pandas')
     vlmeval = types.ModuleType('vlmeval')
     vlmeval.__path__ = ['vlmeval']
 
@@ -72,3 +75,29 @@ def test_parse_file_keeps_unknown_when_pillow_rejects_image(tmp_path):
     error = Image.DecompressionBombError('image exceeds Pillow safety limit')
     with mock.patch.object(Image, 'open', side_effect=error):
         assert module.parse_file(str(image_path)) == ('unknown', str(image_path))
+
+
+def test_remote_load_creates_cache_directory_and_reuses_download(tmp_path, monkeypatch):
+    module = _load_file_module()
+    source = tmp_path / 'source'
+    source.mkdir()
+    (source / 'samples.csv').write_text('index,prediction\n1,answer\n', encoding='utf-8')
+    cache = tmp_path / 'cache'
+    cache.mkdir()
+    monkeypatch.setattr(module, 'LMUDataRoot', lambda: str(cache))
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(source))
+    with http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler) as server:
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        url = f'http://127.0.0.1:{server.server_port}/samples.csv'
+        try:
+            result = module.load(url)
+            assert result.to_dict('records') == [{'index': 1, 'prediction': 'answer'}]
+            assert (cache / 'files' / 'samples.csv').read_text(encoding='utf-8') == (
+                'index,prediction\n1,answer\n'
+            )
+        finally:
+            server.shutdown()
+            thread.join()
+    # A second load uses the cache even after the HTTP server is gone.
+    assert module.load(url).to_dict('records') == [{'index': 1, 'prediction': 'answer'}]
