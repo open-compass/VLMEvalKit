@@ -237,7 +237,7 @@ class OpenAIWrapper(BaseAPI):
                     if self.img_size > 0:
                         target_size = self.img_size
                     if self.total_img_size > 0:
-                        target_size = min(target_size, int(self.img_size / (image_num**0.5)))
+                        target_size = min(target_size, max(1, int(self.total_img_size / (image_num**0.5))))
                     target_size = -1 if math.isinf(target_size) else target_size
                     b64 = encode_image_to_base64(
                         img, target_size=target_size, max_file_size=self.max_file_size)
