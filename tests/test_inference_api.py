@@ -30,6 +30,7 @@ def _load_inference_api():
     smp.dump = _dump
     smp.get_logger = lambda name: logging.getLogger(name)
     smp.load = _load
+    smp.load_prediction_file = _load
     smp.upsert_dataset_status = lambda *args, **kwargs: None
 
     smp_log = types.ModuleType('vlmeval.smp.log')

@@ -91,7 +91,7 @@ def HFCacheRoot():
     cache_list = ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE', 'HF_HOME']
     for cache_name in cache_list:
         if cache_name in os.environ and osp.exists(os.environ[cache_name]):
-            if os.environ[cache_name].split('/')[-1] == 'hub':
+            if cache_name in ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE']:
                 return os.environ[cache_name]
             else:
                 return osp.join(os.environ[cache_name], 'hub')
@@ -559,6 +559,14 @@ def _prediction_table(pred_file):
 
     if 'index' not in frame or 'prediction' not in frame:
         return None
+    return frame
+
+
+def load_prediction_file(pred_file):
+    """Load a prediction table from any supported file format."""
+    frame = _prediction_table(pred_file)
+    if frame is None:
+        raise ValueError(f'Invalid prediction table: {pred_file}')
     return frame
 
 
