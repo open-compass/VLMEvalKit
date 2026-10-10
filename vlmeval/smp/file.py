@@ -562,6 +562,14 @@ def _prediction_table(pred_file):
     return frame
 
 
+def load_prediction_file(pred_file):
+    """Load a prediction table from any supported file format."""
+    frame = _prediction_table(pred_file)
+    if frame is None:
+        raise ValueError(f'Invalid prediction table: {pred_file}')
+    return frame
+
+
 def copy_prediction_file(src_file, dst_file):
     os.makedirs(osp.dirname(dst_file), exist_ok=True)
     src_suffix = osp.splitext(src_file)[1].lower()
