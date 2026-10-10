@@ -259,12 +259,8 @@ def load(f, fmt=None):
         return json.load(open(pth, 'r', encoding='utf-8'))
 
     def load_jsonl(f):
-        lines = open(f, encoding='utf-8').readlines()
-        lines = [x.strip() for x in lines]
-        if lines[-1] == '':
-            lines = lines[:-1]
-        data = [json.loads(x) for x in lines]
-        return data
+        with open(f, encoding='utf-8') as stream:
+            return [json.loads(line) for line in stream if line.strip()]
 
     def load_xlsx(f):
         return pd.read_excel(f, keep_default_na=False, na_values=[''])
