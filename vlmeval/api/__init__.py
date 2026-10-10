@@ -1,4 +1,5 @@
 from .arm_thinker import ARM_thinker
+from .atlascloud import AtlasCloudAPI
 from .bailingmm import bailingMMAPI
 from .bedrock import BedrockAPI
 from .bluelm_api import BlueLM_API, BlueLMWrapper
@@ -44,5 +45,5 @@ __all__ = [
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
     'VideoChatOnlineV2API', 'TeleMM2_API', 'TeleMM2Thinking_API', 'TogetherAPI', 'GCPVertexAPI',
-    'BedrockAPI', 'SenseChatVisionV2API', 'MiniMaxAPI', 'LiteLLMAPI',
+    'BedrockAPI', 'SenseChatVisionV2API', 'MiniMaxAPI', 'LiteLLMAPI', 'AtlasCloudAPI',
 ]
