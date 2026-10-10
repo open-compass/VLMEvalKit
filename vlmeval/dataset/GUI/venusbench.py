@@ -177,9 +177,9 @@ class VenusBench_GD(ImageBaseDataset):
 
         cates = list(set([line["category"] for line in lines]))
         for c in cates:
-            sub_stats = [v for k, v in stats.items() if k.split(":")[0] == c for x in v]
+            sub_stats = [x for k, v in stats.items() if k.split(":")[0] == c for x in v]
             if len(sub_stats) > 0:
-                final_score_dict[c + '_Accuracy'] = np.mean([x[0] > 0 for x in [sub_stats]]) * 100
+                final_score_dict[c + '_Accuracy'] = np.mean([x > 0 for x in sub_stats]) * 100
 
         score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(final_score_dict, score_pth)
