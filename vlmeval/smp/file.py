@@ -282,6 +282,7 @@ def load(f, fmt=None):
     if validators.url(f):
         tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
         if not osp.exists(tgt):
+            os.makedirs(osp.dirname(tgt), exist_ok=True)
             download_file(f, tgt)
         f = tgt
 
