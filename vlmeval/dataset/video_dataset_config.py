@@ -436,6 +436,14 @@ vrbench_dataset = {
     'VRBench_64frame': _video_spec(VRBenchDataset, dataset='VRBench', nframe=64),
 }
 
+video_index_dataset = {
+    'Video-Index_1fps': _video_spec(VideoIndex, dataset='Video-Index', fps=1.0, max_frames=512),
+    'Video-Index_8frame': _video_spec(VideoIndex, dataset='Video-Index', nframe=8, fps=-1),
+    'Video-Index_32frame': _video_spec(VideoIndex, dataset='Video-Index', nframe=32, fps=-1),
+    'Video-Index_64frame': _video_spec(VideoIndex, dataset='Video-Index', nframe=64, fps=-1),
+    'Video-Index_Blind': _video_spec(VideoIndex, dataset='Video-Index_Blind'),
+}
+
 favor_bench_dataset = {
     'FAVOR-Bench_8frame': _video_spec(FavorBench, dataset='FAVOR-Bench', nframe=8, fps=-1),
     'FAVOR-Bench_16frame': _video_spec(FavorBench, dataset='FAVOR-Bench', nframe=16, fps=-1),
@@ -452,7 +460,7 @@ dataset_groups = [
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
     video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset,
-    favor_bench_dataset
+    favor_bench_dataset, video_index_dataset
 ]
 
 # add by EASI team
