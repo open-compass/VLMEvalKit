@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Literal
 import pandas as pd
 from tabulate import tabulate
 
-from vlmeval.smp import dump, get_logger, load, upsert_dataset_status
+from vlmeval.smp import dump, get_logger, load, load_prediction_file, upsert_dataset_status
 from vlmeval.smp.log import setup_subprocess_logger
 from vlmeval.utils.mp_util import (async_recv_process_message, async_wait_process,
                                    terminate_processes)
@@ -341,7 +341,7 @@ class APIEvalPipeline:
         result_path = Path(cfg.result_file)
         if result_path.exists():
             try:
-                data = load(str(result_path))
+                data = load_prediction_file(str(result_path))
                 if isinstance(data, pd.DataFrame):
                     if self.retry_failed:
                         existing_results = {
