@@ -88,8 +88,6 @@ class Video_MMLU_CAP(VideoBaseDataset):
     def prepare_dataset(self, dataset_name='Video_MMLU_CAP', repo_id='Enxin/Video-MMLU'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
-            if not osp.exists(data_file):
-                return False
             if md5(data_file) != self.MD5:
                 return False
             data = load(data_file)
@@ -409,8 +407,6 @@ class Video_MMLU_QA(VideoBaseDataset):
     def prepare_dataset(self, dataset_name='Video_MMLU_QA', repo_id='Enxin/Video-MMLU'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
-            if not osp.exists(data_file):
-                return False
             if md5(data_file) != self.MD5:
                 return False
             data = load(data_file)
