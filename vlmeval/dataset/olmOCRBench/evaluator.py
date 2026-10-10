@@ -373,6 +373,7 @@ def evaluator(tsv_path, eval_file):
             )
     print("\n" + "=" * 60)
     print("Final Summary with 95% Confidence Intervals:")
+    summary_scores = {}
     for idx, (candidate_name, _, total_tests, candidate_errors, _, test_type_breakdown, ci, _) in enumerate(summary):
         # Group results by jsonl file
         jsonl_results = {}
@@ -460,4 +461,8 @@ def evaluator(tsv_path, eval_file):
             writer = csv.writer(f)
             writer.writerows(rows)
 
+        summary_scores = {row[0]: float(row[1]) for row in rows[1:]}
+
         print(f"Results save to: {csv_path}")
+
+    return summary_scores

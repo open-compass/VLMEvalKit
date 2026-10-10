@@ -192,6 +192,11 @@ def oceanocr_evaluate(tsv_path, eval_file):
     df_summary.to_csv(csv_path, index=False)
     print(f"\n✅ Results save to: {csv_path}")
 
+    return {
+        f'{row["Category"]}_{row["Metric"]}'.replace(' ', '_'): float(row["Value"])
+        for row in rows if row["Value"] is not None
+    }
+
 
 class OceanOCRBench(ImageBaseDataset):
     MODALITY = 'IMAGE'
@@ -228,4 +233,4 @@ class OceanOCRBench(ImageBaseDataset):
             )
             raise e
         tsv_path = self.data_path
-        oceanocr_evaluate(tsv_path, eval_file)
+        return oceanocr_evaluate(tsv_path, eval_file)
