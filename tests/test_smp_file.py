@@ -10,6 +10,7 @@ from PIL import Image
 
 @functools.lru_cache(maxsize=1)
 def _load_file_module():
+    importlib.import_module('pandas')
     vlmeval = types.ModuleType('vlmeval')
     vlmeval.__path__ = ['vlmeval']
 
@@ -72,3 +73,19 @@ def test_parse_file_keeps_unknown_when_pillow_rejects_image(tmp_path):
     error = Image.DecompressionBombError('image exceeds Pillow safety limit')
     with mock.patch.object(Image, 'open', side_effect=error):
         assert module.parse_file(str(image_path)) == ('unknown', str(image_path))
+
+
+def test_localization_honors_requested_worker_count(tmp_path, monkeypatch):
+    module = _load_file_module()
+    import pandas as pd
+
+    pool = mock.MagicMock()
+    pool.__enter__.return_value = pool
+    pool.map.return_value = [[str(tmp_path / '0.jpg')]]
+    factory = mock.MagicMock(return_value=pool)
+    monkeypatch.setattr(module.mp, 'Pool', factory)
+    monkeypatch.setattr(module, 'LMUDataRoot', lambda: str(tmp_path))
+    result = module.localize_df(pd.DataFrame({'index': [0], 'image': ['x' * 100]}), 'Example', nproc=1)
+    factory.assert_called_once_with(1)
+    assert result['image_path'].tolist() == [str(tmp_path / '0.jpg')]
+    assert 'image' not in result
