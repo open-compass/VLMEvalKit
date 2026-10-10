@@ -124,10 +124,10 @@ class VideoBaseDataset(metaclass=ABCMeta):
         return [osp.join(frame_root,
                          self.frame_tmpl_fps.format(i, num_frames, self.fps)) for i in range(1, num_frames + 1)]
 
-    def save_video_frames(self, video):
+    def save_video_frames(self, video, video_path=None):
         import decord
         if self.fps > 0:
-            vid_path = osp.join(self.data_root, video + '.mp4')
+            vid_path = video_path or osp.join(self.data_root, video + '.mp4')
             vid = decord.VideoReader(vid_path)
 
             # 计算视频的总帧数和总时长
@@ -170,7 +170,7 @@ class VideoBaseDataset(metaclass=ABCMeta):
             with portalocker.Lock(lock_path, 'w', timeout=30):
                 if np.all([osp.exists(p) for p in frame_paths]):
                     return frame_paths
-                vid_path = osp.join(self.data_root, video + '.mp4')
+                vid_path = video_path or osp.join(self.data_root, video + '.mp4')
                 vid = decord.VideoReader(vid_path)
                 step_size = len(vid) / (self.nframe + 1)
                 indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
