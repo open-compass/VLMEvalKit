@@ -33,7 +33,8 @@ def decode_img_omni(tup):
     images = toliststr(im)
     paths = toliststr(p)
     if len(images) > 1 and len(paths) == 1:
-        paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
+        stem, suffix = osp.splitext(paths[0])
+        paths = [f'{stem}_{i}{suffix}' for i in range(len(images))]
 
     assert len(images) == len(paths)
     paths = [osp.join(root, p) for p in paths]
