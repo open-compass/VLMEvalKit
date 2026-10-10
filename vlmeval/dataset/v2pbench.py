@@ -96,6 +96,8 @@ Please analyze these images and provide the answer to the question about the vid
     def prepare_dataset(self, dataset_name='V2P-Bench', repo_id='gaotiexinqu/V2P-Bench'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
+            if not osp.exists(data_file):
+                return False
             data = load(data_file)
             for video_pth in data['video_path']:
                 if not osp.exists(osp.join(pth, video_pth)):
