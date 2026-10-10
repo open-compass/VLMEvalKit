@@ -31,6 +31,8 @@ def transfer(str1):
 
 def parse_answer(answer, answer_type="multiple choice"):
     if answer_type == "float":
+        if isinstance(answer, (int, float)) and not isinstance(answer, bool):
+            return (True, float(answer)) if np.isfinite(answer) else (False, None)
         if answer.isdigit():
             return True, float(answer)
         else:
