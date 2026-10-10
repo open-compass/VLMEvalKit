@@ -6,7 +6,6 @@ import re
 import warnings
 
 import torch
-from transformers.cache_utils import DynamicCache
 
 from ..base import BaseModel
 from .prompt import ThymePromptMixin
@@ -296,9 +295,6 @@ class Thyme(ThymePromptMixin, BaseModel):
             # maybe perform code execution.
             conversation_history = copy.deepcopy(messages)
 
-            # For each generation, we initialize a KV-Cache to speed up
-            # inference.
-            kv_cache = DynamicCache()
             # Maintain a dictionary to save context (local & global vars.) for
             # code execution.
             previous_execution_context = {}
@@ -313,19 +309,15 @@ class Thyme(ThymePromptMixin, BaseModel):
             # execution.
             while retry_iterations > 0:
                 retry_iterations -= 1
-                generated_content = []
+                assistant_content = []
+                sandbox_content = []
                 if self.verbose:
                     print(
                         f"\033[32m\n--- Iteration {self.max_iterations - retry_iterations} ---\033[0m"
                     )
 
                 text = self.processor.apply_chat_template(
-                    [conversation_history], tokenize=False, add_generation_prompt=(
-                        retry_iterations == self.max_iterations - 1), )
-
-                if retry_iterations != self.max_iterations - 1:
-                    if text[0].endswith("<|im_end|>\n"):
-                        text[0] = text[0][: -len("<|im_end|>\n")]
+                    [conversation_history], tokenize=False, add_generation_prompt=True)
                 images, videos = process_vision_info([conversation_history])
                 inputs = self.processor(
                     text=text,
@@ -336,16 +328,13 @@ class Thyme(ThymePromptMixin, BaseModel):
                 )
                 inputs = inputs.to("cuda")
 
-                # just in case this iteration is invalid, we need to roll back,
-                # thus making a backup.
-                last_kv_cache = copy.deepcopy(kv_cache)
                 # bkup context. roll back when we fail to execute the generated
                 # code.
                 last_execution_context = copy.deepcopy(
                     self._remove_unpickable_values(previous_execution_context)
                 )
                 generated_ids = self.model.generate(
-                    **inputs, **self.generate_kwargs, past_key_values=kv_cache
+                    **inputs, **self.generate_kwargs
                 )
                 generated_ids = [
                     output_ids[len(input_ids):]
@@ -360,7 +349,7 @@ class Thyme(ThymePromptMixin, BaseModel):
 
                 # Case 1: directly give answer
                 if "</answer>" in generated_text_segment:
-                    generated_content.append(
+                    assistant_content.append(
                         {"type": "text", "text": generated_text_segment},
                     )
 
@@ -398,14 +387,16 @@ class Thyme(ThymePromptMixin, BaseModel):
                     previous_execution_context = current_execution_context
                     if not processed_img_paths:
                         # deemed as unsuccessful iteration. roll back status.
-                        kv_cache = last_kv_cache
                         previous_execution_context = last_execution_context
                         print(f"{error_msg}")
                         continue
 
                     has_valid_images = False
-                    generated_content += [
-                        {"type": "text", "text": generated_text_segment},
+                    if not assistant_content:
+                        assistant_content.append(
+                            {"type": "text", "text": generated_text_segment}
+                        )
+                    sandbox_content += [
                         {"type": "text", "text": "<sandbox_output>"},
                     ]
                     first_path = processed_img_paths[0]
@@ -417,15 +408,15 @@ class Thyme(ThymePromptMixin, BaseModel):
                                 # output block
                                 if not has_valid_images:
                                     has_valid_images = True
-                                generated_content.append(
+                                sandbox_content.append(
                                     {"type": "image", "image": img_path}
                                 )
                     else:
-                        generated_content.append(
+                        sandbox_content.append(
                             {"type": "text", "text": first_path})
 
                     if has_valid_images or not os.path.exists(first_path):
-                        generated_content.append(
+                        sandbox_content.append(
                             {"type": "text", "text": "</sandbox_output>"}
                         )
                     else:
@@ -445,17 +436,19 @@ class Thyme(ThymePromptMixin, BaseModel):
                         self.generate_kwargs["temperature"] = 1.0
                         break
 
-                # Update conversation_history with the latest generated segment
-                # If the last message was 'user', start a new 'assistant'
-                # message
-                if conversation_history[-1]["role"] == "user":
+                # Keep model output in the assistant turn and sandbox output in
+                # a separate user observation turn. The next full-history
+                # encoding can then align every image with a user placeholder.
+                if assistant_content and conversation_history[-1]["role"] == "user":
                     conversation_history.append(
-                        {"role": "assistant", "content": generated_content}
+                        {"role": "assistant", "content": assistant_content}
                     )
-                # If the last message was 'assistant', append to its last text
-                # content item
-                elif conversation_history[-1]["role"] == "assistant":
-                    conversation_history[-1]["content"] += generated_content
+                elif assistant_content and conversation_history[-1]["role"] == "assistant":
+                    conversation_history[-1]["content"] += assistant_content
+                if sandbox_content:
+                    conversation_history.append(
+                        {"role": "user", "content": sandbox_content}
+                    )
 
                 # --- Check for final answer tag if no code was processed in this segment ---
                 if "</answer>" in generated_text_segment:
