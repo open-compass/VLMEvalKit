@@ -72,3 +72,13 @@ def test_parse_file_keeps_unknown_when_pillow_rejects_image(tmp_path):
     error = Image.DecompressionBombError('image exceeds Pillow safety limit')
     with mock.patch.object(Image, 'open', side_effect=error):
         assert module.parse_file(str(image_path)) == ('unknown', str(image_path))
+
+
+def test_derived_artifact_paths_preserve_directory_and_stem_dots(monkeypatch):
+    module = _load_file_module()
+    monkeypatch.setenv('EVAL_FORMAT', 'csv')
+    source = '/results.json/model.json_Example.json'
+    assert module.get_eval_file_path(source, 'judge') == '/results.json/model.json_Example_judge.csv'
+    assert module.get_intermediate_file_path(source, '_rating') == '/results.json/model.json_Example_rating.json'
+    legacy = module.get_eval_file_path(source, 'judge', use_env_format=False)
+    assert legacy == '/results.json/model.json_Example_judge.xlsx'
