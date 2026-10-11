@@ -48,6 +48,17 @@ def extract_time_spans(text):
     return _pairs(_NUMBER.findall(text))
 
 
+def normalize_query(query):
+    """Collapse whitespace and drop trailing periods, as the TimeLens data loader does."""
+    return re.sub(r'\s+', ' ', str(query)).strip().strip('.').strip()
+
+
+def round_spans(spans, unit=1.0):
+    """Round span boundaries to multiples of ``unit`` with Python's ``round`` (halves go to the even
+    number), as the TimeLens evaluation does before scoring: [2.5, 7.5] -> [2, 8]."""
+    return [(round(s / unit) * unit, round(e / unit) * unit) for s, e in spans]
+
+
 def temporal_iou(pred, gt):
     """IoU of two single spans ``(start, end)``; 0 for an empty or invalid prediction."""
     if pred is None or len(pred) != 2 or pred[0] >= pred[1]:

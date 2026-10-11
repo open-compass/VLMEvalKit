@@ -2396,5 +2396,65 @@
     "dataset_alias_name": "revsi_all_frame",
     "dataset_class_name": "ReVSI",
     "dataset_name": "ReVSI"
+  },
+  "ActivityNet-TimeLens_1fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "ActivityNet-TimeLens",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "ActivityNet-TimeLens_1fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "ActivityNet-TimeLens"
+  },
+  "ActivityNet-TimeLens_2fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "ActivityNet-TimeLens",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "ActivityNet-TimeLens_2fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "ActivityNet-TimeLens"
+  },
+  "Charades-TimeLens_1fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "Charades-TimeLens",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "Charades-TimeLens_1fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "Charades-TimeLens"
+  },
+  "Charades-TimeLens_2fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "Charades-TimeLens",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "Charades-TimeLens_2fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "Charades-TimeLens"
+  },
+  "QVHighlights-TimeLens_1fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "QVHighlights-TimeLens",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "QVHighlights-TimeLens_1fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "QVHighlights-TimeLens"
+  },
+  "QVHighlights-TimeLens_2fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "QVHighlights-TimeLens",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "QVHighlights-TimeLens_2fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "QVHighlights-TimeLens"
   }
 }

@@ -54,3 +54,14 @@ def test_frames_with_timestamps():
         dict(type='text', value='0.5'),
         dict(type='image', value='b.jpg')
     ]
+
+
+def test_normalize_query_matches_official_loader():
+    assert tg.normalize_query('  A man  opens\nthe door. ') == 'A man opens the door'
+    assert tg.normalize_query('A person is laughing...') == 'A person is laughing'
+
+
+def test_round_spans_matches_official_rounding():
+    # Python round() sends halves to the even number, as in the official evaluation
+    assert tg.round_spans([(2.5, 7.5), (0.4, 9.6)]) == [(2, 8), (0, 10)]
+    assert tg.temporal_iou(tg.round_spans([(2.5, 7.5)])[0], (0, 10)) == pytest.approx(0.6)

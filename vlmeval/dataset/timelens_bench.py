@@ -37,14 +37,15 @@ class TimeLensBench(VideoBaseDataset):
     """TimeLens-Bench: manually refined Charades-STA, ActivityNet Captions and QVHighlights for video
     temporal grounding (https://huggingface.co/datasets/TencentARC/TimeLens-Bench).
 
-    Each sample is a (video, query) pair with one ground-truth span. The model answers in free form;
-    the first predicted span is scored with temporal IoU (R1@{0.3, 0.5, 0.7} and mIoU), as in the
-    official evaluation.
+    Each sample is a (video, query) pair with one ground-truth span. As in the official evaluation,
+    queries are normalized like the official data loader, predicted spans are rounded to whole seconds,
+    and the first predicted span is scored with temporal IoU (R1@{0.3, 0.5, 0.7} and mIoU).
     """
 
     TYPE = 'Video-Temporal-Grounding'
     DEFAULT_JUDGE_MODEL = None
     HF_REPO_ID = 'TencentARC/TimeLens-Bench'
+    UNIT = 1.0  # predictions are rounded to this unit (seconds) before scoring, as in the official code
     SUBSETS = {
         'Charades-TimeLens': 'charades',
         'ActivityNet-TimeLens': 'activitynet',
@@ -71,7 +72,7 @@ class TimeLensBench(VideoBaseDataset):
                     dict(
                         index=len(records),
                         video=video,
-                        question=query,
+                        question=tg.normalize_query(query),
                         answer=json.dumps([float(span[0]), float(span[1])]),
                         duration=float(item['duration']),
                     ))
@@ -152,8 +153,8 @@ class TimeLensBench(VideoBaseDataset):
         for _, row in data.iterrows():
             gt = row['answer']
             gt = json.loads(gt) if isinstance(gt, str) else list(gt)
-            spans = tg.extract_time_spans(row.get('prediction', ''))
-            # The official evaluation scores the first predicted span only.
+            spans = tg.round_spans(tg.extract_time_spans(row.get('prediction', '')), self.UNIT)
+            # The official evaluation scores the first (rounded) predicted span only.
             parsed.append(json.dumps(spans[0]) if spans else '')
             ious.append(tg.temporal_iou(spans[0], gt) if spans else 0.0)
         data['pred_span'] = parsed
