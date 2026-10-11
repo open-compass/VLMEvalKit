@@ -104,6 +104,7 @@ def do_setup():
             'test*',
             'paper_test*',
         ]),
+        include_package_data=True,
         keywords=['AI', 'NLP', 'in-context learning'],
         entry_points={
             'console_scripts': ['vlmutil = vlmeval:cli']
