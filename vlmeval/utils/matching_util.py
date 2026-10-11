@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 # Matches verbose chain-of-thought answers such as:
 #   "The correct answer is **B**. Here's why: ..."
 #   "The answer is C."
-_VERBOSE_ANSWER_RE = re.compile(r"(?i)(?:correct\s+)?answer\s+is\s+\**([ABCD])\**")
+_VERBOSE_ANSWER_RE = re.compile(r"(?i:(?:correct\s+)?answer\s+is\s+)\**([ABCD])\b\**")
 
 
 def can_infer_option(answer, choices):
