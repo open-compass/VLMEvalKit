@@ -9,6 +9,7 @@ from vlmeval.api.base import BaseAPI
 from vlmeval.api.lmdeploy import LMDeployWrapper
 from vlmeval.api.rbdashmm_chat3_5_api import RBdashMMChat3_5_38B_Wrapper, RBdashMMChat3_78B_Wrapper
 from vlmeval.api.rbdashmm_chat3_api import RBdashMMChat3_5_Wrapper, RBdashMMChat3Wrapper
+from vlmeval.api.taichu import TaichuVLRWrapper, TaichuVLWrapper
 from vlmeval.api.telemm import TeleMM2_Wrapper
 from vlmeval.api.telemm_thinking import TeleMM2Thinking_Wrapper
 
@@ -127,3 +128,55 @@ def test_dataset_scoped_models_ignore_request_system_prompt_for_other_datasets(
     model.generate_inner([], system_prompt='Request prompt.', dataset='OtherDataset')
 
     assert model.prepare_inputs.call_args.args[-1] is None
+
+
+def test_taichu_vl_keeps_fixed_system_prompt_marker():
+    model = TaichuVLWrapper(
+        key='test-key',
+        url='http://localhost/v1/chat/completions',
+        system_prompt='Configured prompt.',
+        verbose=False,
+    )
+    fixed_prompt = '[sys]You are a helpful assistant.[/sys]'
+
+    messages, _ = model.prompt_to_request_messages([
+        {'type': 'text', 'value': fixed_prompt},
+        {'type': 'text', 'value': 'Question'},
+    ])
+
+    assert model.system_prompt == fixed_prompt
+    assert messages[0] == {
+        'role': 'system',
+        'content': [{'type': 'text', 'text': fixed_prompt}],
+    }
+
+
+@pytest.mark.parametrize(
+    ('wrapper_cls', 'kwargs'),
+    [
+        (TaichuVLWrapper, {}),
+        (TaichuVLRWrapper, {'use_reasoning_prompt': False, 'post_process': False}),
+    ],
+)
+def test_taichu_wrappers_ignore_request_scoped_system_prompt(monkeypatch, wrapper_cls, kwargs):
+    model = wrapper_cls(
+        key='test-key',
+        url='http://localhost/v1/chat/completions',
+        system_prompt='Configured prompt.',
+        verbose=False,
+        **kwargs,
+    )
+    response = Mock()
+    response.content = json.dumps({
+        'choices': [{'message': {'content': 'ok'}}],
+    }).encode()
+    post = Mock(return_value=response)
+    monkeypatch.setattr('vlmeval.api.taichu.requests.post', post)
+
+    model.generate_inner(
+        [{'type': 'text', 'value': 'Question'}],
+        system_prompt='Request prompt.',
+    )
+
+    payload = post.call_args.kwargs['json']
+    assert [message['role'] for message in payload['messages']] == ['user']

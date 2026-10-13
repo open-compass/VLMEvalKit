@@ -51,7 +51,7 @@ class TaichuVLWrapper(BaseAPI):
         self.kwargs = kwargs
         self.max_tokens = max_tokens
 
-        self.system_prompt = system_prompt or '[sys]You are a helpful assistant.[/sys]'
+        self.system_prompt = '[sys]You are a helpful assistant.[/sys]'
         self.hint_prompt = '|<Hint>|'
         self.mcq_prompt = '|<MCQ>|'
 
@@ -145,19 +145,16 @@ class TaichuVLWrapper(BaseAPI):
             msgs.append(dict(type='text', value=self.mcq_prompt))
         return msgs
 
-    def prompt_to_request_messages(self, inputs, system_prompt=None):
+    def prompt_to_request_messages(self, inputs):
 
         messages = [
             {'role': 'user', 'content': []}
         ]
-        if system_prompt is not None:
-            messages.insert(0, {'role': 'system', 'content': [{"type": "text", "text": system_prompt}]})
         is_mcq = False
         for x in inputs:
             if x['type'] == 'text':
                 if x['value'] == self.system_prompt:
-                    if system_prompt is None:
-                        messages.insert(0, {'role': 'system', 'content': [{"type": "text", "text": x['value']}]})
+                    messages.insert(0, {'role': 'system', 'content': [{"type": "text", "text": x['value']}]})
                 elif self.mcq_prompt == x['value']:
                     is_mcq = True
                 else:
@@ -175,7 +172,7 @@ class TaichuVLWrapper(BaseAPI):
         return messages, is_mcq
 
     def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
-        messages, is_mcq = self.prompt_to_request_messages(inputs, system_prompt)
+        messages, is_mcq = self.prompt_to_request_messages(inputs)
 
         data = {
             "model": self.model,
@@ -281,13 +278,11 @@ class TaichuVLRWrapper(BaseAPI):
             response = resp[:end]
         return response
 
-    def prompt_to_request_messages(self, inputs, system_prompt=None):
+    def prompt_to_request_messages(self, inputs):
 
         messages = [
             {'role': 'user', 'content': []}
         ]
-        if system_prompt is not None:
-            messages.insert(0, {'role': 'system', 'content': [{"type": "text", "text": system_prompt}]})
         for x in inputs:
             if x['type'] == 'text':
                 messages[-1]['content'].append(
@@ -316,7 +311,7 @@ class TaichuVLRWrapper(BaseAPI):
         return messages
 
     def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
-        messages = self.prompt_to_request_messages(inputs, system_prompt)
+        messages = self.prompt_to_request_messages(inputs)
         if self.verbose:
             verbose_messages = copy.deepcopy(messages)
             for mess in verbose_messages:
