@@ -52,6 +52,11 @@ videomme_dataset = {
     'Video-MME_0.5fps_subs': partial(VideoMME, dataset='Video-MME', fps=0.5, use_subtitle=True),
 }
 
+video_odyssey_dataset = {
+    'VideoOdyssey-V_64frame': partial(VideoOdysseyV, dataset='VideoOdyssey-V', nframe=64, pack=False),
+    'VideoOdyssey-V_128frame': partial(VideoOdysseyV, dataset='VideoOdyssey-V', nframe=128, pack=False),
+}
+
 videommev2_dataset = {
     # ── No subtitle ──
     'Video-MME-v2_64frame': partial(VideoMMEv2, dataset='Video-MME-v2', nframe=64),
@@ -384,7 +389,8 @@ dsr_dataset = _build_video_variants(dsr_subsets, DSRBench, dsr_variants)
 supported_video_datasets = {}
 
 dataset_groups = [
-    mmbench_video_dataset, mvbench_dataset, videomme_dataset, videommev2_dataset, videommmu_dataset,
+    mmbench_video_dataset, mvbench_dataset, videomme_dataset, video_odyssey_dataset,
+    videommev2_dataset, videommmu_dataset,
     longvideobench_dataset, mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
