@@ -3,8 +3,14 @@ import json
 from pathlib import Path
 from unittest.mock import Mock
 
+import pytest
+
 from vlmeval.api.base import BaseAPI
 from vlmeval.api.lmdeploy import LMDeployWrapper
+from vlmeval.api.rbdashmm_chat3_5_api import RBdashMMChat3_5_38B_Wrapper, RBdashMMChat3_78B_Wrapper
+from vlmeval.api.rbdashmm_chat3_api import RBdashMMChat3_5_Wrapper, RBdashMMChat3Wrapper
+from vlmeval.api.telemm import TeleMM2_Wrapper
+from vlmeval.api.telemm_thinking import TeleMM2Thinking_Wrapper
 
 
 def test_all_api_generate_inner_methods_accept_system_prompt():
@@ -84,3 +90,40 @@ def test_lmdeploy_uses_message_system_prompt_without_mutating_model(monkeypatch)
     assert payload['messages'][1]['role'] == 'user'
     assert model.system_prompt == 'Configured prompt.'
     assert message == original_message
+
+
+@pytest.mark.parametrize(
+    ('wrapper_cls', 'module_name'),
+    [
+        (RBdashMMChat3_78B_Wrapper, 'vlmeval.api.rbdashmm_chat3_5_api'),
+        (RBdashMMChat3_5_38B_Wrapper, 'vlmeval.api.rbdashmm_chat3_5_api'),
+        (RBdashMMChat3Wrapper, 'vlmeval.api.rbdashmm_chat3_api'),
+        (RBdashMMChat3_5_Wrapper, 'vlmeval.api.rbdashmm_chat3_api'),
+        (TeleMM2_Wrapper, 'vlmeval.api.telemm'),
+        (TeleMM2Thinking_Wrapper, 'vlmeval.api.telemm_thinking'),
+    ],
+)
+def test_dataset_scoped_models_ignore_request_system_prompt_for_other_datasets(
+        monkeypatch, wrapper_cls, module_name):
+    model = wrapper_cls.__new__(wrapper_cls)
+    model.max_tokens = 32
+    model.temperature = 0.0
+    model.key = 'test-key'
+    model.authorization = 'test-key'
+    model.app_id = 'test-app'
+    model.model = 'test-model'
+    model.api_base = 'http://localhost/v1/chat/completions'
+    model.timeout = 1
+    model.fail_msg = 'failed'
+    model.prepare_inputs = Mock(return_value=[])
+
+    response = Mock()
+    response.status_code = 200
+    response.text = json.dumps({
+        'choices': [{'message': {'content': 'ok'}}],
+    })
+    monkeypatch.setattr(f'{module_name}.requests.post', Mock(return_value=response))
+
+    model.generate_inner([], system_prompt='Request prompt.', dataset='OtherDataset')
+
+    assert model.prepare_inputs.call_args.args[-1] is None

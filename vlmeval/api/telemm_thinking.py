@@ -244,6 +244,8 @@ class TeleMM2Thinking_Wrapper(BaseAPI):
             system_prompt = PREDEFINED_SYSTEM_PROMPT.format(START="<think>", END="</think>")
         elif listinstr(['MMMU_DEV_VAL'], dataset):
             system_prompt = PREDEFINED_SYSTEM_PROMPT.format(START="<thinking>", END="</thinking>")
+        else:
+            system_prompt = None
 
         input_msgs = self.prepare_inputs(inputs, system_prompt)
 

@@ -311,11 +311,8 @@ class RBdashMMChat3Wrapper(BaseAPI):
             content_list = [dict(type='text', text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs, dataset, system_prompt=None):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-
-        if listinstr(['MMMU_DEV_VAL', 'MathVista_MINI'], dataset):
-            system_prompt = R1_SYSTEM_PROMPT
 
         if system_prompt is not None:
             input_msgs.append(dict(role='system', content=system_prompt))
@@ -337,8 +334,12 @@ class RBdashMMChat3Wrapper(BaseAPI):
         logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
         dataset = kwargs.pop('dataset', None)
+        if listinstr(['MMMU_DEV_VAL', 'MathVista_MINI'], dataset):
+            system_prompt = R1_SYSTEM_PROMPT
+        else:
+            system_prompt = None
 
-        input_msgs = self.prepare_inputs(inputs, dataset, system_prompt)
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
 
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(
@@ -458,14 +459,8 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
             content_list = [dict(type='text', text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs, dataset, system_prompt=None):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-
-        if listinstr([
-                'MMMU_DEV_VAL', 'MathVista_MINI', 'MMBench_V11',
-                'MMStar', 'DynaMath', 'MathVision', 'MathVerse',
-                'LogicVista', 'WeMath'], dataset):
-            system_prompt = R1_SYSTEM_PROMPT
 
         if system_prompt is not None:
             input_msgs.append(dict(role='system', content=system_prompt))
@@ -485,8 +480,15 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
         logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
         dataset = kwargs.pop('dataset', None)
+        if listinstr([
+                'MMMU_DEV_VAL', 'MathVista_MINI', 'MMBench_V11',
+                'MMStar', 'DynaMath', 'MathVision', 'MathVerse',
+                'LogicVista', 'WeMath'], dataset):
+            system_prompt = R1_SYSTEM_PROMPT
+        else:
+            system_prompt = None
 
-        input_msgs = self.prepare_inputs(inputs, dataset, system_prompt)
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
 
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(

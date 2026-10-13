@@ -405,6 +405,8 @@ class RBdashMMChat3_78B_Wrapper(BaseAPI):
         dataset = kwargs.pop('dataset', None)
         if listinstr(['MMMU_DEV_VAL', 'MathVista'], dataset):
             system_prompt = R1_SYSTEM_PROMPT
+        else:
+            system_prompt = None
 
         input_msgs = self.prepare_inputs(inputs, system_prompt)
 
@@ -545,6 +547,8 @@ class RBdashMMChat3_5_38B_Wrapper(BaseAPI):
                 'MMStar', 'DynaMath', 'MathVision', 'MathVerse',
                 'LogicVista', 'WeMath'], dataset):
             system_prompt = R1_SYSTEM_PROMPT
+        else:
+            system_prompt = None
 
         input_msgs = self.prepare_inputs(inputs, system_prompt)
 
