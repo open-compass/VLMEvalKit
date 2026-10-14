@@ -143,7 +143,7 @@ class VideoOdysseyV(VideoBaseDataset):
     REPO_ID = 'maifoundations/VideoOdyssey'
     ANNOTATION_FILE = 'VideoOdyssey_V.json'
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = 'exact_matching'
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
     JPEG_MAX_SIDE = 512
     JPEG_QUALITY = 70
     DOWNLOAD_WORKERS = 32

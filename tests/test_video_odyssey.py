@@ -1,4 +1,8 @@
-from vlmeval.dataset.video_odyssey import _extract_answer
+from vlmeval.dataset.video_odyssey import VideoOdysseyV, _extract_answer
+
+
+def test_default_judge_model_is_exact_matching():
+    assert VideoOdysseyV.DEFAULT_JUDGE_MODEL == 'exact_matching'
 
 
 def test_extract_answer_uses_response_after_think():
