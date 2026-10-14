@@ -68,6 +68,7 @@ def Comprehensive_auxeval(model, data):
 
 class ImageShortQADataset(ImageBaseDataset):
     TYPE = 'Short'
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
     DATASET_URL = {
         'LiveMMBench_Infographic': '',
@@ -98,7 +99,7 @@ class ImageShortQADataset(ImageBaseDataset):
         if not osp.exists(storage):
             ans_map = {} if not osp.exists(tmp_file) else load(tmp_file)
 
-            model = judge_kwargs.pop('model', 'gpt-4o-mini')
+            model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
             if model == 'exact_matching':
                 model = None
             else:

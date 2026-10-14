@@ -108,6 +108,7 @@ def SFE_auxeval(model, data):
 
 
 class SFE(ImageVQADataset):
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-1120'
 
     DATASET_URL = {
         'SFE': 'https://opencompass.openxlab.space/utils/VLMEval/SFE.tsv',
@@ -186,7 +187,7 @@ class SFE(ImageVQADataset):
         if not osp.exists(storage):
             ans_map = {} if not osp.exists(tmp_file) else load(tmp_file)
 
-            model = judge_kwargs.pop('model', 'gpt-4o-1120')
+            model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
             if model == 'exact_matching':
                 model = None
             else:

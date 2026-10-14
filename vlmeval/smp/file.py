@@ -11,6 +11,7 @@ import re
 import shutil
 import time
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import numpy as np
 import pandas as pd
@@ -91,7 +92,7 @@ def HFCacheRoot():
     cache_list = ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE', 'HF_HOME']
     for cache_name in cache_list:
         if cache_name in os.environ and osp.exists(os.environ[cache_name]):
-            if os.environ[cache_name].split('/')[-1] == 'hub':
+            if cache_name in ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE']:
                 return os.environ[cache_name]
             else:
                 return osp.join(os.environ[cache_name], 'hub')
@@ -132,9 +133,9 @@ class NumpyEncoder(json.JSONEncoder):
                       (np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, np.int64,
                        np.uint8, np.uint16, np.uint32, np.uint64)):
             return int(obj)
-        elif isinstance(obj, (np.float_, np.float16, np.float32, np.float64)):
+        elif isinstance(obj, (np.float16, np.float32, np.float64)):
             return float(obj)
-        elif isinstance(obj, (np.complex_, np.complex64, np.complex128)):
+        elif isinstance(obj, (np.complex64, np.complex128)):
             return {'real': obj.real, 'imag': obj.imag}
         elif isinstance(obj, (np.ndarray,)):
             return obj.tolist()
@@ -163,7 +164,12 @@ def dump(data, f, **kwargs):
             fout.write('\n'.join(lines))
 
     def dump_xlsx(data, f, **kwargs):
-        data.to_excel(f, index=False, engine='xlsxwriter')
+        with pd.ExcelWriter(
+            f,
+            engine='xlsxwriter',
+            engine_kwargs={'options': {'strings_to_formulas': False, 'strings_to_urls': False}},
+        ) as writer:
+            data.to_excel(writer, index=False)
 
     def dump_csv(data, f, quoting=csv.QUOTE_ALL):
         data.to_csv(f, index=False, encoding='utf-8', quoting=quoting)
@@ -261,13 +267,16 @@ def load(f, fmt=None):
         return data
 
     def load_xlsx(f):
-        return pd.read_excel(f)
+        return pd.read_excel(f, keep_default_na=False, na_values=[''])
 
     def load_csv(f):
-        return pd.read_csv(f)
+        return pd.read_csv(f, keep_default_na=False, na_values=[''])
 
     def load_tsv(f):
-        return pd.read_csv(f, sep='\t')
+        return pd.read_csv(f, sep='\t', keep_default_na=False, na_values=[''])
+
+    def load_parquet(f):
+        return pd.read_parquet(f)
 
     import validators
     if validators.url(f):
@@ -276,7 +285,10 @@ def load(f, fmt=None):
             download_file(f, tgt)
         f = tgt
 
-    handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
+    handlers = dict(
+        pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx,
+        csv=load_csv, tsv=load_tsv, parquet=load_parquet
+    )
     if fmt is not None:
         return handlers[fmt](f)
 
@@ -388,6 +400,16 @@ def last_modified(pth):
     return t
 
 
+def _mime_from_pillow(path):
+    from PIL import Image
+
+    try:
+        with Image.open(path) as image:
+            return Image.MIME.get(image.format, 'unknown')
+    except Exception:
+        return 'unknown'
+
+
 def parse_file(s):
     if osp.exists(s) and s != '.':
         assert osp.isfile(s)
@@ -396,6 +418,8 @@ def parse_file(s):
         if suffix == '.webp':
             return ('image/webp', s)
         mime = mimetypes.types_map.get(suffix, 'unknown')
+        if mime == 'unknown':
+            mime = _mime_from_pillow(s)
         return (mime, s)
     elif s.startswith('data:image/'):
         # To be compatible with OPENAI base64 format
@@ -410,12 +434,9 @@ def parse_file(s):
         decode_base64_to_image_file(b64, tgt)
         return parse_file(tgt)
     elif validators.url(s):
-        suffix = osp.splitext(s)[1].lower()
-        # 添加对webp的支持
-        if suffix == '.webp':
-            mime = 'image/webp'
-        elif suffix in mimetypes.types_map:
-            mime = mimetypes.types_map[suffix]
+        suffix = osp.splitext(urlsplit(s).path)[1].lower()
+        mime = 'image/webp' if suffix == '.webp' else mimetypes.types_map.get(suffix)
+        if mime is not None:
             dname = osp.join(LMUDataRoot(), 'files')
             os.makedirs(dname, exist_ok=True)
             tgt = osp.join(dname, md5(s) + suffix)
@@ -536,6 +557,14 @@ def _prediction_table(pred_file):
 
     if 'index' not in frame or 'prediction' not in frame:
         return None
+    return frame
+
+
+def load_prediction_file(pred_file):
+    """Load a prediction table from any supported file format."""
+    frame = _prediction_table(pred_file)
+    if frame is None:
+        raise ValueError(f'Invalid prediction table: {pred_file}')
     return frame
 
 
@@ -699,6 +728,13 @@ def get_intermediate_file_path(eval_file, suffix, target_format=None):
             target_format = get_pred_file_format()
 
     return eval_file.replace(f'.{original_ext}', f'{suffix}.{target_format}')
+
+
+def get_composite_child_eval_file(eval_file, child_name):
+    path = Path(eval_file)
+    stem = path.stem
+    child_stem = f'_{stem}_SUB_{child_name}'
+    return str(path.with_name(f'{child_stem}{path.suffix}'))
 
 
 def prepare_reuse_files(

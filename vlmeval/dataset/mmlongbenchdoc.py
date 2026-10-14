@@ -10,12 +10,14 @@ from urllib.request import urlopen
 import pandas as pd
 import torchvision.transforms as transforms
 from PIL import Image, ImageDraw, ImageFont
-from tqdm import tqdm
 
 from vlmeval.dataset.utils import build_judge, levenshtein_distance
-from vlmeval.smp import (decode_base64_to_image_file, dump, encode_image_to_base64,
-                         get_intermediate_file_path, get_logger, listinstr, load, read_ok,
-                         toliststr)
+from vlmeval.dataset.utils.judge_cache import (get_judge_cache_file, get_judge_detail_file,
+                                               get_judge_named_legacy_cache_file,
+                                               get_judge_score_file, load_judge_cache,
+                                               run_cached_tasks)
+from vlmeval.smp import (decode_base64_to_image_file, dump, encode_image_to_base64, get_logger,
+                         listinstr, load, read_ok, toliststr)
 from .image_base import ImageBaseDataset
 
 logger = get_logger(__name__)
@@ -320,7 +322,7 @@ def eval_score(gt, pred, answer_type):
         except Exception:
             pred = ''
         score = is_float_equal(gt, pred, include_percentage=True, is_close=True)
-    elif answer_type == 'Str':
+    elif answer_type in ['Str', 'None']:
         gt = get_clean_string(gt)
         pred = get_clean_string(pred)
         if is_exact_match(gt):
@@ -371,6 +373,18 @@ def MMLongBench_auxeval(model, line):
             return dict(log=log, res=res, pred=pred)
     log += 'All 5 retries failed.\n'
     return dict(log=log, res='', pred='')
+
+
+def MMLongBench_judge_failed(result):
+    if not isinstance(result, dict):
+        return True
+    response = result.get('res')
+    return (
+        not isinstance(response, str)
+        or not response
+        or FAIL_MSG in response
+        or not result.get('pred')
+    )
 
 
 def get_f1(data):
@@ -436,6 +450,8 @@ class MMLongBenchDoc(ImageBaseDataset):
 
     TYPE = 'VQA'
 
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+
     DATASET_URL = {
         'MMLongBench_DOC': 'https://opencompass.openxlab.space/utils/VLMEval/MMLongBench_DOC.tsv',
     }
@@ -456,9 +472,9 @@ class MMLongBenchDoc(ImageBaseDataset):
         'XComposer2d5': (1, -1),
     }
 
-    def __init__(self, dataset, **kwargs):
+    def __init__(self, dataset, model=None):
         self.model_list = list(self.SUPPORTED_MODELS.keys())
-        model_name = kwargs['model']
+        model_name = model
         if not listinstr(self.model_list, model_name):
             raise AssertionError("{} doesn't support the evaluation on MMLongBench_DOC.".format(model_name))
         super(MMLongBenchDoc, self).__init__(dataset)
@@ -547,46 +563,35 @@ class MMLongBenchDoc(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        model = judge_kwargs['model']
+        judge_name = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
+        storage = get_judge_detail_file(eval_file, 'extract', judge_name)
+        tmp_file = get_judge_cache_file(eval_file, 'extract', judge_name)
+        legacy_file = get_judge_named_legacy_cache_file(eval_file, judge_name)
 
-        storage = get_intermediate_file_path(eval_file, f'_{model}')
-        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
-
-        if osp.exists(storage):
-            logger.warning(f'GPT scoring file {storage} already exists, will reuse it in MMLongBench_eval. ')
-        else:
-            data = load(eval_file)
+        data = load(eval_file)
+        lines = [data.iloc[i] for i in range(len(data))]
+        indices = [line['index'] for line in lines]
+        ans = load_judge_cache(tmp_file, legacy_file=legacy_file)
+        pending = [idx for idx in indices if idx not in ans or MMLongBench_judge_failed(ans[idx])]
+        if pending:
             model = build_judge(max_tokens=128, **judge_kwargs)
-            lt = len(data)
-            lines = [data.iloc[i] for i in range(lt)]
-            tups = [(model, line) for line in lines]
-            indices = [line['index'] for line in lines]
+            pending_set = set(pending)
+            tups = [(model, line) for line in lines if line['index'] in pending_set]
+            ans = run_cached_tasks(
+                MMLongBench_auxeval,
+                tups,
+                pending,
+                tmp_file,
+            )
 
-            ans = {}
-            if osp.exists(tmp_file):
-                ans = load(tmp_file)
-            tups = [x for x, i in zip(tups, indices) if i not in ans]
-            indices = [i for i in indices if i not in ans]
-
-            if len(indices):
-                new_results = list()
-                for model, line in tqdm(tups):
-                    res = MMLongBench_auxeval(model, line)
-                    new_results.append(res)
-
-            log_map, res_map, pred_map = {}, {}, {}
-            all_inds = [line['index'] for line in lines]
-            for k, v in zip(all_inds, new_results):
-                log_map[k] = v['log']
-                res_map[k] = v['res']
-                pred_map[k] = v['pred']
-            data['res'] = [res_map[idx] for idx in data['index']]
-            data['log'] = [log_map[idx] for idx in data['index']]
-            data['pred'] = [pred_map[idx] for idx in data['index']]
-            dump(data, storage)
+        ordered_results = [ans.get(idx, {}) for idx in indices]
+        data['res'] = [result.get('res', '') for result in ordered_results]
+        data['log'] = [result.get('log', '') for result in ordered_results]
+        data['pred'] = [result.get('pred', '') for result in ordered_results]
+        dump(data, storage)
 
         score = MMLongBench_acc(storage)
-        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+        score_pth = get_judge_score_file(eval_file, judge_name, 'csv')
 
         dump(score, score_pth)
         logger.info(f'MMLongBench_eval successfully finished evaluating {eval_file}, results saved in {score_pth}')

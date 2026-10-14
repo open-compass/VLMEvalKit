@@ -37,6 +37,7 @@ class DA2K(ImageVQADataset):
     """
 
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
 
     # HuggingFace dataset repository
     DATASET_URL = {
@@ -262,7 +263,7 @@ class DA2K(ImageVQADataset):
             data = load(eval_file)
 
             # Check if we need LLM judge
-            model = judge_kwargs.get('model', 'exact_matching')
+            model = judge_kwargs.get('model', cls.DEFAULT_JUDGE_MODEL)
 
             if model == 'exact_matching':
                 model = None

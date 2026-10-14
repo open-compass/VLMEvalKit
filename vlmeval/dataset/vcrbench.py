@@ -30,6 +30,7 @@ def unzip_video(pth):
 
 
 class VCRBench(VideoBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-0806'
 
     SYS = 'You are an AI assistant responsible for answering questions about videos.'
 
@@ -51,6 +52,8 @@ Please analyze these images and provide the answer to the question about the vid
     def prepare_dataset(self, dataset_name='VCR-Bench', repo_id='VLM-Reasoning/VCR-Bench'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
+            if not osp.exists(data_file):
+                return False
             data = load(data_file)
             for video_pth in data['video_path']:
                 if not osp.exists(osp.join(pth, video_pth)):
@@ -145,7 +148,7 @@ Please analyze these images and provide the answer to the question about the vid
                                             build_Recall_prompt, build_Scoring_prompt)
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
-        judge = judge_kwargs.pop('model', 'gpt-4o-0806')
+        judge = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         nproc = judge_kwargs.pop('nproc', 4)
 
         # step1: extract answer

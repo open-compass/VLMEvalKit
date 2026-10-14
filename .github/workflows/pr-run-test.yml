@@ -161,4 +161,4 @@ jobs:
       - name: stop job
         if: always()
         run: |
-          rjob stop --namespace=ailab-llmeval vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }}
+          rjob stop vllm-api-pr-test-${{ github.run_id }}-mock-api-${{matrix.answer_type}}-${{ github.run_attempt }}

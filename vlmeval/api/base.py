@@ -157,7 +157,7 @@ class BaseAPI:
 
     def chat(self, messages, **kwargs1):
         """The main function for multi-turn chatting. Will call `chat_inner` with the preprocessed input messages."""
-        assert hasattr(self, 'chat_inner'), 'The API model should has the `chat_inner` method. '
+        assert hasattr(self, 'chat_inner'), 'The API model should have the `chat_inner` method. '
         for msg in messages:
             assert isinstance(msg, dict) and 'role' in msg and 'content' in msg, msg
             assert self.check_content(msg['content']) in ['str', 'dict', 'liststr', 'listdict'], msg
@@ -189,7 +189,7 @@ class BaseAPI:
                     logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
             except Exception as err:
                 if self.verbose:
-                    logger.error(f'An error occured during try {i}: ')
+                    logger.error(f'An error occurred during try {i}: ')
                     logger.error(f'{type(err)}: {err}')
             # delay before each retry
             T = rd.random() * self.wait * 2
@@ -264,7 +264,7 @@ class BaseAPI:
                     logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
             except Exception as err:
                 if self.verbose:
-                    logger.error(f'An error occured during try {i}: ')
+                    logger.error(f'An error occurred during try {i}: ')
                     logger.error(f'{type(err)}: {err}')
             # delay before each retry
             T = rd.random() * self.wait * 2
@@ -306,15 +306,15 @@ class BaseAPI:
     def _inspect_payload(payload) -> str:
         payload = cp.deepcopy(payload)
 
-        def recurive_hide_base64(value):
+        def recursive_hide_base64(value):
             if isinstance(value, str) and (item := re.match(r'^data:[\w/]+;base64,', value)):
                 head = item.group(0)
                 return f'{head}<base64:{len(value) - len(head)}>'
             elif isinstance(value, dict):
-                return {k: recurive_hide_base64(v) for k, v in value.items()}
+                return {k: recursive_hide_base64(v) for k, v in value.items()}
             elif isinstance(value, list):
-                return [recurive_hide_base64(v) for v in value]
+                return [recursive_hide_base64(v) for v in value]
             else:
                 return value
 
-        return json.dumps(recurive_hide_base64(payload), ensure_ascii=False, indent=2)
+        return json.dumps(recursive_hide_base64(payload), ensure_ascii=False, indent=2)

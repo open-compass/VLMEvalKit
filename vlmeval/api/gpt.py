@@ -8,6 +8,7 @@ from PIL import Image
 
 from vlmeval.smp import encode_image_to_base64, get_logger
 from .base import BaseAPI
+from .openai_sdk import _apply_response_charset
 
 logger = get_logger(__name__)
 
@@ -97,7 +98,14 @@ class OpenAIWrapper(BaseAPI):
                  img_detail: str = 'low',
                  use_azure: bool = False,
                  stream: bool = False,
+                 response_charset: str = 'utf-8',
                  **kwargs):
+        """
+        Args:
+            response_charset: Charset used to decode HTTP responses that do
+                not declare a charset in the Content-Type header. Defaults to
+                ``utf-8``. Set to ``None`` to keep requests' inferred encoding.
+        """
 
         self.model = model
         self.cur_idx = 0
@@ -167,6 +175,7 @@ class OpenAIWrapper(BaseAPI):
         self.img_detail = img_detail
         self.timeout = timeout
         self.stream = stream
+        self.response_charset = response_charset
         self.is_max_completion_tokens = ('o1' in model) or ('o3' in model) or ('o4' in model) or ('gpt-5' in model)
         self.is_o_model = ('o1' in model) or ('o3' in model) or ('o4' in model)
         super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
@@ -228,7 +237,7 @@ class OpenAIWrapper(BaseAPI):
                     if self.img_size > 0:
                         target_size = self.img_size
                     if self.total_img_size > 0:
-                        target_size = min(target_size, int(self.img_size / (image_num**0.5)))
+                        target_size = min(target_size, max(1, int(self.total_img_size / (image_num**0.5))))
                     target_size = -1 if math.isinf(target_size) else target_size
                     b64 = encode_image_to_base64(
                         img, target_size=target_size, max_file_size=self.max_file_size)
@@ -308,6 +317,7 @@ class OpenAIWrapper(BaseAPI):
             timeout=self.timeout * 1.1,
             stream=stream,
         )
+        _apply_response_charset(response, self.response_charset)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
         answer = self.fail_msg

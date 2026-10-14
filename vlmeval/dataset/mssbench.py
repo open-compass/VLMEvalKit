@@ -59,6 +59,8 @@ def _mss_behavior_judge(model, pred):
 
 class MSSBenchDataset(ImageBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     MODALITY = 'IMAGE'
     DATASET_URL = {'MSSBench': 'https://opencompass.openxlab.space/utils/VLMEval/MSSBench.tsv'}
     DATASET_MD5 = {'MSSBench': 'f5398724ede5cb8d1c725fc01c96241b'}
@@ -139,7 +141,7 @@ class MSSBenchDataset(ImageBaseDataset):
         data = load(eval_file)
         assert 'prediction' in data and 'answer' in data
 
-        model_name = judge_kwargs.pop('model', 'exact_matching')
+        model_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         nproc = judge_kwargs.pop('nproc', 4)
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}_judge', 'pkl')
 
