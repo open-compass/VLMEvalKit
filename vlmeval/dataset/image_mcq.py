@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from vlmeval.smp import (LMUDataRoot, download_file, dump, file_size, get_cache_path,
                          get_file_extension, get_intermediate_file_path, istype, listinstr, load,
-                         load_prediction_file, localize_df, md5, toliststr)
+                         load_prediction_file, load_table_file, localize_df, md5, toliststr)
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
 
@@ -310,7 +310,7 @@ class ImageMCQDataset(ImageBaseDataset):
         # load split
         eval_record = get_intermediate_file_path(eval_file, f'_{name_str}_result')
         dump(data, eval_record)
-        data = load_prediction_file(eval_record)
+        data = load_table_file(eval_record)
 
         # May have different report acc functions for different datasets
         if 'MMT' in dataset:
@@ -341,13 +341,13 @@ class ImageMCQDataset(ImageBaseDataset):
             result_file = get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_result', 'pkl')
             data0 = mcq_vanilla_eval(model, circ0, meta, nproc, result_file, self.dataset_name)
             dump(data0, get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_circ0_result'))
-            data = load_prediction_file(get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_circ0_result'))
+            data = load_table_file(get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_circ0_result'))
             acc_map['vanilla_0'] = report_acc(data)
             # Vanilla ALL Acc
             data = load_prediction_file(eval_file)
             dataall = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
             dump(dataall, get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_all_result'))
-            data = load_prediction_file(get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_all_result'))
+            data = load_table_file(get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_all_result'))
             acc_map['vanilla_all'] = report_acc(data)
             # Merge & Print the Evaluation Results
             for k, v in acc_map.items():
@@ -434,7 +434,7 @@ class ImageMCQDataset(ImageBaseDataset):
         def report_acc_verifier(result_file):
             from collections import defaultdict
 
-            data = load_prediction_file(result_file)
+            data = load_table_file(result_file)
             tot = defaultdict(lambda: 0)
             hit = defaultdict(lambda: 0)
             lt = len(data)
@@ -876,7 +876,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
         # load split
         dump(data, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
-        data = load_prediction_file(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        data = load_table_file(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
 
         acc = report_acc(data)
 
@@ -1263,7 +1263,7 @@ class CVBench(ImageMCQDataset):
             model, data, meta, nproc, result_file, self.dataset_name
         )
         dump(data, get_intermediate_file_path(eval_file, f"_{model_name}_result"))
-        data = load_prediction_file(get_intermediate_file_path(eval_file, f"_{model_name}_result"))
+        data = load_table_file(get_intermediate_file_path(eval_file, f"_{model_name}_result"))
 
         if all(data["split"] == "2D"):  # 2D
             acc = self.report_accuracy(data)
@@ -1351,7 +1351,7 @@ class HRBenchDataset(ImageMCQDataset):
             return acc
         data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
         dump(data, get_intermediate_file_path(eval_file, f'_{name_str}_result'))
-        data = load_prediction_file(get_intermediate_file_path(eval_file, f'_{name_str}_result'))
+        data = load_table_file(get_intermediate_file_path(eval_file, f'_{name_str}_result'))
 
         acc = report_acc_hrbench(data)
 
@@ -3244,7 +3244,7 @@ class TopViewRS(ImageMCQDataset):
         data = mcq_topviewrs_eval(model, data, meta, nproc, result_file, self.dataset_name)
         eval_record = eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}')
         dump(data, eval_record)
-        data = load_prediction_file(eval_record)
+        data = load_table_file(eval_record)
         acc = report_topviewrs_acc(data)
         score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
         dump(acc, score_file)

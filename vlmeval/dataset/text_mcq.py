@@ -7,7 +7,7 @@ import pandas as pd
 
 from vlmeval.smp import dump, load
 from vlmeval.smp.file import (LMUDataRoot, file_size, get_intermediate_file_path,
-                              load_prediction_file)
+                              load_prediction_file, load_table_file)
 from .text_base import TextBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
 
@@ -101,7 +101,7 @@ class TextMCQDataset(TextBaseDataset):
         # load split
         eval_name_result = get_intermediate_file_path(eval_file, f'_{name_str}_result')
         dump(data, eval_name_result)
-        data = load_prediction_file(eval_name_result)
+        data = load_table_file(eval_name_result)
 
         # May have different report acc functions for different datasets
         if 'MMT' in dataset:

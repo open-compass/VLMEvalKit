@@ -568,6 +568,19 @@ def load_prediction_file(pred_file):
     return frame
 
 
+def load_table_file(table_file):
+    """Load a table that evaluation itself wrote (no ``prediction`` column is required).
+
+    Unlike ``load_prediction_file``, which validates inference results, this only turns the
+    record list that JSON serialization produces back into a DataFrame; other loaded
+    values are returned unchanged.
+    """
+    data = load(table_file)
+    if isinstance(data, list):
+        return pd.DataFrame(data)
+    return data
+
+
 def copy_prediction_file(src_file, dst_file):
     os.makedirs(osp.dirname(dst_file), exist_ok=True)
     src_suffix = osp.splitext(src_file)[1].lower()

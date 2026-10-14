@@ -62,7 +62,7 @@ def runtime(monkeypatch, tmp_path):
         file_definitions = [
             'LMUDataRoot', 'load', 'file_size', 'dump', 'NumpyEncoder', 'get_pred_file_format',
             'get_eval_file_format', 'get_file_extension', 'get_intermediate_file_path',
-            '_prediction_table', '_should_convert_to_dataframe', 'load_prediction_file',
+            '_prediction_table', '_should_convert_to_dataframe', 'load_prediction_file', 'load_table_file',
         ]
         _definitions('vlmeval/smp/file.py', file_definitions, namespace)
         misc_definitions = ['istype', 'cn_string', 'd2df', 'timestr', 'toliststr', 'listinstr']
@@ -145,7 +145,7 @@ def test_native_export_and_cached_exact_matching_evaluation(
     result = dataset.evaluate(target, model='exact_matching', nproc=1)
     assert result['Overall'].tolist() == [0.5]
     scored_path = namespace['get_intermediate_file_path'](target, '_exact_matching_result')
-    scored = namespace['load_prediction_file'](scored_path)
+    scored = namespace['load_table_file'](scored_path)
     assert scored['index'].tolist() == [0, 1]
     assert scored['hit'].tolist() == [1, 0]
 
