@@ -1,10 +1,85 @@
 import ast
 import os
+import re
 
+import pandas as pd
 from huggingface_hub import snapshot_download
 
 from vlmeval.smp import get_cache_path, load, modelscope_flag_set, toliststr
 from .image_mcq import ImageMCQDataset
+
+_MISTAKE_EXISTENCE = 'QA_MISTAKE_EXISTENCE'
+
+
+def _extract_yes_no(text):
+    """Extract an unambiguous yes/no answer from a model response."""
+    text = str(text).strip()
+    if not text:
+        return None
+
+    # Prefer the answer after a reasoning block, when present.
+    think_ends = list(re.finditer(r'</\s*think\s*>', text, flags=re.IGNORECASE))
+    if think_ends:
+        text = text[think_ends[-1].end():].strip()
+
+    tagged = list(re.finditer(
+        r'<\s*answer\b[^>]*>\s*(yes|no)\b.*?</\s*answer\s*>',
+        text,
+        flags=re.IGNORECASE | re.DOTALL,
+    ))
+    if tagged:
+        return tagged[-1].group(1).lower()
+
+    concluded = list(re.finditer(
+        r'(?:(?:final\s+answer|the\s+answer)\s*(?:is|:|=)?|answer\s*(?:is|:|=))'
+        r'\s*(yes|no)\b',
+        text,
+        flags=re.IGNORECASE,
+    ))
+    if concluded:
+        return concluded[-1].group(1).lower()
+
+    leading = re.match(r'^\s*[*_`\[(]*(yes|no)\b', text, flags=re.IGNORECASE)
+    if leading:
+        return leading.group(1).lower()
+
+    matches = re.findall(r'\b(yes|no)\b', text, flags=re.IGNORECASE)
+    normalized = {answer.lower() for answer in matches}
+    if len(normalized) == 1:
+        return normalized.pop()
+    return None
+
+
+def _build_eriq_score_fn(score_fn):
+    """Add rule-based yes/no scoring without changing the LLM judge path."""
+    def eriq_score_fn(data):
+        if getattr(score_fn, 'judge_mode', 'rule') == 'llm':
+            return score_fn(data)
+
+        binary_mask = data['task_type'].eq(_MISTAKE_EXISTENCE)
+        scored_parts = []
+
+        if binary_mask.any():
+            binary = data.loc[binary_mask].copy()
+            predictions = binary['prediction'].map(_extract_yes_no)
+            answers = binary['answer'].map(_extract_yes_no)
+            binary['pred_extracted'] = predictions
+            binary['hit'] = [
+                float(pred is not None and answer is not None and pred == answer)
+                for pred, answer in zip(predictions, answers)
+            ]
+            scored_parts.append(binary)
+
+        if (~binary_mask).any():
+            scored_parts.append(score_fn(data.loc[~binary_mask].copy()))
+
+        return pd.concat(scored_parts).reindex(data.index)
+
+    # eval_mcq_score uses these attributes for judge cache/resume and output file names.
+    for attr in ('judge_mode', 'judge_model', 'llm_cache'):
+        if hasattr(score_fn, attr):
+            setattr(eriq_score_fn, attr, getattr(score_fn, attr))
+    return eriq_score_fn
 
 
 class ERIQBench(ImageMCQDataset):
@@ -12,7 +87,8 @@ class ERIQBench(ImageMCQDataset):
     ERIQ.
 
     Reference:
-      Unified Embodied VLM Reasoning with Robotic Action via Autoregressive Discretized Pre-training
+      Unified Embodied VLM Reasoning with Robotic Action via Autoregressive
+      Discretized Pre-training
       https://arxiv.org/abs/2512.24125
     """
 
@@ -138,7 +214,7 @@ class ERIQBench(ImageMCQDataset):
         from .utils.spatial_bench.cal_scores import build_mcq_score_fn, eval_mcq_score
 
         # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
-        score_fn = build_mcq_score_fn(**judge_kwargs)
+        score_fn = _build_eriq_score_fn(build_mcq_score_fn(**judge_kwargs))
 
         return eval_mcq_score(
             load_fn=load,

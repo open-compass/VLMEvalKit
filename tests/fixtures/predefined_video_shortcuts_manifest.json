@@ -1535,6 +1535,28 @@
     "dataset_class_name": "VideoMMMU",
     "dataset_name": "VideoMMMU"
   },
+  "VideoOdyssey-V_128frame": {
+    "build_config": {
+      "class": "VideoOdysseyV",
+      "dataset": "VideoOdyssey-V",
+      "nframe": 128,
+      "pack": false
+    },
+    "dataset_alias_name": "VideoOdyssey-V_128frame",
+    "dataset_class_name": "VideoOdysseyV",
+    "dataset_name": "VideoOdyssey-V"
+  },
+  "VideoOdyssey-V_64frame": {
+    "build_config": {
+      "class": "VideoOdysseyV",
+      "dataset": "VideoOdyssey-V",
+      "nframe": 64,
+      "pack": false
+    },
+    "dataset_alias_name": "VideoOdyssey-V_64frame",
+    "dataset_class_name": "VideoOdysseyV",
+    "dataset_name": "VideoOdyssey-V"
+  },
   "Video_Holmes_32frame": {
     "build_config": {
       "class": "Video_Holmes",

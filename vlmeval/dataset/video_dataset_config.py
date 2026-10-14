@@ -100,6 +100,11 @@ sis_bench_dataset = {
     'SIS-Bench_1fps': _video_spec(SISBench, dataset='SIS-Bench', fps=1.0),
 }
 
+video_odyssey_dataset = {
+    'VideoOdyssey-V_64frame': _video_spec(VideoOdysseyV, dataset='VideoOdyssey-V', nframe=64, pack=False),
+    'VideoOdyssey-V_128frame': _video_spec(VideoOdysseyV, dataset='VideoOdyssey-V', nframe=128, pack=False),
+}
+
 videommev2_dataset = {
     # ── No subtitle ──
     'Video-MME-v2_64frame': _video_spec(VideoMMEv2, dataset='Video-MME-v2', nframe=64),
@@ -472,7 +477,7 @@ vue_tr_dataset = {
 
 dataset_groups = [
     video_eval_pro_dataset,
-    mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset,
+    mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset, video_odyssey_dataset,
     videommev2_dataset, videommmu_dataset,
     longvideobench_dataset, mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,

@@ -162,6 +162,7 @@ from .video_concat_dataset import ConcatVideoDataset
 from .video_eval_pro import VideoEvalPro_MCQ, VideoEvalPro_OpenEnded
 from .video_holmes import Video_Holmes
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
+from .video_odyssey import VideoOdysseyV
 from .videomme import VideoMME
 from .videommev2 import VideoMMEv2
 from .videommmu import VideoMMMU
@@ -354,7 +355,7 @@ VIDEO_DATASET = [
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
     VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset, FavorBench,
-    TimeLensBench, VUETR
+    TimeLensBench, VideoOdysseyV, VUETR
 ]
 
 # add by EASI team
