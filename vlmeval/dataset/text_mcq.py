@@ -6,7 +6,8 @@ import warnings
 import pandas as pd
 
 from vlmeval.smp import dump, load
-from vlmeval.smp.file import LMUDataRoot, file_size, get_intermediate_file_path
+from vlmeval.smp.file import (LMUDataRoot, file_size, get_intermediate_file_path,
+                              load_prediction_file)
 from .text_base import TextBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
 
@@ -77,7 +78,7 @@ class TextMCQDataset(TextBaseDataset):
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
-        data = load(eval_file)
+        data = load_prediction_file(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         # If not choice label, then use lower case
@@ -100,7 +101,7 @@ class TextMCQDataset(TextBaseDataset):
         # load split
         eval_name_result = get_intermediate_file_path(eval_file, f'_{name_str}_result')
         dump(data, eval_name_result)
-        data = load(eval_name_result)
+        data = load_prediction_file(eval_name_result)
 
         # May have different report acc functions for different datasets
         if 'MMT' in dataset:
