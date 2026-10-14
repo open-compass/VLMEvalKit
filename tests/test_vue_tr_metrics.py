@@ -44,3 +44,31 @@ def test_reversed_interval_counts_for_precision_and_recall():
     assert iou == 0.0
     assert precision == pytest.approx(1.0)
     assert recall == pytest.approx(0.25)
+
+
+def test_tsv_is_reused_until_more_videos_arrive(tmp_path, monkeypatch):
+    import json
+    import os
+
+    from vlmeval.dataset.vue_tr import VUETR
+    from vlmeval.smp import load
+
+    monkeypatch.setenv('LMUData', str(tmp_path))
+    root = tmp_path / 'VUE-TR'
+    (root / 'videos').mkdir(parents=True)
+    gt = [dict(query_id=i, video_id=f'v{i}', query='q', gt=[[0, 1]], duration=60.0, duration_category='short',
+               query_format='keyword', query_modality='vision') for i in range(2)]
+    (root / 'VUE-TR_ground_truth.json').write_text(json.dumps(gt))
+    (root / 'videos' / 'v0.mp4').touch()
+
+    dataset = object.__new__(VUETR)
+    data_file = dataset.prepare_dataset('VUE-TR')['data_file']
+    assert len(load(data_file)) == 1
+    os.utime(data_file, (1e10, 1e10))  # mark the file so a rewrite would show
+    with pytest.warns(UserWarning):
+        dataset.prepare_dataset('VUE-TR')
+    assert os.stat(data_file).st_mtime == 1e10  # reused, not written again
+
+    (root / 'videos' / 'v1.mp4').touch()
+    dataset.prepare_dataset('VUE-TR')
+    assert len(load(data_file)) == 2  # rebuilt once the second video is there

@@ -121,7 +121,7 @@ class VUETR(VideoBaseDataset):
             annos = json.load(f)
         if dataset.endswith('-Vision'):
             annos = [a for a in annos if a['query_modality'] == 'vision']
-        missing = sorted({a['video_id'] for a in annos if not (video_root / f"{a['video_id']}.mp4").exists()})
+        missing = {a['video_id'] for a in annos if not (video_root / f"{a['video_id']}.mp4").exists()}
         if missing:
             warnings.warn(f'{dataset}: {len(missing)} of {len({a["video_id"] for a in annos})} videos are missing '
                           f'under {video_root}; their queries are skipped. Download the videos listed in '
@@ -134,15 +134,28 @@ class VUETR(VideoBaseDataset):
                  duration=float(a['duration']),
                  duration_category=a['duration_category'],
                  query_format=a['query_format'],
-                 query_modality=a['query_modality']) for a in annos if a['video_id'] not in set(missing)
+                 query_modality=a['query_modality']) for a in annos if a['video_id'] not in missing
         ]
         if not records:
             raise FileNotFoundError(f'No {dataset} videos found under {video_root}.')
         data_file = bench_root / f'{dataset}.tsv'
-        tmp = str(data_file) + '.tmp.tsv'
-        dump(pd.DataFrame(records), tmp)
-        os.replace(tmp, data_file)
+        # Reuse an up-to-date TSV: run.py builds the dataset on rank 0 first and then on every rank, so the file is
+        # only written when it is missing, older than the ground truth, or more videos have been downloaded since.
+        if not self._tsv_up_to_date(data_file, gt_file, records):
+            tmp = str(data_file) + '.tmp.tsv'
+            dump(pd.DataFrame(records), tmp)
+            os.replace(tmp, data_file)
         return dict(root=str(video_root), data_file=str(data_file))
+
+    @staticmethod
+    def _tsv_up_to_date(data_file, gt_file, records):
+        if not data_file.exists() or gt_file.stat().st_mtime > data_file.stat().st_mtime:
+            return False
+        try:
+            existing = load(str(data_file))
+        except Exception:
+            return False
+        return sorted(map(str, existing['index'])) == sorted(str(r['index']) for r in records)
 
     def _frame_times(self, video):
         if video not in self._video_meta:
