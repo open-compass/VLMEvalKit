@@ -169,6 +169,7 @@ from .videommmu import VideoMMMU
 from .videott import VideoTT
 from .viewspatialbench import ViewSpatialBench
 from .visfactor import VisFactor
+from .visualoverload import VisualOverload
 from .vl_rewardbench import VLRewardBench
 from .vladbench import VLADBench
 from .vlm2bench import VLM2Bench
@@ -304,6 +305,7 @@ class ConcatDataset(ImageBaseDataset):
 
 # Add new supported dataset class here
 IMAGE_DATASET = [
+    VisualOverload,
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
     MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset, DUDE, DocScope,
