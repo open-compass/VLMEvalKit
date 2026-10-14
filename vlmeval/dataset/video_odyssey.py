@@ -90,10 +90,14 @@ def _extract_answer(prediction):
     if not text or text.lower() == 'nan':
         return ''
 
-    if '```json' in text:
-        text = text.split('```json', 1)[1].split('```', 1)[0].strip()
-    elif '```' in text:
-        text = text.split('```', 1)[1].split('```', 1)[0].strip()
+    if '</think>' in text:
+        final_response = text.rsplit('</think>', 1)[1].strip()
+        if final_response:
+            text = final_response
+
+    fenced = re.findall(r'```(?:json)?\s*(.*?)```', text, re.IGNORECASE | re.DOTALL)
+    if fenced:
+        text = fenced[-1].strip()
 
     try:
         parsed = json.loads(text)
@@ -105,14 +109,33 @@ def _extract_answer(prediction):
     except (TypeError, json.JSONDecodeError):
         pass
 
-    match = re.search(r'(?:predicted_)?answer["\']?\s*[:=]\s*["\']?([A-D])["\']?', text, re.IGNORECASE)
-    if match:
-        return match.group(1).upper()
-    match = re.search(r'\b([A-D])\b', text.upper())
+    match = re.search(r'(?:^|\n)\s*[\[(]?([A-D])[\])]?[.。]?\s*$', text)
     if match:
         return match.group(1)
-    match = re.search(r'([A-D])', text.upper())
-    return match.group(1) if match else ''
+
+    explicit_patterns = [
+        r'(?:final\s+)?(?:predicted_)?answer["\']?\s*(?:is|[:=])\s*["\'`*(\[]*([A-D])\b',
+        r'(?:final\s+)?(?:option|choice)\s*(?:is|[:=])?\s*["\'`*(\[]*([A-D])\b',
+    ]
+    candidates = []
+    for pattern in explicit_patterns:
+        candidates.extend(
+            (match.start(1), match.group(1).upper())
+            for match in re.finditer(pattern, text, re.IGNORECASE)
+        )
+
+    # Keep standalone matching case-sensitive so ordinary words such as the
+    # article "a" are not treated as option A. Prefer the last candidate to
+    # avoid selecting an intermediate choice from the reasoning.
+    candidates.extend(
+        (match.start(1), match.group(1))
+        for match in re.finditer(r'(?<![A-Za-z0-9])([A-D])(?![A-Za-z0-9])', text)
+    )
+    if candidates:
+        return max(candidates)[1]
+
+    stripped = re.sub(r'[\s\W_]+', '', text.upper())
+    return stripped[-1] if stripped and stripped[-1] in 'ABCD' else ''
 
 
 class VideoOdysseyV(VideoBaseDataset):
