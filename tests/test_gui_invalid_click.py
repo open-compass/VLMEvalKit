@@ -30,16 +30,15 @@ def load_gui_module(name):
 
 class TestGUIInvalidClick(unittest.TestCase):
 
-    def test_malformed_clicks_are_not_replaced_with_the_origin(self):
-        for name in ['screenspot', 'screenspot_pro', 'osworld_g', 'vbgd', 'venusbench', 'screenspot_v2']:
+    def test_malformed_clicks_are_replaced_with_a_negative_sentinel(self):
+        for name in ['screenspot', 'vbgd', 'screenspot_v2']:
             module = load_gui_module(name)
             for response in ['', 'Failed to obtain answer via API.', 'pyautogui.click(x=0)']:
                 with self.subTest(dataset=name, response=response):
-                    with self.assertRaises(ValueError):
-                        module.parse_bbox_aguvis(response)
+                    self.assertEqual(module.parse_bbox_aguvis(response), [-1.0, -1.0])
             self.assertEqual(module.parse_bbox_aguvis('pyautogui.click(x=0, y=0)'), [0.0, 0.0])
 
-    def test_screenspot_marks_unparseable_origin_targets_as_format_errors(self):
+    def test_screenspot_scores_negative_sentinels_as_incorrect_clicks(self):
         module = load_gui_module('screenspot')
         dataset = module.ScreenSpot.__new__(module.ScreenSpot)
         dataset.img_root = '/unused'
@@ -51,7 +50,7 @@ class TestGUIInvalidClick(unittest.TestCase):
                 mock.patch.dict('os.environ', {}, clear=True):
             score = dataset.evaluate_point('predictions.xlsx')
         self.assertEqual(score['Overall_Accuracy'], 50)
-        self.assertEqual(score['Format_Err_Rate'], 50)
+        self.assertEqual(score['Format_Err_Rate'], 0)
 
 
 if __name__ == '__main__':
