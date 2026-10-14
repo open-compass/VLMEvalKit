@@ -151,8 +151,6 @@ class VideoOdysseyV(VideoBaseDataset):
     def __init__(self, dataset='VideoOdyssey-V', nframe=64, fps=-1, pack=False):
         if fps > 0:
             raise ValueError('VideoOdyssey-V reproduces the official fixed-frame sampler; fps mode is unsupported.')
-        if nframe <= 0:
-            raise ValueError('VideoOdyssey-V requires a positive nframe value.')
         super().__init__(dataset=dataset, nframe=nframe, fps=fps, pack=pack)
 
     @classmethod
