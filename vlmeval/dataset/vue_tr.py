@@ -169,15 +169,17 @@ class VUETR(VideoBaseDataset):
                           f'videos in {video_root} as <video_id>.mp4.')
             return
         import shutil
+
+        # H.264 video is preferred: decord, which most video models use, often fails on AV1 and VP9.
         if shutil.which('ffmpeg'):
-            fmt = 'bv*+ba/b'
+            fmt = 'bv*[vcodec^=avc1]+ba[ext=m4a]/bv*[vcodec^=avc1]+ba/bv*+ba/b'
         else:
             # Most YouTube videos only have separate video and audio streams, which need ffmpeg to be merged.
             warnings.warn('ffmpeg is not installed, so VUE-TR videos are downloaded without audio (enough for the '
                           '-Vision subsets). Install ffmpeg to also get the audio.')
-            fmt = 'b[ext=mp4]/bv*[ext=mp4]'
-        # Up to 480p on the shorter side ("res"), mp4 / m4a preferred.
-        options = dict(format=fmt, format_sort=['res:480', 'ext:mp4:m4a'], merge_output_format='mp4',
+            fmt = 'b[ext=mp4]/bv*[vcodec^=avc1][ext=mp4]/bv*[ext=mp4]'
+        # Up to 480p on the shorter side ("res").
+        options = dict(format=fmt, format_sort=['res:480'], merge_output_format='mp4',
                        outtmpl=str(Path(video_root) / '%(id)s.%(ext)s'), ignoreerrors=True, quiet=True,
                        no_warnings=True, noprogress=True)
         with yt_dlp.YoutubeDL(options) as ydl:
