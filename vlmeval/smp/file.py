@@ -11,6 +11,7 @@ import re
 import shutil
 import time
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import numpy as np
 import pandas as pd
@@ -91,7 +92,7 @@ def HFCacheRoot():
     cache_list = ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE', 'HF_HOME']
     for cache_name in cache_list:
         if cache_name in os.environ and osp.exists(os.environ[cache_name]):
-            if os.environ[cache_name].split('/')[-1] == 'hub':
+            if cache_name in ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE']:
                 return os.environ[cache_name]
             else:
                 return osp.join(os.environ[cache_name], 'hub')
@@ -132,9 +133,9 @@ class NumpyEncoder(json.JSONEncoder):
                       (np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, np.int64,
                        np.uint8, np.uint16, np.uint32, np.uint64)):
             return int(obj)
-        elif isinstance(obj, (np.float_, np.float16, np.float32, np.float64)):
+        elif isinstance(obj, (np.float16, np.float32, np.float64)):
             return float(obj)
-        elif isinstance(obj, (np.complex_, np.complex64, np.complex128)):
+        elif isinstance(obj, (np.complex64, np.complex128)):
             return {'real': obj.real, 'imag': obj.imag}
         elif isinstance(obj, (np.ndarray,)):
             return obj.tolist()
@@ -433,12 +434,9 @@ def parse_file(s):
         decode_base64_to_image_file(b64, tgt)
         return parse_file(tgt)
     elif validators.url(s):
-        suffix = osp.splitext(s)[1].lower()
-        # 添加对webp的支持
-        if suffix == '.webp':
-            mime = 'image/webp'
-        elif suffix in mimetypes.types_map:
-            mime = mimetypes.types_map[suffix]
+        suffix = osp.splitext(urlsplit(s).path)[1].lower()
+        mime = 'image/webp' if suffix == '.webp' else mimetypes.types_map.get(suffix)
+        if mime is not None:
             dname = osp.join(LMUDataRoot(), 'files')
             os.makedirs(dname, exist_ok=True)
             tgt = osp.join(dname, md5(s) + suffix)
@@ -559,6 +557,14 @@ def _prediction_table(pred_file):
 
     if 'index' not in frame or 'prediction' not in frame:
         return None
+    return frame
+
+
+def load_prediction_file(pred_file):
+    """Load a prediction table from any supported file format."""
+    frame = _prediction_table(pred_file)
+    if frame is None:
+        raise ValueError(f'Invalid prediction table: {pred_file}')
     return frame
 
 

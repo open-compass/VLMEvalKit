@@ -859,6 +859,7 @@ class SciDocBench(ImageBaseDataset):
 
         nproc = judge_kwargs.pop('nproc', 4)
         model_name = judge_kwargs.setdefault('model', cls.DEFAULT_JUDGE_MODEL)
+        judge_kwargs.setdefault('max_tokens', 1024)
 
         storage = get_intermediate_file_path(eval_file, f'_{model_name}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}', 'pkl')
@@ -871,7 +872,7 @@ class SciDocBench(ImageBaseDataset):
         if osp.exists(storage):
             logger.info(f'Scoring file {storage} already exists, will reuse.')
         else:
-            _judge_model = build_judge(max_tokens=1024, **judge_kwargs)
+            _judge_model = build_judge(**judge_kwargs)
 
             # Serialize each row to JSON for the worker function
             tups = []
