@@ -54,6 +54,7 @@ def test_tsv_is_reused_until_more_videos_arrive(tmp_path, monkeypatch):
     from vlmeval.smp import load
 
     monkeypatch.setenv('LMUData', str(tmp_path))
+    monkeypatch.setattr(VUETR, '_download_videos', classmethod(lambda cls, ids, root, unavailable: None))
     root = tmp_path / 'VUE-TR'
     (root / 'videos').mkdir(parents=True)
     gt = [dict(query_id=i, video_id=f'v{i}', query='q', gt=[[0, 1]], duration=60.0, duration_category='short',
@@ -72,3 +73,36 @@ def test_tsv_is_reused_until_more_videos_arrive(tmp_path, monkeypatch):
     (root / 'videos' / 'v1.mp4').touch()
     dataset.prepare_dataset('VUE-TR')
     assert len(load(data_file)) == 2  # rebuilt once the second video is there
+
+
+def test_videos_are_downloaded_and_failures_remembered(tmp_path, monkeypatch):
+    import sys
+    import types
+
+    from vlmeval.dataset.vue_tr import VUETR
+
+    requested = []
+
+    class FakeYoutubeDL:
+        def __init__(self, options):
+            self.options = options
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def download(self, urls):
+            requested.extend(urls)
+            for url in urls:
+                video_id = url.split('=')[-1]
+                if video_id != 'gone':  # 'gone' is no longer online
+                    (tmp_path / f'{video_id}.mp4').touch()
+
+    monkeypatch.setitem(sys.modules, 'yt_dlp', types.SimpleNamespace(YoutubeDL=FakeYoutubeDL))
+    unavailable = tmp_path / 'unavailable_videos.txt'
+    VUETR._download_videos({'abc', 'gone'}, tmp_path, unavailable)
+    assert requested == ['https://www.youtube.com/watch?v=abc', 'https://www.youtube.com/watch?v=gone']
+    assert (tmp_path / 'abc.mp4').exists()
+    assert VUETR._read_ids(unavailable) == {'gone'}  # not tried again by later builds

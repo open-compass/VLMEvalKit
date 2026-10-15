@@ -85,9 +85,10 @@ class VUETR(VideoBaseDataset):
 
     The model lists the matching intervals; the official metrics are the areas under the precision,
     recall and IoU curves, overall and per video length, query format and query modality. The
-    ``-Vision`` subsets keep only the queries about visual content. Videos are YouTube videos: download
-    the ids in the official ``video_id.txt`` to ``$LMUData/VUE-TR/videos/<video_id>.mp4``; queries whose
-    video is missing are skipped with a warning.
+    ``-Vision`` subsets keep only the queries about visual content. The videos are YouTube videos; they are
+    downloaded with yt-dlp (``pip install yt-dlp``; ffmpeg is needed to keep the audio) at up to 480p into
+    ``$LMUData/VUE-TR/videos/<video_id>.mp4``. Videos that are no longer online are listed in
+    ``unavailable_videos.txt`` (delete it to try again) and their queries are skipped with a warning.
     """
 
     TYPE = 'Video-Temporal-Grounding'
@@ -122,10 +123,15 @@ class VUETR(VideoBaseDataset):
         if dataset.endswith('-Vision'):
             annos = [a for a in annos if a['query_modality'] == 'vision']
         missing = {a['video_id'] for a in annos if not (video_root / f"{a['video_id']}.mp4").exists()}
+        unavailable_file = bench_root / 'unavailable_videos.txt'
+        to_download = missing - self._read_ids(unavailable_file)
+        if to_download:
+            self._download_videos(to_download, video_root, unavailable_file)
+            missing = {a['video_id'] for a in annos if not (video_root / f"{a['video_id']}.mp4").exists()}
         if missing:
             warnings.warn(f'{dataset}: {len(missing)} of {len({a["video_id"] for a in annos})} videos are missing '
-                          f'under {video_root}; their queries are skipped. Download the videos listed in '
-                          f'{self.GT_URL.format(folder=folder, file="video_id.txt")}.')
+                          f'under {video_root} (no longer online, or yt-dlp is not installed); their queries are '
+                          'skipped.')
         records = [
             dict(index=a['query_id'],
                  video=a['video_id'],
@@ -146,6 +152,40 @@ class VUETR(VideoBaseDataset):
             dump(pd.DataFrame(records), tmp)
             os.replace(tmp, data_file)
         return dict(root=str(video_root), data_file=str(data_file))
+
+    @staticmethod
+    def _read_ids(path):
+        return set(Path(path).read_text().split()) if Path(path).exists() else set()
+
+    @classmethod
+    def _download_videos(cls, video_ids, video_root, unavailable_file):
+        """Download YouTube videos as <video_id>.mp4 with yt-dlp; the ones that fail are added to
+        ``unavailable_file`` so that later builds do not try them again."""
+        try:
+            import yt_dlp
+        except ImportError:
+            warnings.warn(f'{len(video_ids)} VUE-TR videos are missing and yt-dlp is not installed, so they cannot be '
+                          f'downloaded. Install it with `pip install yt-dlp` (ffmpeg is recommended), or put the '
+                          f'videos in {video_root} as <video_id>.mp4.')
+            return
+        import shutil
+        if shutil.which('ffmpeg'):
+            fmt = 'bv*+ba/b'
+        else:
+            # Most YouTube videos only have separate video and audio streams, which need ffmpeg to be merged.
+            warnings.warn('ffmpeg is not installed, so VUE-TR videos are downloaded without audio (enough for the '
+                          '-Vision subsets). Install ffmpeg to also get the audio.')
+            fmt = 'b[ext=mp4]/bv*[ext=mp4]'
+        # Up to 480p on the shorter side ("res"), mp4 / m4a preferred.
+        options = dict(format=fmt, format_sort=['res:480', 'ext:mp4:m4a'], merge_output_format='mp4',
+                       outtmpl=str(Path(video_root) / '%(id)s.%(ext)s'), ignoreerrors=True, quiet=True,
+                       no_warnings=True, noprogress=True)
+        with yt_dlp.YoutubeDL(options) as ydl:
+            ydl.download([f'https://www.youtube.com/watch?v={vid}' for vid in sorted(video_ids)])
+        failed = sorted(v for v in video_ids if not (Path(video_root) / f'{v}.mp4').exists())
+        if failed:
+            with open(unavailable_file, 'a') as f:
+                f.write(''.join(f'{v}\n' for v in failed))
 
     @staticmethod
     def _tsv_up_to_date(data_file, gt_file, records):
