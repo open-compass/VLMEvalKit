@@ -72,3 +72,17 @@ def test_parse_file_keeps_unknown_when_pillow_rejects_image(tmp_path):
     error = Image.DecompressionBombError('image exceeds Pillow safety limit')
     with mock.patch.object(Image, 'open', side_effect=error):
         assert module.parse_file(str(image_path)) == ('unknown', str(image_path))
+
+
+def test_load_jsonl_accepts_empty_dataset(tmp_path):
+    module = _load_file_module()
+    path = tmp_path / 'empty.jsonl'
+    path.write_text('')
+    assert module.load(str(path)) == []
+
+
+def test_load_jsonl_ignores_blank_record_separators(tmp_path):
+    module = _load_file_module()
+    path = tmp_path / 'records.jsonl'
+    path.write_text('\n{"answer": "A"}\n\n{"answer": "B"}\n\n')
+    assert module.load(str(path)) == [{'answer': 'A'}, {'answer': 'B'}]
