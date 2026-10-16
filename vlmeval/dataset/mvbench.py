@@ -412,9 +412,9 @@ Based on your observations, select the best option that accurately addresses the
                         input_item['answer'] = chr(ord('A') + id)
 
                 if FAIL_MSG in pred:
-                    data.loc[idx, 'score'] = -1
+                    data.loc[data['index'] == idx, 'score'] = -1
                 else:
-                    data.loc[idx, 'score'] = int(check_ans_with_model(
+                    data.loc[data['index'] == idx, 'score'] = int(check_ans_with_model(
                         pred, ans, model,
                         input_item,
                         'MVBench'
@@ -656,9 +656,9 @@ Based on your observations, select the best option that accurately addresses the
                         input_item['answer'] = chr(ord('A') + id)
 
                 if FAIL_MSG in pred:
-                    data.loc[idx, 'score'] = -1
+                    data.loc[data['index'] == idx, 'score'] = -1
                 else:
-                    data.loc[idx, 'score'] = int(check_ans_with_model(
+                    data.loc[data['index'] == idx, 'score'] = int(check_ans_with_model(
                         pred, ans, model,
                         input_item,
                         'MVBench_MP4'
