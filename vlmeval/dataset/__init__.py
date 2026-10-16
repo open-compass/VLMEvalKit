@@ -31,6 +31,7 @@ from .dream import DREAM
 from .dsrbench import DSRBench
 from .dude import DUDE
 from .dynamath import Dynamath
+from .e3vqa import E3VQA
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .embspatialbench import EmbSpatialBench
 from .emma import EMMADataset
@@ -180,7 +181,6 @@ from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
 from .xstest import XSTestDataset
-from .e3vqa import E3VQA
 
 
 class ConcatDataset(ImageBaseDataset):

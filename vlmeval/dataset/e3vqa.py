@@ -4,9 +4,7 @@ import shutil
 
 import pandas as pd
 
-
 from .image_mcq import ImageMCQDataset
-
 
 SYSTEM_PROMPT = (
     "You are a helpful assistant.\n"
@@ -174,6 +172,7 @@ class E3VQA(ImageMCQDataset):
         )
 
         msgs = [
+            dict(type="text", value=SYSTEM_PROMPT, role="system"),
             dict(type="image", value=tgt_path[0]),
             dict(type="image", value=tgt_path[1]),
             dict(type="text", value=prompt),
