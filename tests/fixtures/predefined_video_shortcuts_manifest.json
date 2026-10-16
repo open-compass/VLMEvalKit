@@ -2478,5 +2478,173 @@
     "dataset_alias_name": "QVHighlights-TimeLens_2fps",
     "dataset_class_name": "TimeLensBench",
     "dataset_name": "QVHighlights-TimeLens"
+  },
+  "MomentSeeker-IMR_128frame": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-IMR",
+      "fps": -1,
+      "nframe": 128
+    },
+    "dataset_alias_name": "MomentSeeker-IMR_128frame",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-IMR"
+  },
+  "MomentSeeker-IMR_1fps": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-IMR",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "MomentSeeker-IMR_1fps",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-IMR"
+  },
+  "MomentSeeker-IMR_2fps": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-IMR",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "MomentSeeker-IMR_2fps",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-IMR"
+  },
+  "MomentSeeker-IMR_64frame": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-IMR",
+      "fps": -1,
+      "nframe": 64
+    },
+    "dataset_alias_name": "MomentSeeker-IMR_64frame",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-IMR"
+  },
+  "MomentSeeker-TMR_128frame": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-TMR",
+      "fps": -1,
+      "nframe": 128
+    },
+    "dataset_alias_name": "MomentSeeker-TMR_128frame",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-TMR"
+  },
+  "MomentSeeker-TMR_1fps": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-TMR",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "MomentSeeker-TMR_1fps",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-TMR"
+  },
+  "MomentSeeker-TMR_2fps": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-TMR",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "MomentSeeker-TMR_2fps",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-TMR"
+  },
+  "MomentSeeker-TMR_64frame": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-TMR",
+      "fps": -1,
+      "nframe": 64
+    },
+    "dataset_alias_name": "MomentSeeker-TMR_64frame",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-TMR"
+  },
+  "MomentSeeker-VMR_128frame": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-VMR",
+      "fps": -1,
+      "nframe": 128
+    },
+    "dataset_alias_name": "MomentSeeker-VMR_128frame",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-VMR"
+  },
+  "MomentSeeker-VMR_1fps": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-VMR",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "MomentSeeker-VMR_1fps",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-VMR"
+  },
+  "MomentSeeker-VMR_2fps": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-VMR",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "MomentSeeker-VMR_2fps",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-VMR"
+  },
+  "MomentSeeker-VMR_64frame": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker-VMR",
+      "fps": -1,
+      "nframe": 64
+    },
+    "dataset_alias_name": "MomentSeeker-VMR_64frame",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker-VMR"
+  },
+  "MomentSeeker_128frame": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker",
+      "fps": -1,
+      "nframe": 128
+    },
+    "dataset_alias_name": "MomentSeeker_128frame",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker"
+  },
+  "MomentSeeker_1fps": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "MomentSeeker_1fps",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker"
+  },
+  "MomentSeeker_2fps": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "MomentSeeker_2fps",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker"
+  },
+  "MomentSeeker_64frame": {
+    "build_config": {
+      "class": "MomentSeeker",
+      "dataset": "MomentSeeker",
+      "fps": -1,
+      "nframe": 64
+    },
+    "dataset_alias_name": "MomentSeeker_64frame",
+    "dataset_class_name": "MomentSeeker",
+    "dataset_name": "MomentSeeker"
   }
 }
