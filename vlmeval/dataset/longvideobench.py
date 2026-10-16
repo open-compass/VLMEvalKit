@@ -252,13 +252,12 @@ class LongVideoBench(VideoBaseDataset):
             assert line < len(self)
             line = self.data.iloc[line]
 
-        frames, indices, video_info = self.save_video_frames(line['video_path'], video_llm)
-        fps = video_info["fps"]
-
         message = [dict(type='text', value=self.SYS)]
         if video_llm:
             message.append(dict(type='video', value=osp.join(self.data_root, line['video_path'])))
         else:
+            frames, indices, video_info = self.save_video_frames(line['video_path'], video_llm)
+            fps = video_info['fps']
             if self.use_subtitle:
                 with open(osp.join(self.data_root, "subtitles", line["subtitle_path"])) as f:
                     subtitles = json.load(f)
