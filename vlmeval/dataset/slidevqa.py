@@ -188,3 +188,4 @@ class SlideVQA(ImageBaseDataset):
         logger.info(f'SlideVQA successfully finished evaluating {eval_file}, results saved in {score_pth}')
         logger.info('Score: ')
         logger.info(score)
+        return score
