@@ -541,18 +541,22 @@ def _prediction_table(pred_file):
         logger.warning(f'Failed to load prediction file {pred_file}: {err}')
         return None
 
-    if isinstance(data, pd.DataFrame):
-        frame = data
-    elif isinstance(data, list):
-        frame = pd.DataFrame(data)
-    elif isinstance(data, dict):
-        if not _should_convert_to_dataframe(data):
-            return None
-        if 'columns' in data and 'data' in data:
-            frame = pd.DataFrame(data['data'], columns=data['columns'])
-        else:
+    try:
+        if isinstance(data, pd.DataFrame):
+            frame = data
+        elif isinstance(data, list):
             frame = pd.DataFrame(data)
-    else:
+        elif isinstance(data, dict):
+            if not _should_convert_to_dataframe(data):
+                return None
+            if 'columns' in data and 'data' in data:
+                frame = pd.DataFrame(data['data'], columns=data['columns'])
+            else:
+                frame = pd.DataFrame(data)
+        else:
+            return None
+    except (ValueError, TypeError, AttributeError) as err:
+        logger.warning(f'Invalid prediction table {pred_file}: {err}')
         return None
 
     if 'index' not in frame or 'prediction' not in frame:

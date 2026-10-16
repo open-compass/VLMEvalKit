@@ -1,10 +1,12 @@
 import functools
 import importlib.util
+import json
 import logging
 import sys
 import types
 from unittest import mock
 
+import pytest
 from PIL import Image
 
 
@@ -72,3 +74,57 @@ def test_parse_file_keeps_unknown_when_pillow_rejects_image(tmp_path):
     error = Image.DecompressionBombError('image exceeds Pillow safety limit')
     with mock.patch.object(Image, 'open', side_effect=error):
         assert module.parse_file(str(image_path)) == ('unknown', str(image_path))
+
+
+@pytest.mark.parametrize('payload', [
+    {
+        'columns': ['index', 'prediction'],
+        'data': [[1, 'yes', 'unexpected']]
+    },
+    {
+        'columns': 7,
+        'data': [[1, 'yes']]
+    },
+    [{
+        'index': 1,
+        'prediction': 'yes'
+    }, 'invalid row'],
+])
+def test_prediction_reuse_rejects_malformed_json_tables(tmp_path, monkeypatch, payload):
+    module = _load_file_module()
+    validators = types.ModuleType('validators')
+    validators.url = lambda value: False
+    monkeypatch.setitem(sys.modules, 'validators', validators)
+    path = tmp_path / 'predictions.json'
+    path.write_text(json.dumps(payload), encoding='utf-8')
+
+    assert module.is_prediction_complete(str(path), [1]) is False
+    with pytest.raises(ValueError, match='Invalid prediction table:'):
+        module.load_prediction_file(str(path))
+
+
+@pytest.mark.parametrize('payload', [
+    {
+        'columns': ['index', 'prediction'],
+        'data': [[1, 'yes']]
+    },
+    [{
+        'index': 1,
+        'prediction': 'yes'
+    }],
+    {
+        'index': [1],
+        'prediction': ['yes']
+    },
+])
+def test_prediction_reuse_preserves_valid_json_tables(tmp_path, monkeypatch, payload):
+    module = _load_file_module()
+    validators = types.ModuleType('validators')
+    validators.url = lambda value: False
+    monkeypatch.setitem(sys.modules, 'validators', validators)
+    path = tmp_path / 'predictions.json'
+    path.write_text(json.dumps(payload), encoding='utf-8')
+
+    assert module.is_prediction_complete(str(path), [1]) is True
+    frame = module.load_prediction_file(str(path))
+    assert frame['prediction'].tolist() == ['yes']
