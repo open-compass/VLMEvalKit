@@ -206,3 +206,45 @@ class Aria(BaseModel):
         answer = self.tokenizer.decode(pred[0][encoded['input_ids'].size(1):].cpu(), skip_special_tokens=True).strip()
         answer = answer.replace('<|im_end|>', '')
         return answer
+
+    def chat_inner(self, message, dataset=None):
+        assert len(message) % 2 == 1 and message[-1]['role'] == 'user'
+
+        messages = []
+        images = []
+        for turn in message:
+            content = []
+            for item in turn['content']:
+                if item['type'] == 'image':
+                    content.append({'type': 'image'})
+                    images.append(Image.open(item['value']).convert('RGB'))
+                elif item['type'] == 'text':
+                    content.append({'type': 'text', 'text': item['value']})
+            messages.append({'role': turn['role'], 'content': content})
+
+        prompt = self.processor.apply_chat_template(messages, add_generation_prompt=True)
+        kwargs = self.adjust_kwargs(dataset) if dataset is not None else cp.deepcopy(self.kwargs)
+        max_image_size = kwargs.pop('max_image_size', 980)
+        split_image = kwargs.pop('split_image', False)
+
+        if images:
+            encoded = self.processor(
+                text=prompt,
+                images=images,
+                return_tensors='pt',
+                padding='longest',
+                max_image_size=max_image_size,
+                split_image=split_image,
+            )
+        else:
+            encoded = self.processor(text=prompt, return_tensors='pt', padding='longest')
+        if 'pixel_values' in encoded:
+            encoded['pixel_values'] = encoded['pixel_values'].to(self.model.dtype)
+        encoded = {key: value.to(self.model.device) for key, value in encoded.items()}
+
+        pred = self.model.generate(**encoded, **kwargs)
+        answer = self.tokenizer.decode(
+            pred[0][encoded['input_ids'].size(1):].cpu(),
+            skip_special_tokens=True,
+        ).strip()
+        return answer.replace('<|im_end|>', '')
