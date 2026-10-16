@@ -2478,5 +2478,133 @@
     "dataset_alias_name": "QVHighlights-TimeLens_2fps",
     "dataset_class_name": "TimeLensBench",
     "dataset_name": "QVHighlights-TimeLens"
+  },
+  "VUE-TR-V2-Vision_128frame": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR-V2-Vision",
+      "fps": -1,
+      "nframe": 128
+    },
+    "dataset_alias_name": "VUE-TR-V2-Vision_128frame",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR-V2-Vision"
+  },
+  "VUE-TR-V2-Vision_1fps": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR-V2-Vision",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VUE-TR-V2-Vision_1fps",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR-V2-Vision"
+  },
+  "VUE-TR-V2-Vision_256frame": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR-V2-Vision",
+      "fps": -1,
+      "nframe": 256
+    },
+    "dataset_alias_name": "VUE-TR-V2-Vision_256frame",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR-V2-Vision"
+  },
+  "VUE-TR-V2_128frame": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR-V2",
+      "fps": -1,
+      "nframe": 128
+    },
+    "dataset_alias_name": "VUE-TR-V2_128frame",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR-V2"
+  },
+  "VUE-TR-V2_1fps": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR-V2",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VUE-TR-V2_1fps",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR-V2"
+  },
+  "VUE-TR-V2_256frame": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR-V2",
+      "fps": -1,
+      "nframe": 256
+    },
+    "dataset_alias_name": "VUE-TR-V2_256frame",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR-V2"
+  },
+  "VUE-TR-Vision_128frame": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR-Vision",
+      "fps": -1,
+      "nframe": 128
+    },
+    "dataset_alias_name": "VUE-TR-Vision_128frame",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR-Vision"
+  },
+  "VUE-TR-Vision_1fps": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR-Vision",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VUE-TR-Vision_1fps",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR-Vision"
+  },
+  "VUE-TR-Vision_256frame": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR-Vision",
+      "fps": -1,
+      "nframe": 256
+    },
+    "dataset_alias_name": "VUE-TR-Vision_256frame",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR-Vision"
+  },
+  "VUE-TR_128frame": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR",
+      "fps": -1,
+      "nframe": 128
+    },
+    "dataset_alias_name": "VUE-TR_128frame",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR"
+  },
+  "VUE-TR_1fps": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "VUE-TR_1fps",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR"
+  },
+  "VUE-TR_256frame": {
+    "build_config": {
+      "class": "VUETR",
+      "dataset": "VUE-TR",
+      "fps": -1,
+      "nframe": 256
+    },
+    "dataset_alias_name": "VUE-TR_256frame",
+    "dataset_class_name": "VUETR",
+    "dataset_name": "VUE-TR"
   }
 }
