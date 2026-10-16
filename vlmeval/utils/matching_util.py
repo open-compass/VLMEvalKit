@@ -4,6 +4,8 @@ import re
 import string
 from collections import Counter
 
+import pandas as pd
+
 from vlmeval.smp.log import get_logger
 
 logger = get_logger(__name__)
@@ -105,7 +107,9 @@ def can_infer_sequence(answer, choices=None):
 
 
 def can_infer_text(answer, choices):
-    answer = answer.lower()
+    if pd.api.types.is_scalar(answer) and pd.isna(answer):
+        return False
+    answer = str(answer).lower()
     if len(answer) > 2 * sum(len(str(v)) for v in choices.values()):
         return False
     assert isinstance(choices, dict)
@@ -114,7 +118,14 @@ def can_infer_text(answer, choices):
         choices[k] = str(choices[k]).lower()
     cands = []
     for k in choices:
-        if choices[k] in answer:
+        text = choices[k]
+        if not text:
+            continue
+        # Latin words and numbers must not be found inside longer words.
+        # Preserve substring matching for scripts without word separators.
+        prefix = r'(?<!\w)' if text[0].isascii() and (text[0].isalnum() or text[0] == '_') else ''
+        suffix = r'(?!\w)' if text[-1].isascii() and (text[-1].isalnum() or text[-1] == '_') else ''
+        if re.search(prefix + re.escape(text) + suffix, answer):
             cands.append(k)
     if len(cands) == 1:
         return cands[0]
@@ -122,12 +133,16 @@ def can_infer_text(answer, choices):
 
 
 def can_infer(answer, choices):
+    if pd.api.types.is_scalar(answer) and pd.isna(answer):
+        return False
     answer = str(answer)
     copt = can_infer_option(answer, choices)
     return copt if copt else can_infer_text(answer, choices)
 
 
 def can_infer_lego(answer, question_type, choices):
+    if pd.api.types.is_scalar(answer) and pd.isna(answer):
+        return False
     answer = str(answer)
     if question_type == 'sort':
         copt = can_infer_sequence(answer, choices)
