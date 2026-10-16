@@ -1,8 +1,8 @@
 import ast
 import hashlib
 import os
-from pathlib import Path
 import warnings
+from pathlib import Path
 
 import pandas as pd
 import pytest
