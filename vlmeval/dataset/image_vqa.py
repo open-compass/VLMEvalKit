@@ -3335,7 +3335,7 @@ class ZEROBench(ImageVQADataset):
                 pass
 
             # evaluate via exact matching
-            correct = ans.strip().lower() in parsed_answer.lower()
+            correct = ans.strip().lower() == parsed_answer.lower()
             # store results
             results_row = {"Question_ID": idx,
                            "Ground_Truth": ans,
