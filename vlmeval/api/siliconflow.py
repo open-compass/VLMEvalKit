@@ -94,8 +94,10 @@ class SiliconFlowAPI(BaseAPI):
         )
 
     @staticmethod
-    def build_msgs(msgs_raw):
+    def build_msgs(msgs_raw, system_prompt=None):
         messages = []
+        if system_prompt is not None:
+            messages.append({"role": "system", "content": system_prompt})
         message = {"role": "user", "content": []}
         image_b64 = None
         for msg in msgs_raw:
@@ -119,7 +121,7 @@ class SiliconFlowAPI(BaseAPI):
 
         payload = dict(
             model=self.model,
-            messages=self.build_msgs(msgs_raw=inputs),
+            messages=self.build_msgs(msgs_raw=inputs, system_prompt=self.system_prompt),
             **default_kwargs,
         )
 
