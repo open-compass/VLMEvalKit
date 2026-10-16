@@ -31,6 +31,7 @@ from .dream import DREAM
 from .dsrbench import DSRBench
 from .dude import DUDE
 from .dynamath import Dynamath
+from .e3vqa import E3VQA
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .embspatialbench import EmbSpatialBench
 from .emma import EMMADataset
@@ -333,7 +334,7 @@ IMAGE_DATASET = [
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
-    PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset,
+    PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset, E3VQA,
 ]
 
 # add by EASI team
