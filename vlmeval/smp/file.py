@@ -221,16 +221,16 @@ def get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True):
 
 
 def get_eval_file_path(eval_file, judge_model, use_env_format=True):
-    suffix = eval_file.split('.')[-1]
+    stem = osp.splitext(eval_file)[0]
     if use_env_format:
         file_format = get_eval_file_format()
         if file_format == 'csv':
-            return eval_file.replace(f'.{suffix}', f'_{judge_model}.csv')
+            return f'{stem}_{judge_model}.csv'
         elif file_format == 'json':
-            return eval_file.replace(f'.{suffix}', f'_{judge_model}.json')
+            return f'{stem}_{judge_model}.json'
     else:
         # default
-        return eval_file.replace(f'.{suffix}', f'_{judge_model}.xlsx')
+        return f'{stem}_{judge_model}.xlsx'
 
 
 def _should_convert_to_dataframe(data):
@@ -709,7 +709,7 @@ def get_file_extension(file_path):
 
 
 def get_intermediate_file_path(eval_file, suffix, target_format=None):
-    original_ext = get_file_extension(eval_file)
+    stem = osp.splitext(eval_file)[0]
 
     def ends_with_list(s, lst):
         for item in lst:
@@ -727,7 +727,7 @@ def get_intermediate_file_path(eval_file, suffix, target_format=None):
         else:
             target_format = get_pred_file_format()
 
-    return eval_file.replace(f'.{original_ext}', f'{suffix}.{target_format}')
+    return f'{stem}{suffix}.{target_format}'
 
 
 def get_composite_child_eval_file(eval_file, child_name):
