@@ -61,6 +61,8 @@ class VisualOverload(ImageBaseDataset):
     def export_submission(cls, eval_file):
         """Export raw predictions using the official question_id/response contract."""
         data = load(eval_file)
+        if isinstance(data, list):
+            data = pd.DataFrame(data)
         if data['question_id'].isna().any() or data['question_id'].duplicated().any():
             raise ValueError('VisualOverload submissions require unique, non-null question_id values.')
         records = [
