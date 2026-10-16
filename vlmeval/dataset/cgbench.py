@@ -13,7 +13,7 @@ from vlmeval.smp import (LMUDataRoot, dump, get_cache_path, get_file_extension,
                          get_intermediate_file_path, load, md5, modelscope_flag_set)
 from vlmeval.utils import track_progress_rich
 from .utils import build_judge
-from .utils.cgbench import (eval_open_first, eval_open_second, get_dimention_rating_mcq_grouding,
+from .utils.cgbench import (eval_open_first, eval_open_second, get_dimension_rating_mcq_grounding,
                             get_timestampes, merge_intervals, milliseconds_to_seconds,
                             post_process, sample_frames_clue_average, save_clue_video_frames,
                             save_step_1_steps, save_step_2_steps, sys_prompt_open_eval_step_1,
@@ -374,7 +374,7 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
         if clue_intervals is not None:
             merged_intervals = merge_intervals(clue_intervals)
 
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 indices = sample_frames_clue_average(merged_intervals, num_frames, vid_fps)
                 frame_paths = self.clue_frame_paths(uid, len(indices))
 
@@ -396,7 +396,7 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
                 frame_paths = self.clue_frame_paths_fps(uid, len(indices), fps)
 
         else:
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 step_size = len(vid) / (num_frames + 1)
                 indices = [int(i * step_size) for i in range(1, num_frames + 1)]
 
@@ -482,7 +482,7 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
 
         dump(data, score_file)
 
-        rating = get_dimention_rating_mcq_grouding(score_file)
+        rating = get_dimension_rating_mcq_grounding(score_file)
 
         dump(rating, tgt_file)
 
@@ -702,7 +702,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
         if clue_intervals is not None:
             merged_intervals = merge_intervals(clue_intervals)
 
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 indices = sample_frames_clue_average(merged_intervals, num_frames, vid_fps)
                 frame_paths = self.clue_frame_paths(uid, len(indices))
 
@@ -724,7 +724,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
                 frame_paths = self.clue_frame_paths_fps(uid, len(indices), fps)
 
         else:
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 step_size = len(vid) / (num_frames + 1)
                 indices = [int(i * step_size) for i in range(1, num_frames + 1)]
                 frame_paths = self.frame_paths(uid)
@@ -773,7 +773,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
 
-        from .utils.cgbench import get_dimention_rating_open_ended, post_process_open
+        from .utils.cgbench import get_dimension_rating_open_ended, post_process_open
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
@@ -893,7 +893,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
         dump(data, score_file)
 
-        rating = get_dimention_rating_open_ended(score_file)
+        rating = get_dimension_rating_open_ended(score_file)
 
         dump(rating, tgt_file)
 
@@ -1256,7 +1256,7 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
         if clue_intervals is not None:
             merged_intervals = merge_intervals(clue_intervals)
 
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 indices = sample_frames_clue_average(merged_intervals, num_frames, vid_fps)
                 frame_paths = self.clue_frame_paths(uid, len(indices))
 
@@ -1278,7 +1278,7 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
                 frame_paths = self.clue_frame_paths_fps(uid, len(indices), fps)
 
         else:
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 step_size = len(vid) / (num_frames + 1)
                 indices = [int(i * step_size) for i in range(1, num_frames + 1)]
 
@@ -1364,7 +1364,7 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
 
         dump(data, score_file)
 
-        rating = get_dimention_rating_mcq_grouding(score_file)
+        rating = get_dimension_rating_mcq_grounding(score_file)
 
         dump(rating, tgt_file)
 
@@ -1583,7 +1583,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
         if clue_intervals is not None:
             merged_intervals = merge_intervals(clue_intervals)
 
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 indices = sample_frames_clue_average(merged_intervals, num_frames, vid_fps)
                 frame_paths = self.clue_frame_paths(uid, len(indices))
 
@@ -1605,7 +1605,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
                 frame_paths = self.clue_frame_paths_fps(uid, len(indices), fps)
 
         else:
-            if num_frames > 0 and fps < 0:
+            if num_frames > 0 and fps <= 0:
                 step_size = len(vid) / (num_frames + 1)
                 indices = [int(i * step_size) for i in range(1, num_frames + 1)]
                 frame_paths = self.frame_paths(uid)
@@ -1654,7 +1654,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
 
-        from .utils.cgbench import get_dimention_rating_open_ended, post_process_open
+        from .utils.cgbench import get_dimension_rating_open_ended, post_process_open
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
@@ -1772,7 +1772,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
         dump(data, score_file)
 
-        rating = get_dimention_rating_open_ended(score_file)
+        rating = get_dimension_rating_open_ended(score_file)
 
         dump(rating, tgt_file)
 

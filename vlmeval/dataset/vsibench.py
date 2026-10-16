@@ -164,7 +164,7 @@ class VsiBench(VideoBaseDataset):
 
         indices = []
 
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
             if self.sample_strategy == 'uniform_tail':
                 indices = np.linspace(0, video_nframes - 1, self.nframe, dtype=int).tolist()
                 if (video_nframes - 1) != indices[-1]:
@@ -506,7 +506,7 @@ class VsiSuperBase(VideoBaseDataset):
 
         indices = []
 
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
 
             indices = np.linspace(0, video_nframes - 1, self.nframe, dtype=int).tolist()
             frame_paths = self.frame_paths(video_path)

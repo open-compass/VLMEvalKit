@@ -237,7 +237,7 @@ class OpenAIWrapper(BaseAPI):
                     if self.img_size > 0:
                         target_size = self.img_size
                     if self.total_img_size > 0:
-                        target_size = min(target_size, int(self.img_size / (image_num**0.5)))
+                        target_size = min(target_size, max(1, int(self.total_img_size / (image_num**0.5))))
                     target_size = -1 if math.isinf(target_size) else target_size
                     b64 = encode_image_to_base64(
                         img, target_size=target_size, max_file_size=self.max_file_size)
@@ -249,10 +249,10 @@ class OpenAIWrapper(BaseAPI):
             content_list = [dict(type='text', text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(role='system', content=system_prompt))
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
         assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
         if 'role' in inputs[0]:
@@ -263,8 +263,8 @@ class OpenAIWrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> str:
-        input_msgs = self.prepare_inputs(inputs)
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 

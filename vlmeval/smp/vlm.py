@@ -40,7 +40,7 @@ def concat_images_vlmeval(images, target_size=-1, mode='h', return_image=False):
         new_w, new_h = max(ws), sum(hs)
         dst = Image.new('RGB', (new_w, new_h))
         for i, im in enumerate(ims):
-            dst.paste(im, (sum(ws[:i], 0)))
+            dst.paste(im, (0, sum(hs[:i])))
     if return_image:
         return dst
     else:

@@ -87,12 +87,12 @@ class Qwen2VLAPI(Qwen2VLPromptMixin, BaseAPI):
             content.append(item)
         return content
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         import dashscope
 
         messages = []
-        if self.system_prompt is not None:
-            messages.append({'role': 'system', 'content': self.system_prompt})
+        if system_prompt is not None:
+            messages.append({'role': 'system', 'content': system_prompt})
         messages.append(
             {'role': 'user', 'content': self._prepare_content(inputs, dataset=kwargs.get('dataset', None))}
         )
@@ -170,10 +170,10 @@ class QwenVLWrapper(BaseAPI):
             content_list = [dict(text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(role='system', content=system_prompt))
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
         assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
         if 'role' in inputs[0]:
@@ -184,7 +184,7 @@ class QwenVLWrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         from dashscope import MultiModalConversation
 
         assert isinstance(inputs, str) or isinstance(inputs, list)
@@ -199,7 +199,7 @@ class QwenVLWrapper(BaseAPI):
                     break
 
         assert not pure_text
-        messages = self.prepare_inputs(inputs)
+        messages = self.prepare_inputs(inputs, system_prompt)
         gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
         gen_config.update(kwargs)
         try:
