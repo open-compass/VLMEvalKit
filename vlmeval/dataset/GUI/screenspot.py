@@ -34,10 +34,18 @@ logger = get_logger(__name__)
 
 SYSTEM_PROMPT = """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform pyautogui click/moveTo action to complete the task. The answer format is `pyautogui.click(x=?, y=?), x and y is necessary`"""  # noqa: E501
 
-USER_INSTRUCTION = """Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"""
+USER_INSTRUCTION = (
+    "Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"
+    "\nUse x as a fraction of the image width and y as a fraction of the image height, "
+    "both between 0 and 1."
+)
 
 SYSTEM_PROMPT_V2 = """You are a GUI agent. You are given a screenshot of the screen and the description of a target element. You need to click the target element using `pyautogui.click`. The answer format is `pyautogui.click(x=?, y=?), x and y is necessary`"""  # noqa: E501
-USER_INSTRUCTION_V2 = """Please click the following target element using `pyautogui.click`:\n{description}"""
+USER_INSTRUCTION_V2 = (
+    "Please click the following target element using `pyautogui.click`:\n{description}"
+    "\nUse x as a fraction of the image width and y as a fraction of the image height, "
+    "both between 0 and 1."
+)
 
 
 def parse_bbox_aguvis(response):
