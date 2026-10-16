@@ -1249,18 +1249,7 @@ class SciDocBench(ImageBaseDataset):
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
-            # Qwen thinking templates inject the opening tag into the prompt,
-            # so it is absent from decoded predictions. Detect that convention
-            # once per inference artifact and treat rows without ``</think>``
-            # as truncated reasoning with no scorable final answer.
-            expect_think_end = any(
-                re.search(
-                    r'</think\s*>',
-                    str(line.get('prediction', '')),
-                    flags=re.IGNORECASE,
-                )
-                for line in lines
-            )
+            expect_think_end = False
             indices = [str(line['index']) for line in lines]
             route_counts = {}
             for line in lines:
