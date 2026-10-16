@@ -280,7 +280,13 @@ def load(f, fmt=None):
 
     import validators
     if validators.url(f):
-        tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
+        remote = urlsplit(f)
+        filename = osp.basename(remote.path)
+        if remote.query or remote.fragment:
+            stem, extension = osp.splitext(filename)
+            identity = hashlib.sha256(f.encode('utf-8')).hexdigest()
+            filename = f'{stem}_{identity}{extension}'
+        tgt = osp.join(LMUDataRoot(), 'files', filename)
         if not osp.exists(tgt):
             download_file(f, tgt)
         f = tgt
