@@ -467,6 +467,35 @@ api_models = {
         max_tokens=2048,
         retry=10,
     ),
+    # Atlas Cloud (set ATLASCLOUD_API_KEY)
+    "AtlasCloud_GLM-5.3-Flash": partial(
+        api.AtlasCloudAPI,
+        model="zai-org/glm-5.3-flash",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "AtlasCloud_Qwen3-VL-235B-A22B-Thinking": partial(
+        api.AtlasCloudAPI,
+        model="qwen/qwen3-vl-235b-a22b-thinking",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "AtlasCloud_Qwen3.5-397B-A17B": partial(
+        api.AtlasCloudAPI,
+        model="qwen/qwen3.5-397b-a17b",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "AtlasCloud_Kimi-K2.6": partial(
+        api.AtlasCloudAPI,
+        model="moonshotai/kimi-k2.6",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
     # MiniMax (set MINIMAX_API_KEY)
     "MiniMax-M3": partial(
         api.MiniMaxAPI,
