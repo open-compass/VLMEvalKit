@@ -2449,9 +2449,7 @@ class TableVQABench(ImageBaseDataset):
         data = load(eval_file)
         assert 'answer' in data and 'prediction' in data
 
-        data['prediction'] = data['prediction'].str.replace('^Answer: ',
-                                                            '',
-                                                            regex=True)
+        data['prediction'] = data['prediction'].fillna('').astype(str).str.replace('^Answer: ', '', regex=True)
         data_group = dict(tuple(data.groupby('split')))
         eval_result = {'split': [], 'average_scores': []}
         for split in ['fintabnetqa', 'vtabfact', 'vwtq', 'vwtq_syn']:
