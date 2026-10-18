@@ -89,6 +89,7 @@ def track_progress_rich(
         keys=None,
         use_process: bool = False,
         **kwargs) -> list:
+    """Execute an iterable of tasks and return results in input order."""
 
     from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
@@ -98,13 +99,14 @@ def track_progress_rich(
         assert osp.exists(osp.dirname(save)) or osp.dirname(save) == ''
         if not osp.exists(save):
             save_func({}, save)
-    if keys is not None:
-        assert len(keys) == len(tasks)
     if not callable(func):
         raise TypeError('func must be a callable object')
     if not isinstance(tasks, Iterable):
         raise TypeError(
             f'tasks must be an iterable object, but got {type(tasks)}')
+    tasks = list(tasks)
+    if keys is not None:
+        assert len(keys) == len(tasks)
     assert nproc is None or nproc > 0, 'nproc must be a positive number'
     nproc = nproc or cpu_count()
     res = load(save) if save is not None else {}
