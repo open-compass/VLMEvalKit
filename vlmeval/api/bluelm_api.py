@@ -203,7 +203,7 @@ class BlueLMWrapper(BaseAPI):
             prompt = prompt + " Please answer yes or no."
         return prompt, image
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
 
         assert isinstance(inputs, str) or isinstance(inputs, list)
         pure_text = np.all([x['type'] == 'text' for x in inputs])
