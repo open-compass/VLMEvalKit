@@ -51,10 +51,10 @@ class CWWrapper(BaseAPI):
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(role='system', content=system_prompt))
         has_images = np.sum([x['type'] == 'image' for x in inputs])
         if has_images:
             content_list = []
@@ -74,8 +74,8 @@ class CWWrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=text))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs):
-        input_msgs = self.prepare_inputs(inputs)
+    def generate_inner(self, inputs, system_prompt=None, **kwargs):
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 

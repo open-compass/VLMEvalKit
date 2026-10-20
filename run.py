@@ -913,6 +913,20 @@ def run_local_mode(args):
                         )
                         continue
 
+                    elif dataset_name == 'VisualOverload':
+                        submission_file = dataset.export_submission(result_file)
+                        logger.info(f'VisualOverload submission saved in {submission_file}; '
+                                    f'score it at {dataset.EVALUATOR_URL}')
+                        upsert_dataset_status(
+                            run_dir=pred_root,
+                            model_name=model_name,
+                            dataset_name=dataset_alias_name,
+                            resolved_dataset_name=dataset_name,
+                            status='done',
+                            skip_reason='external_submission_required',
+                        )
+                        continue
+
                     # Skip the evaluation part if only infer
                     if args.mode == 'infer':
                         upsert_dataset_status(
