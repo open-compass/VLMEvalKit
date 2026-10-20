@@ -34,7 +34,7 @@ class Reka_Wrapper(BaseAPI):
             self.key = os.environ.get('REKA_API_KEY', '')
         super().__init__(retry=retry, verbose=verbose, system_prompt=system_prompt, **kwargs)
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         import reka
         reka.API_KEY = self.key
         dataset = kwargs.pop('dataset', None)

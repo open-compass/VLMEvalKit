@@ -1535,6 +1535,28 @@
     "dataset_class_name": "VideoMMMU",
     "dataset_name": "VideoMMMU"
   },
+  "VideoOdyssey-V_128frame": {
+    "build_config": {
+      "class": "VideoOdysseyV",
+      "dataset": "VideoOdyssey-V",
+      "nframe": 128,
+      "pack": false
+    },
+    "dataset_alias_name": "VideoOdyssey-V_128frame",
+    "dataset_class_name": "VideoOdysseyV",
+    "dataset_name": "VideoOdyssey-V"
+  },
+  "VideoOdyssey-V_64frame": {
+    "build_config": {
+      "class": "VideoOdysseyV",
+      "dataset": "VideoOdyssey-V",
+      "nframe": 64,
+      "pack": false
+    },
+    "dataset_alias_name": "VideoOdyssey-V_64frame",
+    "dataset_class_name": "VideoOdysseyV",
+    "dataset_name": "VideoOdyssey-V"
+  },
   "Video_Holmes_32frame": {
     "build_config": {
       "class": "Video_Holmes",
@@ -2396,5 +2418,65 @@
     "dataset_alias_name": "revsi_all_frame",
     "dataset_class_name": "ReVSI",
     "dataset_name": "ReVSI"
+  },
+  "ActivityNet-TimeLens_1fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "ActivityNet-TimeLens",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "ActivityNet-TimeLens_1fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "ActivityNet-TimeLens"
+  },
+  "ActivityNet-TimeLens_2fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "ActivityNet-TimeLens",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "ActivityNet-TimeLens_2fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "ActivityNet-TimeLens"
+  },
+  "Charades-TimeLens_1fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "Charades-TimeLens",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "Charades-TimeLens_1fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "Charades-TimeLens"
+  },
+  "Charades-TimeLens_2fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "Charades-TimeLens",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "Charades-TimeLens_2fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "Charades-TimeLens"
+  },
+  "QVHighlights-TimeLens_1fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "QVHighlights-TimeLens",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "QVHighlights-TimeLens_1fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "QVHighlights-TimeLens"
+  },
+  "QVHighlights-TimeLens_2fps": {
+    "build_config": {
+      "class": "TimeLensBench",
+      "dataset": "QVHighlights-TimeLens",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "QVHighlights-TimeLens_2fps",
+    "dataset_class_name": "TimeLensBench",
+    "dataset_name": "QVHighlights-TimeLens"
   }
 }

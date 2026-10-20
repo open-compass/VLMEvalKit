@@ -52,13 +52,15 @@ def mmqa_display(question, target_size=2048):
             images = eval(images)
         else:
             images = [images]
-    else:
+    elif 'image_path' in question:
         images = question.pop('image_path')
         if images[0] == '[' and images[-1] == ']':
             images = eval(images)
         else:
             images = [images]
         images = [encode_image_file_to_base64(x) for x in images]
+    else:
+        images = []
     
     qtext = question.pop('question', None)
     if qtext is not None:

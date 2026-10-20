@@ -108,3 +108,29 @@ def test_remote_query_urls_keep_table_format_and_distinct_cached_results(tmp_pat
     assert all(path.suffix == '.csv' for path in cached)
     assert module.load(first)['prediction'].tolist() == ['first']
     assert module.load(second)['prediction'].tolist() == ['second']
+
+
+def test_remote_load_creates_cache_directory_and_reuses_download(tmp_path, monkeypatch):
+    module = _load_file_module()
+    source = tmp_path / 'source'
+    source.mkdir()
+    (source / 'samples.csv').write_text('index,prediction\n1,answer\n', encoding='utf-8')
+    cache = tmp_path / 'cache'
+    cache.mkdir()
+    monkeypatch.setattr(module, 'LMUDataRoot', lambda: str(cache))
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(source))
+    with http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler) as server:
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        url = f'http://127.0.0.1:{server.server_port}/samples.csv'
+        try:
+            result = module.load(url)
+            assert result.to_dict('records') == [{'index': 1, 'prediction': 'answer'}]
+            assert (cache / 'files' / 'samples.csv').read_text(encoding='utf-8') == (
+                'index,prediction\n1,answer\n'
+            )
+        finally:
+            server.shutdown()
+            thread.join()
+    # A second load uses the cache even after the HTTP server is gone.
+    assert module.load(url).to_dict('records') == [{'index': 1, 'prediction': 'answer'}]
