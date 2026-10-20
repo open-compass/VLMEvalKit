@@ -315,6 +315,33 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
 
         torch.cuda.empty_cache()
 
+    def _split_system_prompt(self, message):
+        system_prompts = []
+        if self.system_prompt:
+            system_prompts.append(self.system_prompt)
+
+        user_message = []
+        for item in message:
+            if item.get('role') == 'system':
+                assert item['type'] == 'text', 'System messages must be text.'
+                if item['value'] and item['value'] not in system_prompts:
+                    system_prompts.append(item['value'])
+            else:
+                user_message.append({key: value for key, value in item.items() if key != 'role'})
+
+        system_prompt = '\n'.join(system_prompts) if system_prompts else None
+        return user_message, system_prompt
+
+    def _build_chat_messages(self, message, dataset=None, system_prompt=None, use_vllm=False):
+        if system_prompt is None:
+            system_prompt = self.system_prompt
+        prepare_content = self._prepare_content_vllm if use_vllm else self._prepare_content
+        messages = []
+        if system_prompt is not None:
+            messages.append({'role': 'system', 'content': system_prompt})
+        messages.append({'role': 'user', 'content': prepare_content(message, dataset=dataset)})
+        return messages
+
     def _prepare_content(self, inputs: list[dict[str, str]], dataset: str | None = None) -> list[dict[str, str]]:
         """
         inputs list[dict[str, str]], each dict has keys: ['type', 'value']
@@ -456,7 +483,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 raise ValueError(f"Invalid message type: {s['type']}, {s}")
         return content
 
-    def generate_inner_transformers(self, message, dataset=None):
+    def generate_inner_transformers(self, message, dataset=None, system_prompt=None):
         if listinstr(['omni'], self.model_path.lower()):
             try:
                 from qwen_omni_utils import process_mm_info
@@ -470,10 +497,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")  # noqa: E501
                 raise err
 
-        messages = []
-        if self.system_prompt is not None:
-            messages.append({'role': 'system', 'content': self.system_prompt})
-        messages.append({'role': 'user', 'content': self._prepare_content(message, dataset=dataset)})
+        messages = self._build_chat_messages(message, dataset=dataset, system_prompt=system_prompt)
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
 
@@ -522,7 +546,9 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             print(f'\033[32m{response}\033[0m')
         return response
 
-    def generate_inner_lmdeploy(self, message, dataset=None):
+    def generate_inner_lmdeploy(self, message, dataset=None, system_prompt=None):
+        if system_prompt is None:
+            system_prompt = self.system_prompt
         from lmdeploy import GenerationConfig
         gen_config = GenerationConfig(
             max_new_tokens=self.max_new_tokens,
@@ -532,13 +558,13 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             repetition_penalty=self.generate_kwargs['repetition_penalty'],
         )
         gen_config.random_seed = None
-        messages_list = self.message_to_lmdeploy(message, system_prompt=self.system_prompt)
+        messages_list = self.message_to_lmdeploy(message, system_prompt=system_prompt)
         assert len(messages_list) == 1
         response = self.model(messages_list, gen_config=gen_config)[0]
         response = response.text
         return response
 
-    def generate_inner_vllm(self, message, dataset=None):
+    def generate_inner_vllm(self, message, dataset=None, system_prompt=None):
         from vllm import SamplingParams
 
         if listinstr(['omni'], self.model_path.lower()):
@@ -554,10 +580,9 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")  # noqa: E501
                 raise err
 
-        messages = []
-        if self.system_prompt is not None:
-            messages.append({'role': 'system', 'content': self.system_prompt})
-        messages.append({'role': 'user', 'content': self._prepare_content_vllm(message, dataset=dataset)})
+        messages = self._build_chat_messages(
+            message, dataset=dataset, system_prompt=system_prompt, use_vllm=True
+        )
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
 
@@ -634,12 +659,13 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         return generated_text
 
     def generate_inner(self, message, dataset=None):
+        message, system_prompt = self._split_system_prompt(message)
         if self.use_vllm:
-            return self.generate_inner_vllm(message, dataset=dataset)
+            return self.generate_inner_vllm(message, dataset=dataset, system_prompt=system_prompt)
         elif self.use_lmdeploy:
-            return self.generate_inner_lmdeploy(message, dataset=dataset)
+            return self.generate_inner_lmdeploy(message, dataset=dataset, system_prompt=system_prompt)
         else:
-            return self.generate_inner_transformers(message, dataset=dataset)
+            return self.generate_inner_transformers(message, dataset=dataset, system_prompt=system_prompt)
 
 
 class Qwen2VLChatAguvis(Qwen2VLChat):

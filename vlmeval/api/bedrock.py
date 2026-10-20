@@ -133,7 +133,7 @@ class BedrockAPI(BaseAPI):
             content = [{"text": ""}]
         return [{"role": "user", "content": content}]
 
-    def generate_inner(self, inputs, **kwargs):
+    def generate_inner(self, inputs, system_prompt=None, **kwargs):
         messages = self._prepare_messages(inputs)
         temperature = kwargs.pop("temperature", self.temperature)
         max_tokens = kwargs.pop("max_tokens", self.max_tokens)
@@ -146,8 +146,8 @@ class BedrockAPI(BaseAPI):
                 "temperature": temperature,
             },
         }
-        if self.system_prompt:
-            request["system"] = [{"text": self.system_prompt}]
+        if system_prompt:
+            request["system"] = [{"text": system_prompt}]
 
         try:
             response = self._client.converse(**request)
