@@ -13,6 +13,7 @@ import warnings
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -29,6 +30,33 @@ def definitions(path, names, namespace):
              if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name in names]
     assert len(nodes) == len(names)
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(ROOT / path), 'exec'), namespace)
+
+
+@pytest.mark.parametrize('split_frame', [False, True])
+@pytest.mark.parametrize('video_llm', [False, True])
+def test_prompt_checks_frame_sampling(split_frame, video_llm, tmp_path):
+    namespace = dict(VideoBaseDataset=object, osp=os.path)
+    definitions('vlmeval/dataset/longvideobench.py', {'LongVideoBench'}, namespace)
+    dataset = namespace['LongVideoBench'].__new__(namespace['LongVideoBench'])
+    dataset.data_root = str(tmp_path)
+    dataset.split_frame = split_frame
+    dataset.use_subtitle = False
+    dataset.save_video_frames = Mock(return_value=(['frame.jpg'], [0], {'fps': 1}))
+    line = dict(video_path='sample.mp4', question='Which color?', candidates="['red', 'blue']")
+
+    if not split_frame and not video_llm:
+        with pytest.raises(ValueError, match='fps and nframe cannot both be <= 0'):
+            dataset.build_prompt(line, video_llm=video_llm)
+        dataset.save_video_frames.assert_not_called()
+        assert line['question'] == 'Which color?'
+        return
+
+    message = dataset.build_prompt(line, video_llm=video_llm)
+    assert [item['type'] for item in message] == ['text', 'video' if video_llm else 'image', 'text']
+    if video_llm:
+        dataset.save_video_frames.assert_not_called()
+    else:
+        dataset.save_video_frames.assert_called_once_with('sample.mp4', False)
 
 
 @pytest.fixture

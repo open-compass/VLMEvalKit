@@ -256,6 +256,8 @@ class LongVideoBench(VideoBaseDataset):
         if video_llm:
             message.append(dict(type='video', value=osp.join(self.data_root, line['video_path'])))
         else:
+            if not self.split_frame:
+                raise ValueError('fps and nframe cannot both be <= 0 when video_llm is False.')
             frames, indices, video_info = self.save_video_frames(line['video_path'], video_llm)
             fps = video_info['fps']
             if self.use_subtitle:
