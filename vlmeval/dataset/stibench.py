@@ -28,7 +28,7 @@ class STIBench(VideoBaseDataset):
     LMUData_root = LMUDataRoot()
 
     DATASET_URL = {
-        'STI-Bench': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/STIBench.tsv',  # noqa: E501
+        'STI-Bench': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/STI-Bench.tsv',  # noqa: E501
     }
     DATASET_MD5 = {
         'STI-Bench': '9493f1a66374dbd7bf89992d6d1ff117',
