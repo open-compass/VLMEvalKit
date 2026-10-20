@@ -31,6 +31,7 @@ from .dream import DREAM
 from .dsrbench import DSRBench
 from .dude import DUDE
 from .dynamath import Dynamath
+from .e3vqa import E3VQA
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .embspatialbench import EmbSpatialBench
 from .emma import EMMADataset
@@ -162,12 +163,14 @@ from .video_concat_dataset import ConcatVideoDataset
 from .video_eval_pro import VideoEvalPro_MCQ, VideoEvalPro_OpenEnded
 from .video_holmes import Video_Holmes
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
+from .video_odyssey import VideoOdysseyV
 from .videomme import VideoMME
 from .videommev2 import VideoMMEv2
 from .videommmu import VideoMMMU
 from .videott import VideoTT
 from .viewspatialbench import ViewSpatialBench
 from .visfactor import VisFactor
+from .visualoverload import VisualOverload
 from .vl_rewardbench import VLRewardBench
 from .vladbench import VLADBench
 from .vlm2bench import VLM2Bench
@@ -303,6 +306,7 @@ class ConcatDataset(ImageBaseDataset):
 
 # Add new supported dataset class here
 IMAGE_DATASET = [
+    VisualOverload,
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
     MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset, DUDE, DocScope,
@@ -332,7 +336,7 @@ IMAGE_DATASET = [
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
-    PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset,
+    PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset, E3VQA,
 ]
 
 # add by EASI team
@@ -353,7 +357,7 @@ VIDEO_DATASET = [
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
     VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset, FavorBench,
-    TimeLensBench
+    TimeLensBench, VideoOdysseyV
 ]
 
 # add by EASI team
