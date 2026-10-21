@@ -113,7 +113,7 @@ class SiliconFlowAPI(BaseAPI):
         messages.append(message)
         return messages
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         default_kwargs = self.default_kwargs
         default_kwargs.update(kwargs)
 
@@ -251,7 +251,7 @@ class TeleMMAPI(SiliconFlowAPI):
 
         return content
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         default_kwargs = self.default_kwargs
         default_kwargs.update(kwargs)
 

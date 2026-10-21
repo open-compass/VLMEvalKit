@@ -237,6 +237,15 @@ class VizWiz(ImageBaseDataset):
     }
     DATASET_MD5 = {'VizWiz': 'fa4ac4164467563ed2fac6eac6631bd0'}
 
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        assert msgs[-1]['type'] == 'text'
+        msgs[-1]['value'] += (
+            "\nWhen the provided information is insufficient, respond with 'Unanswerable'."
+            '\nAnswer the question using a single word or phrase.'
+        )
+        return msgs
+
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.vqa_eval import hit_calculate, process_line
@@ -3335,7 +3344,7 @@ class ZEROBench(ImageVQADataset):
                 pass
 
             # evaluate via exact matching
-            correct = ans.strip().lower() in parsed_answer.lower()
+            correct = ans.strip().lower() == parsed_answer.lower()
             # store results
             results_row = {"Question_ID": idx,
                            "Ground_Truth": ans,
