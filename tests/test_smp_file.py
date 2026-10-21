@@ -1,7 +1,9 @@
 import functools
+import http.server
 import importlib.util
 import logging
 import sys
+import threading
 import types
 from unittest import mock
 
@@ -94,3 +96,45 @@ def test_decode_multiple_images_with_one_listed_path(tmp_path, monkeypatch):
     with Image.open(paths[0]) as red, Image.open(paths[1]) as blue:
         assert red.getpixel((0, 0)) == (255, 0, 0)
         assert blue.getpixel((0, 0)) == (0, 0, 255)
+
+
+def test_localization_honors_requested_worker_count(tmp_path, monkeypatch):
+    module = _load_file_module()
+    import pandas as pd
+
+    pool = mock.MagicMock()
+    pool.__enter__.return_value = pool
+    pool.map.return_value = [[str(tmp_path / '0.jpg')]]
+    factory = mock.MagicMock(return_value=pool)
+    monkeypatch.setattr(module.mp, 'Pool', factory)
+    monkeypatch.setattr(module, 'LMUDataRoot', lambda: str(tmp_path))
+    result = module.localize_df(pd.DataFrame({'index': [0], 'image': ['x' * 100]}), 'Example', nproc=1)
+    factory.assert_called_once_with(1)
+    assert result['image_path'].tolist() == [str(tmp_path / '0.jpg')]
+    assert 'image' not in result
+
+
+def test_remote_load_creates_cache_directory_and_reuses_download(tmp_path, monkeypatch):
+    module = _load_file_module()
+    source = tmp_path / 'source'
+    source.mkdir()
+    (source / 'samples.csv').write_text('index,prediction\n1,answer\n', encoding='utf-8')
+    cache = tmp_path / 'cache'
+    cache.mkdir()
+    monkeypatch.setattr(module, 'LMUDataRoot', lambda: str(cache))
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(source))
+    with http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler) as server:
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        url = f'http://127.0.0.1:{server.server_port}/samples.csv'
+        try:
+            result = module.load(url)
+            assert result.to_dict('records') == [{'index': 1, 'prediction': 'answer'}]
+            assert (cache / 'files' / 'samples.csv').read_text(encoding='utf-8') == (
+                'index,prediction\n1,answer\n'
+            )
+        finally:
+            server.shutdown()
+            thread.join()
+    # A second load uses the cache even after the HTTP server is gone.
+    assert module.load(url).to_dict('records') == [{'index': 1, 'prediction': 'answer'}]

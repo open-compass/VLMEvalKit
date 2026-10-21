@@ -40,7 +40,7 @@ def parse_bbox_aguvis(response):
     if match:
         click_point = [float(match.group(1)), float(match.group(2))]
     else:
-        click_point = [0.0, 0.0]
+        click_point = [-1.0, -1.0]
     return click_point
 
 

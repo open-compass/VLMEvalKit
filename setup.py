@@ -2,7 +2,7 @@ import re
 import sys
 from os.path import exists
 
-from setuptools import find_packages, setup
+from setuptools import find_namespace_packages, setup
 
 
 def parse_requirements(fname='requirements.txt', with_version=True):
@@ -100,10 +100,13 @@ def do_setup():
         install_requires=parse_requirements('requirements.txt'),
         setup_requires=[],
         python_requires='>=3.7.0',
-        packages=find_packages(exclude=[
+        packages=find_namespace_packages(include=['vlmeval*'], exclude=[
             'test*',
             'paper_test*',
         ]),
+        package_data={
+            '': ['*.css', '*.gz', '*.js', '*.json', '*.md', '*.txt', '*.yaml', '*.yml'],
+        },
         keywords=['AI', 'NLP', 'in-context learning'],
         entry_points={
             'console_scripts': ['vlmutil = vlmeval:cli']

@@ -71,9 +71,8 @@ def localize_df(data, dname, nproc=32):
 
     tups = [(root, im, p) for p, im in zip(img_paths, images)]
 
-    pool = mp.Pool(32)
-    ret = pool.map(decode_img_omni, tups)
-    pool.close()
+    with mp.Pool(nproc) as pool:
+        ret = pool.map(decode_img_omni, tups)
     data.pop('image')
     if 'image_path' not in data:
         data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
@@ -134,9 +133,9 @@ class NumpyEncoder(json.JSONEncoder):
                       (np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, np.int64,
                        np.uint8, np.uint16, np.uint32, np.uint64)):
             return int(obj)
-        elif isinstance(obj, (np.float_, np.float16, np.float32, np.float64)):
+        elif isinstance(obj, (np.float16, np.float32, np.float64)):
             return float(obj)
-        elif isinstance(obj, (np.complex_, np.complex64, np.complex128)):
+        elif isinstance(obj, (np.complex64, np.complex128)):
             return {'real': obj.real, 'imag': obj.imag}
         elif isinstance(obj, (np.ndarray,)):
             return obj.tolist()
@@ -283,6 +282,7 @@ def load(f, fmt=None):
     if validators.url(f):
         tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
         if not osp.exists(tgt):
+            os.makedirs(osp.dirname(tgt), exist_ok=True)
             download_file(f, tgt)
         f = tgt
 

@@ -88,7 +88,7 @@ from .ursa import UrsaChat
 from .valley import Valley2Chat, Valley3Chat
 from .varco_vision import VarcoVision
 from .video_llm import (Chatunivi, LLaMAVID, PLLaVA, VideoChat2_HD, VideoChatGPT, VideoLLaVA,
-                        VideoLLaVA_HF)
+                        VideoLLaVA_HF, Vidi)
 from .vila import NVILA, VILA
 from .vintern_chat import VinternChat
 from .visualglm import VisualGLM
