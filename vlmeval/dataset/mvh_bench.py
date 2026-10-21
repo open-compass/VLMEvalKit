@@ -74,11 +74,9 @@ class MVHBench(ImageBaseDataset):
     def _mc_choices(example, question_index):
         options = list(example["mc_options"])
 
-        key = (
-            f"{SHUFFLE_SEED}:"
-            f"{example['group_id']}:"
-            f"{question_index}"
-        )
+        key = (f"{SHUFFLE_SEED}:"
+               f"{example['group_id']}:"
+               f"{question_index}")
         seed = int.from_bytes(
             hashlib.sha256(key.encode()).digest(),
             "big",
@@ -87,31 +85,15 @@ class MVHBench(ImageBaseDataset):
 
         letters = "ABC"
 
-        gold = letters[
-            options.index(
-                example["mc_answers"][question_index]
-            )
-        ]
+        gold = letters[options.index(example["mc_answers"][question_index])]
 
-        adversarial = letters[
-            options.index(
-                example["mc_answers"][1 - question_index]
-            )
-        ]
+        adversarial = letters[options.index(example["mc_answers"][1 - question_index])]
 
-        neither = next(
-            x for x in letters
-            if x not in (gold, adversarial)
-        )
+        neither = next(x for x in letters if x not in (gold, adversarial))
 
-        other = [
-            x for x in letters
-            if x != neither
-        ]
+        other = [x for x in letters if x != neither]
 
-        options[letters.index(neither)] = (
-            f"Neither {other[0]} nor {other[1]}"
-        )
+        options[letters.index(neither)] = (f"Neither {other[0]} nor {other[1]}")
 
         return options, gold, adversarial
 
@@ -120,11 +102,7 @@ class MVHBench(ImageBaseDataset):
 
         assert dataset in self.DATASET_URL
 
-        split = (
-            "validation"
-            if dataset == "MVHBench_Val"
-            else "test"
-        )
+        split = ("validation" if dataset == "MVHBench_Val" else "test")
 
         ds = load_dataset(
             "SNU-ISLAB/MVH-Bench",
@@ -176,55 +154,45 @@ class MVHBench(ImageBaseDataset):
                     question_index,
                 )
 
-                rows.append(
-                    {
-                        "index": index,
-                        "group_id": group_id,
-                        "mvh_type": example["mvh_type"],
-                        "category": example["category"],
-                        "question_index": question_index,
-                        "question_type": "mc",
-                        "image_path": [
-                            view_1_path,
-                            view_2_path,
-                        ],
-                        "question": example["mc_questions"][
-                            question_index
-                        ],
-                        "A": options[0],
-                        "B": options[1],
-                        "C": options[2],
-                        "answer": gold,
-                        "adversarial": adversarial,
-                    }
-                )
+                rows.append({
+                    "index": index,
+                    "group_id": group_id,
+                    "mvh_type": example["mvh_type"],
+                    "category": example["category"],
+                    "question_index": question_index,
+                    "question_type": "mc",
+                    "image_path": [
+                        view_1_path,
+                        view_2_path,
+                    ],
+                    "question": example["mc_questions"][question_index],
+                    "A": options[0],
+                    "B": options[1],
+                    "C": options[2],
+                    "answer": gold,
+                    "adversarial": adversarial,
+                })
                 index += 1
 
             # 4 binary questions
             for binary_index in range(4):
                 question_index = binary_index + 2
 
-                rows.append(
-                    {
-                        "index": index,
-                        "group_id": group_id,
-                        "mvh_type": example["mvh_type"],
-                        "category": example["category"],
-                        "question_index": question_index,
-                        "question_type": "binary",
-                        "image_path": [
-                            view_1_path,
-                            view_2_path,
-                        ],
-                        "question": example["binary_questions"][
-                            binary_index
-                        ],
-                        "answer": example["binary_answers"][
-                            binary_index
-                        ],
-                        "adversarial": "",
-                    }
-                )
+                rows.append({
+                    "index": index,
+                    "group_id": group_id,
+                    "mvh_type": example["mvh_type"],
+                    "category": example["category"],
+                    "question_index": question_index,
+                    "question_type": "binary",
+                    "image_path": [
+                        view_1_path,
+                        view_2_path,
+                    ],
+                    "question": example["binary_questions"][binary_index],
+                    "answer": example["binary_answers"][binary_index],
+                    "adversarial": "",
+                })
                 index += 1
 
         return pd.DataFrame(rows)
@@ -236,23 +204,16 @@ class MVHBench(ImageBaseDataset):
         tgt_path = self.dump_image(line)
 
         if line["question_type"] == "mc":
-            choices = "\n".join(
-                f"{letter}) {line[letter]}"
-                for letter in "ABC"
-            )
+            choices = "\n".join(f"{letter}) {line[letter]}" for letter in "ABC")
 
-            prompt = (
-                f"Question:\n{line['question']}\n\n"
-                f"Choices:\n{choices}\n\n"
-                "Only one option is correct.\n"
-                "Present the answer strictly in the form X)."
-            )
+            prompt = (f"Question:\n{line['question']}\n\n"
+                      f"Choices:\n{choices}\n\n"
+                      "Only one option is correct.\n"
+                      "Present the answer strictly in the form X).")
 
         else:
-            prompt = (
-                f"{line['question']}\n"
-                "Please answer this question with one word."
-            )
+            prompt = (f"{line['question']}\n"
+                      "Please answer this question with one word.")
 
         return [
             dict(type="image", value=tgt_path[0]),
@@ -268,14 +229,8 @@ class MVHBench(ImageBaseDataset):
 
     @staticmethod
     def _parse_binary(response):
-        matches = {
-            x.lower()
-            for x in re.findall(
-                r"\b(yes|no)\b",
-                str(response),
-                flags=re.IGNORECASE,
-            )
-        }
+        found = re.findall(r"\b(yes|no)\b", str(response), flags=re.IGNORECASE)
+        matches = {x.lower() for x in found}
 
         if len(matches) != 1:
             return ""
@@ -287,16 +242,11 @@ class MVHBench(ImageBaseDataset):
         hits = []
 
         for _, group in data.groupby("group_id"):
-            records = {
-                int(row["question_index"]): bool(row["correct"])
-                for _, row in group.iterrows()
-            }
+            records = {int(row["question_index"]): bool(row["correct"]) for _, row in group.iterrows()}
 
             for indices in index_sets:
                 if all(i in records for i in indices):
-                    hits.append(
-                        all(records[i] for i in indices)
-                    )
+                    hits.append(all(records[i] for i in indices))
 
         if not hits:
             return float("nan")
@@ -308,22 +258,14 @@ class MVHBench(ImageBaseDataset):
         mc = data[data["question_type"] == "mc"]
         binary = data[data["question_type"] == "binary"]
 
-        mc_acc = (
-            100.0 * mc["correct"].mean()
-            if len(mc)
-            else float("nan")
-        )
+        mc_acc = (100.0 * mc["correct"].mean() if len(mc) else float("nan"))
 
         mc_pacc = cls._group_accuracy(
             mc,
             [(0, 1)],
         )
 
-        binary_acc = (
-            100.0 * binary["correct"].mean()
-            if len(binary)
-            else float("nan")
-        )
+        binary_acc = (100.0 * binary["correct"].mean() if len(binary) else float("nan"))
 
         binary_pacc = cls._group_accuracy(
             binary,
@@ -337,31 +279,13 @@ class MVHBench(ImageBaseDataset):
 
         mc_errors = (~mc["correct"]).sum()
 
-        aer = (
-            100.0
-            * mc["adversarial_hit"].sum()
-            / mc_errors
-            if mc_errors
-            else 0.0
-        )
+        aer = (100.0 * mc["adversarial_hit"].sum() / mc_errors if mc_errors else 0.0)
 
         binary_errors = (~binary["correct"]).sum()
 
-        yer = (
-            100.0
-            * binary["false_yes"].sum()
-            / binary_errors
-            if binary_errors
-            else 0.0
-        )
+        yer = (100.0 * binary["false_yes"].sum() / binary_errors if binary_errors else 0.0)
 
-        mvh_score = (
-            mc_acc
-            + mc_pacc
-            + binary_acc
-            + binary_pacc
-            + binary_qacc
-        )
+        mvh_score = (mc_acc + mc_pacc + binary_acc + binary_pacc + binary_qacc)
 
         return {
             "mc_acc": mc_acc,
@@ -388,13 +312,12 @@ class MVHBench(ImageBaseDataset):
             if row["question_type"] == "mc":
                 pred = self._parse_mc(
                     row["prediction"],
-                    {c: row[c] for c in "ABC"},
+                    {c: row[c]
+                     for c in "ABC"},
                 )
                 parsed.append(pred)
                 correct.append(pred == row["answer"])
-                adversarial_hit.append(
-                    pred == row["adversarial"]
-                )
+                adversarial_hit.append(pred == row["adversarial"])
                 false_yes.append(False)
 
             else:
@@ -403,10 +326,7 @@ class MVHBench(ImageBaseDataset):
                 parsed.append(pred)
                 correct.append(pred == row["answer"])
                 adversarial_hit.append(False)
-                false_yes.append(
-                    pred == "Yes"
-                    and row["answer"] == "No"
-                )
+                false_yes.append(pred == "Yes" and row["answer"] == "No")
 
         data["parsed_answer"] = parsed
         data["correct"] = correct
@@ -420,8 +340,8 @@ class MVHBench(ImageBaseDataset):
         dump(data, detail_file)
 
         if self.dataset_name in [
-            "MVHBench_CrossView",
-            "MVHBench_CrossInstance",
+                "MVHBench_CrossView",
+                "MVHBench_CrossInstance",
         ]:
             metrics = self._metrics_for_type(data)
 
@@ -429,24 +349,17 @@ class MVHBench(ImageBaseDataset):
             metrics = {}
 
             for mvh_type in [
-                "cross_instance",
-                "cross_view",
+                    "cross_instance",
+                    "cross_view",
             ]:
-                subset = data[
-                    data["mvh_type"] == mvh_type
-                ]
+                subset = data[data["mvh_type"] == mvh_type]
 
-                type_metrics = self._metrics_for_type(
-                    subset
-                )
+                type_metrics = self._metrics_for_type(subset)
 
                 for key, value in type_metrics.items():
                     metrics[f"{mvh_type}_{key}"] = value
 
-            metrics["mvh_score"] = (
-                metrics["cross_instance_mvh_score"]
-                + metrics["cross_view_mvh_score"]
-            )
+            metrics["mvh_score"] = (metrics["cross_instance_mvh_score"] + metrics["cross_view_mvh_score"])
 
         result = pd.DataFrame([metrics])
 
