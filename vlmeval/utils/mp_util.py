@@ -14,7 +14,10 @@ def cpu_count():
     quota = Path('/sys/fs/cgroup/cpu/cpu.cfs_quota_us')
     try:
         if period.exists() and quota.exists():
-            return int(quota.read_text()) // int(period.read_text())
+            quota_us = int(quota.read_text())
+            period_us = int(period.read_text())
+            if quota_us > 0 and period_us > 0:
+                return max(1, quota_us // period_us)
     except Exception:
         pass
 

@@ -130,10 +130,10 @@ class HunyuanWrapper(BaseAPI):
             content_list = [dict(Type='text', Text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(Role='system', Content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(Role='system', Content=system_prompt))
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
         assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
         if 'role' in inputs[0]:
@@ -144,12 +144,12 @@ class HunyuanWrapper(BaseAPI):
             input_msgs.append(dict(Role='user', Contents=self.prepare_itlist(inputs)))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         from tencentcloud.common.exception.tencent_cloud_sdk_exception import \
             TencentCloudSDKException
         from tencentcloud.hunyuan.v20230901 import models
 
-        input_msgs = self.prepare_inputs(inputs)
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
         temperature = kwargs.pop('temperature', self.temperature)
 
         payload = dict(

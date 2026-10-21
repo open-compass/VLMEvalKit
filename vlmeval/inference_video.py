@@ -215,7 +215,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
                 response = model.generate(message=struct, dataset=sample_dataset_name)
             except RuntimeError as err:
                 torch.cuda.synchronize()
-                warnings.error(f'{type(err)} {str(err)}')
+                warnings.warn(f'{type(err)} {str(err)}')
                 response = f'{FAIL_MSG}: {type(err)} {str(err)}'
         else:
             response = model.generate(message=struct, dataset=sample_dataset_name)
