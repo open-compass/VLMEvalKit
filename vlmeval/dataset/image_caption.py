@@ -8,9 +8,15 @@ class COCO_Caption_Scorer():
         from pycocoevalcap.bleu.bleu import Bleu
         from pycocoevalcap.cider.cider import Cider
         from pycocoevalcap.rouge.rouge import Rouge
+        from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
 
-        self.ref = ref
-        self.gt = gt
+        tokenizer = PTBTokenizer()
+        self.ref = tokenizer.tokenize({
+            key: [{'caption': caption} for caption in captions] for key, captions in ref.items()
+        })
+        self.gt = tokenizer.tokenize({
+            key: [{'caption': caption} for caption in captions] for key, captions in gt.items()
+        })
         print('setting up scorers...')
         self.scorers = [
             (Bleu(4), ['Bleu_1', 'Bleu_2', 'Bleu_3', 'Bleu_4']),
