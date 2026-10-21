@@ -37,7 +37,7 @@ class TestVerboseOptionBoundaries(unittest.TestCase):
                 self.assertEqual(self.matching.can_infer(answer, self.choices()), 'A')
 
     def test_unrecognized_words_do_not_become_options(self):
-        for word in ['dog', 'bird', 'a dog', 'B2', 'Café']:
+        for word in ['dog', 'bird', 'B2', 'b2', 'Café', 'café']:
             answer = f'The answer is {word}.'
             with self.subTest(answer=answer):
                 self.assertIs(self.matching.can_infer_option(answer, self.choices()), False)
@@ -45,10 +45,17 @@ class TestVerboseOptionBoundaries(unittest.TestCase):
 
     def test_verbose_labels_remain_available_when_other_options_are_mentioned(self):
         for prefix in ['The correct answer is', 'THE ANSWER IS', 'Answer is']:
-            for option in 'ABCD':
+            for option in 'ABCDabcd':
                 answer = f'{prefix} **{option}**. Considering A, B, C and D, that is my pick.'
                 with self.subTest(answer=answer):
-                    self.assertEqual(self.matching.can_infer_option(answer, self.choices()), option)
+                    self.assertEqual(self.matching.can_infer_option(answer, self.choices()), option.upper())
+
+    def test_plain_lowercase_option_labels_are_available(self):
+        for option in 'abcd':
+            for answer in [f'The answer is {option}.', f'The correct answer is **{option}**.', f'Answer is {option}']:
+                with self.subTest(answer=answer):
+                    self.assertEqual(self.matching.can_infer_option(answer, self.choices()), option.upper())
+                    self.assertEqual(self.matching.can_infer(answer, self.choices()), option.upper())
 
     def test_plain_uppercase_option_labels_are_unchanged(self):
         for answer, expected in [('B', 'B'), ('The answer is B.', 'B'), ('Answer is D', 'D'),
