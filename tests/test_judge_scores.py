@@ -61,5 +61,55 @@ class TestFiniteJudgeScores(unittest.TestCase):
             self.assertTrue(np.isfinite(result['score']))
 
 
+def load_zerobench_evaluator():
+    import ast
+    import re
+    from pathlib import Path
+
+    import pandas as pd
+
+    source = Path('vlmeval/dataset/image_vqa.py')
+    tree = ast.parse(source.read_text())
+    cls = next(node for node in tree.body
+               if isinstance(node, ast.ClassDef) and node.name == 'ZEROBench')
+    namespace = {'ImageVQADataset': object, 'pd': pd, 're': re,
+                 'load': lambda filename: pd.read_csv(filename, keep_default_na=False)}
+    exec(compile(ast.Module(body=[cls], type_ignores=[]), str(source), 'exec'), namespace)
+    return namespace['ZEROBench']()
+
+
+class TestZeroBenchAnswerProtocol(unittest.TestCase):
+
+    def score(self, answer, prediction):
+        import tempfile
+        from pathlib import Path
+
+        import pandas as pd
+
+        with tempfile.TemporaryDirectory() as directory:
+            table = Path(directory) / 'predictions.csv'
+            row = {'index': 1, 'answers': answer, 'prediction': prediction}
+            pd.DataFrame([row]).to_csv(table, index=False)
+            return load_zerobench_evaluator().evaluate(str(table))['accuracy']
+
+    def test_larger_number_containing_gold_is_not_correct(self):
+        self.assertEqual(self.score('2', '{12}'), 0.0)
+
+    def test_word_containing_gold_is_not_correct(self):
+        self.assertEqual(self.score('red', '{redwood}'), 0.0)
+
+    def test_explanatory_brace_content_is_not_an_exact_answer(self):
+        self.assertEqual(self.score('2', '{2 or 3}'), 0.0)
+
+    def test_exact_answer_case_normalization_and_last_brace_match(self):
+        self.assertEqual(self.score('RED', '{blue} then {red}'), 1.0)
+
+    def test_answer_without_braces_remains_incorrect(self):
+        self.assertEqual(self.score('2', 'The answer is 2'), 0.0)
+
+    def test_wrong_final_brace_answer_remains_incorrect(self):
+        self.assertEqual(self.score('2', '{2} then {3}'), 0.0)
+
+
 if __name__ == '__main__':
     unittest.main()

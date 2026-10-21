@@ -459,6 +459,22 @@ timelens_bench_dataset = {
     'QVHighlights-TimeLens_1fps': _video_spec(TimeLensBench, dataset='QVHighlights-TimeLens', fps=1.0),
 }
 
+vue_tr_dataset = {
+    # Videos are YouTube videos to download beforehand (see VUETR); '-Vision' keeps the visual queries.
+    'VUE-TR_1fps': _video_spec(VUETR, dataset='VUE-TR', fps=1.0),
+    'VUE-TR_128frame': _video_spec(VUETR, dataset='VUE-TR', nframe=128, fps=-1),
+    'VUE-TR_256frame': _video_spec(VUETR, dataset='VUE-TR', nframe=256, fps=-1),
+    'VUE-TR-Vision_1fps': _video_spec(VUETR, dataset='VUE-TR-Vision', fps=1.0),
+    'VUE-TR-Vision_128frame': _video_spec(VUETR, dataset='VUE-TR-Vision', nframe=128, fps=-1),
+    'VUE-TR-Vision_256frame': _video_spec(VUETR, dataset='VUE-TR-Vision', nframe=256, fps=-1),
+    'VUE-TR-V2_1fps': _video_spec(VUETR, dataset='VUE-TR-V2', fps=1.0),
+    'VUE-TR-V2_128frame': _video_spec(VUETR, dataset='VUE-TR-V2', nframe=128, fps=-1),
+    'VUE-TR-V2_256frame': _video_spec(VUETR, dataset='VUE-TR-V2', nframe=256, fps=-1),
+    'VUE-TR-V2-Vision_1fps': _video_spec(VUETR, dataset='VUE-TR-V2-Vision', fps=1.0),
+    'VUE-TR-V2-Vision_128frame': _video_spec(VUETR, dataset='VUE-TR-V2-Vision', nframe=128, fps=-1),
+    'VUE-TR-V2-Vision_256frame': _video_spec(VUETR, dataset='VUE-TR-V2-Vision', nframe=256, fps=-1),
+}
+
 etbench_dataset = {
     # All 7,289 samples, or the official 470-sample subset (used in the paper for commercial models).
     'ETBench_1fps': _video_spec(ETBench, dataset='ETBench', fps=1.0),
@@ -475,7 +491,7 @@ dataset_groups = [
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
     video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset,
-    favor_bench_dataset, timelens_bench_dataset, etbench_dataset
+    favor_bench_dataset, timelens_bench_dataset, vue_tr_dataset, etbench_dataset
 ]
 
 # add by EASI team
