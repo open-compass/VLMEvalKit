@@ -68,6 +68,36 @@ def temporal_iou(pred, gt):
     return max(inter, 0.0) / union if union > 0 else 0.0
 
 
+def merge_spans(spans):
+    """Sort spans and merge the ones that overlap or touch; drops invalid spans."""
+    spans = sorted([float(s), float(e)] for s, e in spans if e > s)
+    merged = []
+    for s, e in spans:
+        if merged and s <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], e)
+        else:
+            merged.append([s, e])
+    return merged
+
+
+def multi_span_iou(pred, gt):
+    """IoU between two sets of spans, computed on their total lengths (predicted spans merged first).
+
+    No ground truth and no prediction counts as a perfect match (1.0).
+    """
+    gt = [[float(s), float(e)] for s, e in gt]
+    pred = merge_spans(pred)
+    if not gt:
+        return 1.0 if not pred else 0.0
+    if not pred:
+        return 0.0
+    len_gt = sum(e - s for s, e in gt)
+    len_pred = sum(e - s for s, e in pred)
+    inter = sum(max(0.0, min(pe, ge) - max(ps, gs)) for ps, pe in pred for gs, ge in gt)
+    union = len_pred + len_gt - inter
+    return float(np.clip(inter / union, 0.0, 1.0)) if union > 0 else 0.0
+
+
 def recall_at(ious, thresholds=(0.3, 0.5, 0.7)):
     """``{'R1@t': % of queries with IoU >= t}`` for each threshold ``t``."""
     ious = np.asarray(ious, dtype=float)
