@@ -15,6 +15,7 @@ VXVERSE_ROOT = None
 VideoChat2_ROOT = None
 VideoChatGPT_ROOT = None
 PLLaVA_ROOT = None
+Vidi_ROOT = None  # the Vidi_7B folder of a clone of https://github.com/bytedance/vidi
 RBDash_ROOT = None
 VITA_ROOT = None
 LLAVA_V1_7B_MODEL_PTH = "Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. "
@@ -47,6 +48,7 @@ video_models = {
     "PLLaVA-34B": partial(
         vlm.PLLaVA, model_path="ermu2001/pllava-34b", dir_root=PLLaVA_ROOT
     ),
+    "Vidi-7B": partial(vlm.Vidi, model_path="bytedance-research/Vidi-7B", root=Vidi_ROOT),
 }
 
 ungrouped = {

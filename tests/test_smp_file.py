@@ -108,6 +108,21 @@ def test_remote_query_urls_keep_table_format_and_distinct_cached_results(tmp_pat
     assert all(path.suffix == '.csv' for path in cached)
     assert module.load(first)['prediction'].tolist() == ['first']
     assert module.load(second)['prediction'].tolist() == ['second']
+    
+def test_localization_honors_requested_worker_count(tmp_path, monkeypatch):
+    module = _load_file_module()
+    import pandas as pd
+
+    pool = mock.MagicMock()
+    pool.__enter__.return_value = pool
+    pool.map.return_value = [[str(tmp_path / '0.jpg')]]
+    factory = mock.MagicMock(return_value=pool)
+    monkeypatch.setattr(module.mp, 'Pool', factory)
+    monkeypatch.setattr(module, 'LMUDataRoot', lambda: str(tmp_path))
+    result = module.localize_df(pd.DataFrame({'index': [0], 'image': ['x' * 100]}), 'Example', nproc=1)
+    factory.assert_called_once_with(1)
+    assert result['image_path'].tolist() == [str(tmp_path / '0.jpg')]
+    assert 'image' not in result
 
 
 def test_remote_load_creates_cache_directory_and_reuses_download(tmp_path, monkeypatch):

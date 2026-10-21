@@ -178,6 +178,7 @@ from .vlmbias import VLMBias
 from .vlrmbench import VLRMBench
 from .vrbench import VRBenchDataset
 from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
+from .vue_tr import VUETR
 from .wiki_vqa_bench import WikiVQABench
 from .wildprobe import WildprobeDataset
 from .wildvision import WildVision
@@ -357,7 +358,7 @@ VIDEO_DATASET = [
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
     VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset, FavorBench,
-    TimeLensBench, VideoOdysseyV
+    TimeLensBench, VideoOdysseyV, VUETR
 ]
 
 # add by EASI team
