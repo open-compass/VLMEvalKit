@@ -62,13 +62,15 @@ def mmqa_display(question, target_size=-1):
             images = eval(images)
         else:
             images = [images]
-    else:
+    elif 'image_path' in question:
         images = question.pop('image_path')
         if images[0] == '[' and images[-1] == ']':
             images = eval(images)
         else:
             images = [images]
         images = [encode_image_file_to_base64(x) for x in images]
+    else:
+        images = []
 
     idx = question.pop('index', 'XXX')
     print(f'INDEX: {idx}')

@@ -175,7 +175,7 @@ class TestPrepareMessages:
         LiteLLMAPI = _load_litellm_api()
         p = LiteLLMAPI(model='gpt-4o', system_prompt='Be concise.', retry=1)
         inputs = [{'type': 'text', 'value': 'Hello'}]
-        msgs = p._prepare_messages(inputs)
+        msgs = p._prepare_messages(inputs, system_prompt='Be concise.')
         assert len(msgs) == 2
         assert msgs[0]['role'] == 'system'
         assert msgs[0]['content'] == 'Be concise.'

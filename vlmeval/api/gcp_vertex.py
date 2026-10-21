@@ -120,10 +120,10 @@ class GCPVertexAPI(BaseAPI):
             f"location={self.location} ({'Claude' if self._is_claude else 'Gemini'})"
         )
 
-    def _build_gemini_contents(self, inputs):
+    def _build_gemini_contents(self, inputs, system_prompt=None):
         parts = []
-        if self.system_prompt:
-            parts.append(self.system_prompt)
+        if system_prompt:
+            parts.append(system_prompt)
         for inp in inputs:
             if inp["type"] == "text" and inp["value"]:
                 parts.append(inp["value"])
@@ -131,8 +131,8 @@ class GCPVertexAPI(BaseAPI):
                 parts.append(Part.from_image(VertexImage.load_from_file(inp["value"])))
         return parts
 
-    def _generate_gemini(self, inputs, temperature, max_tokens):
-        contents = self._build_gemini_contents(inputs)
+    def _generate_gemini(self, inputs, temperature, max_tokens, system_prompt=None):
+        contents = self._build_gemini_contents(inputs, system_prompt)
         if not contents:
             contents = [""]
         resp = self._gemini_model.generate_content(
@@ -179,7 +179,7 @@ class GCPVertexAPI(BaseAPI):
             ]
         return [{"role": "user", "content": self._prepare_claude_content(inputs)}]
 
-    def _generate_claude(self, inputs, temperature, max_tokens):
+    def _generate_claude(self, inputs, temperature, max_tokens, system_prompt=None):
         messages = self._prepare_claude_messages(inputs)
         create_kwargs = {
             "model": self.model,
@@ -187,8 +187,8 @@ class GCPVertexAPI(BaseAPI):
             "messages": messages,
             "temperature": temperature,
         }
-        if self.system_prompt:
-            create_kwargs["system"] = self.system_prompt
+        if system_prompt:
+            create_kwargs["system"] = system_prompt
         resp = self._client.messages.create(**create_kwargs)
         answer = (
             resp.content[0].text.strip()
@@ -197,14 +197,14 @@ class GCPVertexAPI(BaseAPI):
         )
         return 0, answer, resp
 
-    def generate_inner(self, inputs, **kwargs):
+    def generate_inner(self, inputs, system_prompt=None, **kwargs):
         temperature = kwargs.pop("temperature", self.temperature)
         max_tokens = kwargs.pop("max_tokens", self.max_tokens)
 
         try:
             if self._is_claude:
-                return self._generate_claude(inputs, temperature, max_tokens)
-            return self._generate_gemini(inputs, temperature, max_tokens)
+                return self._generate_claude(inputs, temperature, max_tokens, system_prompt)
+            return self._generate_gemini(inputs, temperature, max_tokens, system_prompt)
         except Exception as err:
             if self.verbose:
                 logger.error(f"{type(err).__name__}: {err}")

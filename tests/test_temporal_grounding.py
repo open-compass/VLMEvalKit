@@ -24,6 +24,15 @@ def test_temporal_iou():
     assert tg.temporal_iou(None, (5, 15)) == 0.0
 
 
+def test_multi_span_iou():
+    assert tg.merge_spans([[5, 8], [0, 6], [9, 9], [10, 12]]) == [[0.0, 8.0], [10.0, 12.0]]
+    assert tg.multi_span_iou([[0, 6], [5, 10]], [[0, 10]]) == pytest.approx(1.0)
+    assert tg.multi_span_iou([[0, 5], [20, 25]], [[0, 10], [20, 30]]) == pytest.approx(10 / 20)
+    assert tg.multi_span_iou([], []) == 1.0
+    assert tg.multi_span_iou([[0, 1]], []) == 0.0
+    assert tg.multi_span_iou([], [[0, 1]]) == 0.0
+
+
 def test_recall_at():
     r = tg.recall_at([0.2, 0.35, 0.6, 0.9])
     assert r == {'R1@0.3': 75.0, 'R1@0.5': 50.0, 'R1@0.7': 25.0}
