@@ -18,6 +18,7 @@ from vlmeval.smp import (LMUDataRoot, download_file, dump, file_size, get_cache_
                          localize_df, md5, toliststr)
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
+from .utils.data_errata import filter_unscorable_samples
 
 MMMB_URLS = {
     'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
@@ -208,6 +209,9 @@ class ImageMCQDataset(ImageBaseDataset):
     DATASET_MD5.update(MMMB_MD5)
     DATASET_MD5.update(MTL_MMBench_MD5)
 
+    def post_build(self, dataset):
+        self.data = filter_unscorable_samples(self.data, dataset, self.DATASET_MD5.get(dataset))
+
     def build_prompt(self, line):
 
         if isinstance(line, int):
@@ -288,6 +292,7 @@ class ImageMCQDataset(ImageBaseDataset):
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
         data = load(eval_file)
+        data = filter_unscorable_samples(data, self.dataset_name, self.DATASET_MD5.get(self.dataset_name))
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         # If not choice label, then use lower case
@@ -331,6 +336,7 @@ class ImageMCQDataset(ImageBaseDataset):
             acc_map['circular'] = acc
             # Vanilla Circ0 Acc
             data = load(eval_file)
+            data = filter_unscorable_samples(data, self.dataset_name, self.DATASET_MD5.get(self.dataset_name))
             data['index'] = [int(x) for x in data['index']]
             if 'g_index' in data:
                 data['g_index'] = [int(x) for x in data['g_index']]
@@ -345,6 +351,7 @@ class ImageMCQDataset(ImageBaseDataset):
             acc_map['vanilla_0'] = report_acc(data)
             # Vanilla ALL Acc
             data = load(eval_file)
+            data = filter_unscorable_samples(data, self.dataset_name, self.DATASET_MD5.get(self.dataset_name))
             dataall = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
             dump(dataall, get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_all_result'))
             data = load(get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_all_result'))
@@ -394,6 +401,7 @@ class ImageMCQDataset(ImageBaseDataset):
             raise ValueError("circular is not supported for verifier evaluation")
 
         data = load(eval_file)
+        data = filter_unscorable_samples(data, self.dataset_name, self.DATASET_MD5.get(self.dataset_name))
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         # If not choice label, then use lower case

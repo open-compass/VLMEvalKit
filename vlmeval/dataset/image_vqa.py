@@ -23,6 +23,7 @@ from vlmeval.smp import (LMUDataRoot, d2df, decode_base64_to_image_file, downloa
 from ..utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
+from .utils.data_errata import filter_unscorable_samples
 from .utils.judge_cache import (get_judge_cache_file, get_judge_detail_file, get_judge_score_file,
                                 load_judge_cache, run_cached_tasks)
 from .utils.vqa_eval import istype
@@ -2181,9 +2182,13 @@ class MTVQADataset(ImageBaseDataset):
     }
     DATASET_MD5 = {'MTVQA_TEST': 'd87c17dbab934b7cd89c0a3c1c5657f4'}
 
+    def post_build(self, dataset):
+        self.data = filter_unscorable_samples(self.data, dataset, self.DATASET_MD5.get(dataset))
+
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file)
+        data = filter_unscorable_samples(data, 'MTVQA_TEST', self.DATASET_MD5.get('MTVQA_TEST'))
         assert 'answer' in data and 'prediction' in data and 'category' in data
         data['prediction'] = [str(x) for x in data['prediction']]
         data['answer'] = [str(x) for x in data['answer']]
