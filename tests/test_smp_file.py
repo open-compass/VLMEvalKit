@@ -108,7 +108,8 @@ def test_remote_query_urls_keep_table_format_and_distinct_cached_results(tmp_pat
     assert all(path.suffix == '.csv' for path in cached)
     assert module.load(first)['prediction'].tolist() == ['first']
     assert module.load(second)['prediction'].tolist() == ['second']
-    
+
+
 def test_localization_honors_requested_worker_count(tmp_path, monkeypatch):
     module = _load_file_module()
     import pandas as pd
