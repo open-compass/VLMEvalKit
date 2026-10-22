@@ -2606,5 +2606,45 @@
     "dataset_alias_name": "VUE-TR_256frame",
     "dataset_class_name": "VUETR",
     "dataset_name": "VUE-TR"
+  },
+  "QVHighlights-HD_1fps": {
+    "build_config": {
+      "class": "QVHighlights",
+      "dataset": "QVHighlights-HD",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "QVHighlights-HD_1fps",
+    "dataset_class_name": "QVHighlights",
+    "dataset_name": "QVHighlights-HD"
+  },
+  "QVHighlights-HD_2fps": {
+    "build_config": {
+      "class": "QVHighlights",
+      "dataset": "QVHighlights-HD",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "QVHighlights-HD_2fps",
+    "dataset_class_name": "QVHighlights",
+    "dataset_name": "QVHighlights-HD"
+  },
+  "QVHighlights-MR_1fps": {
+    "build_config": {
+      "class": "QVHighlights",
+      "dataset": "QVHighlights-MR",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "QVHighlights-MR_1fps",
+    "dataset_class_name": "QVHighlights",
+    "dataset_name": "QVHighlights-MR"
+  },
+  "QVHighlights-MR_2fps": {
+    "build_config": {
+      "class": "QVHighlights",
+      "dataset": "QVHighlights-MR",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "QVHighlights-MR_2fps",
+    "dataset_class_name": "QVHighlights",
+    "dataset_name": "QVHighlights-MR"
   }
 }
