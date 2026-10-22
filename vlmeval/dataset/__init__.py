@@ -107,6 +107,7 @@ from .moviechat1k import MovieChat1k
 from .mrarebench import MRareBenchDiagnosis, MRareBenchEvidenceVerif
 from .mssbench import MSSBenchDataset
 from .mvbench import MVBench, MVBench_MP4
+from .mvh_bench import MVHBench
 from .mvu_eval import MVUEval
 from .NPMM import NPMM
 from .oceanocr import OceanOCRBench
@@ -338,6 +339,7 @@ IMAGE_DATASET = [
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
     PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset, E3VQA,
+    MVHBench,
 ]
 
 # add by EASI team
