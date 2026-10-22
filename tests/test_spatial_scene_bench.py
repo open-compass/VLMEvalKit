@@ -15,9 +15,17 @@ def test_spatial_scene_bench_is_registered():
     assert 'SpatialSceneBench_mini' in SUPPORTED_DATASETS
 
 
-@pytest.mark.parametrize('alias', ['SpatialSceneBench_8frame', 'SpatialSceneBench_mini_8frame'])
+@pytest.mark.parametrize('dataset_name', ['SpatialSceneBench', 'SpatialSceneBench_mini'])
 @pytest.mark.parametrize('frame_count', [1, 16])
-def test_frame_preset_uses_official_sampling(alias, frame_count, tmp_path, monkeypatch):
+@pytest.mark.parametrize('max_frames,sampled_indices', [
+    (None, [0, 2, 4, 6, 9, 11, 13, 15]),
+    (1, [0]),
+    (4, [0, 5, 10, 15]),
+    (16, list(range(16))),
+])
+def test_frame_sampling_uses_official_sampling(
+    dataset_name, frame_count, max_frames, sampled_indices, tmp_path, monkeypatch
+):
     from run import build_dataset_from_spec
 
     paths = []
@@ -29,21 +37,24 @@ def test_frame_preset_uses_official_sampling(alias, frame_count, tmp_path, monke
         'index': 0, 'question': 'Benchmark question.', 'answer_type': 'count', 'image_path': paths,
     }])
     monkeypatch.setattr(SpatialSceneBench, 'load_data', lambda self, dataset: data)
-    spec = resolve_dataset_spec(alias)
+    data_config = None if max_frames is None else {
+        dataset_name: {'class': 'SpatialSceneBench', 'dataset': dataset_name, 'max_frames': max_frames},
+    }
+    spec = resolve_dataset_spec(dataset_name, data_config)
     dataset = build_dataset_from_spec(spec)
     dataset.img_root = str(tmp_path)
-    assert dataset.nframe == 8
-    assert dataset.dataset_name == alias.removesuffix('_8frame')
-    expected_indices = [0] if frame_count == 1 else [0, 2, 4, 6, 9, 11, 13, 15]
+    assert dataset.max_frames == (8 if max_frames is None else max_frames)
+    assert dataset.dataset_name == dataset_name
+    expected_indices = [0] if frame_count == 1 else sampled_indices
     expected = [{'type': 'image', 'value': paths[i]} for i in expected_indices]
     expected.append({'type': 'text', 'value': 'Benchmark question.\nAnswer with a single integer.'})
     assert dataset.build_prompt(0) == expected
 
 
-@pytest.mark.parametrize('nframe', [0, -1, 1.5, None, True])
-def test_invalid_frame_count(nframe):
-    with pytest.raises(ValueError, match='nframe must be a positive integer'):
-        SpatialSceneBench(nframe=nframe)
+@pytest.mark.parametrize('max_frames', [0, -1, 1.5, None, True])
+def test_invalid_frame_count(max_frames):
+    with pytest.raises(ValueError, match='max_frames must be a positive integer'):
+        SpatialSceneBench(max_frames=max_frames)
 
 
 def test_short_frame_list_is_preserved(tmp_path, monkeypatch):
@@ -56,7 +67,7 @@ def test_short_frame_list_is_preserved(tmp_path, monkeypatch):
         'index': 0, 'question': 'Benchmark question.', 'answer_type': 'count', 'image_path': paths,
     }])
     monkeypatch.setattr(SpatialSceneBench, 'load_data', lambda self, dataset: data)
-    dataset = SpatialSceneBench(nframe=8)
+    dataset = SpatialSceneBench(max_frames=8)
     dataset.img_root = str(tmp_path)
     assert [item['value'] for item in dataset.build_prompt(0) if item['type'] == 'image'] == paths
 
@@ -98,7 +109,8 @@ def test_inference_preserves_answer_format(
     result = infer_data_api(
         model=model, work_dir=str(tmp_path), model_name='test-model', dataset=dataset, api_nproc=1
     )
-    expected = [{'type': 'image', 'value': path} for path in image_paths]
+    expected_indices = [0] if frame_count == 1 else [0, 2, 4, 6, 9, 11, 13, 15]
+    expected = [{'type': 'image', 'value': image_paths[i]} for i in expected_indices]
     expected.append({'type': 'text', 'value': f'Benchmark question.\n{answer_format}'})
     assert received == [expected]
     assert result == {0: 'test prediction'}

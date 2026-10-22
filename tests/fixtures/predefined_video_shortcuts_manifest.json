@@ -887,26 +887,6 @@
     "dataset_class_name": "SiteBenchVideo",
     "dataset_name": "SiteBenchVideo"
   },
-  "SpatialSceneBench_8frame": {
-    "build_config": {
-      "class": "SpatialSceneBench",
-      "dataset": "SpatialSceneBench",
-      "nframe": 8
-    },
-    "dataset_alias_name": "SpatialSceneBench_8frame",
-    "dataset_class_name": "SpatialSceneBench",
-    "dataset_name": "SpatialSceneBench"
-  },
-  "SpatialSceneBench_mini_8frame": {
-    "build_config": {
-      "class": "SpatialSceneBench",
-      "dataset": "SpatialSceneBench_mini",
-      "nframe": 8
-    },
-    "dataset_alias_name": "SpatialSceneBench_mini_8frame",
-    "dataset_class_name": "SpatialSceneBench",
-    "dataset_name": "SpatialSceneBench_mini"
-  },
   "TempCompass_0.5fps": {
     "build_config": {
       "class": "TempCompass",

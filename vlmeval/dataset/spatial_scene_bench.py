@@ -112,10 +112,10 @@ class SpatialSceneBench(ImageBaseDataset):
         'SpatialSceneBench_mini': 'b7b1feafa0f96728797918a11ae11f66',
     }
 
-    def __init__(self, dataset='SpatialSceneBench', skip_noimg=True, nframe=16):
-        if isinstance(nframe, bool) or not isinstance(nframe, int) or nframe <= 0:
-            raise ValueError('nframe must be a positive integer')
-        self.nframe = nframe
+    def __init__(self, dataset='SpatialSceneBench', skip_noimg=True, max_frames=8):
+        if isinstance(max_frames, bool) or not isinstance(max_frames, int) or max_frames <= 0:
+            raise ValueError('max_frames must be a positive integer')
+        self.max_frames = max_frames
         super().__init__(dataset=dataset, skip_noimg=skip_noimg)
 
     def build_prompt(self, line):
@@ -125,8 +125,8 @@ class SpatialSceneBench(ImageBaseDataset):
             tgt_path = toliststr(line['image_path'])
         else:
             tgt_path = self.dump_image(line)
-        if len(tgt_path) > self.nframe:
-            indices = np.linspace(0, len(tgt_path) - 1, self.nframe).round().astype(int)
+        if len(tgt_path) > self.max_frames:
+            indices = np.linspace(0, len(tgt_path) - 1, self.max_frames).round().astype(int)
             tgt_path = [tgt_path[i] for i in indices]
         prompt = f"{line['question']}\n{ANSWER_FORMATS[line['answer_type']]}"
         msgs = [dict(type='image', value=p) for p in tgt_path]

@@ -17,12 +17,6 @@ def _video_spec(cls, **kwargs):
     )
 
 
-spatial_scene_bench_dataset = {
-    'SpatialSceneBench_8frame': _video_spec(SpatialSceneBench, dataset='SpatialSceneBench', nframe=8),
-    'SpatialSceneBench_mini_8frame': _video_spec(SpatialSceneBench, dataset='SpatialSceneBench_mini', nframe=8),
-}
-
-
 video_eval_pro_dataset = {
     'VideoEval-Pro-MCQ_16frame': _video_spec(
         VideoEvalPro_MCQ, dataset='VideoEval-Pro-MCQ', nframe=16
@@ -482,7 +476,6 @@ vue_tr_dataset = {
 }
 
 dataset_groups = [
-    spatial_scene_bench_dataset,
     video_eval_pro_dataset,
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset, video_odyssey_dataset,
     videommev2_dataset, videommmu_dataset,
