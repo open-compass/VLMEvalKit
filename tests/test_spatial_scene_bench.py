@@ -1,14 +1,107 @@
 import pandas as pd
 import pytest
+from PIL import Image
 
 from vlmeval.dataset import SUPPORTED_DATASETS
 from vlmeval.dataset.spatial_scene_bench import (SpatialSceneBench, mean_relative_accuracy,
                                                  parse_answer)
+from vlmeval.inference import infer_data_api
+from vlmeval.smp.dataset_alias import resolve_dataset_spec
+from vlmeval.vlm.qwen2_vl.prompt import Qwen2VLPromptMixin
 
 
 def test_spatial_scene_bench_is_registered():
     assert 'SpatialSceneBench' in SUPPORTED_DATASETS
     assert 'SpatialSceneBench_mini' in SUPPORTED_DATASETS
+
+
+@pytest.mark.parametrize('alias', ['SpatialSceneBench_8frame', 'SpatialSceneBench_mini_8frame'])
+@pytest.mark.parametrize('frame_count', [1, 16])
+def test_frame_preset_uses_official_sampling(alias, frame_count, tmp_path, monkeypatch):
+    from run import build_dataset_from_spec
+
+    paths = []
+    for frame_index in range(frame_count):
+        path = tmp_path / f'frame_{frame_index}.png'
+        Image.new('RGB', (2, 2), color=(frame_index, 0, 0)).save(path)
+        paths.append(str(path))
+    data = pd.DataFrame([{
+        'index': 0, 'question': 'Benchmark question.', 'answer_type': 'count', 'image_path': paths,
+    }])
+    monkeypatch.setattr(SpatialSceneBench, 'load_data', lambda self, dataset: data)
+    spec = resolve_dataset_spec(alias)
+    dataset = build_dataset_from_spec(spec)
+    dataset.img_root = str(tmp_path)
+    assert dataset.nframe == 8
+    assert dataset.dataset_name == alias.removesuffix('_8frame')
+    expected_indices = [0] if frame_count == 1 else [0, 2, 4, 6, 9, 11, 13, 15]
+    expected = [{'type': 'image', 'value': paths[i]} for i in expected_indices]
+    expected.append({'type': 'text', 'value': 'Benchmark question.\nAnswer with a single integer.'})
+    assert dataset.build_prompt(0) == expected
+
+
+@pytest.mark.parametrize('nframe', [0, -1, 1.5, None, True])
+def test_invalid_frame_count(nframe):
+    with pytest.raises(ValueError, match='nframe must be a positive integer'):
+        SpatialSceneBench(nframe=nframe)
+
+
+def test_short_frame_list_is_preserved(tmp_path, monkeypatch):
+    paths = []
+    for frame_index in range(7):
+        path = tmp_path / f'frame_{frame_index}.png'
+        Image.new('RGB', (2, 2)).save(path)
+        paths.append(str(path))
+    data = pd.DataFrame([{
+        'index': 0, 'question': 'Benchmark question.', 'answer_type': 'count', 'image_path': paths,
+    }])
+    monkeypatch.setattr(SpatialSceneBench, 'load_data', lambda self, dataset: data)
+    dataset = SpatialSceneBench(nframe=8)
+    dataset.img_root = str(tmp_path)
+    assert [item['value'] for item in dataset.build_prompt(0) if item['type'] == 'image'] == paths
+
+
+@pytest.mark.parametrize('answer_type,answer_format', [
+    ('count', 'Answer with a single integer.'),
+    ('yesno', 'Answer with yes or no.'),
+    ('choice', 'Answer with the letter of the correct option.'),
+    ('numeric', 'Answer with a single number.'),
+])
+@pytest.mark.parametrize('frame_count', [1, 16])
+@pytest.mark.parametrize('use_custom_prompt', [True, False])
+def test_inference_preserves_answer_format(
+    answer_type, answer_format, frame_count, use_custom_prompt, tmp_path, monkeypatch
+):
+    image_paths = []
+    for frame_index in range(frame_count):
+        image_path = tmp_path / f'frame_{frame_index}.png'
+        Image.new('RGB', (2, 2)).save(image_path)
+        image_paths.append(str(image_path))
+    data = pd.DataFrame([{
+        'index': 0,
+        'question': 'Benchmark question.',
+        'answer_type': answer_type,
+        'image_path': image_paths,
+    }])
+    monkeypatch.setattr(SpatialSceneBench, 'load_data', lambda self, dataset: data)
+    dataset = SpatialSceneBench('SpatialSceneBench_mini')
+    dataset.img_root = str(tmp_path)
+    model = Qwen2VLPromptMixin(use_custom_prompt=use_custom_prompt)
+    monkeypatch.setattr(model, 'is_api', True, raising=False)
+    received = []
+
+    def generate(message, dataset):
+        received.append(message)
+        return 'test prediction'
+
+    monkeypatch.setattr(model, 'generate', generate, raising=False)
+    result = infer_data_api(
+        model=model, work_dir=str(tmp_path), model_name='test-model', dataset=dataset, api_nproc=1
+    )
+    expected = [{'type': 'image', 'value': path} for path in image_paths]
+    expected.append({'type': 'text', 'value': f'Benchmark question.\n{answer_format}'})
+    assert received == [expected]
+    assert result == {0: 'test prediction'}
 
 
 @pytest.mark.parametrize(
