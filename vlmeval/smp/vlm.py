@@ -4,7 +4,7 @@ import os
 import os.path as osp
 
 import pandas as pd
-from PIL import Image
+from PIL import Image, ImageOps
 
 Image.MAX_IMAGE_PIXELS = 1e9
 
@@ -95,10 +95,18 @@ def resize_image_by_factor(img, factor=1):
     return img
 
 
+def _apply_exif_orientation(image):
+    # Normalize camera display orientation before resizing or dropping metadata.
+    if image.getexif().get(274, 1) in range(2, 9):
+        return ImageOps.exif_transpose(image)
+    return image
+
+
 def encode_image_to_base64(img, target_size=-1, fmt='JPEG', max_file_size=1e9):
     from .log import get_logger
 
     logger = get_logger(__name__)
+    img = _apply_exif_orientation(img)
 
     # if target_size == -1, will not do resizing
     # else, will set the max_size ot (target_size, target_size)
@@ -157,7 +165,7 @@ def encode_image_file_to_base64(image_path, target_size=-1, fmt='JPEG', max_file
 
 def decode_base64_to_image(base64_string, target_size=-1):
     image_data = base64.b64decode(base64_string)
-    image = Image.open(io.BytesIO(image_data))
+    image = _apply_exif_orientation(Image.open(io.BytesIO(image_data)))
     if image.mode in ('I;16', 'I;16L', 'I;16B', 'I;16N'):
         image = image.convert('I')
     elif image.mode not in ('1', 'L', 'I', 'RGB'):
