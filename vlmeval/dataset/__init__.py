@@ -143,6 +143,7 @@ from .slidevqa import SlideVQA
 from .sparbench import SparBench
 from .spatial457 import Spatial457
 from .spatial_dise import SpatialDISE
+from .spatial_scene_bench import SpatialSceneBench
 from .spatialvizbench import SpatialVizBench
 from .spbench import SPBench
 from .ssi_bench import SSIBenchDataset
@@ -181,7 +182,6 @@ from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
 from .vue_tr import VUETR
 from .wiki_vqa_bench import WikiVQABench
 from .wildprobe import WildprobeDataset
-from .spatial_scene_bench import SpatialSceneBench
 from .wildvision import WildVision
 from .worldsense import WorldSense
 from .worldvqa import WorldVQA
