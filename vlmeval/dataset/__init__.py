@@ -106,6 +106,7 @@ from .molrecbench_wild import MolRecBenchWildDataset
 from .moviechat1k import MovieChat1k
 from .mrarebench import MRareBenchDiagnosis, MRareBenchEvidenceVerif
 from .mssbench import MSSBenchDataset
+from .multihopspatial import MultihopSpatial
 from .mvbench import MVBench, MVBench_MP4
 from .mvh_bench import MVHBench
 from .mvu_eval import MVUEval
@@ -331,7 +332,7 @@ IMAGE_DATASET = [
     ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
     ERQADataset, SimpleVQA, HiPhODataset, MaCBench, WikiVQABench,
-    UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
+    UniSVG, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME, MultihopSpatial,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartBench, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,  # noqa: E501
     MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset, M3oralBenchDataset,  # noqa: E501
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
