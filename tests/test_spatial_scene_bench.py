@@ -18,9 +18,10 @@ def test_spatial_scene_bench_is_registered():
 @pytest.mark.parametrize('dataset_name', ['SpatialSceneBench', 'SpatialSceneBench_mini'])
 @pytest.mark.parametrize('frame_count', [1, 16])
 @pytest.mark.parametrize('max_frames,sampled_indices', [
-    (None, [0, 2, 4, 6, 9, 11, 13, 15]),
+    (None, list(range(16))),
     (1, [0]),
     (4, [0, 5, 10, 15]),
+    (8, [0, 2, 4, 6, 9, 11, 13, 15]),
     (16, list(range(16))),
 ])
 def test_frame_sampling_uses_official_sampling(
@@ -43,7 +44,7 @@ def test_frame_sampling_uses_official_sampling(
     spec = resolve_dataset_spec(dataset_name, data_config)
     dataset = build_dataset_from_spec(spec)
     dataset.img_root = str(tmp_path)
-    assert dataset.max_frames == (8 if max_frames is None else max_frames)
+    assert dataset.max_frames == (16 if max_frames is None else max_frames)
     assert dataset.dataset_name == dataset_name
     expected_indices = [0] if frame_count == 1 else sampled_indices
     expected = [{'type': 'image', 'value': paths[i]} for i in expected_indices]
@@ -109,7 +110,7 @@ def test_inference_preserves_answer_format(
     result = infer_data_api(
         model=model, work_dir=str(tmp_path), model_name='test-model', dataset=dataset, api_nproc=1
     )
-    expected_indices = [0] if frame_count == 1 else [0, 2, 4, 6, 9, 11, 13, 15]
+    expected_indices = list(range(frame_count))
     expected = [{'type': 'image', 'value': image_paths[i]} for i in expected_indices]
     expected.append({'type': 'text', 'value': f'Benchmark question.\n{answer_format}'})
     assert received == [expected]

@@ -112,7 +112,7 @@ class SpatialSceneBench(ImageBaseDataset):
         'SpatialSceneBench_mini': 'b7b1feafa0f96728797918a11ae11f66',
     }
 
-    def __init__(self, dataset='SpatialSceneBench', skip_noimg=True, max_frames=8):
+    def __init__(self, dataset='SpatialSceneBench', skip_noimg=True, max_frames=16):
         if isinstance(max_frames, bool) or not isinstance(max_frames, int) or max_frames <= 0:
             raise ValueError('max_frames must be a positive integer')
         self.max_frames = max_frames
