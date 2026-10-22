@@ -59,6 +59,8 @@ class GLMVisionWrapper(BaseAPI):
                 do_sample=False,
                 max_tokens=2048
             )
+            if not response.choices or response.choices[0].message is None:
+                raise ValueError("LLM returned empty or filtered response")
             answer = response.choices[0].message.content.strip()
             if self.verbose:
                 logger.info(f'inputs: {inputs}\nanswer: {answer}')
