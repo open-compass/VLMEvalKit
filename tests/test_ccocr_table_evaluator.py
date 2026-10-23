@@ -2,7 +2,6 @@ import sys
 import unittest
 from pathlib import Path
 
-
 UTILS_DIR = Path(__file__).resolve().parents[1] / "vlmeval" / "dataset" / "utils"
 sys.path.insert(0, str(UTILS_DIR))
 
@@ -16,7 +15,7 @@ def evaluate_single(prediction, ground_truth):
 
 
 class CCOCRTableEvaluatorTest(unittest.TestCase):
-    def test_table_attributes_and_html_fence_are_preserved(self):
+    def test_table_attributes_are_preserved_and_th_is_not_td(self):
         prediction = """
         ```HTML
         <table border="1" style="width: 100%">
@@ -32,7 +31,7 @@ class CCOCRTableEvaluatorTest(unittest.TestCase):
         </table>
         """
 
-        self.assertEqual(evaluate_single(prediction, ground_truth), 1.0)
+        self.assertLess(evaluate_single(prediction, ground_truth), 1.0)
 
     def test_rowspan_and_text_whitespace_are_normalized(self):
         prediction = """
@@ -48,7 +47,21 @@ class CCOCRTableEvaluatorTest(unittest.TestCase):
 
         self.assertEqual(evaluate_single(prediction, ground_truth), 1.0)
 
-    def test_table_is_extracted_from_surrounding_text(self):
+    def test_non_html_fence_does_not_hide_table(self):
+        response = """
+        Here is a note:
+        ```text
+        This is not HTML.
+        ```
+        <table><tr><td>value</td></tr></table>
+        """
+
+        self.assertEqual(
+            extract_table_html(response),
+            "<table><tr><td>value</td></tr></table>",
+        )
+
+    def test_table_is_extracted_from_html_fence(self):
         response = """
         Here is the requested table:
         ```html
@@ -60,6 +73,12 @@ class CCOCRTableEvaluatorTest(unittest.TestCase):
             extract_table_html(response),
             "<table><tr><td>value</td></tr></table>",
         )
+
+    def test_ground_truth_fullwidth_characters_are_normalized(self):
+        prediction = '<table><tr><td>AB,1</td></tr></table>'
+        ground_truth = '<table><tr><td>ＡＢ，１</td></tr></table>'
+
+        self.assertEqual(evaluate_single(prediction, ground_truth), 1.0)
 
     def test_missing_table_scores_zero(self):
         self.assertEqual(

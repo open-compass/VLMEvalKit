@@ -7,7 +7,7 @@ from apted.helpers import Tree
 from tqdm import tqdm
 
 # local import
-from .common import BaseMetric
+from .common import BaseMetric, convert_to_halfwidth
 
 # 移除指定的LaTeX命令
 patterns = [
@@ -20,9 +20,8 @@ patterns = [
     r'\\noindent'
 ]
 
-TABLE_CELL_TAGS = {"td", "th"}
 FENCED_HTML_RE = re.compile(
-    r'```(?:html)?\s*(.*?)```',
+    r'```html\s*(.*?)```',
     flags=re.IGNORECASE | re.DOTALL,
 )
 TABLE_HTML_RE = re.compile(
@@ -30,7 +29,7 @@ TABLE_HTML_RE = re.compile(
     flags=re.IGNORECASE | re.DOTALL,
 )
 OPENING_FENCE_RE = re.compile(
-    r'^\s*```(?:html)?\s*',
+    r'^\s*```html\s*',
     flags=re.IGNORECASE,
 )
 
@@ -131,14 +130,13 @@ class TEDS(object):
             self.tokenize(n)
         if node.tag != "unk":
             self.__tokens__.append("</%s>" % node.tag)
-        if node.tag not in TABLE_CELL_TAGS and node.tail is not None:
+        if node.tag != "td" and node.tail is not None:
             self.__tokens__ += list(normalize_text_whitespace(node.tail))
 
     def load_html_tree(self, node, parent=None):
         """Converts HTML tree to the format required by apted"""
         global __tokens__
-        is_table_cell = node.tag in TABLE_CELL_TAGS
-        if is_table_cell:
+        if node.tag == "td":
             if self.structure_only:
                 cell = []
             else:
@@ -146,7 +144,7 @@ class TEDS(object):
                 self.tokenize(node)
                 cell = self.__tokens__[1:-1].copy()
             new_node = TableTree(
-                "td",
+                node.tag,
                 int(node.attrib.get("colspan", "1")),
                 int(node.attrib.get("rowspan", "1")),
                 cell,
@@ -156,7 +154,7 @@ class TEDS(object):
             new_node = TableTree(node.tag, None, None, None, *deque())
         if parent is not None:
             parent.children.append(new_node)
-        if not is_table_cell:
+        if node.tag != "td":
             for n in node.getchildren():
                 self.load_html_tree(n, new_node)
         if parent is None:
@@ -258,8 +256,8 @@ class ParsingEvaluator(BaseMetric):
             for pattern in patterns:
                 pred = re.sub(pattern, '', pred)
 
-            pred = extract_table_html(pred).replace('，', ',')
-            gt = extract_table_html(gt)
+            pred = convert_to_halfwidth(extract_table_html(pred))
+            gt = convert_to_halfwidth(extract_table_html(gt))
 
             pred_html = '<html><body>{}</body></html>'.format(pred)
             gt_html = '<html><body>{}</body></html>'.format(gt)
