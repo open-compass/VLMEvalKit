@@ -293,12 +293,13 @@ def _evaluate_row(idx, model_answer, gt_answer, q_type, metadata, tmpdir, device
         cats_gt = metadata.get('keywords', {}).get('category', [])
         if not cats_gt and 'category' in metadata:
             cats_gt = metadata['category']
-        correct_lower = set(c.lower() for c in cats_gt)
-        correct_cap = set(c.capitalize() for c in cats_gt)
-        matched = (
-            any(c in model_answer for c in correct_lower)
-            or any(c in model_answer for c in correct_cap)
-        )
+        correct_cats = set(c.lower() for c in cats_gt)
+        # Normalise the prediction, as the colour branch above does, instead of
+        # enumerating casings of the ground truth. str.capitalize() also
+        # lowercases the remainder, so a title-cased multi-word category such
+        # as "Red Panda" could never match, and an upper-cased one never could.
+        answer_lower = model_answer.lower()
+        matched = any(c in answer_lower for c in correct_cats)
         metrics['accuracy'] += 1 if matched else 0
 
     # --- GENERATION (ISVGEN, TSVGEN) ---
