@@ -1,5 +1,4 @@
 import os.path as osp
-import random as rd
 import re
 import string
 from collections import defaultdict
@@ -13,6 +12,17 @@ from vlmeval.smp.vlm import build_option_str
 from vlmeval.utils import can_infer, can_infer_lego, track_progress_rich
 
 logger = get_logger(__name__)
+
+# Contains 'Failed to obtain answer', the marker the run summary counts as a judge failure.
+JUDGE_FAILED_LOG = 'Failed to obtain answer from the judge, the prediction was not matched. '
+# Written by older versions when the judge failed: the item was scored with a random option.
+LEGACY_RANDOM_LOG = 'Failed to predict, thus randomly generate one.'
+
+
+def mcq_judge_failed(res):
+    """Whether a cached MCQ result came from a judge that never answered (rerun these)."""
+    return bool(res.get('judge_failed')) or LEGACY_RANDOM_LOG in str(res.get('log', ''))
+
 
 MMB_abbrs = {
     'coarse_perception': 'CP',
@@ -382,11 +392,13 @@ def extract_answer_from_item(model, item, dataset_name=None):
     if model is None:
         return dict(opt='Z', log='Failed in Prefetch, no GPT-based answer matching under `exact_matching` policy.')
 
+    judge_answered = False
     while retry:
         ans = model.generate(prompt)
         if 'Failed to obtain answer via API' in ans:
             logger.warning('GPT API failed to answer. ')
         else:
+            judge_answered = True
             if dataset_name is not None and 'LEGO' in dataset_name:
                 ret = can_infer_lego(ans, item['question_type'], choices)
             else:
@@ -401,8 +413,12 @@ def extract_answer_from_item(model, item, dataset_name=None):
         retry -= 1
 
         if retry == 0:
-            options = list(choices) + ['Z'] if 'Z' not in choices else []
-            return dict(opt=rd.choice(options), log='Failed to predict, thus randomly generate one. ')
+            # MMBench maps a prediction that matches no option to the pseudo choice Z, which is
+            # scored as wrong. If the judge API never answered, the item was not judged at all:
+            # flag it so a rerun judges it again instead of keeping the cached result.
+            if judge_answered:
+                return dict(opt='Z', log='Failed to match the prediction to any option. ')
+            return dict(opt='Z', log=JUDGE_FAILED_LOG, judge_failed=True)
 
 
 # For Circular Evaluation
@@ -431,10 +447,10 @@ def prefetch_circular_group(sub_data, verbose=False):
 def eval_vanilla(model, item, dataset_name=None):
     res = extract_answer_from_item(model, item, dataset_name=dataset_name)
     opt, match_log = res['opt'], res['log']
-    if opt == item['GT']:
-        return dict(hit=1, log=f'Match Log: {match_log}. ')
-    else:
-        return dict(hit=0, log=f'Match Log: {match_log}. ')
+    ret = dict(hit=int(opt == item['GT']), log=f'Match Log: {match_log}. ')
+    if res.get('judge_failed'):
+        ret['judge_failed'] = True
+    return ret
 
 
 # For Circular Evaluation
@@ -461,7 +477,10 @@ def eval_circular_group(model, sub_data, dataset_name=None):
                     f"Failed in Rolling {i}: Answer is {GT[i]}; Prediction is {sub_data.iloc[i]['prediction']}; "
                     f'Pre-fetched is {PRED[i]}; Match Log is {match_log}.\n'
                 )
-                return dict(hit=0, log=log)
+                ret = dict(hit=0, log=log)
+                if res.get('judge_failed'):
+                    ret['judge_failed'] = True
+                return ret
             else:
                 log += (
                     f"Rolling {i}: Answer is {GT[i]}, Prediction is {sub_data.iloc[i]['prediction']}, "
@@ -469,6 +488,14 @@ def eval_circular_group(model, sub_data, dataset_name=None):
                 )
 
     return dict(hit=1, log=log)
+
+
+def _warn_judge_failures(result, indices):
+    failed = sum(mcq_judge_failed(result[i]) for i in indices if i in result)
+    if failed:
+        logger.warning(
+            f'The judge API failed on {failed} item(s); they are scored as wrong for now. '
+            'Rerun the evaluation to judge them again.')
 
 
 # data, meta are pd.DataFrame, result_file is a path
@@ -489,7 +516,7 @@ def mcq_vanilla_eval(model, data, meta, nproc, result_file, dataset_name=None):
     for i in range(len(data)):
         # Dealing with the normal part
         item = data.iloc[i]
-        if item['index'] not in result:
+        if item['index'] not in result or mcq_judge_failed(result[item['index']]):
             items.append(item)
 
     tups = [dict(model=model, item=x, dataset_name=dataset_name) for x in items]
@@ -500,6 +527,7 @@ def mcq_vanilla_eval(model, data, meta, nproc, result_file, dataset_name=None):
         for k, v in zip(keys, res):
             if k not in result:
                 result[k] = v
+    _warn_judge_failures(result, data['index'])
     data['hit'] = [result[i]['hit'] for i in data['index']]
     data['log'] = [result[i]['log'] for i in data['index']]
     if 'GT' in data:
@@ -532,7 +560,7 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
     for i in range(len(data_main)):
         # Dealing with the normal part
         idx = data_main.iloc[i]['index']
-        if idx not in result:
+        if idx not in result or mcq_judge_failed(result[idx]):
             sub_data = data[data['g_index'] == idx]
             data_groups.append(sub_data)
 
@@ -569,6 +597,7 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
                 if k not in result:
                     result[k] = v
 
+    _warn_judge_failures(result, data_main['index'])
     tmp_ext = get_pred_file_format()
     tmp_pth = f'/tmp/{timestr()}.{tmp_ext}'
     dump(data_main, tmp_pth)
