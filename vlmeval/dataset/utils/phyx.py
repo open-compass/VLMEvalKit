@@ -339,16 +339,27 @@ def PhyX_process_line_MC(line):
     ret['gt'] = answers
     ret['pred'] = line['prediction'].strip()
 
-    pattern = r'\b(?:correct|answer|option|Answer|Option|Correct)\b[\s\S]*?([A-D])'
-    match = re.search(pattern, ret['pred'])
+    # A rationale usually enumerates the options before concluding, so anchor
+    # on the LAST trigger word and require the letter to stand alone. The old
+    # re.search with a lazy gap and a bare ([A-D]) returned the first A-D
+    # character after the FIRST trigger word, which on "...each answer choice.
+    # A) 10 N ... the correct option is D." is the "A" of the enumerated
+    # option. The sibling strategy below already takes matches[-1], and the
+    # open-ended PhyX_process_line likewise anchors on the final answer.
+    pattern = r'\b(?:correct|answer|option|Answer|Option|Correct)\b[\s\S]*?\b([A-D])\b'
+    matches = re.findall(pattern, ret['pred'])
+    extracted_answer = matches[-1] if matches else None
+    if extracted_answer is None and re.fullmatch(r'[A-D]', ret['pred'].strip()):
+        # A bare option letter carries no trigger word; get_ICE_MC's example_1
+        # pairs a predicted answer of "A" with judgement 1.
+        extracted_answer = ret['pred'].strip()
 
     if ret['pred'] == FAIL_MSG:
         ret['match'] = 0
         ret["extracted"] = "Fail to Call API"
         return ret
 
-    if match:
-        extracted_answer = match.group(1)
+    if extracted_answer is not None:
         # compare string
         ret["extracted"] = extracted_answer
         if ret['gt'].strip().lower() == extracted_answer.strip().lower():
