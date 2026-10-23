@@ -4,7 +4,7 @@ import string
 
 import pandas as pd
 
-from vlmeval.smp import dump, gpt_key_set, load
+from vlmeval.smp import dump, get_intermediate_file_path, gpt_key_set, load, load_prediction_file
 from vlmeval.smp.log import get_logger
 from ..dataset.utils.judge_util import build_judge, warn_if_judge_model_changed
 from ..dataset.utils.multiple_choice import extract_answer_from_item
@@ -16,7 +16,10 @@ logger = get_logger(__name__)
 
 def MMMU_result_transfer(result_path):
     res = {}
-    result_data = load(result_path)
+    # The prediction file may be .xlsx, .tsv or .json depending on
+    # PRED_FORMAT, and only load_prediction_file normalises all three into a
+    # DataFrame -- a raw load() of a JSON table yields a list of records.
+    result_data = load_prediction_file(result_path)
     mcq = result_data['A'].notna()
     lt = len(result_data)
     for i in range(lt):
@@ -32,7 +35,10 @@ def MMMU_result_transfer(result_path):
             res[line['id']] = infer_prediction
         else:
             res[line['id']] = line['prediction']
-    result_json = result_path.replace('.xlsx', '.json')
+    # Derive the submission path from the real extension rather than assuming
+    # '.xlsx', and give it the '_submission' name MMTBench_result_transfer
+    # already uses, so a .json prediction file is not overwritten in place.
+    result_json = get_intermediate_file_path(result_path, '_submission', 'json')
     dump(res, result_json)
     return result_json
 
