@@ -20,7 +20,7 @@ def get_dimension_rating(data_path, category_type='task_type'):
         if item[category_type] not in result_board:
             result_board[item[category_type]] = [0, 0]
         result_board[item[category_type]][1] += 1
-        if item['score']:
+        if item['score'] == 1:
             result_board[item[category_type]][0] += 1
 
     correct = 0
