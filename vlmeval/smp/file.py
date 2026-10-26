@@ -70,9 +70,8 @@ def localize_df(data, dname, nproc=32):
 
     tups = [(root, im, p) for p, im in zip(img_paths, images)]
 
-    pool = mp.Pool(32)
-    ret = pool.map(decode_img_omni, tups)
-    pool.close()
+    with mp.Pool(nproc) as pool:
+        ret = pool.map(decode_img_omni, tups)
     data.pop('image')
     if 'image_path' not in data:
         data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
@@ -280,7 +279,13 @@ def load(f, fmt=None):
 
     import validators
     if validators.url(f):
-        tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
+        remote = urlsplit(f)
+        filename = osp.basename(remote.path)
+        if remote.query or remote.fragment:
+            stem, extension = osp.splitext(filename)
+            identity = hashlib.sha256(f.encode('utf-8')).hexdigest()
+            filename = f'{stem}_{identity}{extension}'
+        tgt = osp.join(LMUDataRoot(), 'files', filename)
         if not osp.exists(tgt):
             os.makedirs(osp.dirname(tgt), exist_ok=True)
             download_file(f, tgt)
