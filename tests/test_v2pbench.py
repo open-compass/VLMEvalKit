@@ -95,6 +95,32 @@ class TestV2PBenchFramePath(unittest.TestCase):
                     self.assertEqual(image.size, (2, 2))
             return frame_paths
 
+    def test_fps_sampler_uses_canonical_video_path(self):
+        module = load_v2pbench()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            video = root / 'videos/EgoSchema/sample.avi'
+            video.parent.mkdir(parents=True, exist_ok=True)
+            video.touch()
+            dataset = module.V2PBench.__new__(module.V2PBench)
+            dataset.data_root = dataset.video_path = directory
+            dataset.frame_root = str(root / 'cached_frames')
+            dataset.frame_tmpl_fps = 'frame-{}-of-{}-{}fps.jpg'
+            dataset.nframe = 0
+            dataset.fps = 2
+            decord = types.ModuleType('decord')
+            reader = mock.MagicMock()
+            reader.__len__.return_value = 6
+            reader.get_avg_fps.return_value = 3
+            reader.__getitem__.return_value.asnumpy.return_value = np.zeros(
+                (2, 2, 3), dtype=np.uint8)
+            decord.VideoReader = mock.Mock(return_value=reader)
+            with mock.patch.dict(sys.modules, {'decord': decord}):
+                frames = dataset.save_video_frames('EgoSchema/sample.avi')
+            decord.VideoReader.assert_called_once_with(str(video))
+            self.assertEqual(len(frames), 4)
+            self.assertTrue(all(Path(path).is_file() for path in frames))
+
     def test_complete_cache_uses_videos_subdirectory(self):
         module = load_v2pbench()
         dataset = module.V2PBench.__new__(module.V2PBench)
