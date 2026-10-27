@@ -26,6 +26,7 @@ def scorer(request):
 
 @pytest.mark.parametrize('response', [
     'Score: 20', 'Score: 2.8', '2.8', 'Score: 2e3', 'Score: 1.2.3', 'Score: 1..2', 'Score: 2..',
+    '**Score: 2.8.**', '(Score: 20.)', 'Score: 2e3."', '**Score: 1.2.3.**',
 ])
 def test_invalid_text_scores_cannot_be_truncated_or_exceed_the_scale(scorer, response):
     assert scorer.parse_score_from_response(response) is None
@@ -35,6 +36,7 @@ def test_invalid_text_scores_cannot_be_truncated_or_exceed_the_scale(scorer, res
     ('Score: 0', 0.0), ('Score: 2', 2.0), ('Score: 1.5', 1.5),
     ('1.5', 1.5), ('{"score": 2}', 2.0), ('{"Score": 0}', 0.0),
     ('Score: 2.', 2.0), ('Score: 1.5.', 1.5),
+    ('**Score: 2.**', 2.0), ('(Score: 2.)', 2.0), ('Score: 1.5."', 1.5),
 ])
 def test_valid_encodings_keep_the_same_score(scorer, response, expected):
     assert scorer.parse_score_from_response(response) == expected

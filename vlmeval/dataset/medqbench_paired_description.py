@@ -96,8 +96,8 @@ class MedQBench_PairedDescription_Scorer:
             resp = str(resp)
         text = str(resp).strip()
         numeric = r'[-+]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?'
-        # Permit a sentence-ending period, but not another decimal component.
-        match = re.search(rf'Score\s*[:：]\s*({numeric})(?=$|[^\w.]|\.(?=\s|$))', text)
+        # Permit a sentence-ending period before punctuation or formatting.
+        match = re.search(rf'Score\s*[:：]\s*({numeric})(?:\.(?![\w.]))?(?![\w.])', text)
         if match:
             try:
                 score = float(match.group(1))
