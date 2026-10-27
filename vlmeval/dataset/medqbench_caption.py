@@ -117,10 +117,12 @@ class MedQBench_Caption_Scorer:
         if isinstance(resp, dict):
             resp = str(resp)
         text = str(resp).strip()
-        match = re.search(r'Score\s*[:：]\s*([0-2](?:\.\d+)?)', text)
+        numeric = r'[-+]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?'
+        match = re.search(rf'Score\s*[:：]\s*({numeric})(?![\w.])', text)
         if match:
             try:
-                return float(match.group(1))
+                score = float(match.group(1))
+                return score if 0 <= score <= 2 else None
             except Exception:
                 return None
         # Compatible with cases returning only numbers, like "2" or {"score":2}
@@ -139,7 +141,8 @@ class MedQBench_Caption_Scorer:
         match2 = re.fullmatch(r'\s*([0-2](?:\.\d+)?)\s*', text)
         if match2:
             try:
-                return float(match2.group(1))
+                score = float(match2.group(1))
+                return score if 0 <= score <= 2 else None
             except Exception:
                 return None
         return None
