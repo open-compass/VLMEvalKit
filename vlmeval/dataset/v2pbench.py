@@ -100,7 +100,7 @@ Please analyze these images and provide the answer to the question about the vid
                 return False
             data = load(data_file)
             for video_pth in data['video_path']:
-                if not osp.exists(osp.join(pth, video_pth)):
+                if not osp.exists(osp.join(pth, 'videos', video_pth)):
                     return False
             return True
 
@@ -148,6 +148,42 @@ Please analyze these images and provide the answer to the question about the vid
 
     def build_prompt(self, line, video_llm):
         return self.build_prompt_nopack(line, video_llm)
+
+    def save_video_frames(self, video):
+        import decord
+        import portalocker
+        from PIL import Image
+
+        vid_path = osp.join(self.video_path, 'videos', video)
+        if self.fps > 0:
+            vid = decord.VideoReader(vid_path)
+            total_frames = len(vid)
+            video_fps = vid.get_avg_fps()
+            total_duration = total_frames / video_fps
+            required_frames = int(total_duration * self.fps)
+            step_size = video_fps / self.fps
+            indices = [int(i * step_size) for i in range(required_frames)]
+            frame_paths = self.frame_paths_fps(video, len(indices))
+        else:
+            frame_paths = self.frame_paths(video)
+
+        if np.all([osp.exists(p) for p in frame_paths]):
+            return frame_paths
+
+        lock_path = osp.join(self.frame_root, video + '.lock')
+        with portalocker.Lock(lock_path, 'w', timeout=30):
+            if np.all([osp.exists(p) for p in frame_paths]):
+                return frame_paths
+            if self.fps <= 0:
+                vid = decord.VideoReader(vid_path)
+                step_size = len(vid) / (self.nframe + 1)
+                indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
+            images = [vid[i].asnumpy() for i in indices]
+            images = [Image.fromarray(arr) for arr in images]
+            for im, pth in zip(images, frame_paths):
+                if not osp.exists(pth):
+                    im.save(pth)
+        return frame_paths
 
     @staticmethod
     def remove_side_quote(s, syms=[',', '"', "'"]):
