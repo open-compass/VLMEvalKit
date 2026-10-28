@@ -70,7 +70,7 @@ def infer_data_api(
         if osp.exists(v11_pred):
             try:
                 reuse_inds = load('https://opencompass.openxlab.space/utils/mmb_reuse.pkl')
-                data_v11 = load(v11_pred)
+                data_v11 = load_prediction_file(v11_pred)
                 ans_map = {str(x): y for x, y in zip(data_v11['index'], data_v11['prediction']) if x in reuse_inds}
                 dump(ans_map, out_file)
             except Exception as err:

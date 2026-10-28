@@ -118,3 +118,59 @@ def test_api_pipeline_reuses_json_result_file(tmp_path):
         assert pipeline._load_checkpoint('Example') == {'0': 'cached'}
     finally:
         pipeline._shutdown_executors()
+
+
+@pytest.mark.parametrize('pred_format', ['json', 'tsv'])
+@pytest.mark.parametrize('dataset_name', ['MMBench', 'MMBench_CN'])
+def test_mmbench_reuses_v11_predictions_written_by_inference_job(tmp_path, monkeypatch, pred_format, dataset_name):
+    module, modules = _load_inference_module('inference')
+    file = modules['vlmeval.smp.file']
+    monkeypatch.setenv('PRED_FORMAT', pred_format)
+
+    class Dataset:
+
+        def __init__(self, name):
+            self.dataset_name = name
+            self.data = pd.DataFrame({'index': [0, 1], 'question': ['first', 'second']})
+
+        def __len__(self):
+            return len(self.data)
+
+        def build_prompt(self, row):
+            return [{'type': 'text', 'value': row['question']}]
+
+    class Model:
+        is_api = True
+
+        def __init__(self):
+            self.calls = []
+
+        def generate(self, message, dataset):
+            self.calls.append((message, dataset))
+            return 'A' if message[0]['value'] == 'first' else 'B'
+
+    # Generate the V11 file through the same inference job called by run.py;
+    # do not handcraft an external prediction table.
+    model = Model()
+    module.infer_data_job(model, str(tmp_path), 'mock', Dataset(dataset_name + '_V11'))
+    assert len(model.calls) == 2
+    v11_file = tmp_path / f'mock_{dataset_name}_V11.{pred_format}'
+    original_bytes = v11_file.read_bytes()
+    assert file.load_prediction_file(str(v11_file))['prediction'].tolist() == ['A', 'B']
+
+    # Only the remote index-list boundary is replaced; prediction reading,
+    # checkpoint writing and the second inference job are production code.
+    real_load = module.load
+
+    def load(path):
+        if path == 'https://opencompass.openxlab.space/utils/mmb_reuse.pkl':
+            return [0, 1]
+        return real_load(path)
+
+    monkeypatch.setattr(module, 'load', load)
+    model.calls.clear()
+    module.infer_data_job(model, str(tmp_path), 'mock', Dataset(dataset_name))
+    assert model.calls == [], 'V11 answers should be reused instead of calling the API again'
+    result = file.load_prediction_file(str(tmp_path / f'mock_{dataset_name}.{pred_format}'))
+    assert result['prediction'].tolist() == ['A', 'B']
+    assert v11_file.read_bytes() == original_bytes
