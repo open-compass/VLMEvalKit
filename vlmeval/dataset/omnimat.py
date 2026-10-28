@@ -22,8 +22,16 @@ class OmniMat(ImageBaseDataset):
     DEFAULT_JUDGE_MODEL = 'gemini-2.5-flash'
 
     DATASET_URL = {
-        'OmniMat_QA': '',
-        'OmniMat_CAL': '',
+        'OmniMat_QA': (
+            'https://huggingface.co/datasets/'
+            'Summer12138/OmniMat1K-VLMEvalKit/resolve/main/'
+            'vlmevalkit/OmniMat_QA.tsv'
+        ),
+        'OmniMat_CAL': (
+            'https://huggingface.co/datasets/'
+            'Summer12138/OmniMat1K-VLMEvalKit/resolve/main/'
+            'vlmevalkit/OmniMat_CAL.tsv'
+        ),
     }
 
     QA_PROMPT = (
@@ -70,6 +78,16 @@ class OmniMat(ImageBaseDataset):
                     data['image_path'] = data['image_path'].fillna('')
                 _normalize_ids(data)
                 return data
+
+        url = self.DATASET_URL.get(dataset)
+        if url:
+            data = self.prepare_tsv(url)
+            if 'image' in data:
+                data['image'] = data['image'].fillna('')
+            if 'image_path' in data:
+                data['image_path'] = data['image_path'].fillna('')
+            _normalize_ids(data)
+            return data
 
         raise FileNotFoundError(
             f'{dataset}.tsv was not found. Run `python scripts/convert_omnimat.py` '
