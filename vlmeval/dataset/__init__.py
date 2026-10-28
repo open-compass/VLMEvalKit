@@ -144,6 +144,7 @@ from .slidevqa import SlideVQA
 from .sparbench import SparBench
 from .spatial457 import Spatial457
 from .spatial_dise import SpatialDISE
+from .spatial_scene_bench import SpatialSceneBench
 from .spatialvizbench import SpatialVizBench
 from .spbench import SPBench
 from .ssi_bench import SSIBenchDataset
@@ -346,7 +347,7 @@ IMAGE_DATASET = [
 IMAGE_DATASET += [
     MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
     SparBench, SpatialVizBench, SpatialDISE, StareBench, OmniSpatialBench, ERQABench, RoboSpatialBench, RefSpatialBench,  # noqa: E501
-    SPBench, ERIQBench, DA2K
+    SPBench, ERIQBench, DA2K, SpatialSceneBench
 ]
 
 VIDEO_DATASET = [

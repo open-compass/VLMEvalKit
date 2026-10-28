@@ -83,7 +83,7 @@ def extract_lang_content(ans):
 
 
 def extract_answer(ans):
-    matches = re.findall(r"\banswer\s*:\s*([A-Z])\b", ans, re.IGNORECASE)
+    matches = re.findall(r"\banswer\s*:\s*\(?([A-Z])\b", ans, re.IGNORECASE)
     if matches:
         ans = matches[-1]
         return ans

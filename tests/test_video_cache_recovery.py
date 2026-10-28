@@ -35,7 +35,10 @@ def load_dataset_module(name):
     return module
 
 
-CASES = [('v2pbench', 'V2PBench', 'V2P-Bench'), ('vcrbench', 'VCRBench', 'VCR-Bench')]
+CASES = [
+    ('v2pbench', 'V2PBench', 'V2P-Bench', Path('videos')),
+    ('vcrbench', 'VCRBench', 'VCR-Bench', Path('.')),
+]
 
 
 class DownloadRequested(Exception):
@@ -45,7 +48,7 @@ class DownloadRequested(Exception):
 class TestVideoCacheRecovery(unittest.TestCase):
 
     def test_missing_metadata_allows_snapshot_download_to_resume(self):
-        for module_name, class_name, dataset_name in CASES:
+        for module_name, class_name, dataset_name, video_root in CASES:
             with self.subTest(dataset=dataset_name), tempfile.TemporaryDirectory() as directory:
                 module = load_dataset_module(module_name)
                 cls = getattr(module, class_name)
@@ -59,7 +62,7 @@ class TestVideoCacheRecovery(unittest.TestCase):
                 downloader.assert_called_once()
 
     def test_complete_metadata_and_videos_reuse_the_cache(self):
-        for module_name, class_name, dataset_name in CASES:
+        for module_name, class_name, dataset_name, video_root in CASES:
             with self.subTest(dataset=dataset_name), tempfile.TemporaryDirectory() as directory:
                 module = load_dataset_module(module_name)
                 cls = getattr(module, class_name)
@@ -68,7 +71,9 @@ class TestVideoCacheRecovery(unittest.TestCase):
                 table = pd.DataFrame({'video': ['sample.mp4'], 'video_path': ['sample.mp4']})
                 metadata = root / (dataset_name + '.tsv')
                 table.to_csv(metadata, sep='\t', index=False)
-                (root / 'sample.mp4').touch()
+                video = root / video_root / 'sample.mp4'
+                video.parent.mkdir(parents=True, exist_ok=True)
+                video.touch()
                 with mock.patch.object(module, 'get_cache_path', return_value=directory), \
                         mock.patch.object(module, 'load', side_effect=lambda path: pd.read_csv(path, sep='\t')), \
                         mock.patch.object(module, 'modelscope_flag_set', return_value=False, create=True), \
@@ -79,7 +84,7 @@ class TestVideoCacheRecovery(unittest.TestCase):
                 self.assertEqual(result['data_file'], str(metadata))
 
     def test_missing_video_allows_snapshot_download_to_resume(self):
-        for module_name, class_name, dataset_name in CASES:
+        for module_name, class_name, dataset_name, video_root in CASES:
             with self.subTest(dataset=dataset_name), tempfile.TemporaryDirectory() as directory:
                 module = load_dataset_module(module_name)
                 cls = getattr(module, class_name)
