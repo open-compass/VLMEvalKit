@@ -5,8 +5,6 @@ from functools import reduce
 
 import pandas as pd
 
-from vlmeval.smp import load
-
 rotations_all = ['rot0', 'rot90', 'rot180', 'rot270']
 
 
@@ -77,7 +75,7 @@ def rotational_eval(eval_file):
     for rot, path in rotation_files.items():
         filename = os.path.basename(path)
         if os.path.exists(path):
-            df_rot = pd.DataFrame(load(path))[['index', 'category', 'hit']]
+            df_rot = pd.read_excel(path)[['index', 'category', 'hit']]
             df_rot.rename(columns={'hit': f'hit_{rot}'}, inplace=True)
             data.append(df_rot)
         else:

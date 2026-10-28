@@ -3283,7 +3283,7 @@ class TDBenchGrounding(ImageVQADataset):
 
         data['hit'] = scores
         data['category'] = 'visual_grounding'
-        result_file = get_intermediate_file_path(eval_file, f'_{method}_result')
+        result_file = get_intermediate_file_path(eval_file, f'_{method}_result', 'xlsx')
         dump(data, result_file)
 
         metric_name = 'Average Centroid Containment' if method == 'centroid' else 'Average IoU'
