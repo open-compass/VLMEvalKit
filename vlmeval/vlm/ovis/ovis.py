@@ -1,4 +1,9 @@
+import os
+import string
+
+import pandas as pd
 import torch
+from PIL import Image
 from transformers import AutoModelForCausalLM
 
 from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE

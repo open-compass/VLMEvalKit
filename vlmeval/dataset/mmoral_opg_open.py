@@ -32,6 +32,7 @@ class MMOral_OPG_OPEN(MMOralBase):
     """Open-ended MMOral-OPG benchmark (VQA)."""
 
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'mmoral-opg-judge'
 
     DATASET_URL = {
         'MMOral_OPG_OPEN': 'https://huggingface.co/datasets/OralGPT/MMOral-OPG-Bench/resolve/main/MMOral-OPG-Bench-Open-Ended.tsv'  # noqa: E501
@@ -69,7 +70,7 @@ class MMOral_OPG_OPEN(MMOralBase):
         suffix = eval_file.split('.')[-1]
         # Some call sites may not explicitly set `judge_kwargs['model']`,
         # so we fall back to a default name for the judge model.
-        judge_model_name = judge_kwargs.pop('model', 'mmoral-opg-judge')
+        judge_model_name = judge_kwargs.pop('model', cls.DEFAULT_JUDGE_MODEL)
         storage = eval_file.replace(f'.{suffix}', f'_{judge_model_name}.xlsx')
         tmp_file = eval_file.replace(f'.{suffix}', f'_{judge_model_name}.pkl')
         nproc = judge_kwargs.pop('nproc', 4)

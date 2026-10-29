@@ -40,7 +40,7 @@ def concat_images_vlmeval(images, target_size=-1, mode='h', return_image=False):
         new_w, new_h = max(ws), sum(hs)
         dst = Image.new('RGB', (new_w, new_h))
         for i, im in enumerate(ims):
-            dst.paste(im, (sum(ws[:i], 0)))
+            dst.paste(im, (0, sum(hs[:i])))
     if return_image:
         return dst
     else:
@@ -62,13 +62,15 @@ def mmqa_display(question, target_size=-1):
             images = eval(images)
         else:
             images = [images]
-    else:
+    elif 'image_path' in question:
         images = question.pop('image_path')
         if images[0] == '[' and images[-1] == ']':
             images = eval(images)
         else:
             images = [images]
         images = [encode_image_file_to_base64(x) for x in images]
+    else:
+        images = []
 
     idx = question.pop('index', 'XXX')
     print(f'INDEX: {idx}')
@@ -156,10 +158,14 @@ def encode_image_file_to_base64(image_path, target_size=-1, fmt='JPEG', max_file
 def decode_base64_to_image(base64_string, target_size=-1):
     image_data = base64.b64decode(base64_string)
     image = Image.open(io.BytesIO(image_data))
-    if image.mode in ('RGBA', 'P', 'LA'):
+    if image.mode in ('I;16', 'I;16L', 'I;16B', 'I;16N'):
+        image = image.convert('I')
+    elif image.mode not in ('1', 'L', 'I', 'RGB'):
         image = image.convert('RGB')
     if target_size > 0:
         image.thumbnail((target_size, target_size))
+    if image.mode == 'I':
+        image = image.convert('I;16')
     return image
 
 

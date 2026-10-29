@@ -6,7 +6,7 @@ import pandas as pd
 
 from vlmeval.smp import dump, gpt_key_set, load
 from vlmeval.smp.log import get_logger
-from ..dataset.utils.judge_util import build_judge
+from ..dataset.utils.judge_util import build_judge, warn_if_judge_model_changed
 from ..dataset.utils.multiple_choice import extract_answer_from_item
 from .matching_util import can_infer
 from .mp_util import track_progress_rich
@@ -43,7 +43,11 @@ def MMTBench_result_transfer(eval_file, dataset='default', **judge_kwargs):
     rd.seed(2680)
     suffix = eval_file.split('.')[-1]
     model = judge_kwargs['model']
-    assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+    warn_if_judge_model_changed(
+        model,
+        ['chatgpt-0125', 'exact_matching', 'gpt-4-0125'],
+        'MMTBench result transfer',
+    )
     name_str_map = {
         'chatgpt-0125': 'openai',
         'gpt-4-0125': 'gpt4'

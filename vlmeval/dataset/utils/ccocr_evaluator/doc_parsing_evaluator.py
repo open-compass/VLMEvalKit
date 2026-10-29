@@ -1,13 +1,13 @@
 import re
 from collections import deque
 
-import nltk
+import editdistance
 from apted import APTED, Config
 from apted.helpers import Tree
 from tqdm import tqdm
 
 # local import
-from .common import BaseMetric
+from .common import BaseMetric, convert_to_halfwidth
 
 # 移除指定的LaTeX命令
 patterns = [
@@ -19,6 +19,41 @@ patterns = [
     r'\\end\{document\}',
     r'\\noindent'
 ]
+
+FENCED_HTML_RE = re.compile(
+    r'```html\s*(.*?)```',
+    flags=re.IGNORECASE | re.DOTALL,
+)
+TABLE_HTML_RE = re.compile(
+    r'<table\b.*?</table\s*>',
+    flags=re.IGNORECASE | re.DOTALL,
+)
+OPENING_FENCE_RE = re.compile(
+    r'^\s*```html\s*',
+    flags=re.IGNORECASE,
+)
+
+
+def extract_table_html(response_text):
+    """Extract one HTML table without damaging valid tag attributes."""
+    response_text = response_text.strip()
+
+    fenced_match = FENCED_HTML_RE.search(response_text)
+    if fenced_match:
+        response_text = fenced_match.group(1).strip()
+    else:
+        response_text = OPENING_FENCE_RE.sub('', response_text)
+        response_text = response_text.replace('```', '').strip()
+
+    table_match = TABLE_HTML_RE.search(response_text)
+    if table_match:
+        return table_match.group(0)
+    return response_text
+
+
+def normalize_text_whitespace(text):
+    """Remove whitespace from text nodes while preserving HTML syntax."""
+    return re.sub(r'\s+', '', text or '')
 
 
 class TableTree(Tree):
@@ -67,7 +102,9 @@ class CustomConfig(Config):
             return 1.0
         if node1.tag == "td":
             if node1.content or node2.content:
-                return nltk.edit_distance(node1.content, node2.content) / max(len(node1.content), len(node2.content))
+                return editdistance.eval(node1.content, node2.content) / max(
+                    len(node1.content), len(node2.content)
+                )
         return 0.0
 
 
@@ -90,17 +127,16 @@ class TEDS(object):
         """Tokenizes table cells"""
         self.__tokens__.append("<%s>" % node.tag)
         if node.text is not None:
-            self.__tokens__ += list(node.text)
+            self.__tokens__ += list(normalize_text_whitespace(node.text))
         for n in node.getchildren():
             self.tokenize(n)
         if node.tag != "unk":
             self.__tokens__.append("</%s>" % node.tag)
         if node.tag != "td" and node.tail is not None:
-            self.__tokens__ += list(node.tail)
+            self.__tokens__ += list(normalize_text_whitespace(node.tail))
 
     def load_html_tree(self, node, parent=None):
         """Converts HTML tree to the format required by apted"""
-        global __tokens__
         if node.tag == "td":
             if self.structure_only:
                 cell = []
@@ -135,23 +171,29 @@ class TEDS(object):
             return 0.0
 
         parser = html.HTMLParser(remove_comments=True, encoding="utf-8")
-        pred = html.fromstring(pred, parser=parser)
-        true = html.fromstring(true, parser=parser)
-        if pred.xpath("body/table") and true.xpath("body/table"):
-            pred = pred.xpath("body/table")[0]
-            true = true.xpath("body/table")[0]
+        try:
+            pred = html.fromstring(pred, parser=parser)
+            true = html.fromstring(true, parser=parser)
+        except (etree.ParserError, ValueError):
+            return 0.0
+
+        pred_tables = pred.xpath("//table")
+        true_tables = true.xpath("//table")
+        if pred_tables and true_tables:
+            pred = pred_tables[0]
+            true = true_tables[0]
             if self.ignore_nodes:
                 etree.strip_tags(pred, *self.ignore_nodes)
                 etree.strip_tags(true, *self.ignore_nodes)
             n_nodes_pred = len(pred.xpath(".//*"))
             n_nodes_true = len(true.xpath(".//*"))
-            n_nodes = max(n_nodes_pred, n_nodes_true)
+            n_nodes = max(n_nodes_pred, n_nodes_true, 1)
             tree_pred = self.load_html_tree(pred)
             tree_true = self.load_html_tree(true)
             distance = APTED(
                 tree_pred, tree_true, CustomConfig()
             ).compute_edit_distance()
-            return 1.0 - (float(distance) / n_nodes)
+            return max(0.0, 1.0 - (float(distance) / n_nodes))
         else:
             return 0.0
 
@@ -197,7 +239,7 @@ class ParsingEvaluator(BaseMetric):
             pred = pred.replace(' ', '').replace('\n', '')
             gt = gt.replace(' ', '').replace('\n', '')
 
-            edit_dist = nltk.edit_distance(pred, gt) / max(len(pred), len(gt))
+            edit_dist = editdistance.eval(pred, gt) / max(len(pred), len(gt))
             results.append(1 - edit_dist)
 
         score = sum(results) / len(results)
@@ -215,14 +257,8 @@ class ParsingEvaluator(BaseMetric):
             for pattern in patterns:
                 pred = re.sub(pattern, '', pred)
 
-            try:
-                pred = pred.split('```html')[1]
-            except Exception:
-                pass
-
-            pred = pred.replace('```', '')
-            pred = pred.replace(' ', '').replace('\n', '').replace('，', ',')
-            gt = gt.replace(' ', '').replace('\n', '')
+            pred = convert_to_halfwidth(extract_table_html(pred))
+            gt = convert_to_halfwidth(extract_table_html(gt))
 
             pred_html = '<html><body>{}</body></html>'.format(pred)
             gt_html = '<html><body>{}</body></html>'.format(gt)
@@ -244,9 +280,14 @@ class ParsingEvaluator(BaseMetric):
                 pred = pred.replace("\n", " ").replace("```latex", "").replace("```", "").replace("\t", " ").replace(" ", "")  # noqa: E501
                 gt = gt.replace(" ", "")
             elif op_name == 'molecular':
-                pred = pred.replace("\n", "").replace(" ", "").replace("<smiles>", "").replace("</smiles>", "")
+                pred = (
+                    pred.replace("\n", "")
+                    .replace(" ", "")
+                    .replace("<smiles>", "")
+                    .replace("</smiles>", "")
+                )
                 gt = gt.replace(" ", "")
-            edit_dist = nltk.edit_distance(pred, gt) / max(len(pred), len(gt))
+            edit_dist = editdistance.eval(pred, gt) / max(len(pred), len(gt))
             results.append(1 - edit_dist)
         score = sum(results) / len(results)
         return score

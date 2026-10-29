@@ -61,6 +61,8 @@ def _xstest_judge_llm(model, q, pred):
 
 class XSTestDataset(TextBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     MODALITY = 'TEXT'
     DATASET_URL = {'XSTest': 'https://opencompass.openxlab.space/utils/VLMEval/XSTest.tsv'}
     DATASET_MD5 = {'XSTest': 'd33f7ff1bc362c2b8d8deb8021959f3c'}
@@ -78,7 +80,7 @@ class XSTestDataset(TextBaseDataset):
         data = load(eval_file)
         assert 'prediction' in data and 'answer' in data and 'question' in data
 
-        model_name = judge_kwargs.pop('model', 'gpt-4o-mini')
+        model_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         nproc = judge_kwargs.pop('nproc', 4)
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}_judge', 'pkl')
 

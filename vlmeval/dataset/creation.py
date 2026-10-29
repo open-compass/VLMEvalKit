@@ -648,6 +648,8 @@ def merge_dual(raw, raw_dual, dataset_name):
 
 
 class CreationMMBenchDataset(ImageBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-0806'
+
 
     TYPE = 'CreationVQA'
     DATASET_URL = {
@@ -706,7 +708,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
         score_file = get_intermediate_file_path(eval_file, '_score')
         tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
 
-        model = judge_kwargs.pop('model', 'gpt-4o-0806')
+        model = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         model_name = model.split('/')[-1] if '/' in model else model
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}', 'pkl')
 

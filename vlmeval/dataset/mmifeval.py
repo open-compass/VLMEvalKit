@@ -9,6 +9,7 @@ from vlmeval.smp import dump, get_intermediate_file_path, get_logger, load, toli
 from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
+from .utils.mmif import function_and_compare
 
 logger = get_logger(__name__)
 
@@ -293,7 +294,7 @@ def judge_one_item(item, retry=3):
                     score = 1.0
                     # breakpoint()
                     for func_dict in constraint["judge"]["verify_funcs"]:
-                        func = globals()[func_dict["func"]]
+                        func = getattr(function_and_compare, func_dict["func"])
                         # use * to unpack the list, ** is used for dict
                         judge_result = func(str(item["prediction"]), *func_dict["params"])
                         # breakpoint()
@@ -332,6 +333,8 @@ def judge_one_item(item, retry=3):
 
 class MMIFEval(ImageBaseDataset):
     TYPE = "VQA"
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
 
     # TODO: add dataset url and md5
     DATASET_URL = {"MM-IFEval": 'https://opencompass.openxlab.space/utils/VLMEval/MM-IFEval.tsv'}

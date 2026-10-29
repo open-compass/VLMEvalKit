@@ -55,6 +55,8 @@ def _flames_judge(model, dimension, question, response):
 
 class FlamesDataset(TextBaseDataset):
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     MODALITY = 'TEXT'
     DATASET_URL = {'Flames': 'https://opencompass.openxlab.space/utils/VLMEval/Flames.tsv'}
     DATASET_MD5 = {'Flames': 'b567b6c96717c9e6c8bb9b458a85635a'}
@@ -72,7 +74,7 @@ class FlamesDataset(TextBaseDataset):
         data = load(eval_file)
         assert 'prediction' in data and 'question' in data
 
-        model_name = judge_kwargs.pop('model', 'gpt-4o-mini')
+        model_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         nproc = judge_kwargs.pop('nproc', 4)
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}_judge', 'pkl')
 

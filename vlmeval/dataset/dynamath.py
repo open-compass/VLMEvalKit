@@ -112,6 +112,8 @@ def DynaMath_auxeval(model, line):
 class Dynamath(ImageBaseDataset):
 
     TYPE = 'VQA'
+
+    DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
     DATASET_URL = {
         'DynaMath': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath.tsv',
         'DynaMath_noprompt': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath.tsv',
@@ -164,7 +166,7 @@ Example of expected JSON response format:
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        judge_name = judge_kwargs.pop('model', 'gpt-4o-mini')
+        judge_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
 
         model = build_judge(model=judge_name, **judge_kwargs)
 

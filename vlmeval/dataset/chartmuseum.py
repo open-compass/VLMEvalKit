@@ -154,7 +154,7 @@ class ChartMuseum(ImageBaseDataset):
         assert len(id_list) == len(pred_answers)
 
         category_flags = defaultdict(list)
-        judge_model_name = judge_kwargs.pop('judge_model', 'gpt-4.1-mini-2025-04-14')
+        judge_model_name = judge_kwargs.pop('model', 'gpt-4.1-mini-2025-04-14')
         nproc = judge_kwargs.pop('nproc', 4)
         if judge_model_name != 'gpt-4.1-mini-2025-04-14':
             logger.warning("Recommend to use gpt-4.1-mini-2025-04-14 as judge model for "

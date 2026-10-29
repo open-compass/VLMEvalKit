@@ -123,7 +123,7 @@ python run.py --data MMBench_Video_1fps_pack --model GPT4o
 
 在VLMEvalkit中，每个`dataset`类都包含一个名为`build_prompt()`的函数，用于构建输入问题的格式。不同的benchmark可以选择自定义`build_prompt()`函数，也可以使用默认的实现。
 
-例如，在处理默认的[多选题/Multi-Choice QA]([vlmeval/dataset/image_mcq.py](https://github.com/open-compass/VLMEvalKit/blob/43af13e052de6805a8b08cd04aed5e0d74f82ff5/vlmeval/dataset/image_mcq.py#L164))时，`ImageMCQDataset.build_prompt()`类会将`hint`、`question`、`options`等元素（若数据集中包含）组合成一个完整的问题格式，如下所示：
+例如，在处理默认的[多选题/Multi-Choice QA](https://github.com/open-compass/VLMEvalKit/blob/43af13e052de6805a8b08cd04aed5e0d74f82ff5/vlmeval/dataset/image_mcq.py#L164)时，`ImageMCQDataset.build_prompt()`类会将`hint`、`question`、`options`等元素（若数据集中包含）组合成一个完整的问题格式，如下所示：
 ```
 HINT
 QUESTION
