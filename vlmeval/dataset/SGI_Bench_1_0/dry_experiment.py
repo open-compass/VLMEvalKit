@@ -335,7 +335,7 @@ def replace_function(main_code, new_code, function_name):
 
 class SGI_Bench_Dry_Experiment(TextBaseDataset):
     TYPE = 'QA'
-    DEFAULT_JUDGE_MODEL = 'o4-mini'
+    DEFAULT_JUDGE_MODEL = 'gpt-5.6-terra'
 
     @classmethod
     def supported_datasets(cls):
