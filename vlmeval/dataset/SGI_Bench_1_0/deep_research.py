@@ -106,7 +106,7 @@ provided below. Do not include any other text or comments.
 
 class SGI_Bench_Deep_Research(TextBaseDataset):
     TYPE = 'QA'
-    DEFAULT_JUDGE_MODEL = 'o4-mini'
+    DEFAULT_JUDGE_MODEL = 'gpt-5.6-terra'
 
     @classmethod
     def supported_datasets(cls):
