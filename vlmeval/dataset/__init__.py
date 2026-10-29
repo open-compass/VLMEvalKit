@@ -70,6 +70,7 @@ from .image_vqa import (BMMR, CRPE, LENS, MMNIAH, AyaVisionBench, CoreCognition,
                         QSpatial, SeePhys, TableVQABench, TallyQA, TDBenchGrounding, VGRPBench,
                         VizWiz, VLMsAreBiased, VTCBench, WildDocBenchmark, ZEROBench)
 from .image_yorn import ImageYORNDataset
+from .imgmt import ImgMT
 from .longdocurl import LongDocURL
 from .longvideobench import LongVideoBench
 from .m3oralbench import M3oralBenchDataset
@@ -309,6 +310,7 @@ class ConcatDataset(ImageBaseDataset):
 
 # Add new supported dataset class here
 IMAGE_DATASET = [
+    ImgMT,
     VisualOverload,
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
