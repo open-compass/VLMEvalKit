@@ -453,12 +453,17 @@ class ETBench(VideoBaseDataset):
     the rules of the official evaluation script. The 14 headline numbers are accuracy for referring (RAR, ECA,
     RVQ), F1 for grounding (TVG, EPM, TAL, EVS, VHD), F1 and sentence similarity for dense captioning (DVC,
     SLC) and recall for complex understanding (TEM, GVQ). ``ETBench-Subset`` is the official 470-sample subset.
+    The ``_vid`` presets use the benchmark's second prompt style (``etbench_vid_v1.0.json``), where timestamps in
+    the prompt are ``<vid>`` tokens, for models that read timestamps from special tokens, such as E.T. Chat.
     """
 
     TYPE = 'Video-Temporal-Grounding'
     DEFAULT_JUDGE_MODEL = None
     HF_REPO_ID = 'PolyU-ChenLab/ETBench'
     ANNOTATION_FILE = 'annotations/etbench_txt_v1.0.json'
+    # The official second prompt style, for models that read timestamps from special tokens (such as E.T. Chat):
+    # timestamps in the prompt are written as <vid> tokens, whose values are in `src`. Kept as `question_vid`.
+    VID_ANNOTATION_FILE = 'annotations/etbench_vid_v1.0.json'
     SUBSET_FILE = 'evaluation/subset.json'
     # Videos in the official archives whose timestamps are broken, so that decord cannot seek in them and loading
     # the video fails. They are re-encoded once after extraction, frame for frame at the same frame rate; the
@@ -469,15 +474,22 @@ class ETBench(VideoBaseDataset):
     def supported_datasets(cls):
         return ['ETBench', 'ETBench-Subset']
 
-    def __init__(self, dataset='ETBench', pack=False, nframe=0, fps=1.0):
+    def __init__(self, dataset='ETBench', pack=False, nframe=0, fps=1.0, prompt_style='txt'):
+        # 'txt': timestamps in the prompt are written in seconds. 'vid': the official second style, for video models
+        # that read timestamps from special tokens; the text item then also carries the task and the values (`src`).
+        if prompt_style not in ('txt', 'vid'):
+            raise ValueError(f"prompt_style must be 'txt' or 'vid', got {prompt_style!r}")
+        self.prompt_style = prompt_style
         self._video_meta = {}
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
     # ------------------------------------------------------------------ data
     @classmethod
-    def _build_tsv(cls, annotation_file, subset_file, data_file, subset=False):
+    def _build_tsv(cls, annotation_file, vid_annotation_file, subset_file, data_file, subset=False):
         with open(annotation_file, 'r', encoding='utf-8') as f:
             annos = json.load(f)
+        with open(vid_annotation_file, 'r', encoding='utf-8') as f:
+            vid_annos = {(a['task'], a['source'], a['idx']): a for a in json.load(f)}
         if subset:
             with open(subset_file, 'r', encoding='utf-8') as f:
                 keep = json.load(f)
@@ -492,12 +504,22 @@ class ETBench(VideoBaseDataset):
                     source=a['source'],
                     video=osp.splitext(a['video'])[0],
                     question=a['q'],
+                    question_vid=vid_annos[(a['task'], a['source'], a['idx'])]['q'],
                     duration=float(a['duration']),
                     **{k: json.dumps(a[k]) if k in a else '' for k in ('tgt', 'p', 'o', 'g', 'src')},
+                    # ECA options are time spans; the vid-style file writes them without " seconds".
+                    o_vid=json.dumps(vid_annos[(a['task'], a['source'], a['idx'])]['o']) if 'o' in a else '',
                 ))
         tmp = str(data_file) + '.tmp.tsv'
         dump(pd.DataFrame(records), tmp)
         os.replace(tmp, data_file)
+
+    @staticmethod
+    def _tsv_up_to_date(data_file, annotation_files):
+        if not data_file.exists() or any(f.stat().st_mtime > data_file.stat().st_mtime for f in annotation_files):
+            return False
+        columns = pd.read_csv(data_file, sep='\t', nrows=0).columns  # a file built before these columns existed
+        return 'question_vid' in columns and 'o_vid' in columns
 
     @staticmethod
     def _missing_videos(video_root, data_file):
@@ -517,13 +539,14 @@ class ETBench(VideoBaseDataset):
         from huggingface_hub import hf_hub_download
         root = Path(LMUDataRoot()) / 'ETBench'
         root.mkdir(parents=True, exist_ok=True)
-        for name in (self.ANNOTATION_FILE, self.SUBSET_FILE):
+        for name in (self.ANNOTATION_FILE, self.VID_ANNOTATION_FILE, self.SUBSET_FILE):
             if not (root / name).exists():
                 hf_hub_download(repo_id=self.HF_REPO_ID, repo_type='dataset', filename=name, local_dir=str(root))
-        annotation_file = root / self.ANNOTATION_FILE
+        annotation_file, vid_annotation_file = root / self.ANNOTATION_FILE, root / self.VID_ANNOTATION_FILE
         data_file = root / f'{dataset}.tsv'
-        if not data_file.exists() or annotation_file.stat().st_mtime > data_file.stat().st_mtime:
-            self._build_tsv(annotation_file, root / self.SUBSET_FILE, data_file, subset=dataset.endswith('-Subset'))
+        if not self._tsv_up_to_date(data_file, (annotation_file, vid_annotation_file)):
+            self._build_tsv(annotation_file, vid_annotation_file, root / self.SUBSET_FILE, data_file,
+                            subset=dataset.endswith('-Subset'))
 
         video_root = root / 'videos'
         missing = self._missing_videos(video_root, data_file)
@@ -592,7 +615,13 @@ class ETBench(VideoBaseDataset):
                 item['fps'] = self.fps
             elif self.nframe > 0:
                 item['nframes'] = self.nframe
+            if self.prompt_style == 'vid':
+                src = line['src'] if isinstance(line['src'], str) and line['src'] else None
+                return [item, dict(type='text', value=line['question_vid'], task=line['task'],
+                                   src=json.loads(src) if src else None)]
             return [item, dict(type='text', value=line['question'])]
+        if self.prompt_style == 'vid':
+            raise ValueError('The vid prompt style is for video models that take the whole video.')
         frames = self.save_video_frames(video)
         message = tg.frames_with_timestamps(frames, self._frame_times(video))
         message.append(dict(type='text', value=FRAMES_PREFIX + line['question']))
@@ -621,6 +650,10 @@ class ETBench(VideoBaseDataset):
         data = load(eval_file)
         if isinstance(data, list):
             data = pd.DataFrame(data)
+        if getattr(self, 'prompt_style', 'txt') == 'vid' and 'o_vid' in data:
+            # A choice answer with a wrong or missing letter is matched to the most similar option text, so answers
+            # to vid-style prompts are scored with that file's options, as the official script does.
+            data = data.assign(o=data['o_vid'])
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             per_source, headline = etbench_metrics(self._samples(data))

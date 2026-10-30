@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from vlmeval.dataset import etbench as etb
-from vlmeval.smp import dump
+from vlmeval.smp import dump, load
 
 
 @pytest.mark.parametrize('answer, expected', [
@@ -97,3 +97,66 @@ def test_broken_videos_are_repaired_once(tmp_path, monkeypatch):
     dataset._repair_videos(tmp_path, data_file)
     dataset._repair_videos(tmp_path, data_file)  # the kept original marks the video as repaired
     assert calls == ['cooking.mp4']
+
+
+def test_build_tsv_keeps_both_prompt_styles(tmp_path):
+    txt = [dict(idx=0, task='eca', source='a', video='a/v0.mp4', duration=10, q='around 4.6 seconds', src=[4.574],
+                p=1, o=['1.0 - 2.0 seconds', '3.0 - 4.0 seconds']),
+           dict(idx=0, task='tvg', source='b', video='b/v1.mp4', duration=20, q='Answer in seconds.', tgt=[1, 2])]
+    vid = [dict(a, q=a['q'].replace('4.6 seconds', '<vid>')) for a in txt]
+    vid[0]['o'] = ['1.0 - 2.0', '3.0 - 4.0']
+    vid[1]['q'] = 'Answer.'
+    for name, annos in (('txt.json', txt), ('vid.json', vid), ('subset.json', dict(tvg=dict(b=[0])))):
+        (tmp_path / name).write_text(json.dumps(annos))
+    data_file = tmp_path / 'ETBench.tsv'
+    etb.ETBench._build_tsv(tmp_path / 'txt.json', tmp_path / 'vid.json', tmp_path / 'subset.json', data_file)
+    data = load(str(data_file))
+    assert list(data['question']) == ['around 4.6 seconds', 'Answer in seconds.']
+    assert list(data['question_vid']) == ['around <vid>', 'Answer.']
+    assert json.loads(data['src'][0]) == [4.574]
+    assert json.loads(data['o'][0]) == txt[0]['o'] and json.loads(data['o_vid'][0]) == vid[0]['o']
+    annotations = (tmp_path / 'txt.json', tmp_path / 'vid.json')
+    assert etb.ETBench._tsv_up_to_date(data_file, annotations)
+    dump(data.drop(columns=['question_vid']), str(data_file))  # a file built before the column existed
+    assert not etb.ETBench._tsv_up_to_date(data_file, annotations)
+
+    subset_file = tmp_path / 'ETBench-Subset.tsv'
+    etb.ETBench._build_tsv(tmp_path / 'txt.json', tmp_path / 'vid.json', tmp_path / 'subset.json', subset_file,
+                           subset=True)
+    assert list(load(str(subset_file))['question_vid']) == ['Answer.']
+
+
+def test_vid_prompt_style():
+    dataset = object.__new__(etb.ETBench)
+    dataset.data_root, dataset.fps, dataset.nframe = '/videos', 1.0, 0
+    line = pd.Series(dict(video='a/v0', task='rar', question='around 4.6 seconds', question_vid='around <vid>',
+                          src='[4.574]'))
+    dataset.prompt_style = 'txt'
+    assert dataset.build_prompt(line, video_llm=True)[1] == dict(type='text', value='around 4.6 seconds')
+    dataset.prompt_style = 'vid'
+    video, text = dataset.build_prompt(line, video_llm=True)
+    assert video == dict(type='video', value='/videos/a/v0.mp4', fps=1.0)
+    assert text == dict(type='text', value='around <vid>', task='rar', src=[4.574])
+    no_src = dataset.build_prompt(pd.concat([line.drop('src'), pd.Series(dict(src=float('nan')))]), video_llm=True)
+    assert no_src[1]['src'] is None  # an empty cell is read back as NaN
+    with pytest.raises(ValueError):
+        dataset.build_prompt(line, video_llm=False)
+
+
+class SameWords:
+    def best_option(self, answer, options):  # the option that shares the most words with the answer
+        return max(range(len(options)), key=lambda i: len(set(answer.split()) & set(options[i].split())))
+
+
+def test_vid_style_is_scored_with_its_own_options(tmp_path, monkeypatch):
+    monkeypatch.setattr(etb, 'SentenceSimilarity', SameWords)
+    rows = [dict(index=0, idx=0, video='v0', question='q', duration=30.0, task='eca', source='charades_sta',
+                 prediction='Best Option: (A) red', p=1, o=json.dumps(['red', 'blue']),
+                 o_vid=json.dumps(['green', 'red']), tgt='', g='', src='')]
+    eval_file = tmp_path / 'model_ETBench_1fps_vid.xlsx'
+    dump(pd.DataFrame(rows), str(eval_file))
+    dataset = object.__new__(etb.ETBench)
+    dataset.prompt_style = 'txt'
+    assert dataset.evaluate(str(eval_file))['ECA_Acc'] == 0.0
+    dataset.prompt_style = 'vid'  # the wrong letter is matched to the most similar option text: "red"
+    assert dataset.evaluate(str(eval_file))['ECA_Acc'] == 100.0

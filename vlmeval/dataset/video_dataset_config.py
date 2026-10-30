@@ -481,6 +481,9 @@ etbench_dataset = {
     'ETBench_2fps': _video_spec(ETBench, dataset='ETBench', fps=2.0),
     'ETBench-Subset_1fps': _video_spec(ETBench, dataset='ETBench-Subset', fps=1.0),
     'ETBench-Subset_2fps': _video_spec(ETBench, dataset='ETBench-Subset', fps=2.0),
+    # The official second prompt style, for models that read timestamps from special tokens (E.T. Chat).
+    'ETBench_1fps_vid': _video_spec(ETBench, dataset='ETBench', fps=1.0, prompt_style='vid'),
+    'ETBench-Subset_1fps_vid': _video_spec(ETBench, dataset='ETBench-Subset', fps=1.0, prompt_style='vid'),
 }
 
 dataset_groups = [
