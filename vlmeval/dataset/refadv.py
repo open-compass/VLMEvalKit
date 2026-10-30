@@ -11,15 +11,19 @@ import json
 import os
 import os.path as osp
 import re
+import warnings
 
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, toliststr
+from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, load, md5, toliststr
 from .image_base import ImageBaseDataset
 
 HF_REPO_ID = 'dddraxxx/ref-adv-s'
 HF_FILENAME = 'data/train-00000-of-00001.parquet'
+HF_REVISION = 'e7a53e352b5885b8228fc6afa8645ab78e76d5f1'
+HF_PARQUET_MD5 = '608345e0dd0bc616781f28c22d93c915'
+REFADV_TSV_MD5 = 'a390ac803cd953f59f1a7c9a06eff16b'
 
 # Official `prompts.direct` in configs/qwen.yaml. The literal `<image>` is part of the
 # official text prompt and is kept as-is.
@@ -75,7 +79,12 @@ def build_refadv_tsv(data_path):
     """Convert the HF parquet of Ref-Adv-s into a VLMEvalKit TSV."""
     from huggingface_hub import hf_hub_download
 
-    parquet = hf_hub_download(HF_REPO_ID, HF_FILENAME, repo_type='dataset')
+    parquet = hf_hub_download(HF_REPO_ID, HF_FILENAME, repo_type='dataset', revision=HF_REVISION)
+    parquet_md5 = md5(parquet)
+    if parquet_md5 != HF_PARQUET_MD5:
+        raise ValueError(
+            f'Ref-Adv-s parquet MD5 mismatch: expected {HF_PARQUET_MD5}, got {parquet_md5} ({parquet})'
+        )
     df = pd.read_parquet(parquet)
     rows = []
     for r in df.itertuples(index=False):
@@ -226,7 +235,7 @@ class RefAdvDataset(ImageBaseDataset):
 
     # No public TSV: the TSV is built from the HF parquet on first use
     DATASET_URL = {'Ref-Adv-s': ''}
-    DATASET_MD5 = {}
+    DATASET_MD5 = {'Ref-Adv-s': REFADV_TSV_MD5}
 
     # The official repo sets the coordinate format per model: norm_1000_xyxy for
     # Qwen3-VL / Qwen3.5 and abs_xyxy for Qwen2.5-VL. Override with REFADV_BOX_FORMAT.
@@ -234,9 +243,21 @@ class RefAdvDataset(ImageBaseDataset):
 
     def load_data(self, dataset):
         data_path = osp.join(LMUDataRoot(), f'{dataset}.tsv')
-        if not osp.exists(data_path):
+        expected_md5 = self.DATASET_MD5[dataset]
+        rebuild = not osp.exists(data_path)
+        if not rebuild and md5(data_path) != expected_md5:
+            warnings.warn(
+                f'Ref-Adv-s TSV MD5 mismatch at {data_path}; rebuilding from the pinned HF parquet.'
+            )
+            rebuild = True
+        if rebuild:
             os.makedirs(LMUDataRoot(), exist_ok=True)
             build_refadv_tsv(data_path)
+            actual_md5 = md5(data_path)
+            if actual_md5 != expected_md5:
+                raise ValueError(
+                    f'Ref-Adv-s TSV MD5 mismatch after rebuild: expected {expected_md5}, got {actual_md5}'
+                )
         self.data_path = data_path
         return load(data_path)
 
