@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from vlmeval.config import supported_VLM
 from vlmeval.smp import (dump, get_pred_file_path, get_rank_and_world_size, load,
-                         resolve_dataset_alias_name)
+                         load_prediction_file, resolve_dataset_alias_name)
 from vlmeval.utils import track_progress_rich
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -70,7 +70,7 @@ def infer_data_api(
     if osp.exists(out_file):
         res = load(out_file)
         if retry_failed:
-            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+            res = {k: v for k, v in res.items() if FAIL_MSG not in str(v)}
 
     structs = [s for i, s in zip(indices, structs) if str(i) not in res]
     indices = [i for i in indices if str(i) not in res]
@@ -202,7 +202,7 @@ def infer_data_job_mt(
     prev_file = f'{work_dir}/{model_name}_{dataset_alias_name}_PREV.pkl'
     if osp.exists(result_file):
         if rank == 0:
-            data = load(result_file)
+            data = load_prediction_file(result_file)
             results = {k: v for k, v in zip(data['index'], data['prediction'])}
             if retry_failed:
                 results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}

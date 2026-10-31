@@ -31,6 +31,7 @@ from .dream import DREAM
 from .dsrbench import DSRBench
 from .dude import DUDE
 from .dynamath import Dynamath
+from .e3vqa import E3VQA
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .embspatialbench import EmbSpatialBench
 from .emma import EMMADataset
@@ -106,6 +107,7 @@ from .moviechat1k import MovieChat1k
 from .mrarebench import MRareBenchDiagnosis, MRareBenchEvidenceVerif
 from .mssbench import MSSBenchDataset
 from .mvbench import MVBench, MVBench_MP4
+from .mvh_bench import MVHBench
 from .mvu_eval import MVUEval
 from .NPMM import NPMM
 from .oceanocr import OceanOCRBench
@@ -142,6 +144,7 @@ from .slidevqa import SlideVQA
 from .sparbench import SparBench
 from .spatial457 import Spatial457
 from .spatial_dise import SpatialDISE
+from .spatial_scene_bench import SpatialSceneBench
 from .spatialvizbench import SpatialVizBench
 from .spbench import SPBench
 from .ssi_bench import SSIBenchDataset
@@ -151,6 +154,7 @@ from .superchem import SUPERChemDataset
 from .tamperbench import MVTamperBench
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
 from .text_mcq import CustomTextMCQDataset, MedXpertQAText, TextMCQDataset
+from .timelens_bench import TimeLensBench
 from .uni_svg import UniSVG
 from .utils import DEBUG_MESSAGE, build_judge, extract_answer_from_item, prefetch_answer
 from .v2pbench import V2PBench
@@ -161,12 +165,14 @@ from .video_concat_dataset import ConcatVideoDataset
 from .video_eval_pro import VideoEvalPro_MCQ, VideoEvalPro_OpenEnded
 from .video_holmes import Video_Holmes
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
+from .video_odyssey import VideoOdysseyV
 from .videomme import VideoMME
 from .videommev2 import VideoMMEv2
 from .videommmu import VideoMMMU
 from .videott import VideoTT
 from .viewspatialbench import ViewSpatialBench
 from .visfactor import VisFactor
+from .visualoverload import VisualOverload
 from .vl_rewardbench import VLRewardBench
 from .vladbench import VLADBench
 from .vlm2bench import VLM2Bench
@@ -174,6 +180,7 @@ from .vlmbias import VLMBias
 from .vlrmbench import VLRMBench
 from .vrbench import VRBenchDataset
 from .vsibench import VsiBench, VsiSuperCount, VsiSuperRecall
+from .vue_tr import VUETR
 from .wiki_vqa_bench import WikiVQABench
 from .wildprobe import WildprobeDataset
 from .wildvision import WildVision
@@ -302,6 +309,7 @@ class ConcatDataset(ImageBaseDataset):
 
 # Add new supported dataset class here
 IMAGE_DATASET = [
+    VisualOverload,
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
     MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset, DUDE, DocScope,
@@ -331,14 +339,15 @@ IMAGE_DATASET = [
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
     MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
-    PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset,
+    PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset, E3VQA,
+    MVHBench,
 ]
 
 # add by EASI team
 IMAGE_DATASET += [
     MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
     SparBench, SpatialVizBench, SpatialDISE, StareBench, OmniSpatialBench, ERQABench, RoboSpatialBench, RefSpatialBench,  # noqa: E501
-    SPBench, ERIQBench, DA2K
+    SPBench, ERIQBench, DA2K, SpatialSceneBench
 ]
 
 VIDEO_DATASET = [
@@ -351,7 +360,8 @@ VIDEO_DATASET = [
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
-    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset, FavorBench
+    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset, FavorBench,
+    TimeLensBench, VideoOdysseyV, VUETR
 ]
 
 # add by EASI team

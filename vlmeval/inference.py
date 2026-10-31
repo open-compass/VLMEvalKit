@@ -9,7 +9,8 @@ from tqdm import tqdm
 
 from vlmeval.config import supported_VLM
 from vlmeval.smp import (dump, get_logger, get_pred_file_format, get_pred_file_path,
-                         get_rank_and_world_size, load, resolve_dataset_alias_name)
+                         get_rank_and_world_size, load, load_prediction_file,
+                         resolve_dataset_alias_name)
 from vlmeval.utils import track_progress_rich
 
 logger = get_logger(__name__)
@@ -69,7 +70,7 @@ def infer_data_api(
         if osp.exists(v11_pred):
             try:
                 reuse_inds = load('https://opencompass.openxlab.space/utils/mmb_reuse.pkl')
-                data_v11 = load(v11_pred)
+                data_v11 = load_prediction_file(v11_pred)
                 ans_map = {str(x): y for x, y in zip(data_v11['index'], data_v11['prediction']) if x in reuse_inds}
                 dump(ans_map, out_file)
             except Exception as err:
@@ -230,7 +231,7 @@ def infer_data_job(
     prev_file = f'{work_dir}/{model_name}_{dataset_alias_name}_PREV.pkl'
     if osp.exists(result_file):
         if rank == 0:
-            data = load(result_file)
+            data = load_prediction_file(result_file)
             results = {k: v for k, v in zip(data['index'], data['prediction'])}
             if retry_failed:
                 results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}

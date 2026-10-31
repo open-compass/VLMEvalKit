@@ -40,7 +40,7 @@ def concat_images_vlmeval(images, target_size=-1, mode='h', return_image=False):
         new_w, new_h = max(ws), sum(hs)
         dst = Image.new('RGB', (new_w, new_h))
         for i, im in enumerate(ims):
-            dst.paste(im, (sum(ws[:i], 0)))
+            dst.paste(im, (0, sum(hs[:i])))
     if return_image:
         return dst
     else:
@@ -62,13 +62,15 @@ def mmqa_display(question, target_size=-1):
             images = eval(images)
         else:
             images = [images]
-    else:
+    elif 'image_path' in question:
         images = question.pop('image_path')
         if images[0] == '[' and images[-1] == ']':
             images = eval(images)
         else:
             images = [images]
         images = [encode_image_file_to_base64(x) for x in images]
+    else:
+        images = []
 
     idx = question.pop('index', 'XXX')
     print(f'INDEX: {idx}')

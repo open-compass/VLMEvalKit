@@ -67,6 +67,33 @@ def load_response_from_dir(res_dir):
     return response_info
 
 
+_FULLWIDTH_ASCII = (
+    '！＂＃＄％＆＇（）＊＋，－．／'
+    '０１２３４５６７８９：；＜＝＞？＠'
+    'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ'
+    '［＼］＾＿｀'
+    'ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ'
+    '｛｜｝～'
+)
+_HALFWIDTH_ASCII = (
+    '!"#$%&\'()*+,-./'
+    '0123456789:;<=>?@'
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    '[\\]^_`'
+    'abcdefghijklmnopqrstuvwxyz'
+    '{|}~'
+)
+_FULLWIDTH_TO_HALFWIDTH = str.maketrans(
+    _FULLWIDTH_ASCII,
+    _HALFWIDTH_ASCII,
+)
+
+
+def convert_to_halfwidth(text):
+    """Convert common full-width ASCII characters to half-width."""
+    return text.translate(_FULLWIDTH_TO_HALFWIDTH)
+
+
 class BaseMetric(object):
     """ BaseMetric """
     """ OCRMetric """

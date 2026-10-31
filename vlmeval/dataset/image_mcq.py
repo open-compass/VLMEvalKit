@@ -779,14 +779,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
     def load_data(self, dataset):
         if dataset == 'GMAI-MMBench_VAL':
-            data_path = osp.join(LMUDataRoot(), f'{dataset}.tsv')
-            if file_size(data_path, 'GB') > 1:
-                local_path = data_path.replace('.tsv', '_local.tsv')
-                if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL'):
-                    from ..tools import LOCALIZE
-                    LOCALIZE(data_path, local_path)
-                data_path = local_path
-            return load(data_path)
+            return super().load_data(dataset)
         elif dataset == 'GMAI-MMBench_TEST':
             dfs = []
             for part_num in range(1, 12):
@@ -2006,7 +1999,7 @@ class TDBench(ImageMCQDataset):
         data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
 
         # Save evaluation results
-        judged_result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result')
+        judged_result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'xlsx')
         dump(data, judged_result_file)
 
         acc = report_acc(data)

@@ -4,6 +4,7 @@ import multiprocessing as mp
 import os
 import os.path as osp
 import re
+import shutil
 import string
 import tempfile
 import warnings
@@ -30,7 +31,12 @@ from .utils.vqa_eval import istype
 def llava_judge_failed(result):
     return (
         not isinstance(result, (list, tuple)) or len(result) != 2
-        or any(not isinstance(score, (int, float, np.number)) or score < 0 for score in result)
+        or any(
+            not isinstance(score, (int, float, np.number))
+            or not np.isfinite(score)
+            or score < 0
+            for score in result
+        )
     )
 
 
@@ -230,6 +236,15 @@ class VizWiz(ImageBaseDataset):
         'VizWiz': 'https://opencompass.openxlab.space/utils/VLMEval/VizWiz.tsv'
     }
     DATASET_MD5 = {'VizWiz': 'fa4ac4164467563ed2fac6eac6631bd0'}
+
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        assert msgs[-1]['type'] == 'text'
+        msgs[-1]['value'] += (
+            "\nWhen the provided information is insufficient, respond with 'Unanswerable'."
+            '\nAnswer the question using a single word or phrase.'
+        )
+        return msgs
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
@@ -2868,22 +2883,25 @@ class MMNIAH(ImageBaseDataset):
             pass
         elif file_name == 'MM_NIAH_TEST.tsv':
             warnings.warn('The dataset tsv is not downloaded')
-            for i in range(len(url)):
-                if osp.exists(osp.join(data_root,
-                                       'part-a' + chr(ord('a') + i))):
-                    print('part_a' + chr(ord('a') + i) + ' is existed')
+            split_files = [osp.join(data_root, 'part-a' + chr(ord('a') + i)) for i in range(len(url))]
+            for part_url, part_path in zip(url, split_files):
+                if osp.exists(part_path):
+                    print(f'{osp.basename(part_path)} is existed')
                     continue
-                download_file(url[i], data_path)
-            file_prefix = 'part-'
-            output_file = data_path
-            split_files = sorted([
-                f for f in os.listdir(data_root) if f.startswith(file_prefix)
-            ])
-            with open(output_file, 'wb') as outfile:
-                # 逐个读取每个拆分文件并写入到输出文件
-                for filename in split_files:
-                    with open(osp.join(data_root, filename), 'rb') as infile:
-                        outfile.write(infile.read())
+                with tempfile.NamedTemporaryFile(dir=data_root, prefix=osp.basename(part_path) + '.',
+                                                 suffix='.tmp', delete=False) as temporary:
+                    temporary_path = temporary.name
+                try:
+                    download_file(part_url, temporary_path)
+                    os.replace(temporary_path, part_path)
+                finally:
+                    if osp.exists(temporary_path):
+                        os.remove(temporary_path)
+            with open(data_path, 'wb') as outfile:
+                # Concatenate only this dataset's shards, in their configured order.
+                for part_path in split_files:
+                    with open(part_path, 'rb') as infile:
+                        shutil.copyfileobj(infile, outfile)
             update_flag = True
         else:
             warnings.warn('The dataset tsv is not downloaded')
@@ -2942,9 +2960,11 @@ class MMNIAH(ImageBaseDataset):
             category = line['category']
             if category in ['visual-reasoning', 'find-image']:
                 answers = int(answers)
-            if is_correct(answers, predict):
-                MMNIAH_score[category] += 1
-                MMNIAH_score['total'] += 1
+            elif category in ['count-text', 'count-image'] and not isinstance(answers, list):
+                answers = json.loads(answers)
+            score = is_correct(answers, predict)
+            MMNIAH_score[category] += score
+            MMNIAH_score['total'] += score
             MMNIAH_num[category] += 1
             MMNIAH_num['total'] += 1
 
@@ -3263,7 +3283,7 @@ class TDBenchGrounding(ImageVQADataset):
 
         data['hit'] = scores
         data['category'] = 'visual_grounding'
-        result_file = get_intermediate_file_path(eval_file, f'_{method}_result')
+        result_file = get_intermediate_file_path(eval_file, f'_{method}_result', 'xlsx')
         dump(data, result_file)
 
         metric_name = 'Average Centroid Containment' if method == 'centroid' else 'Average IoU'
@@ -3324,7 +3344,7 @@ class ZEROBench(ImageVQADataset):
                 pass
 
             # evaluate via exact matching
-            correct = ans.strip().lower() in parsed_answer.lower()
+            correct = ans.strip().lower() == parsed_answer.lower()
             # store results
             results_row = {"Question_ID": idx,
                            "Ground_Truth": ans,
