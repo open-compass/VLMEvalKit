@@ -475,6 +475,17 @@ vue_tr_dataset = {
     'VUE-TR-V2-Vision_256frame': _video_spec(VUETR, dataset='VUE-TR-V2-Vision', nframe=256, fps=-1),
 }
 
+etbench_dataset = {
+    # All 7,289 samples, or the official 470-sample subset (used in the paper for commercial models).
+    'ETBench_1fps': _video_spec(ETBench, dataset='ETBench', fps=1.0),
+    'ETBench_2fps': _video_spec(ETBench, dataset='ETBench', fps=2.0),
+    'ETBench-Subset_1fps': _video_spec(ETBench, dataset='ETBench-Subset', fps=1.0),
+    'ETBench-Subset_2fps': _video_spec(ETBench, dataset='ETBench-Subset', fps=2.0),
+    # The official second prompt style, for models that read timestamps from special tokens (E.T. Chat).
+    'ETBench_1fps_vid': _video_spec(ETBench, dataset='ETBench', fps=1.0, prompt_style='vid'),
+    'ETBench-Subset_1fps_vid': _video_spec(ETBench, dataset='ETBench-Subset', fps=1.0, prompt_style='vid'),
+}
+
 dataset_groups = [
     video_eval_pro_dataset,
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset, video_odyssey_dataset,
@@ -483,7 +494,7 @@ dataset_groups = [
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
     video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset,
-    favor_bench_dataset, timelens_bench_dataset, vue_tr_dataset
+    favor_bench_dataset, timelens_bench_dataset, vue_tr_dataset, etbench_dataset
 ]
 
 # add by EASI team
