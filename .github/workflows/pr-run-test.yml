@@ -111,7 +111,7 @@ jobs:
       - name: stop job
         if: always()
         run: |
-          rjob stop --namespace=ailab-llmeval vllm-pr-test-${{ github.run_id }}-gpu-${{ github.run_attempt }}
+          rjob stop --namespace=ailab-llmeval vllm-pr-test-${{ github.run_id }}-gpu-${{ github.run_attempt }} || true
 
   vlm_api_test:
     if: ${{!cancelled()}}
