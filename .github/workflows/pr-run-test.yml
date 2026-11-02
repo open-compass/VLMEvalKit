@@ -28,22 +28,6 @@ jobs:
   vlm_test:
     if: ${{!cancelled()}}
     runs-on: [yidian_cu12_mllm]
-    strategy:
-      fail-fast: false
-      matrix:
-        dataset: ["MMBench_V11_MINI MMStar_MINI AI2D_MINI","OCRBench_MINI"]
-        model: ['llava-onevision-qwen2-0.5b-ov-hf', 'InternVL3-8B', 'Qwen2.5-VL-7B-Instruct']
-        include:
-          - model: llava-onevision-qwen2-0.5b-ov-hf
-            model_name: llava
-          - model: Qwen2.5-VL-7B-Instruct
-            model_name: qwen
-          - model: InternVL3-8B
-            model_name: internvl
-          - dataset: MMBench_V11_MINI MMStar_MINI AI2D_MINI
-            dataset_name: mmbench
-          - dataset: OCRBench_MINI
-            dataset_name: ocrbench
     steps:
       - name: Clean workdir
         run: sudo git clean -ffdx
@@ -62,35 +46,72 @@ jobs:
           conda activate ${{env.CONDA_ENV}}
           pip list
 
-          rjob submit --metadata-name=vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} --charged-group=llmeval_gpu --private-machine=group --namespace=ailab-llmeval --group=llmeval_gpu --gpu=1 --cpu=16 --memory=32568 --private-machine=group --image=registry.h.pjlab.org.cn/ailab-puyu-puyu_wsp_cpu/vlmevalkit:auto-v0.0.10 --env=HF_HUB_CACHE=/mnt/shared-storage-gpfs2/gpfs2-shared-public/huggingface/hub --env=HF_HUB_OFFLINE=1 --env=LMUData=/mnt/shared-storage-user/opencompass-shared/qa-llm-cicd/LMUData --mount=gpfs://gpfs1/qa-llm-cicd:/mnt/shared-storage-user/qa-llm-cicd --mount=gpfs://gpfs1/opencompass-shared:/mnt/shared-storage-user/opencompass-shared --mount=gpfs://gpfs1/auto-eval-pipeline:/mnt/shared-storage-user/auto-eval-pipeline --mount=gpfs://gpfs2/gpfs2-shared-public:/mnt/shared-storage-gpfs2/gpfs2-shared-public --mount=gpfs://gpfs1/mllm:/mnt/shared-storage-user/mllm -- bash -exc 'cd ${{github.workspace}}; source /mnt/shared-storage-user/opencompass-shared/qa-llm-cicd/miniconda3/bin/activate; conda activate ${{env.CONDA_ENV}}; python run.py --data ${{matrix.dataset}} --model ${{matrix.model}} --work-dir /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/${{matrix.model}} --reuse --judge exact_matching 2>&1'
+          GPU_JOB=vllm-pr-test-${{ github.run_id }}-gpu-${{ github.run_attempt }}
+          EVAL_ROOT=/mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}
+
+          rjob submit \
+            --metadata-name="$GPU_JOB" \
+            --charged-group=llmeval_gpu \
+            --private-machine=group \
+            --namespace=ailab-llmeval \
+            --group=llmeval_gpu \
+            --gpu=1 --cpu=16 --memory=32568 \
+            --image=registry.h.pjlab.org.cn/ailab-puyu-puyu_wsp_cpu/vlmevalkit:auto-v0.0.10 \
+            --env=EVAL_ROOT="$EVAL_ROOT" \
+            --env=PYTHONPATH="${{ github.workspace }}" \
+            --env=PRED_FORMAT=tsv \
+            --env=HF_HUB_CACHE=/mnt/shared-storage-gpfs2/gpfs2-shared-public/huggingface/hub \
+            --env=HF_HUB_OFFLINE=1 \
+            --env=TRANSFORMERS_OFFLINE=1 \
+            --env=LMUData=/mnt/shared-storage-user/opencompass-shared/qa-llm-cicd/LMUData \
+            --mount=gpfs://gpfs1/qa-llm-cicd:/mnt/shared-storage-user/qa-llm-cicd \
+            --mount=gpfs://gpfs1/opencompass-shared:/mnt/shared-storage-user/opencompass-shared \
+            --mount=gpfs://gpfs1/auto-eval-pipeline:/mnt/shared-storage-user/auto-eval-pipeline \
+            --mount=gpfs://gpfs2/gpfs2-shared-public:/mnt/shared-storage-gpfs2/gpfs2-shared-public \
+            --mount=gpfs://gpfs1/mllm:/mnt/shared-storage-user/mllm \
+            -- bash -ec '
+              cd "${{ github.workspace }}"
+              source "${{env.CONDA_PATH}}/bin/activate"
+              conda activate "${{env.CONDA_ENV}}"
+              export PYTHONPATH="$PWD"
+              python run.py \
+                --data MMBench_V11_MINI MMStar_MINI AI2D_MINI OCRBench_MINI \
+                --model llava-onevision-qwen2-0.5b-ov-hf InternVL3-8B Qwen2.5-VL-7B-Instruct \
+                --work-dir "$EVAL_ROOT" \
+                --reuse --judge exact_matching 2>&1
+            '
 
           for i in {1..1200}; do
-            current_status=$(rjob get --namespace=ailab-llmeval vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} | grep -oP 'rjob [^:]+: \K[^ ]+')
+            current_status=$(rjob get --namespace=ailab-llmeval "$GPU_JOB" | grep -oP 'rjob [^:]+: \K[^ ]+')
             echo "Current status: $current_status, stop checking"
             if [[ $current_status == "Succeeded" ]]; then
               echo "Task succeeded"
-              rjob logs job --namespace=ailab-llmeval vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} -n 100
+              rjob logs job --namespace=ailab-llmeval "$GPU_JOB" -n 100
               exit 0
             elif [[ $current_status == "Failed" || $current_status == "Stopped" ]]; then
               echo "Task failed or stopped, fetching logs"
-              rjob logs job --namespace=ailab-llmeval vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }}
+              rjob logs job --namespace=ailab-llmeval "$GPU_JOB"
               exit 1
             fi
             sleep 6
           done
-          rjob logs job --namespace=ailab-llmeval vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} -n 100
+          rjob logs job --namespace=ailab-llmeval "$GPU_JOB" -n 100
           echo "Task timeout"
           exit 1
       - name: assert_result
         run: |
           . ${{env.CONDA_PATH}}/bin/activate
           conda activate ${{env.CONDA_ENV}}
-          cp -r /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/${{matrix.model}} outputs
-          python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name ${{matrix.model}}
+          EVAL_ROOT=/mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}
+          mkdir -p outputs
+          for model in llava-onevision-qwen2-0.5b-ov-hf InternVL3-8B Qwen2.5-VL-7B-Instruct; do
+            cp -r "$EVAL_ROOT/$model" "outputs/$model"
+            python .github/scripts/assert_score.py --dataset "MMBench_V11_MINI MMStar_MINI AI2D_MINI OCRBench_MINI" --base_score "$BASE_SCORE" --model-name "$model"
+          done
       - name: stop job
         if: always()
         run: |
-          rjob stop vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }}
+          rjob stop --namespace=ailab-llmeval vllm-pr-test-${{ github.run_id }}-gpu-${{ github.run_attempt }}
 
   vlm_api_test:
     if: ${{!cancelled()}}
