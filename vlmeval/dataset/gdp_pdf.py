@@ -48,10 +48,16 @@ RESPONSE_FORMAT = {
             'type': 'object',
             'required': ['rationale', 'score'],
             'properties': {
-                'rationale': {'type': 'string', 'description': 'Text describing the evaluation criterion'},
+                'rationale': {
+                    'type': 'string',
+                    'description': 'Text describing the evaluation criterion',
+                },
                 'score': {
-                    'type': 'string', 'enum': ['0', '1'],
-                    'description': "Score value: '0' (does not satisfy) or '1' (perfectly satisfies)",
+                    'type': 'string',
+                    'enum': ['0', '1'],
+                    'description': (
+                        "Score value: '0' (does not satisfy) or '1' (perfectly satisfies)"
+                    ),
                 },
             },
             'additionalProperties': False,
@@ -70,13 +76,18 @@ def _rubrics_from_row(row):
         match = _RUBRIC_RE.fullmatch(str(column).strip())
         if match and pd.notna(value) and value != '':
             found.append((int(match.group(1)), str(value)))
-    return [{'id': f'r{number}', 'criterion': text} for number, text in sorted(found)]
+    return [
+        {'id': f'r{number}', 'criterion': text}
+        for number, text in sorted(found)
+    ]
 
 
 def _judge_prompt(response, criterion):
     return JUDGE_PROMPT_TEMPLATE.replace(
         '{{ rubric.response_to_grade }}', response
-    ).replace('{{ rubric.criterion }}', criterion)
+    ).replace(
+        '{{ rubric.criterion }}', criterion
+    )
 
 
 def _parse_criterion_result(raw):
@@ -113,8 +124,18 @@ def _score_criterion(model, response, criterion):
             passed = _criterion_passes(score)
         except (ValueError, InvalidOperation):
             continue
-        return dict(score=str(score), passed=passed, rationale=rationale, judge_response=attempts)
-    return dict(score=None, passed=None, rationale=UNSCORED, judge_response=attempts)
+        return dict(
+            score=str(score),
+            passed=passed,
+            rationale=rationale,
+            judge_response=attempts,
+        )
+    return dict(
+        score=None,
+        passed=None,
+        rationale=UNSCORED,
+        judge_response=attempts,
+    )
 
 
 def _sample_scores(grades):
@@ -158,8 +179,11 @@ class GDPPDF(ImageBaseDataset):
         path = self.data_root / relative
         if not path.is_file():
             hf_hub_download(
-                repo_id=self.HF_REPO_ID, repo_type='dataset', revision=self.HF_REVISION,
-                filename=relative.as_posix(), local_dir=str(self.data_root),
+                repo_id=self.HF_REPO_ID,
+                repo_type='dataset',
+                revision=self.HF_REVISION,
+                filename=relative.as_posix(),
+                local_dir=str(self.data_root),
             )
         return path
 
@@ -182,8 +206,11 @@ class GDPPDF(ImageBaseDataset):
             if pd.isna(task_id) or task_id == '':
                 task_id = index
             rows.append(dict(
-                index=str(task_id), question=row['prompt'], pdf_path=row['pdf_path'],
-                rubrics=json.dumps(rubrics, ensure_ascii=False), category=row.get('domain', ''),
+                index=str(task_id),
+                question=row['prompt'],
+                pdf_path=row['pdf_path'],
+                rubrics=json.dumps(rubrics, ensure_ascii=False),
+                category=row.get('domain', ''),
             ))
         data = pd.DataFrame(rows)
         if data.empty or data['index'].duplicated().any():
@@ -196,7 +223,9 @@ class GDPPDF(ImageBaseDataset):
         try:
             import fitz
         except ImportError as err:
-            raise ImportError('GDP.pdf page rendering requires PyMuPDF: pip install pymupdf') from err
+            raise ImportError(
+                'GDP.pdf page rendering requires PyMuPDF: pip install pymupdf'
+            ) from err
         pdf = self.data_root / line['pdf_path']
         directory = Path(self.img_root) / f'{md5(str(pdf))}_{self.dpi}dpi'
         directory.mkdir(parents=True, exist_ok=True)
@@ -208,7 +237,9 @@ class GDPPDF(ImageBaseDataset):
                 path = directory / f'page_{number + 1:05d}.png'
                 if not read_ok(str(path)):
                     pixmap = doc[number].get_pixmap(dpi=self.dpi, alpha=False)
-                    with tempfile.NamedTemporaryFile(dir=directory, suffix='.png', delete=False) as stream:
+                    with tempfile.NamedTemporaryFile(
+                        dir=directory, suffix='.png', delete=False
+                    ) as stream:
                         stream.write(pixmap.tobytes('png'))
                         temporary = stream.name
                     os.replace(temporary, path)
@@ -227,10 +258,15 @@ class GDPPDF(ImageBaseDataset):
         predictions['index'] = predictions['index'].astype(str)
         metadata = self.data.copy()
         metadata['index'] = metadata['index'].astype(str)
-        if predictions['index'].duplicated().any() or set(predictions['index']) != set(metadata['index']):
+        if (
+            predictions['index'].duplicated().any()
+            or set(predictions['index']) != set(metadata['index'])
+        ):
             raise ValueError('GDP.pdf predictions must contain each dataset index exactly once')
         # Use canonical metadata, not possibly edited rubric columns in predictions.
-        data = metadata.merge(predictions[['index', 'prediction']], on='index', validate='one_to_one')
+        data = metadata.merge(
+            predictions[['index', 'prediction']], on='index', validate='one_to_one'
+        )
         judge_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
         nproc = judge_kwargs.pop('nproc', 4)
         cache_file = get_judge_cache_file(eval_file, 'rubric_v1', judge_name)
@@ -244,7 +280,12 @@ class GDPPDF(ImageBaseDataset):
                 key = hashlib.sha256(fingerprint.encode('utf-8')).hexdigest()
                 row_keys.append((key, rubric['id']))
                 if FAIL_MSG in response:
-                    cache[key] = dict(score='0', passed=False, rationale='Inference failed.', judge_response=[])
+                    cache[key] = dict(
+                        score='0',
+                        passed=False,
+                        rationale='Inference failed.',
+                        judge_response=[],
+                    )
                 elif key not in cache or cache[key]['passed'] is None:
                     tasks.append((response, rubric['criterion']))
                     keys.append(key)
@@ -254,11 +295,18 @@ class GDPPDF(ImageBaseDataset):
             model = build_judge(model=judge_name, **judge_kwargs)
             # Criterion-level tasks allow nproc concurrent calls even for long rubrics.
             judged = run_cached_tasks(
-                _score_criterion, [(model, *task) for task in tasks], keys, cache_file, nproc=nproc,
+                _score_criterion,
+                [(model, *task) for task in tasks],
+                keys,
+                cache_file,
+                nproc=nproc,
             )
             cache.update(judged)
         grades = [
-            [dict(rubric_id=rubric_id, **cache[key]) for key, rubric_id in row_keys]
+            [
+                dict(rubric_id=rubric_id, **cache[key])
+                for key, rubric_id in row_keys
+            ]
             for row_keys in sample_keys
         ]
         scores = pd.DataFrame([_sample_scores(row) for row in grades])
@@ -279,7 +327,10 @@ class GDPPDF(ImageBaseDataset):
 
         result = summarize(data)
         for category, frame in data.groupby('category', dropna=False):
-            result.update({f'domain/{category}/{key}': value for key, value in summarize(frame).items()})
+            result.update({
+                f'domain/{category}/{key}': value
+                for key, value in summarize(frame).items()
+            })
         dump(result, get_judge_score_file(eval_file, judge_name, 'json'))
         return result
 
