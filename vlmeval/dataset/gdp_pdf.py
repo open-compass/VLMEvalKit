@@ -157,6 +157,7 @@ class GDPPDF(ImageBaseDataset):
     DEFAULT_JUDGE_MODEL = 'gemini-3.5-flash'
     HF_REPO_ID = 'surgeai/GDP.pdf'
     HF_REVISION = 'main'
+    HF_PARQUET_MD5 = 'aa6d3ce9b6285b767c888da35c2cb7c8'
     force_use_dataset_prompt = True
     JUDGE_FAIL_MARKERS = (FAIL_MSG, UNSCORED)
 
@@ -190,7 +191,14 @@ class GDPPDF(ImageBaseDataset):
     def load_data(self, dataset):
         self.data_root = Path(LMUDataRoot()) / dataset
         self.data_root.mkdir(parents=True, exist_ok=True)
-        source = pd.read_parquet(self._local_file('data.parquet'))
+        data_file = self._local_file('data.parquet')
+        data_md5 = md5(str(data_file))
+        if data_md5 != self.HF_PARQUET_MD5:
+            raise ValueError(
+                f'GDP.pdf data.parquet MD5 mismatch: expected {self.HF_PARQUET_MD5}, '
+                f'got {data_md5} ({data_file})'
+            )
+        source = pd.read_parquet(data_file)
         rows = []
         for index, row in enumerate(source.to_dict('records')):
             rubrics = _rubrics_from_row(row)
