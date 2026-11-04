@@ -6,6 +6,7 @@ import pandas as pd
 
 from vlmeval.smp import dump, get_intermediate_file_path, load, toliststr
 from vlmeval.utils import track_progress_rich
+from ..interactive_mt import StaticTurnPolicy
 from .image_base import ImageBaseDataset
 from .utils.judge_util import build_judge
 
@@ -14,7 +15,7 @@ class ImageMTDataset(ImageBaseDataset):
 
     TYPE = 'MT'
 
-    def build_prompt(self, line):
+    def _build_messages(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
@@ -53,6 +54,17 @@ class ImageMTDataset(ImageBaseDataset):
             content = [dict(type='text', value=a)]
             dlgs.append(dict(role='assistant', content=content))
         return dlgs
+
+    def build_prompt(self, line):
+        """Return the complete context for the first model call only."""
+        messages = self._build_messages(line)
+        if not messages:
+            raise ValueError('An MT sample must contain at least one question.')
+        return messages[:1]
+
+    def build_policy(self, line, messages):
+        all_messages = self._build_messages(line)
+        return StaticTurnPolicy(messages, all_messages[2::2])
 
 
 class MMDUDataset(ImageMTDataset):

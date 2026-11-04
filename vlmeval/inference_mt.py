@@ -7,6 +7,7 @@ import torch.distributed as dist
 from tqdm import tqdm
 
 from vlmeval.config import supported_VLM
+from vlmeval.interactive_mt import chat_interactive_mt
 from vlmeval.smp import (dump, get_pred_file_path, get_rank_and_world_size, load,
                          load_prediction_file, resolve_dataset_alias_name)
 from vlmeval.utils import track_progress_rich
@@ -22,25 +23,6 @@ def parse_args():
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
     return args
-
-
-def chat_mt(model, messages, dataset_name):
-    assert len(messages) % 2 == 0
-    nturn = len(messages) // 2
-    utter_stack = []
-    predictions = []
-
-    for i in range(nturn):
-        utter = messages[2 * i]
-        utter_stack.append(utter)
-        try:
-            resp = model.chat(utter_stack, dataset=dataset_name)
-            utter_stack.append(dict(role='assistant', content=resp))
-        except Exception as e:
-            resp = FAIL_MSG + str(e)
-            utter_stack.append(dict(role='assistant', content=resp))
-        predictions.append(resp)
-    return predictions
 
 
 # Only API model is accepted
@@ -63,7 +45,6 @@ def infer_data_api(
     lt, indices = len(data), list(data['index'])
     # Build str→orig mapping for checkpoint key conversion
     index_str_to_orig = {str(i): i for i in indices}
-    structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
 
     out_file = f'{work_dir}/{model_name}_{dataset_alias_name}_checkpoint.pkl'
     res = {}
@@ -72,14 +53,28 @@ def infer_data_api(
         if retry_failed:
             res = {k: v for k, v in res.items() if FAIL_MSG not in str(v)}
 
-    structs = [s for i, s in zip(indices, structs) if str(i) not in res]
+    tasks = [
+        dict(
+            model=model,
+            dataset=dataset,
+            sample=data.iloc[i],
+            dataset_name=dataset_name,
+        )
+        for i in range(lt)
+        if str(indices[i]) not in res
+    ]
     indices = [i for i in indices if str(i) not in res]
 
-    structs = [dict(model=model, messages=struct, dataset_name=dataset_name) for struct in structs]
-
-    if len(structs):
+    if len(tasks):
         str_indices = [str(i) for i in indices]
-        track_progress_rich(chat_mt, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=str_indices)
+        track_progress_rich(
+            chat_interactive_mt,
+            tasks,
+            nproc=api_nproc,
+            chunksize=api_nproc,
+            save=out_file,
+            keys=str_indices,
+        )
 
     # Load the full accumulated results (str keys)
     if osp.exists(out_file):
@@ -168,12 +163,7 @@ def infer_data(
         if idx in res:
             continue
 
-        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
-            struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
-        else:
-            struct = dataset.build_prompt(data.iloc[i])
-
-        response = chat_mt(model, struct, dataset_name)
+        response = chat_interactive_mt(model, dataset, data.iloc[i], dataset_name)
         torch.cuda.empty_cache()
 
         if verbose:

@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Literal
 import pandas as pd
 from tabulate import tabulate
 
+from vlmeval.interactive_mt import build_mt_prompt, chat_interactive_mt
 from vlmeval.smp import dump, get_logger, load, load_prediction_file, upsert_dataset_status
 from vlmeval.smp.log import setup_subprocess_logger
 from vlmeval.utils.mp_util import (async_recv_process_message, async_wait_process,
@@ -96,26 +97,6 @@ def _prompt_subprocess_target(dataset_obj, video_llm: bool, conn, parent_conn=No
         conn.close()
 
 
-def chat_mt(model, messages: List[dict], dataset_name: str) -> List[str]:
-    """Infer function for multi-turn dataset."""
-    assert len(messages) % 2 == 0, "Messages should be pairs of user and assistant"
-    nturn = len(messages) // 2
-    utter_stack = []
-    predictions = []
-
-    for i in range(nturn):
-        utter = messages[2 * i]
-        utter_stack.append(utter)
-        try:
-            resp = model.chat(utter_stack, dataset=dataset_name)
-            utter_stack.append(dict(role='assistant', content=resp))
-        except Exception as e:
-            resp = FAIL_MSG + str(e)
-            utter_stack.append(dict(role='assistant', content=resp))
-        predictions.append(resp)
-
-    return predictions
-
 # ==========================================
 # Core Data Structures
 # ==========================================
@@ -139,6 +120,7 @@ class InferenceTask:
     dataset_alias_name: str
     model_name: str        # Model name (for naming task)
     dataset_type: DatasetType = "image"
+    sample: Any = None     # Original dataset sample for policy-driven MT
 
 
 @dataclass
@@ -654,6 +636,7 @@ class APIEvalPipeline:
 
     async def _produce_mt_tasks(self, cfg: DatasetConfig, existing_results: dict) -> int:
         """Produce multi-turns dataset inference task."""
+        model = cfg.model_obj
         dataset = cfg.dataset_obj
         dataset_name = cfg.dataset_name
         dataset_alias_name = cfg.dataset_alias_name
@@ -669,7 +652,7 @@ class APIEvalPipeline:
                 continue
 
             try:
-                prompt_struct = dataset.build_prompt(item)
+                prompt_struct = build_mt_prompt(model, dataset, item, dataset_name)
             except Exception as e:
                 import traceback
                 logger.error(f"   [{dataset_alias_name}] Failed to build prompt "
@@ -684,7 +667,8 @@ class APIEvalPipeline:
                 model_name=cfg.model_name,
                 sample_index=idx_str,
                 prompt_struct=prompt_struct,
-                dataset_type="mt"
+                dataset_type="mt",
+                sample=item,
             )
             await self.queue.put(task)
             tasks_generated += 1
@@ -713,10 +697,12 @@ class APIEvalPipeline:
                 if task.dataset_type == "mt":
                     output = await loop.run_in_executor(
                         self.infer_executor,
-                        partial(chat_mt,
+                        partial(chat_interactive_mt,
                                 model=model,
-                                messages=task.prompt_struct,
-                                dataset_name=task.dataset_name),
+                                dataset=cfg.dataset_obj,
+                                sample=task.sample,
+                                dataset_name=task.dataset_name,
+                                messages=task.prompt_struct),
                     )
                 else:
                     def inference_call():
