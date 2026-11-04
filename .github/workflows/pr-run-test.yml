@@ -146,6 +146,7 @@ jobs:
             --gpu=0 --cpu=16 --memory=24576 \
             --image=registry.h.pjlab.org.cn/ailab-puyu-puyu_wsp_cpu/vlmevalkit:auto-v0.0.10 \
             --env=EVAL_ROOT="$EVAL_ROOT" \
+            --env=MOCK_SERVER="${{ github.workspace }}/.github/scripts/mock_chat_api.py" \
             --env=PYTHONPATH="${{ github.workspace }}" \
             --env=PRED_FORMAT=tsv \
             --env=HF_HUB_CACHE=/mnt/shared-storage-gpfs2/gpfs2-shared-public/huggingface/hub \
@@ -186,15 +187,9 @@ jobs:
         run: |
           . ${{env.CONDA_PATH}}/bin/activate
           conda activate ${{env.CONDA_ENV}}
-          result=0
-          for answer_type in choice bool score text; do
-            CURRENT_DIR=/mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/mock_api_${answer_type}/mock--mock-api
-            BASELINE_DIR=/mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/baseline/mock_api_${answer_type}/mock--mock-api
-            if ! python .github/scripts/compare_dirs.py "$BASELINE_DIR" "$CURRENT_DIR"; then
-              result=1
-            fi
-          done
-          exit "$result"
+          bash .github/scripts/compare_mock_api_baseline.sh \
+            /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }} \
+            /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/baseline_261104
       - name: stop job
         if: always()
         run: |
