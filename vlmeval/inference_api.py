@@ -161,6 +161,9 @@ class DatasetConfig:
     # For final result assembly
     results_dict: Dict[str, Any] = field(default_factory=dict)
 
+    # Inference-time MT policy LLM options, separate from evaluation judge options.
+    policy_kwargs: dict = field(default_factory=dict)
+
     def __post_init__(self):
         if self.dataset_alias_name is None:
             self.dataset_alias_name = self.dataset_name
@@ -702,7 +705,8 @@ class APIEvalPipeline:
                                 dataset=cfg.dataset_obj,
                                 sample=task.sample,
                                 dataset_name=task.dataset_name,
-                                messages=task.prompt_struct),
+                                messages=task.prompt_struct,
+                                policy_kwargs=cfg.policy_kwargs),
                     )
                 else:
                     def inference_call():

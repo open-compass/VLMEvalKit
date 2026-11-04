@@ -418,6 +418,32 @@ def get_judge_kwargs(args, *, dataset):
     return judge_kwargs
 
 
+def get_policy_kwargs(args, *, dataset):
+    """Collect inference-time policy LLM options independently of the judge."""
+    policy_args = json.loads(args.policy_args) if args.policy_args else {}
+    if not isinstance(policy_args, dict):
+        raise ValueError('--policy-args must be a JSON object.')
+    policy_kwargs = {
+        'verbose': args.verbose,
+        'retry': args.policy_retry if args.policy_retry is not None else args.retry,
+        'timeout': args.policy_timeout,
+        **policy_args,
+    }
+    if args.policy_base_url:
+        policy_kwargs['api_base'] = f"{args.policy_base_url.rstrip('/')}/chat/completions"
+    if args.policy_key:
+        policy_kwargs['key'] = args.policy_key
+    if args.policy is not None:
+        policy_kwargs['model'] = args.policy
+    elif 'model' not in policy_args:
+        default_model = dataset.get_default_policy_model(policy_kwargs)
+        if default_model is not None:
+            if not isinstance(default_model, str) or not default_model:
+                raise TypeError('A default policy model must be a non-empty string or None.')
+            policy_kwargs['model'] = default_model
+    return policy_kwargs
+
+
 def parse_reuse_aux_arg(reuse_aux):
     if isinstance(reuse_aux, bool):
         return 'all' if reuse_aux else 'none'
@@ -569,6 +595,17 @@ You can launch the evaluation by setting either --data and --model or --config.
                         help='Retry times for failed judgement (defaults to follow --retry)')
     parser.add_argument('--judge-timeout', type=int, default=600,
                         help='Max time in seconds for judgement.')
+
+    # Inference-time MT Policy LLM Args
+    parser.add_argument('--policy', type=str, default=None, help='LLM used by the MT policy')
+    parser.add_argument('--policy-args', type=str, default=None,
+                        help='MT policy LLM arguments in JSON format')
+    parser.add_argument('--policy-base-url', type=str, default=None, help='Base URL of policy LLM API')
+    parser.add_argument('--policy-key', type=str, default=None, help='API key for policy LLM')
+    parser.add_argument('--policy-retry', type=int, default=None,
+                        help='Retry times for policy LLM requests (defaults to follow --retry)')
+    parser.add_argument('--policy-timeout', type=int, default=600,
+                        help='Max time in seconds for a policy LLM request.')
 
     # Inference Model Args (when --base-url is specified)
     parser.add_argument('--base-url', type=str, default=None,
@@ -856,6 +893,7 @@ def run_local_mode(args):
                             verbose=args.verbose,
                             api_nproc=args.api_nproc,
                             retry_failed=not args.keep_failed,
+                            policy_kwargs=get_policy_kwargs(args, dataset=dataset),
                             use_vllm=args.use_vllm)
                     else:
                         model = infer_data_job(
@@ -1266,6 +1304,7 @@ def run_api_mode(args):
                 work_dir=str(pred_root),
                 result_file=result_file,
                 judge_kwargs=judge_kwargs,
+                policy_kwargs=get_policy_kwargs(args, dataset=dataset) if dataset_type == 'mt' else {},
                 verbose=args.verbose
             )
             dataset_configs.append(dataset_config)

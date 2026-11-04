@@ -131,9 +131,9 @@ def build_mt_prompt(model, dataset, sample, dataset_name):
     return dataset.build_prompt(sample)
 
 
-def chat_interactive_mt(model, dataset, sample, dataset_name, *, messages=None):
+def chat_interactive_mt(model, dataset, sample, dataset_name, *, messages=None, policy_kwargs=None):
     """Run one interactive MT case and return its finalized prediction."""
     if messages is None:
         messages = build_mt_prompt(model, dataset, sample, dataset_name)
-    policy = dataset.build_policy(sample, messages=messages)
+    policy = dataset.build_policy(sample, messages=messages, **deepcopy(policy_kwargs or {}))
     return _chat_with_policy(model, policy, messages, dataset_name)

@@ -14,6 +14,10 @@ from .utils.judge_util import build_judge
 class ImageMTDataset(ImageBaseDataset):
 
     TYPE = 'MT'
+    DEFAULT_POLICY_MODEL = None
+
+    def get_default_policy_model(self, policy_kwargs=None):
+        return self.DEFAULT_POLICY_MODEL
 
     def _build_messages(self, line):
         if isinstance(line, int):
@@ -62,7 +66,8 @@ class ImageMTDataset(ImageBaseDataset):
             raise ValueError('An MT sample must contain at least one question.')
         return messages[:1]
 
-    def build_policy(self, line, messages):
+    def build_policy(self, line, messages, **policy_kwargs):
+        """Build a case policy; static MT does not need a policy LLM."""
         all_messages = self._build_messages(line)
         return StaticTurnPolicy(messages, all_messages[2::2])
 
