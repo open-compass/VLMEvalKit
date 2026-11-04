@@ -51,10 +51,10 @@ jobs:
 
           rjob submit \
             --metadata-name="$GPU_JOB" \
-            --charged-group=llmeval_gpu \
+            --charged-group=llmeval_gpu_pool \
             --private-machine=group \
             --namespace=ailab-llmeval \
-            --group=llmeval_gpu \
+            --group=llmeval_gpu_pool \
             --gpu=1 --cpu=16 --memory=32568 \
             --image=registry.h.pjlab.org.cn/ailab-puyu-puyu_wsp_cpu/vlmevalkit:auto-v0.0.10 \
             --env=EVAL_ROOT="$EVAL_ROOT" \
