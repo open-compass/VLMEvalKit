@@ -3705,8 +3705,10 @@ class MMEReasoning(ImageBaseDataset):
     TYPE = 'VQA'
     DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
-    DATASET_URL = {'MME-Reasoning': 'https://huggingface.co/datasets/U4R/MME-Reasoning/blob/main/MME_Reasoning.tsv'}
-    DATASET_MD = {'MME-Reasoning': 'b243f44778782d3821523689f6b40a1e'}
+    DATASET_URL = {
+        'MME-Reasoning': 'https://huggingface.co/datasets/InternScience/MME-Reasoning/resolve/main/MME_Reasoning.tsv'
+    }
+    DATASET_MD5 = {'MME-Reasoning': 'b243f44778782d3821523689f6b40a1e'}
 
     def build_prompt(self, line):
         if isinstance(line, int):
