@@ -68,7 +68,7 @@ Please directly reply with your response to the only question.
 """
 
     TYPE = 'Video-VQA'
-    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+    DEFAULT_JUDGE_MODEL = 'gpt-5.6-sol'
 
     def __init__(self, dataset='MMBench-Video', pack=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
