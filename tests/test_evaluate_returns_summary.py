@@ -122,7 +122,6 @@ class TestJudgeDatasetEvaluateReturnsSummary(unittest.TestCase):
             obj for obj in vars(module).values()
             if isinstance(obj, type) and hasattr(obj, 'evaluate')
         )
-        dataset_obj = types.SimpleNamespace(DEFAULT_JUDGE_MODEL='judge', data_path='data.tsv')
         # evaluate() is a classmethod on these datasets
         result = dataset_cls.evaluate('pred.xlsx')
         self.assertEqual(result, SUMMARY, f'{dataset_cls.__name__}.evaluate() dropped its score')
