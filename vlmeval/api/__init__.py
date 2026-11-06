@@ -3,6 +3,7 @@ from .bailingmm import bailingMMAPI
 from .bedrock import BedrockAPI
 from .bluelm_api import BlueLM_API, BlueLMWrapper
 from .claude import Claude3V, Claude_Wrapper
+from .claude_sdk import ClaudeSDKAPI, ClaudeSDKWrapper
 from .cloudwalk import CWWrapper
 from .doubao_vl_api import DoubaoVL
 from .gcp_vertex import GCPVertexAPI
@@ -41,6 +42,7 @@ __all__ = [
     'JTVLChatAPI', 'JTVLChatAPI_Mini', 'JTVLChatAPI_2B', 'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI',
     'SiliconFlowAPI', 'LMDeployAPI', 'ARM_thinker', 'OpenAISDKWrapper', 'LMDeployWrapper',
     'OpenAIResponsesAPI', 'OpenAIResponsesWrapper',
+    'ClaudeSDKAPI', 'ClaudeSDKWrapper',
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
     'VideoChatOnlineV2API', 'TeleMM2_API', 'TeleMM2Thinking_API', 'TogetherAPI', 'GCPVertexAPI',
