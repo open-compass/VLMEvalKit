@@ -95,10 +95,21 @@ def resize_image_by_factor(img, factor=1):
     return img
 
 
+def _flatten_transparency(image):
+    if image.mode in ('RGBA', 'LA', 'PA') or 'transparency' in image.info:
+        rgba = image.convert('RGBA')
+        background = Image.new('RGB', rgba.size, (255, 255, 255))
+        background.paste(rgba, mask=rgba.getchannel('A'))
+        return background
+    return image
+
+
 def encode_image_to_base64(img, target_size=-1, fmt='JPEG', max_file_size=1e9):
     from .log import get_logger
 
     logger = get_logger(__name__)
+
+    img = _flatten_transparency(img)
 
     # if target_size == -1, will not do resizing
     # else, will set the max_size ot (target_size, target_size)
@@ -157,7 +168,7 @@ def encode_image_file_to_base64(image_path, target_size=-1, fmt='JPEG', max_file
 
 def decode_base64_to_image(base64_string, target_size=-1):
     image_data = base64.b64decode(base64_string)
-    image = Image.open(io.BytesIO(image_data))
+    image = _flatten_transparency(Image.open(io.BytesIO(image_data)))
     if image.mode in ('I;16', 'I;16L', 'I;16B', 'I;16N'):
         image = image.convert('I')
     elif image.mode not in ('1', 'L', 'I', 'RGB'):

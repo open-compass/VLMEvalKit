@@ -59,3 +59,47 @@ def test_vertical_concat_stacks_images_using_heights(tmp_path, target_size):
     path = module.concat_images_vlmeval(paths, mode='v')
     with Image.open(path) as saved:
         assert saved.size == (20, 30)
+
+
+@pytest.mark.parametrize('mode', ['RGBA', 'LA', 'P'])
+@pytest.mark.parametrize('operation', ['encode', 'decode'])
+def test_transparent_diagrams_keep_white_background(mode, operation, monkeypatch):
+    import base64
+    import io
+
+    monkeypatch.setenv('VLMEVAL_MIN_IMAGE_EDGE', '1')
+    modules = _load_modules()
+    image = Image.new('RGBA', (4, 4), (0, 0, 0, 0))
+    image.putpixel((2, 2), (0, 0, 0, 255))
+    if mode == 'LA':
+        image = image.convert('LA')
+    elif mode == 'P':
+        image = Image.new('P', (4, 4), 0)
+        image.putpalette([0] * 768)
+        image.putpixel((2, 2), 1)
+        image.info['transparency'] = 0
+    if operation == 'encode':
+        encoded = modules['vlmeval.smp.vlm'].encode_image_to_base64(image, fmt='PNG')
+        actual = Image.open(io.BytesIO(base64.b64decode(encoded)))
+    else:
+        buffer = io.BytesIO()
+        image.save(buffer, format='PNG')
+        actual = modules['vlmeval.smp.vlm'].decode_base64_to_image(
+            base64.b64encode(buffer.getvalue()))
+    assert actual.getpixel((0, 0)) == (255, 255, 255)
+    assert actual.getpixel((2, 2)) == (0, 0, 0)
+
+
+@pytest.mark.parametrize('mode', ['RGB', 'L', 'I;16'])
+def test_opaque_image_decode_keeps_mode_and_pixels(mode):
+    import base64
+    import io
+
+    modules = _load_modules()
+    value = (12, 34, 56) if mode == 'RGB' else 127
+    image = Image.new(mode, (4, 4), value)
+    buffer = io.BytesIO()
+    image.save(buffer, format='PNG')
+    actual = modules['vlmeval.smp.vlm'].decode_base64_to_image(base64.b64encode(buffer.getvalue()))
+    assert actual.mode == mode
+    assert actual.getpixel((0, 0)) == value
