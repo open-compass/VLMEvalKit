@@ -28,19 +28,21 @@ def extract_numerical_answer(text):
         return None
     text = str(text).strip()
 
+    # A number may be written with US thousands separators ("1,234"). The
+    # grouped alternative is tried before the plain one so that a bare year
+    # followed by punctuation ("In 2020, ...") does not absorb the comma, and
+    # _clean_extracted_number strips the separators before validating. One
+    # pattern per prefix therefore covers both spellings; keeping a separate
+    # comma-only twin after a plain `[0-9]+` twin left the former unreachable.
+    number = r"-?(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)(?:\.[0-9]+)?(?:/[0-9]+)?"
+
     final_answer_patterns = [
-        r"(?:FINAL\s+ANSWER|Final\s+Answer)\s*[:\-=]?\s*\$?\s*(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)",
-        r"(?:FINAL\s+ANSWER|Final\s+Answer)\s*[:\-=]?\s*\$?\s*(-?[0-9,]+(?:\.[0-9]+)?)",
-        r"\\boxed\\{(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)\\}",  # noqa: W605
-        r"\\boxed\\{(-?[0-9,]+(?:\.[0-9]+)?)\\}",  # noqa: W605
-        r"####\s*(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)",
-        r"####\s*\$?\s*(-?[0-9,]+(?:\.[0-9]+)?)",
-        r"(?:The\s+)?(?:[Aa]nswer|result)\s+is\s*[:\-=]?\s*\$?\s*(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)",
-        r"(?:The\s+)?(?:[Aa]nswer|result)\s+is\s*[:\-=]?\s*\$?\s*(-?[0-9,]+(?:\.[0-9]+)?)",
-        r"答案\s*[:\-=]?\s*\$?\s*(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)",
-        r"答案\s*[:\-=]?\s*\$?\s*(-?[0-9,]+(?:\.[0-9]+)?)",
-        r"(?:Therefore|Thus|Hence)[^.]*?[:\-=]?\s*\$?\s*(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)",
-        r"(?:Therefore|Thus|Hence)[^.]*?[:\-=]?\s*\$?\s*(-?[0-9,]+(?:\.[0-9]+)?)",
+        r"(?:FINAL\s+ANSWER|Final\s+Answer)\s*[:\-=]?\s*\$?\s*(" + number + r")",
+        r"\\boxed\\{(" + number + r")\\}",  # noqa: W605
+        r"####\s*\$?\s*(" + number + r")",
+        r"(?:The\s+)?(?:[Aa]nswer|result)\s+is\s*[:\-=]?\s*\$?\s*(" + number + r")",
+        r"答案\s*[:\-=]?\s*\$?\s*(" + number + r")",
+        r"(?:Therefore|Thus|Hence)[^.]*?[:\-=]?\s*\$?\s*(" + number + r")",
     ]
 
     for pattern in final_answer_patterns:
@@ -102,18 +104,9 @@ def extract_numerical_answer(text):
     for i in range(min(3, len(lines))):
         line = lines[-(i + 1)].strip()
 
-        numbers = re.findall(r'-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?', line)
+        numbers = re.findall(number, line)
         if numbers:
             cleaned = _clean_extracted_number(numbers[-1])
-            if cleaned is not None:
-                try:
-                    return _normalize_to_float(cleaned)
-                except Exception:
-                    pass
-
-        comma_numbers = re.findall(r'-?[0-9,]+(?:\.[0-9]+)?', line)
-        if comma_numbers:
-            cleaned = _clean_extracted_number(comma_numbers[-1])
             if cleaned is not None:
                 try:
                     return _normalize_to_float(cleaned)
