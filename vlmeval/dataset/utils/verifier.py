@@ -311,6 +311,15 @@ class Verifier_Model(BaseVerifierModel):
             matches = re.findall(r"\(([A-C])\)*", judgment_str)
             if matches:
                 return matches[-1]
+            # The prompt sanctions a word reply as well as a bare letter
+            # ("Simply reply with either CORRECT, INCORRECT, or INVALID"), so
+            # resolve the words before the bare-letter scan below, which would
+            # otherwise reduce INVALID to its "A" and CORRECT/INCORRECT to a
+            # "C". INCORRECT is tested before CORRECT because it contains it.
+            upper = judgment_str.upper()
+            for word, letter in (("INVALID", "C"), ("INCORRECT", "B"), ("CORRECT", "A")):
+                if re.search(r"\b" + word + r"\b", upper):
+                    return letter
             matches = re.findall(r"([A-C])", judgment_str)
             if matches:
                 return matches[-1]
