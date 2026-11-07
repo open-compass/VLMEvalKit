@@ -31,7 +31,28 @@ the script prints a warning and estimates TTFT/TTPT from wall time and output
 length. These fallback figures are not direct measurements. Compare output
 lengths as well as latency, since different generations affect total time.
 
-The example uses 10% sampling and the two CoT modes from the Qwen2.5-VL-3B
-experiment. The exact original environment, dataset versions, sampled indices,
+The example uses 10% sampling and the two replay configurations with CoT
+from the Qwen2.5-VL-3B experiment. The exact original environment, dataset versions, sampled indices,
 and hardware are not captured in this configuration, so it is a starting
 point rather than a guarantee of reproducing the original numbers.
+
+## All nine models
+
+`scripts/configs/latency_9models.yaml` enables Qwen2.5-VL 3B, 7B, 32B and
+72B; MiniCPM-V 4.5 and MiniCPM-o 4.5; and Gemma 3 4B, 12B and 27B. Edit
+each local model path and adjust GPU IDs and tensor parallel sizes for your
+hardware, then run:
+
+```bash
+python scripts/latency_test.py --config scripts/configs/latency_9models.yaml
+```
+
+Models run sequentially in separate subprocesses, with results under a separate
+`results_root/<model_name>/` directory. To run a subset, remove or comment out
+entries in `models`. CLI overrides for the model path, registry, framework,
+GPU and tensor parallel size do not override individual `models` entries.
+With this configuration the script passes a 2048-token generation limit to
+Qwen and MiniCPM. Gemma uses 4096 by default, configurable through
+`GEMMA3_MAX_NEW_TOKENS`. MiniCPM uses its `MINICPM45_VLLM_*` environment
+variables for some vLLM settings instead of the shared `vllm` configuration. MiniCPM's chat-based timing path
+estimates TTFT, TTPT and token counts, so these are not direct measurements.

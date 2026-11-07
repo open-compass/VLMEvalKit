@@ -1,0 +1,46 @@
+# Edit model paths, GPU IDs and tensor parallel sizes for your machine.
+# Nine-model latency test, 10% sampling, CoT only.
+name: latency_9models
+results_root: runs/latency_9models_10pct
+sampling_fraction: 0.10
+max_new_tokens: 2048
+batch_size: 1
+replay_modes:
+  - image_text
+  - image_text_image_text
+cot_modes:
+  - CoT
+replay:
+  replay_times: 1
+  template_on_last_replay_text: 1
+  image_copy_mode: reuse_path
+  limit_mm_per_prompt: 2
+  safe_fallback: 1
+  safe_truncate_chars: 6000
+vllm:
+  max_num_seqs: 16
+  max_model_len: 32768
+  gpu_memory_utilization: 0.9
+datasets:
+  - DynaMath
+  - MathVision
+  - LogicVista
+  - VisualPuzzles
+  - AI2D_TEST
+  - OCRBench
+  - SEEDBench2_Plus
+  - MMMU_DEV_VAL_SINGLE_IMAGE
+  - WeMath
+  - MMBench_DEV_EN_V11
+  - MMStar
+  - MathVista_MINI
+models:
+  - { name: "qwen25vl_3b",  path: "/path/to/models/qwen2_5_vl_3b_instruct",  registry: "Qwen2.5-VL-3B-Instruct-Replay", framework: "qwen",    gpu: "0", tp: 1 }
+  - { name: "qwen25vl_7b",  path: "/path/to/models/qwen2_5_vl_7b_instruct",  registry: "Qwen2.5-VL-7B-Instruct-Replay", framework: "qwen",    gpu: "0", tp: 1 }
+  - { name: "qwen25vl_32b", path: "/path/to/models/qwen2_5_vl_32b_instruct", registry: "Qwen2VLChatReplay",              framework: "qwen",    gpu: "0,1", tp: 2 }
+  - { name: "qwen25vl_72b", path: "/path/to/models/qwen2_5_vl_72b_instruct", registry: "Qwen2VLChatReplay",              framework: "qwen",    gpu: "0,1,2,3", tp: 4 }
+  - { name: "minicpm_v_45", path: "/path/to/models/minicpm-v-4_5",          registry: "MiniCPM-V-4_5-Replay",          framework: "minicpm", gpu: "0", tp: 1 }
+  - { name: "minicpm_o_45", path: "/path/to/models/minicpm-o-4_5",          registry: "MiniCPM-o-4_5-Replay",          framework: "minicpm", gpu: "0", tp: 1 }
+  - { name: "gemma3_4b",    path: "/path/to/models/gemma-3-4b-it",          registry: "Gemma3-4B-Replay",              framework: "gemma3",  gpu: "0", tp: 1 }
+  - { name: "gemma3_12b",   path: "/path/to/models/gemma-3-12b-it",         registry: "Gemma3-12B-Replay",             framework: "gemma3",  gpu: "0", tp: 1 }
+  - { name: "gemma3_27b",   path: "/path/to/models/gemma-3-27b-it",         registry: "Gemma3-27B-Replay",             framework: "gemma3",  gpu: "0,1", tp: 2 }
