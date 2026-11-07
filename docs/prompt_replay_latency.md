@@ -19,15 +19,6 @@ mean. `per_dataset_summary.csv` contains the corresponding dataset-level
 statistics, and `all_latency_results.csv` contains per-sample values in
 `e2e_latency_s`.
 
-For reference, the original Qwen2.5-VL-3B result contained 2,610 measured
-samples from 12 datasets per configuration (one additional sample per
-configuration was discarded as warmup):
-
-| Configuration | Mean E2E latency (s) | E2E standard deviation (s) |
-| --- | ---: | ---: |
-| `image_text_CoT` | 0.7782 | 1.3090 |
-| `image_text_image_text_CoT` | 0.7834 | 1.1995 |
-
 TTFT, TTPT, calculated total latency and output token counts are also recorded
 for analysis. Total latency is calculated as TTFT plus TTPT multiplied by
 the number of remaining output tokens; use the E2E columns above for the
@@ -36,6 +27,52 @@ stepping fails, the script prints a warning and estimates them from wall time
 and output length. MiniCPM's chat-based path estimates TTFT, TTPT and token
 counts. These estimated figures are not direct measurements. Compare output
 lengths as well as latency, since different generations affect total time.
+
+## Results for all nine models
+
+Each row summarizes 2,610 measured samples across 12 datasets, with CoT
+enabled. Mean and standard deviation are sample-level E2E latency in seconds.
+The output token counts for MiniCPM are estimates based on word counts.
+
+| Model | Configuration | Mean E2E (s) | E2E std. (s) | Mean output tokens |
+| --- | --- | ---: | ---: | ---: |
+| Qwen2.5-VL-3B | `image_text_CoT` | 0.7782 | 1.309 | 141.8 |
+| Qwen2.5-VL-3B | `image_text_image_text_CoT` | 0.7834 | 1.1995 | 120.8 |
+| Qwen2.5-VL-7B | `image_text_CoT` | 0.9546 | 1.1761 | 163.8 |
+| Qwen2.5-VL-7B | `image_text_image_text_CoT` | 0.9992 | 1.2257 | 149.2 |
+| Qwen2.5-VL-32B | `image_text_CoT` | 5.7278 | 5.6348 | 342.2 |
+| Qwen2.5-VL-32B | `image_text_image_text_CoT` | 5.8682 | 5.5018 | 342.1 |
+| Qwen2.5-VL-72B | `image_text_CoT` | 5.0112 | 6.3431 | 159.0 |
+| Qwen2.5-VL-72B | `image_text_image_text_CoT` | 5.469 | 6.7628 | 161.4 |
+| MiniCPM-V-4.5 | `image_text_CoT` | 5.2004 | 4.1229 | 960.4 |
+| MiniCPM-V-4.5 | `image_text_image_text_CoT` | 5.3622 | 4.1242 | 951.9 |
+| MiniCPM-o-4.5 | `image_text_CoT` | 4.4216 | 3.9454 | 894.8 |
+| MiniCPM-o-4.5 | `image_text_image_text_CoT` | 4.3194 | 3.9406 | 841.8 |
+| Gemma3-4B | `image_text_CoT` | 1.1264 | 2.2683 | 256.3 |
+| Gemma3-4B | `image_text_image_text_CoT` | 1.0822 | 2.0807 | 227.7 |
+| Gemma3-12B | `image_text_CoT` | 1.873 | 3.8807 | 225.0 |
+| Gemma3-12B | `image_text_image_text_CoT` | 1.9329 | 3.9037 | 219.3 |
+| Gemma3-27B | `image_text_CoT` | 3.9642 | 7.8824 | 273.2 |
+| Gemma3-27B | `image_text_image_text_CoT` | 3.4744 | 7.1358 | 228.0 |
+
+The additional Qwen timing fields from the recorded results are shown below.
+TTFT and TTPT may be estimates when the engine-step timing falls back.
+
+| Model | Configuration | Mean total latency (s) | Total latency std. (s) | Mean TTFT (s) | TTFT std. (s) | Mean TTPT (s/token) | TTPT std. (s/token) |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Qwen2.5-VL-3B | `image_text_CoT` | 0.7556 | 1.3081 | 0.1545 | 0.1259 | 0.004203 | 0.00023 |
+| Qwen2.5-VL-3B | `image_text_image_text_CoT` | 0.7451 | 1.1963 | 0.2329 | 0.1866 | 0.004127 | 0.000316 |
+| Qwen2.5-VL-7B | `image_text_CoT` | 0.9316 | 1.1735 | 0.1611 | 0.1302 | 0.004687 | 0.000242 |
+| Qwen2.5-VL-7B | `image_text_image_text_CoT` | 0.9609 | 1.2215 | 0.259 | 0.201 | 0.00465 | 0.000222 |
+| Qwen2.5-VL-32B | `image_text_CoT` | 5.7045 | 5.6338 | 0.2683 | 0.195 | 0.015985 | 0.000481 |
+| Qwen2.5-VL-32B | `image_text_image_text_CoT` | 5.8264 | 5.4994 | 0.4709 | 0.3403 | 0.015643 | 0.000179 |
+| Qwen2.5-VL-72B | `image_text_CoT` | 4.988 | 6.3415 | 0.4098 | 0.291 | 0.029055 | 0.000508 |
+| Qwen2.5-VL-72B | `image_text_image_text_CoT` | 5.4284 | 6.7594 | 0.7587 | 0.5299 | 0.029057 | 0.000418 |
+
+The source summaries were `overall_summary.csv` files under
+`runs/latency_9models_10pct/<model>/`, except Gemma3-12B and Gemma3-27B,
+which came from `runs/latency_9models_10pct1/<model>/`. These experiment
+outputs are not included in the repository.
 
 ## Run all nine models
 
