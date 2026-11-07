@@ -32,7 +32,6 @@ lengths as well as latency, since different generations affect total time.
 
 Each row summarizes 2,610 measured samples across 12 datasets, with CoT
 enabled. Mean and standard deviation are sample-level E2E latency in seconds.
-The output token counts for MiniCPM are estimates based on word counts.
 
 | Model | Configuration | Mean E2E (s) | E2E std. (s) | Mean output tokens |
 | --- | --- | ---: | ---: | ---: |
