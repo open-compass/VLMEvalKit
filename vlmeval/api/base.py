@@ -47,7 +47,7 @@ class BaseAPI:
         self.default_kwargs = kwargs
 
     @abstractmethod
-    def generate_inner(self, inputs, **kwargs):
+    def generate_inner(self, inputs, system_prompt=None, **kwargs):
         """The inner function to generate the answer.
 
         Returns:
@@ -157,7 +157,7 @@ class BaseAPI:
 
     def chat(self, messages, **kwargs1):
         """The main function for multi-turn chatting. Will call `chat_inner` with the preprocessed input messages."""
-        assert hasattr(self, 'chat_inner'), 'The API model should has the `chat_inner` method. '
+        assert hasattr(self, 'chat_inner'), 'The API model should have the `chat_inner` method. '
         for msg in messages:
             assert isinstance(msg, dict) and 'role' in msg and 'content' in msg, msg
             assert self.check_content(msg['content']) in ['str', 'dict', 'liststr', 'listdict'], msg
@@ -189,7 +189,7 @@ class BaseAPI:
                     logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
             except Exception as err:
                 if self.verbose:
-                    logger.error(f'An error occured during try {i}: ')
+                    logger.error(f'An error occurred during try {i}: ')
                     logger.error(f'{type(err)}: {err}')
             # delay before each retry
             T = rd.random() * self.wait * 2
@@ -198,24 +198,20 @@ class BaseAPI:
         return self.fail_msg if answer in ['', None] else answer
 
     def preprocess_message_with_role(self, message):
-        system_prompt = ''
+        system_prompts = []
         new_message = []
 
         for data in message:
             assert isinstance(data, dict)
-            role = data.pop('role', 'user')
+            role = data.get('role', 'user')
             if role == 'system':
-                system_prompt += data['value'] + '\n'
+                system_prompts.append(data['value'])
             else:
-                new_message.append(data)
+                new_message.append({key: value for key, value in data.items() if key != 'role'})
 
-        if system_prompt != '':
-            if self.system_prompt is None:
-                self.system_prompt = system_prompt
-            else:
-                if system_prompt not in self.system_prompt:
-                    self.system_prompt += '\n' + system_prompt
-        return new_message
+        prompts = [self.system_prompt, *system_prompts]
+        system_prompt = '\n'.join(prompt for prompt in prompts if prompt) or None
+        return new_message, system_prompt
 
     def generate(self, message, **kwargs1):
         """The main function to generate the answer. Will call `generate_inner` with the preprocessed input messages.
@@ -226,8 +222,9 @@ class BaseAPI:
         Returns:
             str: The generated answer of the Failed Message if failed to obtain answer.
         """
+        system_prompt = self.system_prompt
         if self.check_content(message) == 'listdict':
-            message = self.preprocess_message_with_role(message)
+            message, system_prompt = self.preprocess_message_with_role(message)
 
         assert self.check_content(message) in ['str', 'dict', 'liststr', 'listdict'], f'Invalid input type: {message}'
         message = self.preproc_content(message)
@@ -238,6 +235,7 @@ class BaseAPI:
         # merge kwargs
         kwargs = cp.deepcopy(self.default_kwargs)
         kwargs.update(kwargs1)
+        kwargs['system_prompt'] = system_prompt
 
         answer = None
         # a very small random delay [0s - 0.5s]
@@ -264,7 +262,7 @@ class BaseAPI:
                     logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
             except Exception as err:
                 if self.verbose:
-                    logger.error(f'An error occured during try {i}: ')
+                    logger.error(f'An error occurred during try {i}: ')
                     logger.error(f'{type(err)}: {err}')
             # delay before each retry
             T = rd.random() * self.wait * 2
@@ -306,15 +304,15 @@ class BaseAPI:
     def _inspect_payload(payload) -> str:
         payload = cp.deepcopy(payload)
 
-        def recurive_hide_base64(value):
+        def recursive_hide_base64(value):
             if isinstance(value, str) and (item := re.match(r'^data:[\w/]+;base64,', value)):
                 head = item.group(0)
                 return f'{head}<base64:{len(value) - len(head)}>'
             elif isinstance(value, dict):
-                return {k: recurive_hide_base64(v) for k, v in value.items()}
+                return {k: recursive_hide_base64(v) for k, v in value.items()}
             elif isinstance(value, list):
-                return [recurive_hide_base64(v) for v in value]
+                return [recursive_hide_base64(v) for v in value]
             else:
                 return value
 
-        return json.dumps(recurive_hide_base64(payload), ensure_ascii=False, indent=2)
+        return json.dumps(recursive_hide_base64(payload), ensure_ascii=False, indent=2)

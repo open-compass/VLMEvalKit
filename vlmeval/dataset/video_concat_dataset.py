@@ -1,15 +1,20 @@
 import copy as cp
+import os
 
 import numpy as np
 import pandas as pd
 
-from vlmeval.smp import dump, get_intermediate_file_path, load, toliststr
+from vlmeval.smp import (dump, get_composite_child_eval_file, get_intermediate_file_path, load,
+                         toliststr)
 from .video_base import VideoBaseDataset
 
 
 class ConcatVideoDataset(VideoBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
     # Each single dataset should not have a field named `SUB_DATASET`
+
+    def prepare_dataset(self, dataset):
+        pass
 
     DATASET_SETS = {}
 
@@ -66,17 +71,20 @@ class ConcatVideoDataset(VideoBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         # First, split the eval_file by dataset
         data_all = load(eval_file)
+        child_eval_files = {}
         for dname in self.datasets:
-            tgt = eval_file.replace(self.dataset_name, dname)
-            data_sub = data_all[data_all['SUB_DATASET'] == dname]
+            tgt = get_composite_child_eval_file(eval_file, dname)
+            child_eval_files[dname] = tgt
+            data_sub = data_all[data_all['SUB_DATASET'] == dname].copy()
             data_sub.pop('index')
             data_sub['index'] = data_sub.pop('original_index')
             data_sub.pop('SUB_DATASET')
+            os.makedirs(os.path.dirname(tgt), exist_ok=True)
             dump(data_sub, tgt)
         # Then, evaluate each dataset separately
         results_all = {}
         for dname in self.datasets:
-            tgt = eval_file.replace(self.dataset_name, dname)
+            tgt = child_eval_files[dname]
             res = self.dataset_map[dname].evaluate(tgt, **judge_kwargs)
             results_all.update(res)
 

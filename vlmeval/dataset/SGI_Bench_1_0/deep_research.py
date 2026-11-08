@@ -106,6 +106,7 @@ provided below. Do not include any other text or comments.
 
 class SGI_Bench_Deep_Research(TextBaseDataset):
     TYPE = 'QA'
+    DEFAULT_JUDGE_MODEL = 'o4-mini'
 
     @classmethod
     def supported_datasets(cls):
@@ -154,7 +155,7 @@ Step 2. ...
         data = pd.DataFrame(data)
 
         if judge_kwargs.get('model') is None:
-            judge_kwargs['model'] = 'o4-mini'
+            judge_kwargs['model'] = self.DEFAULT_JUDGE_MODEL
         if judge_kwargs.get('max_tokens') is None:
             judge_kwargs['max_tokens'] = None
 

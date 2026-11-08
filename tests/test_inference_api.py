@@ -30,6 +30,7 @@ def _load_inference_api():
     smp.dump = _dump
     smp.get_logger = lambda name: logging.getLogger(name)
     smp.load = _load
+    smp.load_prediction_file = _load
     smp.upsert_dataset_status = lambda *args, **kwargs: None
 
     smp_log = types.ModuleType('vlmeval.smp.log')
@@ -89,6 +90,38 @@ class FakeCrashEvalDataset:
 
     def evaluate(self, result_file, **judge_kwargs):
         os._exit(1)
+
+
+class FakeAliasDataset:
+    dataset_name = 'LogicalEval'
+    data = [{'index': 0}]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        return self.data[idx]
+
+    def build_prompt(self, item):
+        return {'dataset_prompt': item['index']}
+
+    def dump_image(self, item):
+        return []
+
+
+class FakeAliasModel:
+
+    def __init__(self):
+        self.use_custom_prompt_datasets = []
+        self.build_prompt_datasets = []
+
+    def use_custom_prompt(self, dataset):
+        self.use_custom_prompt_datasets.append(dataset)
+        return True
+
+    def build_prompt(self, item, dataset=None):
+        self.build_prompt_datasets.append(dataset)
+        return {'model_prompt': item['index'], 'dataset': dataset}
 
 
 class TestInferenceApiProcessHelpers(unittest.TestCase):
@@ -230,6 +263,42 @@ class TestInferenceApiProcessHelpers(unittest.TestCase):
                 self.assertEqual(pipeline.eval_processes, {})
             finally:
                 logging.disable(logging.NOTSET)
+                pipeline._shutdown_executors()
+
+    def test_dataset_config_separates_logical_name_from_output_alias(self):
+        inference_api = _load_inference_api()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model = FakeAliasModel()
+            cfg = inference_api.DatasetConfig(
+                dataset_name='LogicalEval',
+                dataset_alias_name='AliasEval',
+                dataset_obj=FakeAliasDataset(),
+                model_name='mock',
+                model_obj=model,
+                work_dir=tmpdir,
+                result_file=str(Path(tmpdir) / 'mock_AliasEval.tsv'),
+                judge_kwargs={},
+            )
+            pipeline = inference_api.APIEvalPipeline([cfg], concurrency=1, run_eval=False)
+
+            try:
+                self.assertIn('AliasEval', pipeline.states)
+                self.assertNotIn('LogicalEval', pipeline.states)
+                self.assertEqual(
+                    pipeline._get_checkpoint_file('AliasEval').name,
+                    'mock_AliasEval_checkpoint.pkl',
+                )
+
+                tasks_generated = asyncio.run(pipeline._produce_image_tasks(cfg, {}))
+                self.assertEqual(tasks_generated, 1)
+                task = pipeline.queue.get_nowait()
+
+                self.assertEqual(task.dataset_name, 'LogicalEval')
+                self.assertEqual(task.dataset_alias_name, 'AliasEval')
+                self.assertEqual(model.use_custom_prompt_datasets, ['LogicalEval'])
+                self.assertEqual(model.build_prompt_datasets, ['LogicalEval'])
+            finally:
                 pipeline._shutdown_executors()
 
 

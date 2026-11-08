@@ -343,7 +343,6 @@ class RBdashMMChat3_78B_Wrapper(BaseAPI):
 
         logger.info(f'using custom prompt {self.custom_prompt}')
         logger.info(f'Init temperature: {self.temperature}')
-        self.system_prompt = R1_SYSTEM_PROMPT
 
     def set_dump_image(self, dump_image_func):
         if self.custom_prompt in self.prompt_map:
@@ -384,10 +383,10 @@ class RBdashMMChat3_78B_Wrapper(BaseAPI):
             content_list = [dict(type='text', text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(role='system', content=system_prompt))
 
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
         assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
@@ -399,17 +398,17 @@ class RBdashMMChat3_78B_Wrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         temperature = kwargs.pop('temperature', self.temperature)
         logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
         dataset = kwargs.pop('dataset', None)
         if listinstr(['MMMU_DEV_VAL', 'MathVista'], dataset):
-            self.system_prompt = R1_SYSTEM_PROMPT
+            system_prompt = R1_SYSTEM_PROMPT
         else:
-            self.system_prompt = None
+            system_prompt = None
 
-        input_msgs = self.prepare_inputs(inputs)
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
 
         if dataset is not None and listinstr(['BMMR'], dataset):
             # BMMR dataset has a very long prompt, so we need to increase max_tokens
@@ -482,7 +481,6 @@ class RBdashMMChat3_5_38B_Wrapper(BaseAPI):
 
         logger.info(f'using custom prompt {self.custom_prompt}')
         logger.info(f'Init temperature: {self.temperature}')
-        self.system_prompt = R1_SYSTEM_PROMPT
 
     def set_dump_image(self, dump_image_func):
         if self.custom_prompt in self.prompt_map:
@@ -524,10 +522,10 @@ class RBdashMMChat3_5_38B_Wrapper(BaseAPI):
             content_list = [dict(type='text', text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(role='system', content=system_prompt))
 
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
         assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
@@ -539,7 +537,7 @@ class RBdashMMChat3_5_38B_Wrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         temperature = kwargs.pop('temperature', self.temperature)
         logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
@@ -548,11 +546,11 @@ class RBdashMMChat3_5_38B_Wrapper(BaseAPI):
                 'MMMU_DEV_VAL', 'MathVista_MINI', 'MMBench_V11',
                 'MMStar', 'DynaMath', 'MathVision', 'MathVerse',
                 'LogicVista', 'WeMath'], dataset):
-            self.system_prompt = R1_SYSTEM_PROMPT
+            system_prompt = R1_SYSTEM_PROMPT
         else:
-            self.system_prompt = None
+            system_prompt = None
 
-        input_msgs = self.prepare_inputs(inputs)
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
 
         if dataset is not None and listinstr(['BMMR'], dataset):
             # BMMR dataset has a very long prompt, so we need to increase max_tokens

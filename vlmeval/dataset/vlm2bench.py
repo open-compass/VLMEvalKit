@@ -3,11 +3,60 @@ import os
 
 import pandas as pd
 
-from vlmeval.smp import dump, load
+from vlmeval.smp import dump, load, toliststr
 from vlmeval.smp.file import get_intermediate_file_path
 from .image_base import ImageBaseDataset
 from .utils.vlm2bench import (cnt_aggregate_metric, common_process_results, grp_aggregate_accuracy,
                               tf_pair_aggregate_accuracy)
+
+
+def _is_missing(value):
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value.strip() == ''
+    if isinstance(value, (list, tuple)):
+        return False
+    try:
+        return bool(pd.isna(value))
+    except Exception:
+        return False
+
+
+def _positive_int(value):
+    if _is_missing(value):
+        return None
+    try:
+        count = int(value)
+    except Exception:
+        return None
+    return count if count > 0 else None
+
+
+def _field_seq_len(value):
+    if _is_missing(value):
+        return None
+    if isinstance(value, (list, tuple)):
+        count = len(value)
+    else:
+        try:
+            count = len(toliststr(value))
+        except Exception:
+            return None
+    return count if count > 0 else None
+
+
+def _infer_image_seq_len(record, default=2):
+    seq_len = _positive_int(record.get('image_seq_len'))
+    if seq_len is not None:
+        return seq_len
+    for key in ('image_path', 'image'):
+        if key not in record:
+            continue
+        seq_len = _field_seq_len(record[key])
+        if seq_len is not None:
+            return seq_len
+    return default
 
 
 class VLM2Bench(ImageBaseDataset):
@@ -82,13 +131,11 @@ class VLM2Bench(ImageBaseDataset):
         results = data.to_dict(orient="records")
         processed = common_process_results(results)
 
-        # For cnt category, calculate image_seq_len (i.e., number of images) based on the list of image encodings stored in the image field
+        # For cnt category, calculate image_seq_len (i.e., number of images) from
+        # inference/eval records, which usually keep image_path instead of image.
         for rec in processed:
             if rec.get("category", "").lower() in ["oc-cnt", "pc-cnt"]:
-                try:
-                    rec["image_seq_len"] = len(rec["image"])
-                except Exception as e:
-                    rec["image_seq_len"] = 2
+                rec["image_seq_len"] = _infer_image_seq_len(rec)
 
         eval_scores = {}
         for cat in sorted(set([r["category"] for r in processed])):

@@ -1,7 +1,9 @@
 import logging
 import re
+import string
 from typing import Dict, List, Optional, Union
 
+import pandas as pd
 import torch
 from PIL import Image
 from transformers import AutoProcessor, AutoTokenizer, set_seed

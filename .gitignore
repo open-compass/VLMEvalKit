@@ -172,6 +172,7 @@ data
 outputs/*
 demo.ipynb
 *json
+!tests/fixtures/predefined_video_shortcuts_manifest.json
 !vlmeval/dataset/utils/vgrpbench/configs/formating-prompt/**/*.json
 .vscode
 *.swp

@@ -98,10 +98,10 @@ class GeminiWrapper(BaseAPI):
 
         return video_part
 
-    def build_msgs_genai(self, inputs):
+    def build_msgs_genai(self, inputs, system_prompt=None):
         video_in_msg = False
         video_parts = []
-        text_and_images = [] if self.system_prompt is None else [self.system_prompt]
+        text_and_images = [] if system_prompt is None else [system_prompt]
 
         for inp in inputs:
             if inp['type'] == 'text':
@@ -116,9 +116,9 @@ class GeminiWrapper(BaseAPI):
         messages = video_parts + text_and_images
         return messages, video_in_msg
 
-    def build_msgs_vertex(self, inputs):
+    def build_msgs_vertex(self, inputs, system_prompt=None):
         from vertexai.generative_models import Image, Part
-        messages = [] if self.system_prompt is None else [self.system_prompt]
+        messages = [] if system_prompt is None else [system_prompt]
         for inp in inputs:
             if inp['type'] == 'text':
                 messages.append(inp['value'])
@@ -126,12 +126,12 @@ class GeminiWrapper(BaseAPI):
                 messages.append(Part.from_image(Image.load_from_file(inp['value'])))
         return messages
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         if self.backend == 'genai':
             from google.genai import types
             assert isinstance(inputs, list)
             model = self.model
-            messages, video_in_msg = self.build_msgs_genai(inputs)
+            messages, video_in_msg = self.build_msgs_genai(inputs, system_prompt)
 
             # Configure generation parameters
             config_args = {
@@ -173,7 +173,7 @@ class GeminiWrapper(BaseAPI):
             vertexai.init(project=self.project_id, location='us-central1')
             model_name = 'gemini-1.0-pro-vision' if self.model == 'gemini-1.0-pro' else self.model
             model = GenerativeModel(model_name=model_name)
-            messages = self.build_msgs_vertex(inputs)
+            messages = self.build_msgs_vertex(inputs, system_prompt)
             try:
                 resp = model.generate_content(messages)
                 answer = resp.text

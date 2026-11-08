@@ -335,6 +335,7 @@ def replace_function(main_code, new_code, function_name):
 
 class SGI_Bench_Dry_Experiment(TextBaseDataset):
     TYPE = 'QA'
+    DEFAULT_JUDGE_MODEL = 'o4-mini'
 
     @classmethod
     def supported_datasets(cls):
@@ -549,7 +550,7 @@ def minus(a, b):
         )
         # 代码运行
         if judge_kwargs.get('model') is None:
-            judge_kwargs['model'] = 'o4-mini'
+            judge_kwargs['model'] = self.DEFAULT_JUDGE_MODEL
         if judge_kwargs.get('max_tokens') is None:
             judge_kwargs['max_tokens'] = None
         # 代码评测

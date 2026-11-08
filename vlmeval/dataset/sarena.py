@@ -58,8 +58,8 @@ class SArena(ImageBaseDataset):
         try:
             t2s_clip = metrics['SArena-Icon|T2SVG|CLIP-Score-I2I']
             i2s_dino = metrics['SArena-Icon|I2SVG|DINO-Score']
-            i2s_ssim = metrics['SArena-Icon|I2SVG|LPIPS']
-            i2s_lpips = metrics['SArena-Icon|I2SVG|SSIM']
+            i2s_ssim = metrics['SArena-Icon|I2SVG|SSIM']
+            i2s_lpips = metrics['SArena-Icon|I2SVG|LPIPS']
 
             icon_score = sum((
                 0.3 * float(t2s_clip),
@@ -75,8 +75,8 @@ class SArena(ImageBaseDataset):
         try:
             t2s_clip = metrics['SArena-Illustration|T2SVG|CLIP-Score-I2I']
             i2s_dino = metrics['SArena-Illustration|I2SVG|DINO-Score']
-            i2s_ssim = metrics['SArena-Illustration|I2SVG|LPIPS']
-            i2s_lpips = metrics['SArena-Illustration|I2SVG|SSIM']
+            i2s_ssim = metrics['SArena-Illustration|I2SVG|SSIM']
+            i2s_lpips = metrics['SArena-Illustration|I2SVG|LPIPS']
 
             illu_score = sum((
                 0.3 * float(t2s_clip),

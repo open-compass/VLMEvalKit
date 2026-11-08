@@ -201,6 +201,7 @@ class MMRarebenchOpenEndedBase(MMRarebenchBase):
     """Base class for open-ended VQA tasks."""
 
     TYPE = 'VQA'
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
 
     def _build_open_prompt(self, line, task_instruction=''):
         if isinstance(line, int):
@@ -320,7 +321,7 @@ class MMRarebenchDiagnosis(MMRarebenchOpenEndedBase):
 
     def evaluate(self, eval_file, **judge_kwargs):
         """Diagnosis evaluation: Judge Score (3-dim YES/NO weighted) + token-level F1."""
-        model_name = judge_kwargs.get('model', 'exact_matching')
+        model_name = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         if model_name == 'exact_matching':
             warnings.warn(
                 f'{self.dataset_name}: Open-ended QA requires Judge Model. '
@@ -498,7 +499,7 @@ class MMRarebenchTreatment(MMRarebenchOpenEndedBase):
 
     def evaluate(self, eval_file, **judge_kwargs):
         """Treatment Track evaluation: Judge Score (6-dim YES/NO)."""
-        model_name = judge_kwargs.get('model', 'exact_matching')
+        model_name = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         if model_name == 'exact_matching':
             warnings.warn(
                 f'{self.dataset_name}: Open-ended QA requires Judge Model. '
@@ -615,7 +616,7 @@ class MMRarebenchCrossmodal(MMRarebenchOpenEndedBase):
 
     def evaluate(self, eval_file, **judge_kwargs):
         """Crossmodal Track evaluation: Judge Score (5-dim YES/NO)."""
-        model_name = judge_kwargs.get('model', 'exact_matching')
+        model_name = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         if model_name == 'exact_matching':
             warnings.warn(
                 f'{self.dataset_name}: Open-ended QA requires Judge Model. '
@@ -743,7 +744,7 @@ class MMRarebenchExamination(MMRarebenchOpenEndedBase):
 
     def evaluate(self, eval_file, **judge_kwargs):
         """Examination Track evaluation: Judge Score (8-dim 0-1-2 scale)."""
-        model_name = judge_kwargs.get('model', 'exact_matching')
+        model_name = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         if model_name == 'exact_matching':
             warnings.warn(
                 f'{self.dataset_name}: Open-ended QA requires Judge Model. '

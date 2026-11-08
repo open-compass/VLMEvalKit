@@ -117,15 +117,15 @@ class Claude_Wrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         payload = {
             'model': self.model,
             'max_tokens': self.max_tokens,
             'messages': self.prepare_inputs(inputs),
             **kwargs
         }
-        if self.system_prompt is not None:
-            payload['system'] = self.system_prompt
+        if system_prompt is not None:
+            payload['system'] = system_prompt
 
         response = requests.request(
             'POST', self.url, headers=self.headers, data=json.dumps(payload), timeout=self.timeout * 1.1

@@ -14,6 +14,11 @@ cd VLMEvalKit
 pip install -e .
 ```
 
+**COCO caption scoring.** Install `pycocoevalcap` and make Java available on `PATH`.
+The COCO evaluator uses its Stanford PTB tokenizer before BLEU, ROUGE and CIDEr;
+these metrics do not call a model API. See the
+[caption scorer setup](https://github.com/salaniz/pycocoevalcap#requirements).
+
 **Setup Keys.**
 
 To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **judge or choice extractor**, you need to first setup API keys. VLMEvalKit will use an judge **LLM** to extract answer from the output if you set the key, otherwise it uses the **exact matching** mode (find "Yes", "No", "A", "B", "C"... in the output strings). **The exact matching can only be applied to the Yes-or-No tasks and the Multi-choice tasks.**

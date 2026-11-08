@@ -3,7 +3,7 @@ MiniMax API support for text-based LLM evaluation.
 OpenAI-compatible chat completions endpoint.
 Set MINIMAX_API_KEY or pass key=...
 
-Models: MiniMax-M2.7, MiniMax-M2.5, MiniMax-M2.5-highspeed
+Models: MiniMax-M3, MiniMax-M2.7
 API docs: https://platform.minimaxi.com/document/guides/chat-model/text-generation
 """
 import json
@@ -25,7 +25,7 @@ class MiniMaxAPI(BaseAPI):
 
     def __init__(
         self,
-        model: str = "MiniMax-M2.7",
+        model: str = "MiniMax-M3",
         key: str = None,
         api_base: str = None,
         retry: int = 10,
@@ -59,11 +59,11 @@ class MiniMaxAPI(BaseAPI):
 
         logger.info(f"MiniMaxAPI: model={self.model}, api_base={self.api_base}")
 
-    def _prepare_messages(self, inputs):
+    def _prepare_messages(self, inputs, system_prompt=None):
         """Build OpenAI-style messages from VLMEvalKit input format."""
         messages = []
-        if self.system_prompt:
-            messages.append({"role": "system", "content": self.system_prompt})
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
 
         # Handle multi-turn chat format
         if inputs and isinstance(inputs[0], dict) and "role" in inputs[0]:
@@ -82,11 +82,11 @@ class MiniMaxAPI(BaseAPI):
 
         return messages
 
-    def generate_inner(self, inputs, **kwargs):
+    def generate_inner(self, inputs, system_prompt=None, **kwargs):
         temperature = kwargs.pop("temperature", self.temperature)
         max_tokens = kwargs.pop("max_tokens", self.max_tokens)
 
-        messages = self._prepare_messages(inputs)
+        messages = self._prepare_messages(inputs, system_prompt)
         payload = {
             "model": self.model,
             "messages": messages,

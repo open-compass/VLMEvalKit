@@ -224,7 +224,7 @@ class call_BLEU():
     def evaluate(self, group_info=[], save_name='default'):
         group_samples = get_groups(self.samples, group_info)
         result = {}
-        bleu = evaluate.load("bleu", keep_in_memory=True, experiment_id=random.randint(1,1e8))
+        bleu = evaluate.load("bleu", keep_in_memory=True, experiment_id=random.randint(1,int(1e8)))
 
         for group_name, samples in group_samples.items():
             predictions, references = [], []
@@ -261,7 +261,7 @@ class call_METEOR():
                 pred = sample['norm_pred'] if sample.get('norm_pred') else sample['pred']
                 predictions.append(gt)
                 references.append(pred)
-            meteor = evaluate.load('meteor', keep_in_memory=True, experiment_id=random.randint(1,1e8))
+            meteor = evaluate.load('meteor', keep_in_memory=True, experiment_id=random.randint(1,int(1e8)))
             meteor_results = meteor.compute(predictions=predictions, references=references)
             result[group_name] = meteor_results['meteor']
 

@@ -112,7 +112,7 @@ class LMDeployWrapper(BaseAPI):
             input_msgs.append(dict(role="user", content=self.prepare_itlist(inputs)))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> tuple:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> tuple:
         mode = kwargs.pop("mode", "direct")
         dataset = kwargs.pop("dataset", None)
 

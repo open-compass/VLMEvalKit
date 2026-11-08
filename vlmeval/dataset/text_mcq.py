@@ -18,8 +18,6 @@ class TextMCQDataset(TextBaseDataset):
 
     DATASET_MD5 = {}
 
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
-
     def build_prompt(self, line):
 
         if isinstance(line, int):
@@ -114,6 +112,19 @@ class TextMCQDataset(TextBaseDataset):
         dump(acc, score_file)
 
         return acc
+
+
+class MedXpertQAText(TextMCQDataset):
+
+    DATASET_URL = {
+        'MedXpertQA_Text_test': (
+            'http://opencompass.oss-cn-shanghai.aliyuncs.com/utils/VLMEval/MedXpertQA_Text_test.tsv'
+        ),
+    }
+
+    DATASET_MD5 = {
+        'MedXpertQA_Text_test': '354e00e77e865beb7ddf2132aabce45c',
+    }
 
 
 class CustomTextMCQDataset(TextMCQDataset):

@@ -13,6 +13,7 @@ class TextBaseDataset:
     MODALITY = 'TEXT'
     DATASET_URL = {}
     DATASET_MD5 = {}
+    DEFAULT_JUDGE_MODEL: str | None = None
 
     def __init__(self, dataset='MMBench', **kwargs):
         self.dataset_name = dataset
@@ -32,6 +33,16 @@ class TextBaseDataset:
 
     def __getitem__(self, idx):
         return dict(self.data.iloc[idx])
+
+    def get_default_judge_model(self, judge_kwargs=None):
+        default_model = getattr(self, 'DEFAULT_JUDGE_MODEL', None)
+        if default_model is not None:
+            return default_model
+
+        dataset_type = getattr(self, 'TYPE', None)
+        if dataset_type in ('MCQ', 'Y/N', 'MCQ_MMMU_Pro'):
+            return 'gpt-4o-mini'
+        return None
 
     def prepare_tsv(self, url, file_md5=None):
         data_root = LMUDataRoot()

@@ -28,6 +28,7 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 class MVBench(VideoBaseDataset):
+    DEFAULT_JUDGE_MODEL = 'chatgpt-0125'
 
     MD5 = 'fd21d36522cdedd46d84dc46715ad832'
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
@@ -36,7 +37,6 @@ Based on your observations, select the best option that accurately addresses the
 """
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='MVBench', nframe=0, fps=-1):
         self.type_data_list = {
@@ -380,7 +380,7 @@ Based on your observations, select the best option that accurately addresses the
         score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.setdefault('model', 'chatgpt-0125')
+            model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
 
             if model == 'exact_matching':
                 model = None
@@ -436,7 +436,7 @@ Based on your observations, select the best option that accurately addresses the
 
 
 class MVBench_MP4(VideoBaseDataset):
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
+    DEFAULT_JUDGE_MODEL = 'chatgpt-0125'
 
     MP4_MD5 = '5c8c6f8b7972c2de65a629590f7c42f5'
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
@@ -553,7 +553,7 @@ Based on your observations, select the best option that accurately addresses the
         max_frame = len(vr) - 1
 
         images_group = list()
-        if self.fps < 0:
+        if self.fps <= 0:
             frame_indices = self.get_index_by_frame(max_frame)
         else:
             frame_indices = self.get_index_by_fps(vr, self.fps)
@@ -624,7 +624,7 @@ Based on your observations, select the best option that accurately addresses the
         score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.setdefault('model', 'chatgpt-0125')
+            model = judge_kwargs.setdefault('model', self.DEFAULT_JUDGE_MODEL)
 
             if model == 'exact_matching':
                 model = None

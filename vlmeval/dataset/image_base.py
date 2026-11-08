@@ -8,6 +8,31 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+try:
+    from pandas._libs.parsers import STR_NA_VALUES as PANDAS_DEFAULT_NA_VALUES
+except ImportError:
+    PANDAS_DEFAULT_NA_VALUES = {
+        '',
+        '#N/A',
+        '#N/A N/A',
+        '#NA',
+        '-1.#IND',
+        '-1.#QNAN',
+        '-NaN',
+        '-nan',
+        '1.#IND',
+        '1.#QNAN',
+        '<NA>',
+        'N/A',
+        'NA',
+        'NULL',
+        'NaN',
+        'None',
+        'n/a',
+        'nan',
+        'null',
+    }
+
 from vlmeval.smp import (LMUDataRoot, decode_base64_to_image_file, download_file, file_size,
                          istype, load, md5, mmqa_display, read_ok, toliststr)
 from vlmeval.smp.file import INFER_FAIL_MSG, RUN_STATUS_NAME, _prediction_table, fetch_aux_files
@@ -49,6 +74,12 @@ def _choose_primary_metric_key(metrics: dict[str, Any]) -> str | None:
 
     scored.sort(key=lambda item: (-item[0], item[1]))
     return scored[0][1]
+
+
+def restore_image_default_na(data):
+    if isinstance(data, pd.DataFrame) and 'image' in data:
+        data['image'] = data['image'].replace(list(PANDAS_DEFAULT_NA_VALUES), np.nan)
+    return data
 
 
 def _count_markers_in_obj(obj: Any, markers: tuple[str, ...]) -> int:
@@ -138,7 +169,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
     MODALITY = 'IMAGE'
     DATASET_URL = {}
     DATASET_MD5 = {}
-    DEFAULT_JUDGE: str | list = 'gpt-4o-mini'
+    DEFAULT_JUDGE_MODEL: str | None = None
 
     INFER_FAIL_MARKERS = (INFER_FAIL_MSG, )
     JUDGE_FAIL_MARKERS = (INFER_FAIL_MSG, )
@@ -150,6 +181,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
         self.img_root = osp.join(ROOT, 'images', img_root_map(dataset))
 
         data = self.load_data(dataset)
+        data = restore_image_default_na(data)
         self.skip_noimg = skip_noimg
         if skip_noimg and 'image' in data:
             data = data[~pd.isna(data['image'])]
@@ -187,6 +219,16 @@ class ImageBaseDataset(metaclass=ABCMeta):
 
     def __getitem__(self, idx):
         return dict(self.data.iloc[idx])
+
+    def get_default_judge_model(self, judge_kwargs=None):
+        default_model = getattr(self, 'DEFAULT_JUDGE_MODEL', None)
+        if default_model is not None:
+            return default_model
+
+        dataset_type = getattr(self, 'TYPE', None)
+        if dataset_type in ('MCQ', 'Y/N', 'MCQ_MMMU_Pro'):
+            return 'gpt-4o-mini'
+        return None
 
     @classmethod
     def get_judge_file(cls, eval_file: str | Path, judge_model: str | None = None) -> Path | None:

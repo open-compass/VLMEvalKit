@@ -51,10 +51,10 @@ class TaiyiWrapper(BaseAPI):
             return True
         return False
 
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(role='system', content=system_prompt))
         has_images = np.sum([x['type'] == 'image' for x in inputs])
         if has_images:
             content_list = []
@@ -166,9 +166,9 @@ class TaiyiWrapper(BaseAPI):
 
         return message
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
 
-        input_msgs = self.prepare_inputs(inputs)
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
         temperature = kwargs.pop('temperature', self.temperature)
 
         headers = {'Authorization': f'Bearer {self.key}'}

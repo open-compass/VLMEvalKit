@@ -135,6 +135,7 @@ def judge_aux(judge, row):
 
 class SGI_Bench_Experimental_Reasoning(ImageBaseDataset):
     TYPE = 'MCQ '
+    DEFAULT_JUDGE_MODEL = 'o4-mini'
 
     @classmethod
     def supported_datasets(cls):
@@ -260,7 +261,7 @@ class SGI_Bench_Experimental_Reasoning(ImageBaseDataset):
 
         all_mcc, all_rv = [], []
         if judge_kwargs.get('model') is None:
-            judge_kwargs['model'] = 'o4-mini'
+            judge_kwargs['model'] = self.DEFAULT_JUDGE_MODEL
         if judge_kwargs.get('max_tokens') is None:
             judge_kwargs['max_tokens'] = None
         judge = build_judge(**judge_kwargs)

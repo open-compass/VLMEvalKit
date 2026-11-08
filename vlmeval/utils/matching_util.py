@@ -9,6 +9,13 @@ from vlmeval.smp.log import get_logger
 logger = get_logger(__name__)
 
 
+# Matches verbose chain-of-thought answers such as:
+#   "The correct answer is **B**. Here's why: ..."
+#   "The answer is C."
+# A lowercase "a" followed by a word is the English article ("the answer is a horse"), not option A.
+_VERBOSE_ANSWER_RE = re.compile(r"(?i)(?:correct\s+)?answer\s+is\s+\**(?!(?-i:a)\s+[a-z])([ABCD])\b\**")
+
+
 def can_infer_option(answer, choices):
     verbose = os.environ.get('VERBOSE', 0)
     # Choices is a dictionary
@@ -47,6 +54,11 @@ def can_infer_option(answer, choices):
                 return ch
     elif count == 0 and count_choice(splits, {'Z', ''}) == 1:
         return 'Z'
+
+    match = _VERBOSE_ANSWER_RE.search(answer or "")
+    if match and match.group(1).upper() in choices:
+        return match.group(1).upper()
+
     return False
 
 

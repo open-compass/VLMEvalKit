@@ -52,6 +52,7 @@ class HiPhODataset(ImageBaseDataset):
 
     Integrated with hipho_verifier for fine and coarse-grained evaluation
     """
+    DEFAULT_JUDGE_MODEL = 'exact_matching'
     TYPE = 'VQA'  # Use VQA type uniformly
 
     # Dataset URL mapping - points to different splits of HuggingFace dataset
@@ -198,7 +199,7 @@ class HiPhODataset(ImageBaseDataset):
 
         # Check if this is HiPhO_ALL mode
         if self.is_all_mode and 'SUB_DATASET' in data.columns:
-            judge_name = judge_kwargs.get('model', 'exact_matching')
+            judge_name = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
             all_tmp_file = get_intermediate_file_path(eval_file, f'_ALL_{judge_name}', 'pkl')
             all_score_file = get_intermediate_file_path(eval_file, f'_ALL_{judge_name}_score', 'json')
             nproc = judge_kwargs.pop('nproc', 4)
@@ -335,7 +336,7 @@ class HiPhODataset(ImageBaseDataset):
             return final_results
 
         # Single subset evaluation with resume support
-        judge_name = judge_kwargs.get('model', 'exact_matching')
+        judge_name = judge_kwargs.get('model', self.DEFAULT_JUDGE_MODEL)
         tmp_file = get_intermediate_file_path(eval_file, f'_{judge_name}', 'pkl')
         score_file = get_intermediate_file_path(eval_file, f'_{judge_name}_score', 'json')
         nproc = judge_kwargs.pop('nproc', 4)
