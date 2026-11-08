@@ -133,7 +133,10 @@ class RBLNQwen2VL(Qwen2VLPromptMixin, RBLNChatVLMBase):
             images, videos, video_kwargs = process_vision_info(
                 messages, return_video_kwargs=True,
             )
-            return images, videos, (video_kwargs or {})
+            # Image-only messages give {'fps': []}; transformers 5 validates processor
+            # kwargs strictly and rejects the empty list, so drop empty entries.
+            video_kwargs = {k: v for k, v in (video_kwargs or {}).items() if v not in (None, [], ())}
+            return images, videos, video_kwargs
         images, videos = process_vision_info(messages)
         return images, videos, {}
 
