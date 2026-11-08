@@ -35,6 +35,32 @@ from huggingface_hub import hf_hub_download
 # paligemma2 before paligemma, llavanext before llavafor, blip_2 before
 # blip2).
 _ARCH_TABLE: tuple[tuple[str, str, dict], ...] = (
+    # Qwen3.5 / 3.6 / 3.8, Gemma 4 and EXAONE 4.5 defaults follow
+    # quant-model-zoo's image-text-to-text/{qwen3.5,gemma4,exaone4_5}/*/compile.py
+    # (int8 device counts).
+    ('qwen3_5forconditional', 'RBLNQwen3_5', {
+        'visual': {'max_seq_len': 16384, 'tensor_parallel_size': 8},
+        'tensor_parallel_size': 8,
+        'kvcache_partition_len': 16384,
+        'max_seq_len': 262144,
+    }),
+    ('gemma4forconditional', 'RBLNGemma4', {
+        'batch_size': 1,
+        'language_model': {
+            'num_devices': 16,
+            'max_seq_len': 262144,
+            'kvcache_partition_len': 16384,
+            'prefill_chunk_size': 128,
+            'attn_impl': 'flash_attn',
+        },
+        'vision_tower': {'num_devices': 8},
+    }),
+    ('exaone4_5_forconditional', 'RBLNExaone4_5', {
+        'visual': {'max_seq_len': 16384, 'num_devices': 16},
+        'num_devices': 16,
+        'kvcache_partition_len': 8192,
+        'max_seq_len': 262144,
+    }),
     ('qwen3vl', 'RBLNQwen3VL', {
         'visual': {'max_seq_lens': 16384, 'tensor_parallel_size': 8},
         'tensor_parallel_size': 8,
@@ -194,9 +220,9 @@ def auto_select_wrapper(model_path: str) -> tuple[type, dict]:
     """
     # Lazy import: avoid pulling every wrapper at module load time, and
     # avoid a circular import when this module is loaded from rbln/__init__.
-    from . import (RBLNBlip2, RBLNCosmosReason1, RBLNGemma3, RBLNIdefics3, RBLNLlava,
-                   RBLNLlavaNext, RBLNPaliGemma, RBLNPaliGemma2, RBLNPixtral, RBLNQwen2VL,
-                   RBLNQwen3VL)
+    from . import (RBLNBlip2, RBLNCosmosReason1, RBLNExaone4_5, RBLNGemma3, RBLNGemma4,
+                   RBLNIdefics3, RBLNLlava, RBLNLlavaNext, RBLNPaliGemma, RBLNPaliGemma2,
+                   RBLNPixtral, RBLNQwen2VL, RBLNQwen3_5, RBLNQwen3VL)
 
     name_to_cls: dict[str, type] = {
         'RBLNQwen2VL': RBLNQwen2VL,
@@ -210,6 +236,9 @@ def auto_select_wrapper(model_path: str) -> tuple[type, dict]:
         'RBLNPaliGemma': RBLNPaliGemma,
         'RBLNBlip2': RBLNBlip2,
         'RBLNCosmosReason1': RBLNCosmosReason1,
+        'RBLNQwen3_5': RBLNQwen3_5,
+        'RBLNGemma4': RBLNGemma4,
+        'RBLNExaone4_5': RBLNExaone4_5,
     }
 
     if 'cosmos' in model_path.lower():

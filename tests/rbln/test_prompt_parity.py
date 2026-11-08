@@ -169,3 +169,35 @@ def test_family_flags():
     # stays ON (inherited); strip drops trailing whitespace.
     assert RBLNBlip2._DECODE_TRIM is True
     assert RBLNBlip2._DECODE_STRIP is True
+
+
+def test_new_family_response_postprocess():
+    """Qwen3.5 / EXAONE-4.5 drop a reasoning block; Gemma4 reuses upstream extraction."""
+    from vlmeval.vlm.rbln import RBLNExaone4_5, RBLNQwen3_5
+    from vlmeval.vlm.rbln.qwen3_5 import strip_think
+
+    assert strip_think('<think>\nwhy\n</think>\n\nB') == 'B'
+    assert strip_think('B') == 'B'
+    for cls in (RBLNQwen3_5, RBLNExaone4_5):
+        inst = cls.__new__(cls)
+        assert inst._postprocess_response('<think>x</think> C') == 'C'
+
+
+def test_qwen3_5_matches_upstream_qwen3vlchat_settings():
+    from vlmeval.vlm.rbln import RBLNQwen3_5, RBLNQwen3VL
+
+    assert issubclass(RBLNQwen3_5, RBLNQwen3VL)  # Qwen3VLPromptMixin, as upstream Qwen3VLChat
+    assert RBLNQwen3_5._IMAGE_PATCH_SIZE == 16 and RBLNQwen3_5._PROCESSOR_DO_RESIZE is False
+    # Qwen3-VL keeps its existing preprocessing.
+    assert RBLNQwen3VL._IMAGE_PATCH_SIZE is None
+
+
+def test_gemma4_finalize_reads_chat_message_content():
+    """processor.parse_response returns {'role','content'} in transformers 5."""
+    from vlmeval.vlm.rbln import RBLNGemma4
+
+    inst = RBLNGemma4.__new__(RBLNGemma4)
+    inst._decode_generated = lambda *a, **k: 'raw<turn|>'
+    inst.processor = type('P', (), {
+        'parse_response': staticmethod(lambda t: {'role': 'assistant', 'content': 'B. Music'})})()
+    assert inst._finalize_response(None, None) == 'B. Music'

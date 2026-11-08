@@ -21,6 +21,12 @@ class RBLNQwen2VL(Qwen2VLPromptMixin, RBLNChatVLMBase):
 
     VIDEO_LLM = True
 
+    # Vision preprocessing knobs. ``None`` keeps qwen_vl_utils' / the
+    # processor's defaults (Qwen2-VL: patch 14, processor resizes). Qwen3.5
+    # sets patch 16 + do_resize=False to match upstream ``Qwen3VLChat``.
+    _IMAGE_PATCH_SIZE: int | None = None
+    _PROCESSOR_DO_RESIZE: bool | None = None
+
     def __init__(
         self,
         model_path: str,
@@ -113,7 +119,7 @@ class RBLNQwen2VL(Qwen2VLPromptMixin, RBLNChatVLMBase):
         return content
 
     @staticmethod
-    def _process_vision_info_compat(messages):
+    def _process_vision_info_compat(messages, image_patch_size: int | None = None):
         """Call ``qwen_vl_utils.process_vision_info`` with or without
         ``return_video_kwargs`` depending on the installed version.
 
@@ -129,15 +135,23 @@ class RBLNQwen2VL(Qwen2VLPromptMixin, RBLNChatVLMBase):
             ) from err
 
         sig = inspect.signature(process_vision_info)
+        extra = {}
+        if image_patch_size is not None:
+            if 'image_patch_size' not in sig.parameters:
+                raise ImportError(
+                    'qwen_vl_utils is too old for image_patch_size; '
+                    'pip install -U qwen-vl-utils'
+                )
+            extra['image_patch_size'] = image_patch_size
         if 'return_video_kwargs' in sig.parameters:
             images, videos, video_kwargs = process_vision_info(
-                messages, return_video_kwargs=True,
+                messages, return_video_kwargs=True, **extra,
             )
             # Image-only messages give {'fps': []}; transformers 5 validates processor
             # kwargs strictly and rejects the empty list, so drop empty entries.
             video_kwargs = {k: v for k, v in (video_kwargs or {}).items() if v not in (None, [], ())}
             return images, videos, video_kwargs
-        images, videos = process_vision_info(messages)
+        images, videos = process_vision_info(messages, **extra)
         return images, videos, {}
 
     def generate_inner(self, message, dataset=None):
@@ -151,8 +165,13 @@ class RBLNQwen2VL(Qwen2VLPromptMixin, RBLNChatVLMBase):
 
         text = self.processor.apply_chat_template(
             [messages], tokenize=False, add_generation_prompt=True,
+            **self.chat_template_kwargs,
         )
-        images, videos, video_kwargs = self._process_vision_info_compat([messages])
+        images, videos, video_kwargs = self._process_vision_info_compat(
+            [messages], image_patch_size=self._IMAGE_PATCH_SIZE,
+        )
+        if self._PROCESSOR_DO_RESIZE is not None:
+            video_kwargs = {**video_kwargs, 'do_resize': self._PROCESSOR_DO_RESIZE}
         inputs = self.processor(
             text=text, images=images, videos=videos,
             padding=True, return_tensors='pt',
@@ -160,6 +179,6 @@ class RBLNQwen2VL(Qwen2VLPromptMixin, RBLNChatVLMBase):
         )
 
         generated_ids = self.model.generate(**inputs, **self.generate_kwargs)
-        response = self._decode_generated(inputs, generated_ids)
+        response = self._postprocess_response(self._decode_generated(inputs, generated_ids))
         self._debug_log(response, color='green')
         return response

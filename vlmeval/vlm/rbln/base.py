@@ -50,6 +50,7 @@ class RBLNVLMBase(BaseModel):
         repetition_penalty: float = 1.0,
         num_beams: int | None = None,
         system_prompt: str | None = None,
+        chat_template_kwargs: dict | None = None,
         verbose: bool = False,
         **kwargs,
     ) -> None:
@@ -70,6 +71,9 @@ class RBLNVLMBase(BaseModel):
         self.rbln_runtime_config = rbln_runtime_config or {}
         self.rbln_export = rbln_export
         self.system_prompt = system_prompt
+        # Extra kwargs for processor.apply_chat_template, e.g.
+        # {"enable_thinking": False} (as upstream chat_template_kwargs).
+        self.chat_template_kwargs = dict(chat_template_kwargs or {})
         self.verbose = verbose
         self.max_new_tokens = max_new_tokens
         # Drop None-valued sampling params so HF generate falls back to
@@ -135,15 +139,25 @@ class RBLNVLMBase(BaseModel):
         Resolution order:
           1. ``self.RBLN_MODEL_CLASS`` if a subclass sets it.
           2. Subclass override of ``_pick_rbln_class()`` (for config-driven dispatch).
-          3. ``RBLNAutoModelForVision2Seq`` as the default.
+          3. ``RBLNAutoModelForImageTextToText`` (``RBLNAutoModelForVision2Seq``
+             on older optimum-rbln builds that lack it). optimum-rbln 0.11 has no
+             Vision2Seq auto class, and transformers 5 lists every VLM under
+             image-text-to-text.
         """
         if self.RBLN_MODEL_CLASS is not None:
             return self.RBLN_MODEL_CLASS
         picked = self._pick_rbln_class()
         if picked is not None:
             return picked
-        from optimum.rbln import RBLNAutoModelForVision2Seq
-        return RBLNAutoModelForVision2Seq
+        import optimum.rbln as rbln
+        auto_cls = getattr(rbln, 'RBLNAutoModelForImageTextToText', None) or getattr(
+            rbln, 'RBLNAutoModelForVision2Seq', None)
+        if auto_cls is None:
+            raise ImportError(
+                'optimum-rbln exposes neither RBLNAutoModelForImageTextToText nor '
+                'RBLNAutoModelForVision2Seq.'
+            )
+        return auto_cls
 
     def _pick_rbln_class(self):
         return None
@@ -413,7 +427,13 @@ class RBLNVLMBase(BaseModel):
 
     def _finalize_response(self, inputs, generated_ids) -> str:
         out = self._decode_generated(inputs, generated_ids, trim=self._DECODE_TRIM)
-        return out.strip() if self._DECODE_STRIP else out
+        out = out.strip() if self._DECODE_STRIP else out
+        return self._postprocess_response(out)
+
+    def _postprocess_response(self, response: str) -> str:
+        """Hook for family-specific answer extraction (e.g. dropping a
+        reasoning block). Identity by default."""
+        return response
 
     def generate_inner(self, message, dataset=None):
         """Default for raw-prompt single-image VLMs (PaliGemma, PaliGemma2,
@@ -479,6 +499,7 @@ class RBLNChatVLMBase(RBLNVLMBase):
 
         prompt = self.processor.apply_chat_template(
             chat, add_generation_prompt=True, tokenize=False,
+            **self.chat_template_kwargs,
         )
         inputs = self.processor(
             text=prompt,
