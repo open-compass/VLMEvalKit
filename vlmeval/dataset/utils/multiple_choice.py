@@ -10,7 +10,7 @@ import pandas as pd
 from vlmeval.smp import (cn_string, d2df, dump, get_logger, get_pred_file_format, istype, load,
                          timestr)
 from vlmeval.smp.vlm import build_option_str
-from vlmeval.utils import can_infer, can_infer_lego, track_progress_rich
+from vlmeval.utils import can_infer, can_infer_lego, rule_based_mcq_answer, track_progress_rich
 
 logger = get_logger(__name__)
 
@@ -380,6 +380,11 @@ def extract_answer_from_item(model, item, dataset_name=None):
     if ret:
         return dict(opt=ret, log=item['prediction'])
     if model is None:
+        # Judge-free: read explicit answer statements, then the official MMMU
+        # rule-based parser, before giving up on chain-of-thought answers.
+        opt, rule = rule_based_mcq_answer(item['prediction'], choices)
+        if opt:
+            return dict(opt=opt, log=f'Rule-based ({rule}): {opt}')
         return dict(opt='Z', log='Failed in Prefetch, no GPT-based answer matching under `exact_matching` policy.')
 
     while retry:
