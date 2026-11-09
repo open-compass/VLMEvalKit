@@ -108,6 +108,14 @@ class MiniCPM_V_4_5(BaseModel):
                 limit_mm_per_prompt={"image": max(1, self.vllm_max_images)},
                 gpu_memory_utilization=self.vllm_gpu_memory_utilization,
                 chat_template=self.vllm_chat_template,
+                # llm.chat below uses chat_template_content_format="string".
+                # With vLLM's default (False) its chat parser moves every image
+                # placeholder to the front of the joined text, so replay orders
+                # such as <V,T,V,T> reach the engine as <V,V,T,T>. Interleaving
+                # keeps each placeholder at its content position, matching the
+                # checkpoint's own HF chat(); image-first content renders
+                # byte-identically either way.
+                interleave_mm_strings=True,
             )
             print(
                 f"[MiniCPM_V_4_5] using vLLM tp={tp_size} "
