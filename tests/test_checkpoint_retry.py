@@ -77,7 +77,7 @@ def _load_inference_module(name):
 
 @pytest.mark.parametrize('retry_failed', [True, False])
 def test_api_checkpoint_retries_failed_turn_answers(tmp_path, monkeypatch, retry_failed):
-    module, modules = _load_inference_module('inference_mt')
+    module, modules = _load_inference_module('inference')
     from vlmeval.interactive_mt import StaticTurnPolicy
 
     base = modules['vlmeval.api.base']

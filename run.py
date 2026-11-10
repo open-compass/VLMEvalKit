@@ -54,7 +54,6 @@ if LOCAL_WORLD_SIZE > 1 and len(GPU_LIST):
 from vlmeval.config import supported_VLM
 from vlmeval.dataset import build_dataset
 from vlmeval.inference import infer_data_job
-from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, collect_run_benchmark_report,
                          get_eval_file_format, get_logger, get_pred_file_format,
@@ -868,6 +867,12 @@ def run_local_mode(args):
                             status='infer',
                         )
                     # Perform the Inference
+                    # MT is a property of how a dataset runs, not of its media
+                    # type; both modality paths dispatch on it internally.
+                    policy_kwargs = (
+                        get_policy_kwargs(args, dataset=dataset)
+                        if getattr(dataset, 'interactive_mt', False) else None
+                    )
                     if dataset.MODALITY == 'VIDEO':
                         model = infer_data_job_video(
                             model,
@@ -880,21 +885,8 @@ def run_local_mode(args):
                             verbose=args.verbose,
                             api_nproc=args.api_nproc,
                             use_vllm=args.use_vllm,
-                            retry_failed=not args.keep_failed)
-                    elif getattr(dataset, 'interactive_mt', False):
-                        model = infer_data_job_mt(
-                            model,
-                            work_dir=pred_root,
-                            model_name=model_name,
-                            dataset=dataset,
-                            result_file=result_file,
-                            dataset_name=dataset_name,
-                            dataset_alias_name=dataset_alias_name,
-                            verbose=args.verbose,
-                            api_nproc=args.api_nproc,
                             retry_failed=not args.keep_failed,
-                            policy_kwargs=get_policy_kwargs(args, dataset=dataset),
-                            use_vllm=args.use_vllm)
+                            policy_kwargs=policy_kwargs)
                     else:
                         model = infer_data_job(
                             model,
@@ -907,7 +899,8 @@ def run_local_mode(args):
                             verbose=args.verbose,
                             api_nproc=args.api_nproc,
                             retry_failed=not args.keep_failed,
-                            use_vllm=args.use_vllm)
+                            use_vllm=args.use_vllm,
+                            policy_kwargs=policy_kwargs)
 
                 if WORLD_SIZE > 1:
                     dist.barrier()

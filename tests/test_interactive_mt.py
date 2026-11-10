@@ -166,7 +166,7 @@ def test_mmdu_static_policy_preserves_text_images_and_prediction_format():
 
 def test_failed_api_checkpoint_retries_case_from_first_turn(tmp_path):
     from vlmeval.dataset.interactive_mt import InteractiveMTMixin
-    module, modules = _load_inference_module('inference_mt')
+    module, modules = _load_inference_module('inference')
     from vlmeval.interactive_mt import StaticTurnPolicy
 
     smp_file = modules['vlmeval.smp.file']
@@ -227,7 +227,7 @@ def test_interactive_case_retry_and_finalized_prediction(
     tmp_path, monkeypatch, runner, retry_failed,
 ):
     from vlmeval.dataset.interactive_mt import InteractiveMTMixin
-    name = 'inference_mt' if runner == 'local' else 'inference_api'
+    name = 'inference' if runner == 'local' else 'inference_api'
     module, modules = _load_inference_module(name)
     from vlmeval.interactive_mt import Step, TurnPolicy
 
@@ -322,7 +322,7 @@ def test_interactive_case_retry_and_finalized_prediction(
 
     def run(model, dataset):
         if runner == 'local':
-            module.infer_data_job_mt(
+            module.infer_data_job(
                 model, str(tmp_path), 'mock', dataset,
                 result_file=str(target), retry_failed=retry_failed,
             )

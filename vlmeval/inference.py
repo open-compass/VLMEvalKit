@@ -8,6 +8,7 @@ import torch.distributed as dist
 from tqdm import tqdm
 
 from vlmeval.config import supported_VLM
+from vlmeval.interactive_mt import chat_interactive_mt
 from vlmeval.smp import (dump, get_logger, get_pred_file_format, get_pred_file_path,
                          get_rank_and_world_size, load, load_prediction_file,
                          resolve_dataset_alias_name)
@@ -30,7 +31,7 @@ def parse_args():
 # Only API model is accepted
 def infer_data_api(
     model, work_dir, model_name, dataset, index_set=None, api_nproc=4, retry_failed=True,
-    dataset_name=None, dataset_alias_name=None
+    dataset_name=None, dataset_alias_name=None, policy_kwargs=None
 ):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
@@ -42,24 +43,18 @@ def infer_data_api(
 
     model = supported_VLM[model_name]() if isinstance(model, str) else model
     assert getattr(model, 'is_api', False)
-    if hasattr(model, 'set_dump_image'):
+    if hasattr(model, 'set_dump_image') and hasattr(dataset, 'dump_image'):
         model.set_dump_image(dataset.dump_image)
 
     lt, indices = len(data), list(data['index'])
     # Build str→orig mapping for checkpoint key conversion
     index_str_to_orig = {str(i): i for i in indices}
 
-    structs = []
-    for i in range(lt):
-        item = data.iloc[i]
-        if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
-            struct = dataset.build_prompt(item)
-        elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
-            assert hasattr(model, 'build_prompt')
-            struct = model.build_prompt(item, dataset=dataset_name)
-        else:
-            struct = dataset.build_prompt(item)
-        structs.append(struct)
+    # Interactive MT builds its prompt per case inside the runner, because one
+    # row may expand into several cases with different first contexts.
+    interactive_mt = getattr(dataset, 'interactive_mt', False)
+
+    rows = [data.iloc[i] for i in range(lt)]
 
     out_file = f'{work_dir}/{model_name}_{dataset_alias_name}_checkpoint.pkl'
 
@@ -80,14 +75,36 @@ def infer_data_api(
     if osp.exists(out_file):
         res = load(out_file)
         if retry_failed:
-            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+            res = {k: v for k, v in res.items() if FAIL_MSG not in str(v)}
         logger.info(f'Reuse {len(res)} inference results from previous run.')
 
-    structs = [s for i, s in zip(indices, structs) if str(i) not in res]
+    rows = [s for i, s in zip(indices, rows) if str(i) not in res]
     indices = [i for i in indices if str(i) not in res]
 
-    gen_func = model.generate
-    structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
+    if interactive_mt:
+        gen_func = chat_interactive_mt
+        structs = [
+            dict(
+                model=model,
+                dataset=dataset,
+                sample=sample,
+                dataset_name=dataset_name,
+                policy_kwargs=policy_kwargs,
+            )
+            for sample in rows
+        ]
+    else:
+        gen_func = model.generate
+        structs = []
+        for item in rows:
+            if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
+                struct = dataset.build_prompt(item)
+            elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+                assert hasattr(model, 'build_prompt')
+                struct = model.build_prompt(item, dataset=dataset_name)
+            else:
+                struct = dataset.build_prompt(item)
+            structs.append(dict(message=struct, dataset=dataset_name))
 
     if len(structs):
         str_indices = [str(i) for i in indices]
@@ -105,7 +122,7 @@ def infer_data_api(
 
 def infer_data(
     model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False,
-    retry_failed=True, dataset_name=None, dataset_alias_name=None
+    retry_failed=True, dataset_name=None, dataset_alias_name=None, policy_kwargs=None
 ):
     dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
@@ -164,7 +181,8 @@ def infer_data(
             api_nproc=api_nproc,
             retry_failed=retry_failed,
             dataset_name=dataset_name,
-            dataset_alias_name=dataset_alias_name)
+            dataset_alias_name=dataset_alias_name,
+            policy_kwargs=policy_kwargs)
         for idx in indices:
             assert idx in supp
         res.update(supp)
@@ -174,29 +192,37 @@ def infer_data(
     else:
         model.set_dump_image(dataset.dump_image)
 
+    # Interactive MT replaces "build one prompt, call once" with the case-level
+    # loop, because one row may expand into several cases sharing no context.
+    interactive_mt = getattr(dataset, 'interactive_mt', False)
+
     for i in tqdm(range(lt), desc=f'Infer {model_name}/{dataset_name}, Rank {rank}/{world_size}'):
         idx = data.iloc[i]['index']
         if idx in res:
             continue
 
-        if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
-            struct = dataset.build_prompt(data.iloc[i])
-        elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
-            struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
+        if interactive_mt:
+            struct = None
+            response = chat_interactive_mt(
+                model, dataset, data.iloc[i], dataset_name, policy_kwargs=policy_kwargs)
         else:
-            struct = dataset.build_prompt(data.iloc[i])
+            if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
+                struct = dataset.build_prompt(data.iloc[i])
+            elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+                struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
+            else:
+                struct = dataset.build_prompt(data.iloc[i])
 
-        # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered
-        if os.environ.get('SKIP_ERR', False) == '1':
-            FAIL_MSG = 'Failed to obtain answer'
-            try:
+            # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered
+            if os.environ.get('SKIP_ERR', False) == '1':
+                try:
+                    response = model.generate(message=struct, dataset=dataset_name)
+                except RuntimeError as err:
+                    torch.cuda.synchronize()
+                    warnings.warn(f'{type(err)} {str(err)}')
+                    response = f'Failed to obtain answer: {type(err)} {str(err)}'
+            else:
                 response = model.generate(message=struct, dataset=dataset_name)
-            except RuntimeError as err:
-                torch.cuda.synchronize()
-                warnings.warn(f'{type(err)} {str(err)}')
-                response = f'{FAIL_MSG}: {type(err)} {str(err)}'
-        else:
-            response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
 
         if verbose:
@@ -219,7 +245,7 @@ def _is_structured_record(v):
 # A wrapper for infer_data, do the pre & post processing
 def infer_data_job(
     model, work_dir, model_name, dataset, verbose=False, api_nproc=4, retry_failed=True, use_vllm=False,
-    result_file=None, dataset_name=None, dataset_alias_name=None
+    result_file=None, dataset_name=None, dataset_alias_name=None, policy_kwargs=None
 ):
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset_name or dataset.dataset_name
@@ -245,7 +271,8 @@ def infer_data_job(
     model = infer_data(
         model=model, work_dir=work_dir, model_name=model_name, dataset=dataset,
         out_file=out_file, verbose=verbose, api_nproc=api_nproc, use_vllm=use_vllm,
-        retry_failed=retry_failed, dataset_name=dataset_name, dataset_alias_name=dataset_alias_name)
+        retry_failed=retry_failed, dataset_name=dataset_name, dataset_alias_name=dataset_alias_name,
+        policy_kwargs=policy_kwargs)
     if world_size > 1:
         dist.barrier()
 

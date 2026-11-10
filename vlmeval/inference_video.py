@@ -10,6 +10,7 @@ import torch.distributed as dist
 from tqdm import tqdm
 
 from vlmeval.config import supported_VLM
+from vlmeval.interactive_mt import chat_interactive_mt, has_failure
 from vlmeval.smp import (dump, get_pred_file_path, get_rank_and_world_size, load,
                          load_prediction_file, resolve_dataset_alias_name)
 from vlmeval.utils import track_progress_rich
@@ -29,7 +30,7 @@ def parse_args():
 
 # Only API model is accepted
 def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_nproc=4, retry_failed=True,
-                   dataset_name=None, dataset_alias_name=None):
+                   dataset_name=None, dataset_alias_name=None, policy_kwargs=None):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset_name = dataset_name or dataset.dataset_name
@@ -58,18 +59,28 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
         setattr(model, 'VIDEO_LLM', False)
 
     packstr = 'pack' if getattr(dataset, 'pack', False) else 'nopack'
-    build_prompt_input = [(samples_dict[idx], getattr(model, 'VIDEO_LLM', False)) for idx in indices]
-    if dataset.nframe > 0:
-        struct_tmp_file = f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.nframe}frame_{packstr}_structs.pkl'
+    interactive_mt = getattr(dataset, 'interactive_mt', False)
+    if interactive_mt:
+        # The MT runner owns prompt construction: one row may expand into
+        # several cases with different first contexts.
+        structs = [None] * len(indices)
     else:
-        struct_tmp_file = f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.fps}fps_{packstr}_structs.pkl'
-    structs = track_progress_rich(
-        dataset.build_prompt,
-        tasks=build_prompt_input,
-        nproc=api_nproc,
-        save=struct_tmp_file,
-        keys=indices,
-    )
+        build_prompt_input = [(samples_dict[idx], getattr(model, 'VIDEO_LLM', False)) for idx in indices]
+        if dataset.nframe > 0:
+            struct_tmp_file = (
+                f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.nframe}frame_{packstr}_structs.pkl'
+            )
+        else:
+            struct_tmp_file = (
+                f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.fps}fps_{packstr}_structs.pkl'
+            )
+        structs = track_progress_rich(
+            dataset.build_prompt,
+            tasks=build_prompt_input,
+            nproc=api_nproc,
+            save=struct_tmp_file,
+            keys=indices,
+        )
 
     if dataset.nframe > 0:
         out_file = f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.nframe}frame_{packstr}_checkpoint.pkl'
@@ -77,14 +88,32 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
         out_file = f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.fps}fps_{packstr}_checkpoint.pkl'
     res = load(out_file) if osp.exists(out_file) else {}
     if retry_failed:
-        res = {k: v for k, v in res.items() if FAIL_MSG not in str(v)}
+        if interactive_mt:
+            # An MT case finalizes to a list of turns, so the failure marker is
+            # nested instead of the whole value being a failing string.
+            res = {k: v for k, v in res.items() if not has_failure(v)}
+        else:
+            res = {k: v for k, v in res.items() if FAIL_MSG not in str(v)}
 
     structs = [s for i, s in zip(indices, structs) if str(i) not in res]
     structs = [struct for struct in structs if struct is not None]
     indices = [i for i in indices if str(i) not in res]
 
-    gen_func = model.generate
-    structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
+    if interactive_mt:
+        gen_func = chat_interactive_mt
+        structs = [
+            dict(
+                model=model,
+                dataset=dataset,
+                sample=samples_dict[i],
+                dataset_name=dataset_name,
+                policy_kwargs=policy_kwargs,
+            )
+            for i in indices
+        ]
+    else:
+        gen_func = model.generate
+        structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
 
     if len(structs):
         str_indices = [str(i) for i in indices]
@@ -99,7 +128,7 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
 
 
 def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False,
-               retry_failed=True, dataset_name=None, dataset_alias_name=None):
+               retry_failed=True, dataset_name=None, dataset_alias_name=None, policy_kwargs=None):
     dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
     prev_file = f'{work_dir}/{model_name}_{dataset_alias_name}_PREV.pkl'
@@ -147,7 +176,8 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
             api_nproc=api_nproc,
             retry_failed=retry_failed,
             dataset_name=dataset_name,
-            dataset_alias_name=dataset_alias_name)
+            dataset_alias_name=dataset_alias_name,
+            policy_kwargs=policy_kwargs)
         for k in sample_indices_subrem:
             assert k in supp
         res.update(supp)
@@ -161,6 +191,8 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
             'will set its VIDEO_LLM to False to enable multi-image input for video.'
         )
         setattr(model, 'VIDEO_LLM', False)
+
+    interactive_mt = getattr(dataset, 'interactive_mt', False)
 
     for i, idx in tqdm(enumerate(sample_indices_subrem)):
         if idx in res:
@@ -195,6 +227,21 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         sample_dataset_name = dataset_name
         if 'SUB_DATASET' in dataset.data.iloc[sample_map[idx]]:
             sample_dataset_name = dataset.data.iloc[sample_map[idx]]['SUB_DATASET']
+
+        # Interactive MT replaces "build one prompt, call once" with the
+        # case-level loop; the runner asks the dataset for the media itself.
+        if interactive_mt:
+            response = chat_interactive_mt(
+                model, dataset, dataset.data.iloc[sample_map[idx]], sample_dataset_name,
+                policy_kwargs=policy_kwargs)
+            torch.cuda.empty_cache()
+            if verbose:
+                print(response, flush=True)
+            res[idx] = response
+            if (i + 1) % 20 == 0:
+                dump(res, out_file)
+            continue
+
         if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(sample_dataset_name):
             if dataset.nframe == 0:
                 raise ValueError(f'nframe must be set for custom prompt, fps is not suitable for {model_name}')
@@ -244,7 +291,8 @@ def infer_data_job_video(model,
                          verbose=False,
                          api_nproc=4,
                          use_vllm=False,
-                         retry_failed=True):
+                         retry_failed=True,
+                         policy_kwargs=None):
 
     dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
@@ -259,7 +307,12 @@ def infer_data_job_video(model,
             if rank == 0:
                 data = load_prediction_file(result_file)
                 results = {k: v for k, v in zip(data['index'], data['prediction'])}
-                results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
+                if getattr(dataset, 'interactive_mt', False):
+                    # An MT case finalizes to a container, so the failure marker
+                    # is nested rather than the whole value being a string.
+                    results = {k: v for k, v in results.items() if not has_failure(v)}
+                else:
+                    results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
                 if len(results) == len(data):
                     return model
                 dump(results, prev_file)
