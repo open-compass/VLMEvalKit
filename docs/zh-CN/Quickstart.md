@@ -117,6 +117,49 @@ python run.py --data MMBench_Video_1fps_pack --model GPT4o
 ```
 
 评估结果将作为日志打印出来。此外，**结果文件**也会在目录 `$YOUR_WORKING_DIRECTORY/{model_name}` 中生成。以 `.csv` 结尾的文件包含评估的指标。
+
+### 音频基准评测 <a id="audio-evaluation"></a>
+
+VLMEvalKit 支持音频模态评测，目前已集成 [MMSU](https://github.com/dingdongwang/MMSU_Bench)，包含 5,000 道音频理解与推理选择题。首次运行时会自动下载并准备数据，后续运行复用本地缓存。
+
+以通过 vLLM 部署的 **Qwen3-Omni** 为例，先准备支持音频输入的 OpenAI-compatible API 服务，再运行：
+
+```bash
+# 数据缓存目录，可按需修改
+export LMUData=/path/to/LMUData
+export PRED_FORMAT=tsv
+
+python run.py \
+  --api-mode \
+  --data MMSU \
+  --model Qwen3-Omni-30B-A3B-Instruct \
+  --base-url http://127.0.0.1:8000/v1 \
+  --key EMPTY \
+  --max-tokens 16384 \
+  --api-nproc 8 \
+  --judge exact_matching \
+  --work-dir ./outputs \
+  --reuse
+```
+
+将 `--base-url` 和 `--key` 替换为实际服务地址与密钥，`--model` 应与服务 `/v1/models` 返回的模型名称一致。`--api-nproc` 控制并发请求数，可根据服务容量调整。
+
+默认将音频编码为 base64 发送。若评测端与模型服务共享音频文件目录，可添加 `--local-media`，通过 `file://` 传递路径；使用 vLLM 时，需要在服务启动时通过 `--allowed-local-media-path` 允许访问该目录。
+
+命令会完成推理和评分。`--judge exact_matching` 提取并匹配选项，无需额外的评判模型 API。结果保存在 `./outputs/<模型名>/` 下，包括预测文件和以 `_acc.csv` 结尾的准确率报告，报告包含总体准确率及任务、类别等维度的细分结果。中断后可使用相同命令配合 `--reuse` 从已保存的结果继续运行。
+
+也可以使用已配置的音频 API 模型，例如设置 `GOOGLE_API_KEY` 后评测 Gemini：
+
+```bash
+python run.py \
+  --api-mode \
+  --data MMSU \
+  --model GeminiFlash2-5 \
+  --judge exact_matching \
+  --api-nproc 8 \
+  --reuse
+```
+
 ### 常见问题
 #### 构建输入prompt：`build_prompt()`函数
 如果您在评测某个benchmark时，发现模型输出的结果与预期不符，可能是因为您使用的模型没有正确构建输入prompt。

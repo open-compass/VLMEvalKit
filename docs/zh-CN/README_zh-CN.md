@@ -25,7 +25,7 @@
 
 ## 🆕 更新
 
-- **[2026-11-10]** **VLMEvalKit 现已支持音频模态评测**，首个支持的音频基准为 [**MMSU**](https://github.com/dingdongwang/MMSU_Bench)！🔥🔥🔥
+- **[2026-11-10]** [**VLMEvalKit 现已支持音频模态评测**](/docs/zh-CN/Quickstart.md#audio-evaluation)，首个支持的音频基准为 [**MMSU**](https://github.com/dingdongwang/MMSU_Bench)！🔥🔥🔥
 - **[2025-04-29]** 优化 `torchrun` 启动逻辑：目前 `torchrun` 启动时，若进程数为 M，机器 GPU 卡数为 N，将会自动调整每个进程分配的 GPU 数量为 `N // M`。目前此分配方式适用于 `transformers`, `lmdeploy` 推理后端，`vllm` 推理后端仅支持使用 python 启动 🔥🔥🔥
 - **[2025-02-20]** 支持新模型：**InternVL2.5 series, QwenVL2.5 series, QVQ-72B, Doubao-VL, Janus-Pro-7B, MiniCPM-o-2.6, InternVL2-MPO, LLaVA-CoT, Hunyuan-Standard-Vision, Ovis2, Valley, SAIL-VL, Ross, Long-VITA, EMU3, SmolVLM**。支持新基准：**MMMU-Pro, WeMath, 3DSRBench, LogicVista, VL-RewardBench, CC-OCR, CG-Bench, CMMMU, WorldSense**。请参考[**VLMEvalKit Features**](https://aicarrier.feishu.cn/wiki/Qp7wwSzQ9iK1Y6kNUJVcr6zTnPe?table=tblsdEpLieDoCxtb)以获取更多信息。感谢社区的各位贡献者 🔥🔥🔥
 - **[2024-11-21]** 集成了一个新的配置系统，以实现更灵活的评估设置。查看[文档](/docs/zh-CN/ConfigSystem.md)或运行`python run.py --help`了解更多详情 🔥🔥🔥
