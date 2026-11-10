@@ -84,7 +84,7 @@ def compute_mcq_score(df: pd.DataFrame) -> pd.DataFrame:
         gt = can_match_option(gt_raw)
 
         preds_extracted.append(pred)
-        acc.append(exact_match(pred, gt))
+        acc.append(0. if pred is False or gt is False else exact_match(pred, gt))
 
     df = df.copy()
     df['pred_extracted'] = preds_extracted

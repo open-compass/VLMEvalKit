@@ -46,3 +46,14 @@ def test_tagged_words_do_not_score_as_their_first_letter(prediction, gold):
 def test_tagged_labels_and_explanations_preserve_scoring(prediction, gold, expected):
     result = load_rule_scorer()(pd.DataFrame([{'prediction': prediction, 'answer': gold}]))
     assert result.iloc[0]['hit'] == expected
+
+
+@pytest.mark.parametrize('prediction,gold', [
+    ('', ''),
+    ('xyz', 'uvw'),
+    ('A', 'uvw'),
+    ('xyz', 'A'),
+])
+def test_unparseable_prediction_or_gold_never_scores_as_a_match(prediction, gold):
+    result = load_rule_scorer()(pd.DataFrame([{'prediction': prediction, 'answer': gold}]))
+    assert result.iloc[0]['hit'] == 0.0
