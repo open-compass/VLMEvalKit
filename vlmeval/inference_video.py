@@ -114,6 +114,8 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
 
     sample_indices_sub = sample_indices[rank::world_size]
     if np.all([idx in res for idx in sample_indices_sub]):
+        res = {idx: res[idx] for idx in sample_indices_sub}
+        dump(res, out_file)
         return model
     sample_indices_subrem = [x for x in sample_indices_sub if x not in res]
 
