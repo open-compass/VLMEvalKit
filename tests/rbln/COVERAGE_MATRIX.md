@@ -62,7 +62,8 @@ T2 는 `scripts/rbln_smoke.sh` 로 NPU 호스트에서 수행한다 (CI 필수 �
 `RBLNVLMBase._save_dir()` 는 **CWD 기준 `basename(model_path)`** 로 아티팩트를
 캐시한다 (`--work-dir` 와 독립). 서로 다른 모델이 같은 basename 을 가지면
 캐시가 충돌할 수 있으므로, `scripts/rbln_smoke.sh` 는 **패밀리별 디렉토리로 cd**
-하여 캐시를 격리한다.
+하여 캐시를 격리한다. 이미 컴파일된 디렉토리(예: NAS 빌드)를 `model_path` 로 주면
+그 자리에서 로드만 하고 CWD 로 복사하지 않는다 — 캐시는 새로 컴파일한 경우에만 생긴다.
 
 ## 검증 명령
 

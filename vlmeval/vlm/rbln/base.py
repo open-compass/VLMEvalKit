@@ -291,11 +291,14 @@ class RBLNVLMBase(BaseModel):
         ``<cwd>/<basename(model_path)>/`` (rbln-model-zoo convention) so
         subsequent runs can skip recompilation.
 
-        Skipped when the target already contains an ``*.rbln`` artifact
-        (it was either loaded from there or saved by a previous run) or
-        when save fails for any reason — failure is logged and the
-        in-memory model continues to serve this run.
+        Skipped when the model was loaded from an already-compiled directory
+        (nothing new to keep; copying a prebuilt artifact into cwd would
+        duplicate it and later shadow the original), when the target already
+        contains an ``*.rbln`` artifact, or when save fails for any reason —
+        failure is logged and the in-memory model continues to serve this run.
         """
+        if self.rbln_export is not True and self._is_compiled_dir(self.model_path):
+            return
         path = self._save_dir()
         if not path or self._is_compiled_dir(path):
             return

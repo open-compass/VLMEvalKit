@@ -142,3 +142,30 @@ def test_fresh_compile_passes_merged_compile_config(tmp_path):
     assert fake.captured.get('export') is None
     assert fake.captured['rbln_config']['tensor_parallel_size'] == 8
     assert fake.captured['rbln_config']['visual'] == {'max_seq_lens': 6400}
+
+
+def test_loading_a_compiled_dir_does_not_copy_it_into_cwd(tmp_path, monkeypatch):
+    # A prebuilt artifact (e.g. on shared storage) is used in place; only a
+    # fresh compile is saved under <cwd>/<basename>.
+    src = tmp_path / 'nas' / 'Model-w8a16'
+    src.mkdir(parents=True)
+    (src / 'prefill.rbln').write_bytes(b'x')
+    cwd = tmp_path / 'run'
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+
+    class _Model:
+        saved = []
+
+        def save_pretrained(self, path):
+            self.saved.append(path)
+
+    obj = _bare_instance(model_path=str(src), _input_model_path=str(src))
+    obj.model, obj.processor = _Model(), object()
+    obj._maybe_save_compiled_artifact()
+    assert _Model.saved == []
+    assert not (cwd / 'Model-w8a16').exists()
+
+    obj.rbln_export = True  # forced recompile: the new artifact is kept
+    obj._maybe_save_compiled_artifact()
+    assert _Model.saved == [str(cwd / 'Model-w8a16')]
