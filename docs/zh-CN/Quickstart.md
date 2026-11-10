@@ -120,8 +120,6 @@ python run.py --data MMBench_Video_1fps_pack --model GPT4o
 
 **用于评测音频多模态评测集的命令**
 
-[MMSU](https://github.com/dingdongwang/MMSU_Bench) 包含 5,000 道音频理解与推理选择题，首次运行时会自动下载并缓存数据。使用 `python` 配合 `--api-mode` 评测音频 API 模型：
-
 ```bash
 # 在 MMSU 上评测 Gemini-2.5-Flash（API 模型），需先设置 GOOGLE_API_KEY。
 python run.py --data MMSU --model GeminiFlash2-5 --api-mode --judge exact_matching
@@ -129,11 +127,7 @@ python run.py --data MMSU --model GeminiFlash2-5 --api-mode --judge exact_matchi
 python run.py --data MMSU --model Qwen3-Omni-30B-A3B-Instruct --api-mode --base-url http://127.0.0.1:8000/v1 --key EMPTY --max-tokens 16384 --judge exact_matching
 ```
 
-使用自部署服务时，将 `--base-url` 和 `--key` 替换为实际服务地址与密钥，`--model` 应与 `/v1/models` 返回的模型名称一致。默认将音频编码为 base64 发送；若评测端与服务端共享音频文件，可添加 `--local-media` 通过 `file://` 传递路径，并在启动 vLLM 时通过 `--allowed-local-media-path` 允许访问该目录。
-
-`--judge exact_matching` 对选项进行评分，无需额外的评判模型 API。`_acc.csv` 报告包含总体准确率及任务、类别等维度的细分结果。可通过 `--api-nproc` 调整并发数，添加 `--reuse` 从已保存的结果继续运行，设置 `PRED_FORMAT=tsv` 将预测保存为 TSV。
-
-评估结果将作为日志打印出来。此外，**结果文件**也会在目录 `$YOUR_WORKING_DIRECTORY/{model_name}` 中生成。以 `.csv` 结尾的文件包含评估的指标。
+使用自部署服务时，将 `--base-url` 和 `--key` 替换为实际服务地址与密钥，`--model` 应与 `/v1/models` 返回的模型名称一致。默认将音频编码为 base64 发送；若评测端与服务端共享音频文件，可添加 `--local-media` 通过 `file://` 传递路径。
 
 ### 常见问题
 #### 构建输入prompt：`build_prompt()`函数
