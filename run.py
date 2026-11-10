@@ -881,7 +881,7 @@ def run_local_mode(args):
                             api_nproc=args.api_nproc,
                             use_vllm=args.use_vllm,
                             retry_failed=not args.keep_failed)
-                    elif dataset.TYPE == 'MT':
+                    elif getattr(dataset, 'interactive_mt', False):
                         model = infer_data_job_mt(
                             model,
                             work_dir=pred_root,
@@ -1287,24 +1287,23 @@ def run_api_mode(args):
                 continue
 
             # Complete the dataset config
-            if dataset.MODALITY == 'VIDEO':
-                dataset_type = 'video'
-            elif dataset.TYPE == 'MT':
-                dataset_type = 'mt'
-            else:
-                dataset_type = 'image'
+            # Modality and interactive-MT are independent dimensions: any
+            # modality may be run as a policy-driven multi-turn dataset.
+            dataset_type = 'video' if dataset.MODALITY == 'VIDEO' else 'image'
+            interactive_mt = getattr(dataset, 'interactive_mt', False)
             dataset_config = DatasetConfig(
                 dataset_name=ds_name,
                 dataset_alias_name=dataset_alias_name,
                 dataset_class_name=dataset_class_name,
                 dataset_obj=dataset,
                 dataset_type=dataset_type,
+                interactive_mt=interactive_mt,
                 model_obj=model_builder(),
                 model_name=model_name,
                 work_dir=str(pred_root),
                 result_file=result_file,
                 judge_kwargs=judge_kwargs,
-                policy_kwargs=get_policy_kwargs(args, dataset=dataset) if dataset_type == 'mt' else {},
+                policy_kwargs=get_policy_kwargs(args, dataset=dataset) if interactive_mt else {},
                 verbose=args.verbose
             )
             dataset_configs.append(dataset_config)

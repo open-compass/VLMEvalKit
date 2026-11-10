@@ -1,4 +1,3 @@
-import ast
 import asyncio
 import importlib.util
 import sys
@@ -12,6 +11,12 @@ import pandas as pd
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# Warm up at module scope: the autouse fixture snapshots sys.modules and restores
+# it on teardown, so an import first made inside a test is rolled back afterwards.
+# Re-importing torch after that fails (its C extensions stay initialized), so any
+# later import of vlmeval -- which imports torch -- would blow up.
+import vlmeval.dataset.interactive_mt  # noqa: E402,F401
 
 
 @pytest.fixture(autouse=True)
@@ -38,7 +43,8 @@ def _load_inference_module(name):
 
 
 def test_static_policy_preserves_initial_context_and_replays_all_user_turns():
-    mt = _load_interactive_mt()
+    import vlmeval.interactive_mt as mt
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
     initial = [
         {'role': 'system', 'content': 'system context'},
         {'role': 'assistant', 'content': 'dataset context'},
@@ -46,7 +52,10 @@ def test_static_policy_preserves_initial_context_and_replays_all_user_turns():
     ]
     follow_up = {'role': 'user', 'content': 'second question'}
 
-    class Dataset:
+    class Dataset(InteractiveMTMixin):
+        def build_cases(self, sample):
+            return [sample]
+
         def build_prompt(self, sample):
             return deepcopy(initial)
 
@@ -77,11 +86,15 @@ def test_static_policy_preserves_initial_context_and_replays_all_user_turns():
 
 @pytest.mark.parametrize('raises', [True, False])
 def test_failure_is_finalized_and_stops_remaining_turns(raises):
-    mt = _load_interactive_mt()
+    import vlmeval.interactive_mt as mt
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
     initial = [{'role': 'user', 'content': 'first question'}]
     follow_up = {'role': 'user', 'content': 'second question'}
 
-    class Dataset:
+    class Dataset(InteractiveMTMixin):
+        def build_cases(self, sample):
+            return [sample]
+
         def build_prompt(self, sample):
             return initial
 
@@ -108,18 +121,10 @@ def test_failure_is_finalized_and_stops_remaining_turns(raises):
 
 
 def test_mmdu_static_policy_preserves_text_images_and_prediction_format():
-    mt = _load_interactive_mt()
-    path = ROOT / 'vlmeval/dataset/image_mt.py'
-    tree = ast.parse(path.read_text())
-    dataset_node = next(node for node in tree.body
-                        if isinstance(node, ast.ClassDef) and node.name == 'ImageMTDataset')
-    namespace = {
-        'ImageBaseDataset': object,
-        'StaticTurnPolicy': mt.StaticTurnPolicy,
-        'toliststr': lambda value: value if isinstance(value, list) else literal_eval(value),
-    }
-    exec(compile(ast.Module(body=[dataset_node], type_ignores=[]), str(path), 'exec'), namespace)
-    dataset = namespace['ImageMTDataset']()
+    from vlmeval.dataset.image_mt import MMDUDataset
+    from vlmeval.interactive_mt import chat_interactive_mt
+
+    dataset = MMDUDataset.__new__(MMDUDataset)
     dataset.meta_only = True
     sample = {
         'question': repr(['first<ImageHere>between<ImageHere>end', 'second', 'third<ImageHere>']),
@@ -148,7 +153,7 @@ def test_mmdu_static_policy_preserves_text_images_and_prediction_format():
 
     assert dataset.build_prompt(sample) == [first]
     model = Model()
-    prediction = mt.chat_interactive_mt(model, dataset, sample, 'MMDU')
+    prediction = chat_interactive_mt(model, dataset, sample, 'MMDU')
     assert prediction == ['answer 1', 'answer 2', 'answer 3']
     assert model.calls == [
         [first],
@@ -160,14 +165,18 @@ def test_mmdu_static_policy_preserves_text_images_and_prediction_format():
 
 
 def test_failed_api_checkpoint_retries_case_from_first_turn(tmp_path):
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
     module, modules = _load_inference_module('inference_mt')
     from vlmeval.interactive_mt import StaticTurnPolicy
 
     smp_file = modules['vlmeval.smp.file']
 
-    class Dataset:
+    class Dataset(InteractiveMTMixin):
         dataset_name = 'Example'
         data = pd.DataFrame({'index': [0, 1]})
+
+        def build_cases(self, row):
+            return [row]
 
         def build_prompt(self, row):
             return [{'role': 'user', 'content': str(row['index'])}]
@@ -217,9 +226,10 @@ def test_failed_api_checkpoint_retries_case_from_first_turn(tmp_path):
 def test_interactive_case_retry_and_finalized_prediction(
     tmp_path, monkeypatch, runner, retry_failed,
 ):
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
     name = 'inference_mt' if runner == 'local' else 'inference_api'
     module, modules = _load_inference_module(name)
-    from vlmeval.interactive_mt import PolicyStep, TurnPolicy
+    from vlmeval.interactive_mt import Step, TurnPolicy
 
     smp_file = modules['vlmeval.smp.file']
     target = tmp_path / 'mock_Example.tsv'
@@ -234,8 +244,8 @@ def test_interactive_case_retry_and_finalized_prediction(
         def step(self, response, history):
             self.state['responses'].append(response)
             if response == 'END':
-                return PolicyStep(None, True)
-            return PolicyStep({'role': 'user', 'content': 'follow-up for ' + response}, False)
+                return Step(done=True)
+            return Step(messages=[{'role': 'user', 'content': 'follow-up for ' + response}])
 
         def finalize(self):
             return {
@@ -243,7 +253,7 @@ def test_interactive_case_retry_and_finalized_prediction(
                 'error': self.state.get('failure', {}).get('message'),
             }
 
-    class Dataset:
+    class Dataset(InteractiveMTMixin):
         dataset_name = 'Example'
 
         def __init__(self):
@@ -261,7 +271,13 @@ def test_interactive_case_retry_and_finalized_prediction(
             return []
 
         def build_prompt(self, sample):
-            raise AssertionError('The model custom prompt should be used.')
+            # An interactive_mt MT dataset always supplies its own prompt; the
+            # model's single-turn custom prompt must not replace it.
+            return [
+                {'role': 'system', 'content': 'initial context'},
+                {'role': 'assistant', 'content': 'dataset example'},
+                {'role': 'user', 'content': f'case {sample["index"]} first'},
+            ]
 
         def build_policy(self, sample, messages):
             assert messages[-1]['content'] == f'case {sample["index"]} first'
@@ -285,15 +301,10 @@ def test_interactive_case_retry_and_finalized_prediction(
             self.dump_image = dump_image
 
         def use_custom_prompt(self, dataset):
-            assert dataset == 'Example'
-            return True
+            raise AssertionError('Interactive MT must not consult the model prompt.')
 
         def build_prompt(self, sample, dataset):
-            return [
-                {'role': 'system', 'content': 'initial context'},
-                {'role': 'assistant', 'content': 'dataset example'},
-                {'role': 'user', 'content': f'case {sample["index"]} first'},
-            ]
+            raise AssertionError('Interactive MT must not use the model prompt.')
 
         def chat_inner(self, inputs, **kwargs):
             raise AssertionError('Only used for the MT capability check.')
@@ -320,7 +331,7 @@ def test_interactive_case_retry_and_finalized_prediction(
             cfg = module.DatasetConfig(
                 dataset_name='Example', dataset_obj=dataset, model_name='mock',
                 model_obj=model, work_dir=str(tmp_path), result_file=str(target),
-                judge_kwargs={}, dataset_type='mt',
+                judge_kwargs={}, dataset_type='image', interactive_mt=True,
             )
             pipeline = module.APIEvalPipeline(
                 [cfg], concurrency=1, debug=True, retry_failed=retry_failed,

@@ -9,7 +9,8 @@ import pandas as pd
 import pytest
 
 import run as runner
-from vlmeval.dataset.image_mt import ImageMTDataset, MMDUDataset
+from vlmeval.dataset.image_mt import MMDUDataset
+from vlmeval.dataset.interactive_mt import InteractiveMTMixin
 from vlmeval.interactive_mt import StaticTurnPolicy
 from vlmeval.smp import load_prediction_file
 
@@ -30,7 +31,7 @@ def parse_args(monkeypatch, *options):
       'key': 'dummy-policy-key', 'retry': 3, 'timeout': 42, 'verbose': False}),
 ])
 def test_policy_kwargs_precedence(monkeypatch, options, expected):
-    class Dataset(ImageMTDataset):
+    class Dataset(MMDUDataset):
         DEFAULT_POLICY_MODEL = 'default-policy'
 
         def __init__(self):
@@ -64,7 +65,8 @@ def test_static_mt_does_not_require_policy_model(monkeypatch):
 
 @pytest.mark.parametrize('mode', ['local', 'api', 'api_pipeline'])
 def test_run_cli_passes_policy_options_to_each_case(tmp_path, monkeypatch, mode):
-    class Dataset(ImageMTDataset):
+    class Dataset(InteractiveMTMixin):
+        MODALITY = 'IMAGE'   # supplied by the concrete dataset base in real code
         dataset_name = 'Example'
         DEFAULT_POLICY_MODEL = 'default-policy'
         DEFAULT_JUDGE_MODEL = 'default-judge'
@@ -73,6 +75,12 @@ def test_run_cli_passes_policy_options_to_each_case(tmp_path, monkeypatch, mode)
             self.data = pd.DataFrame({'index': [0, 1]})
             self.received = []
             self.evaluated = []
+
+        def __len__(self):
+            return len(self.data)
+
+        def __getitem__(self, index):
+            return self.data.iloc[index]
 
         def dump_image(self, sample):
             return []

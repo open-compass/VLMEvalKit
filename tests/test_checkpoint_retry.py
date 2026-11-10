@@ -87,7 +87,9 @@ def test_api_checkpoint_retries_failed_turn_answers(tmp_path, monkeypatch, retry
     checkpoint = tmp_path / 'mock_Example_checkpoint.pkl'
     modules['vlmeval.smp.file'].dump({'0': success, '1': failed}, str(checkpoint))
 
-    class Dataset:
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
+
+    class Dataset(InteractiveMTMixin):
         dataset_name = 'Example'
         data = pd.DataFrame({'index': [0, 1]})
 
