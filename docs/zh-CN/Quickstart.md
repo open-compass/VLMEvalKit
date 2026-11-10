@@ -78,9 +78,9 @@ max_pixels=1280 * 28 * 28,
 
 - `--data (list[str])`: 设置在 VLMEvalKit 中支持的数据集名称（可以在代码库首页的 README 中找到支持的数据集列表）
 - `--model (list[str])`: 设置在 VLMEvalKit 中支持的 VLM 名称（在 `vlmeval/config.py` 中的 `supported_VLM` 中定义）
-- `--mode (str, 默认值为 'all', 可选值为 ['all', 'infer'])`：当 mode 设置为 "all" 时，将执行推理和评估；当设置为 "infer" 时，只执行推理
-- `--api-nproc (int, 默认值为 4)`: 调用 API 的线程数
-- `--work-dir (str, default to '.')`: 存放测试结果的目录
+- `--mode (str, 默认值为 'all', 可选值为 ['all', 'infer', 'eval'])`：当 mode 为 "all" 时，同时执行推理和评估；"infer" 只执行推理；"eval" 使用已有的完整预测结果进行评估，不重新执行推理。
+- `--api-nproc (int, 默认值为 32)`: 调用 API 的线程数
+- `--work-dir (str, 默认值为 './outputs')`: 存放评估结果的目录
 
 **用于评测图像多模态评测集的命令**
 

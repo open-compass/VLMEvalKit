@@ -84,9 +84,9 @@ We use `run.py` for evaluation. To use the script, you can use `$VLMEvalKit/run.
 
 - `--data (list[str])`: Set the dataset names that are supported in VLMEvalKit (names can be found in the codebase README).
 - `--model (list[str])`: Set the VLM names that are supported in VLMEvalKit (defined in `supported_VLM` in `vlmeval/config.py`).
-- `--mode (str, default to 'all', choices are ['all', 'infer'])`: When `mode` set to "all", will perform both inference and evaluation; when set to "infer", will only perform the inference.
-- `--api-nproc (int, default to 4)`: The number of threads for OpenAI API calling.
-- `--work-dir (str, default to '.')`: The directory to save evaluation results.
+- `--mode (str, default to 'all', choices are ['all', 'infer', 'eval'])`: When `mode` is "all", the run performs both inference and evaluation; "infer" runs inference only; "eval" evaluates existing completed predictions without running inference.
+- `--api-nproc (int, default to 32)`: The number of threads for API calls.
+- `--work-dir (str, default to './outputs')`: The directory to save evaluation results.
 
 **Command for Evaluating Image Benchmarks **
 
