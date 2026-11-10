@@ -3375,6 +3375,8 @@ class ZEROBench(ImageVQADataset):
             f"pass@{self.k}": grouped_correct.any().mean(),
             f"pass^{self.k}": grouped_correct.all().mean(),
         }
+        detail_file = get_intermediate_file_path(eval_file, '_results', 'csv')
+        dump(output_df, detail_file)
         result_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         dump(d2df(result), result_file)
         return result

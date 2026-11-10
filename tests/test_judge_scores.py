@@ -205,6 +205,12 @@ class TestZeroBenchAnswerProtocol(unittest.TestCase):
             self.assertAlmostEqual(score['pass@3'], 2 / 3)
             self.assertAlmostEqual(score['pass^3'], 1 / 3)
 
+            details = pd.read_csv(Path(directory) / 'predictions_results.csv')
+            self.assertEqual(len(details), 9)
+            self.assertEqual(details.columns.tolist(),
+                             ['Question_ID', 'Ground_Truth', 'Model_Output', 'Correct?', 'orig_index'])
+            self.assertEqual(details['orig_index'].tolist(), [10] * 3 + [20] * 3 + [30] * 3)
+
 
 if __name__ == '__main__':
     unittest.main()
