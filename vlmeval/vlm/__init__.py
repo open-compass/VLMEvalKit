@@ -43,6 +43,7 @@ from .logics import Logics_Thinking
 from .long_vita import LongVITA
 from .mantis import Mantis
 from .mgm import Mini_Gemini
+from .minicpm_ocr import MiniCPM_OCR
 from .minicpm_v import (MiniCPM_Llama3_V, MiniCPM_o_2_6, MiniCPM_o_4_5, MiniCPM_V, MiniCPM_V_2_6,
                         MiniCPM_V_4, MiniCPM_V_4_5, MiniCPM_V_4_6, MiniCPM_V_4_6_Thinking)
 from .minigpt4 import MiniGPT4

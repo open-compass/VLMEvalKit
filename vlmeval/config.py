@@ -947,6 +947,7 @@ minicpm_series = {
     "MiniCPM-V-4": partial(vlm.MiniCPM_V_4, model_path="openbmb/MiniCPM-V-4"),
     "MiniCPM-V-4_5": partial(vlm.MiniCPM_V_4_5, model_path="openbmb/MiniCPM-V-4_5"),
     "MiniCPM-o-4_5": partial(vlm.MiniCPM_o_4_5, model_path="openbmb/MiniCPM-o-4_5"),
+    "MiniCPM-OCR-1_0": partial(vlm.MiniCPM_OCR, model_path="openbmb/MiniCPM-OCR-1.0"),
     # Set use_upsize=True to reproduce the reported MiniCPM-V-4.6 evaluation scores.
     "MiniCPM-V-4_6": partial(vlm.MiniCPM_V_4_6, model_path="openbmb/MiniCPM-V-4.6", use_upsize=False),
     # Set use_upsize=True to reproduce the reported MiniCPM-V-4.6-Thinking evaluation scores.
