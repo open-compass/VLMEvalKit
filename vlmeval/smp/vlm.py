@@ -9,6 +9,11 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = 1e9
 
 
+def encode_file_to_base64(path):
+    with open(path, 'rb') as f:
+        return base64.b64encode(f.read()).decode('utf-8')
+
+
 def rescale_img(img, tgt=None):
     assert isinstance(tgt, tuple) and -1 in tgt
     w, h = img.size

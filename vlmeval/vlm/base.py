@@ -91,6 +91,7 @@ class BaseModel:
         elif self.check_content(inputs) == 'listdict':
             for item in inputs:
                 assert 'type' in item and 'value' in item
+                assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
                 mime, s = parse_file(item['value'])
                 if mime is None:
                     assert item['type'] == 'text'

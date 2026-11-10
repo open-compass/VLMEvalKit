@@ -1,11 +1,14 @@
 import ast
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
 
 from vlmeval.api.base import BaseAPI
+from vlmeval.api.gemini import GeminiWrapper
+from vlmeval.api.gpt import GPTAudio
 from vlmeval.api.lmdeploy import LMDeployWrapper
 from vlmeval.api.rbdashmm_chat3_5_api import RBdashMMChat3_5_38B_Wrapper, RBdashMMChat3_78B_Wrapper
 from vlmeval.api.rbdashmm_chat3_api import RBdashMMChat3_5_Wrapper, RBdashMMChat3Wrapper
@@ -43,6 +46,82 @@ def test_preprocess_message_uses_system_role_when_model_prompt_is_empty():
     assert system_prompt == 'Request prompt.'
     assert model.system_prompt is None
     assert message[0]['role'] == 'system'
+
+
+def test_gpt_audio_preserves_request_system_prompt_through_normalization(monkeypatch):
+    model = GPTAudio.__new__(GPTAudio)
+    BaseAPI.__init__(model, retry=1, wait=0, system_prompt='Configured prompt.', verbose=False)
+    model.audio_cache_dir = None
+    model.audio_sample_rate = 'auto'
+    model.audio_channels = 'auto'
+    model.audio_max_file_size = 1024
+    model.audio_max_payload_size = 1024
+    model.generate_inner = Mock(return_value=(0, 'ok', ''))
+    payload = SimpleNamespace(data=b'audio', format='wav')
+    normalize = Mock(return_value=payload)
+    monkeypatch.setattr('vlmeval.api.gpt.normalize_audio', normalize)
+    monkeypatch.setattr('vlmeval.api.gpt.resolve_media_source', lambda value, **kwargs: value)
+    monkeypatch.setattr('vlmeval.api.gpt.parse_file', lambda value: (None, value))
+    monkeypatch.setattr('vlmeval.api.base.time.sleep', lambda _: None)
+    message = [
+        {'role': 'system', 'type': 'text', 'value': 'Request prompt.'},
+        {'role': 'user', 'type': 'audio', 'value': 'sample.wav'},
+        {'role': 'user', 'type': 'text', 'value': 'Question'},
+    ]
+    original = [item.copy() for item in message]
+
+    assert model.generate(message) == 'ok'
+
+    assert model.generate_inner.call_args.kwargs['system_prompt'] == 'Configured prompt.\nRequest prompt.'
+    content = model.generate_inner.call_args.args[0]
+    assert model.prepare_itlist(content) == [
+        {'type': 'text', 'text': 'Question'},
+        {'type': 'input_audio', 'input_audio': {'data': 'YXVkaW8=', 'format': 'wav'}},
+    ]
+    normalize.assert_called_once()
+    assert message == original
+    assert model.generate([{'type': 'text', 'value': 'Next question'}]) == 'ok'
+    assert model.generate_inner.call_args.kwargs['system_prompt'] == 'Configured prompt.'
+    assert model.system_prompt == 'Configured prompt.'
+
+
+def test_gemini_audio_uses_request_system_prompt_and_preserves_media_order(monkeypatch):
+    model = GeminiWrapper.__new__(GeminiWrapper)
+    model.backend = 'genai'
+    model.model = 'test-model'
+    model.system_prompt = 'Configured prompt.'
+    model.temperature = 0
+    model.max_tokens = 32
+    model.media_resolution = None
+    model.thinking_budget = None
+    model.audio_max_file_size = 1024
+    model.audio_inline_max_file_size = 1024
+    model.audio_cache_dir = None
+    audio_part = object()
+    model.types = SimpleNamespace(
+        Part=SimpleNamespace(from_bytes=Mock(return_value=audio_part)),
+        GenerateContentConfig=lambda **kwargs: kwargs,
+    )
+    generate_content = Mock(return_value=SimpleNamespace(text='ok'))
+    model.client = SimpleNamespace(models=SimpleNamespace(generate_content=generate_content))
+    monkeypatch.setattr('vlmeval.api.gemini.resolve_media_source', lambda value, **kwargs: value)
+    monkeypatch.setattr(
+        'vlmeval.api.gemini.normalize_audio',
+        Mock(return_value=SimpleNamespace(data=b'audio', mime_type='audio/wav')),
+    )
+    message = [
+        {'type': 'text', 'value': 'Before audio'},
+        {'type': 'audio', 'value': 'sample.wav'},
+        {'type': 'text', 'value': 'After audio'},
+    ]
+
+    assert model.generate_inner(message, system_prompt='Request prompt.') == (0, 'ok', 'Succeeded! ')
+    assert generate_content.call_args.kwargs['contents'] == [
+        'Request prompt.', 'Before audio', audio_part, 'After audio',
+    ]
+    assert model.generate_inner(message) == (0, 'ok', 'Succeeded! ')
+    assert generate_content.call_args.kwargs['contents'] == ['Before audio', audio_part, 'After audio']
+    assert model.system_prompt == 'Configured prompt.'
 
 
 def test_lmdeploy_uses_message_system_prompt_without_mutating_model(monkeypatch):
