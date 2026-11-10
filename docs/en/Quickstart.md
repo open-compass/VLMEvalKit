@@ -122,49 +122,24 @@ torchrun --nproc-per-node=8 run.py --data MMBench_Video_8frame_nopack --model id
 python run.py --data MMBench_Video_1fps_pack --model GPT4o
 ```
 
+<a id="audio-evaluation"></a>
+
+**Command for Evaluating Audio Benchmarks**
+
+[MMSU](https://github.com/dingdongwang/MMSU_Bench) contains 5,000 multiple-choice questions for audio understanding and reasoning. The dataset is downloaded and cached automatically on the first run. Use `python` with `--api-mode` to evaluate audio API models:
+
+```bash
+# Gemini-2.5-Flash (API model) on MMSU. Set GOOGLE_API_KEY first.
+python run.py --data MMSU --model GeminiFlash2-5 --api-mode --judge exact_matching
+# Qwen3-Omni on MMSU through a deployed vLLM service that supports audio input.
+python run.py --data MMSU --model Qwen3-Omni-30B-A3B-Instruct --api-mode --base-url http://127.0.0.1:8000/v1 --key EMPTY --max-tokens 16384 --judge exact_matching
+```
+
+For a self-hosted service, replace `--base-url` and `--key` with your service address and API key; `--model` must match an ID returned by `/v1/models`. Audio is sent as base64 by default. If the client and server share the audio files, add `--local-media` to send `file://` paths, and allow access to the shared directory with `--allowed-local-media-path` when starting vLLM.
+
+`--judge exact_matching` scores answer choices without an additional judge model API. The `_acc.csv` report includes overall accuracy and breakdowns by task and category. Adjust concurrency with `--api-nproc`, add `--reuse` to resume from saved results, and set `PRED_FORMAT=tsv` to save predictions as TSV.
+
 The evaluation results will be printed as logs, besides. **Result Files** will also be generated in the directory `$YOUR_WORKING_DIRECTORY/{model_name}`. Files ending with `.csv` contain the evaluated metrics.
-
-### Evaluating Audio Benchmarks <a id="audio-evaluation"></a>
-
-VLMEvalKit supports audio modality evaluation with [MMSU](https://github.com/dingdongwang/MMSU_Bench), a benchmark of 5,000 multiple-choice questions for audio understanding and reasoning. The dataset is downloaded and prepared automatically on the first run, and subsequent runs reuse the local cache.
-
-To evaluate **Qwen3-Omni** served through vLLM, first deploy an OpenAI-compatible API service that supports audio input, then run:
-
-```bash
-# Data cache directory; change this to your preferred location
-export LMUData=/path/to/LMUData
-export PRED_FORMAT=tsv
-
-python run.py \
-  --api-mode \
-  --data MMSU \
-  --model Qwen3-Omni-30B-A3B-Instruct \
-  --base-url http://127.0.0.1:8000/v1 \
-  --key EMPTY \
-  --max-tokens 16384 \
-  --api-nproc 8 \
-  --judge exact_matching \
-  --work-dir ./outputs \
-  --reuse
-```
-
-Replace `--base-url` and `--key` with your service address and API key. The `--model` value must match a model ID returned by the service's `/v1/models` endpoint. Adjust `--api-nproc`, the number of concurrent requests, to suit your service capacity.
-
-By default, audio is sent as base64 data. If the evaluation client and model service share the audio files, add `--local-media` to send `file://` paths instead. For vLLM, allow access to the shared directory with `--allowed-local-media-path` when starting the server.
-
-The command runs both inference and scoring. `--judge exact_matching` extracts and matches answer choices without an additional judge model API. Results are saved under `./outputs/<model_name>/`, including predictions and an accuracy report ending in `_acc.csv`. The report contains overall accuracy and breakdowns by task, category, and other available metadata. After an interruption, rerun the same command with `--reuse` to resume from saved results.
-
-You can also use a configured audio API model. For example, after setting `GOOGLE_API_KEY`, evaluate Gemini with:
-
-```bash
-python run.py \
-  --api-mode \
-  --data MMSU \
-  --model GeminiFlash2-5 \
-  --judge exact_matching \
-  --api-nproc 8 \
-  --reuse
-```
 
 ### Frequently Asked Questions
 
