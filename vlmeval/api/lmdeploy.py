@@ -23,6 +23,9 @@ class LMDeployWrapper(OpenAISDKWrapper):
     Model-specific prompt building and payload post-processing are
     delegated to a :class:`~vlmeval.api.adapters.ModelAdapter` that is
     selected automatically or specified via ``custom_prompt``.
+
+    ``convert_rgb=False`` preserves image mode and transparency using PNG
+    (JPEG for CMYK). Set it to ``True`` for the legacy RGB/JPEG encoding.
     """
 
     def __init__(self,
@@ -41,6 +44,7 @@ class LMDeployWrapper(OpenAISDKWrapper):
                  img_size: int = -1,
                  total_img_size: int = -1,
                  max_file_size: int = 1e9,
+                 convert_rgb: bool = False,
                  **kwargs):
         self.fail_msg = 'Failed to obtain answer via API. '
         self.timeout = timeout
@@ -59,13 +63,14 @@ class LMDeployWrapper(OpenAISDKWrapper):
         assert total_img_size > 0 or total_img_size == -1
         self.total_img_size = total_img_size
         self.max_file_size = max_file_size
+        self.convert_rgb = convert_rgb
         if self.local_media:
             logger.info(
                 f'lmdeploy: `local_media={self.local_media}`, pass local media file path directly.')
-            if img_size != -1 or total_img_size != -1 or max_file_size != 1e9:
+            if img_size != -1 or total_img_size != -1 or max_file_size != 1e9 or convert_rgb:
                 logger.warning(
                     'lmdeploy: image encoding parameters `img_size`, `total_img_size`, '
-                    'and `max_file_size` will not take effect when `local_media=True`.')
+                    '`max_file_size`, and `convert_rgb` will not take effect when `local_media=True`.')
         else:
             logger.info(
                 f'lmdeploy: `local_media={self.local_media}`, pass media file base64.')
@@ -124,12 +129,15 @@ class LMDeployWrapper(OpenAISDKWrapper):
                     else:
                         from PIL import Image
                         img = Image.open(msg['value'])
+                        fmt = 'JPEG' if self.convert_rgb or img.mode == 'CMYK' else 'PNG'
                         b64 = encode_image_to_base64(
                             img,
                             target_size=image_target_size,
+                            fmt=fmt,
                             max_file_size=self.max_file_size,
+                            convert_rgb=self.convert_rgb,
                         )
-                        image_data_url = f'data:image/jpeg;base64,{b64}'
+                        image_data_url = f'data:{Image.MIME[fmt]};base64,{b64}'
                     extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
                     img_struct = dict(url=image_data_url, **extra_args)
                     content_list.append(dict(type='image_url', image_url=img_struct))

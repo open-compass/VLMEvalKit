@@ -99,9 +99,12 @@ class OpenAIWrapper(BaseAPI):
                  use_azure: bool = False,
                  stream: bool = False,
                  response_charset: str = 'utf-8',
+                 convert_rgb: bool = False,
                  **kwargs):
         """
         Args:
+            convert_rgb: Convert RGBA/LA/P to RGB and encode as JPEG. Defaults
+                to False to preserve mode and transparency with PNG (JPEG for CMYK).
             response_charset: Charset used to decode HTTP responses that do
                 not declare a charset in the Content-Type header. Defaults to
                 ``utf-8``. Set to ``None`` to keep requests' inferred encoding.
@@ -171,6 +174,7 @@ class OpenAIWrapper(BaseAPI):
         assert total_img_size > 0 or total_img_size == -1
         self.total_img_size = total_img_size
         self.max_file_size = max_file_size
+        self.convert_rgb = convert_rgb
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
         self.timeout = timeout
@@ -239,9 +243,11 @@ class OpenAIWrapper(BaseAPI):
                     if self.total_img_size > 0:
                         target_size = min(target_size, max(1, int(self.total_img_size / (image_num**0.5))))
                     target_size = -1 if math.isinf(target_size) else target_size
+                    fmt = 'JPEG' if self.convert_rgb or img.mode == 'CMYK' else 'PNG'
                     b64 = encode_image_to_base64(
-                        img, target_size=target_size, max_file_size=self.max_file_size)
-                    img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
+                        img, target_size=target_size, fmt=fmt,
+                        max_file_size=self.max_file_size, convert_rgb=self.convert_rgb)
+                    img_struct = dict(url=f'data:{Image.MIME[fmt]};base64,{b64}', detail=self.img_detail)
                     content_list.append(dict(type='image_url', image_url=img_struct))
         else:
             assert all([x['type'] == 'text' for x in inputs])

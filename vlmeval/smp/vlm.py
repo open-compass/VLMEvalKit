@@ -95,14 +95,15 @@ def resize_image_by_factor(img, factor=1):
     return img
 
 
-def encode_image_to_base64(img, target_size=-1, fmt='JPEG', max_file_size=1e9):
+def encode_image_to_base64(img, target_size=-1, fmt='JPEG', max_file_size=1e9, convert_rgb=True):
+    """Encode an image, optionally keeping its mode with a compatible ``fmt`` such as PNG."""
     from .log import get_logger
 
     logger = get_logger(__name__)
 
     # if target_size == -1, will not do resizing
     # else, will set the max_size ot (target_size, target_size)
-    if img.mode in ('RGBA', 'P', 'LA'):
+    if convert_rgb and img.mode in ('RGBA', 'P', 'LA'):
         img = img.convert('RGB')
     if target_size > 0:
         ori_w, ori_h = img.size
