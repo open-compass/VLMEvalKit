@@ -18,4 +18,4 @@ New Qualified Contributors (2024.09):
 
 > In this section, we list all the contributors as well as their corresponding contributions to the development of VLMEvalKit.
 
-TBD.
+See [GitHub's contributor graph](https://github.com/open-compass/VLMEvalKit/graphs/contributors) for the repository's commit contributors. This page does not yet provide contribution-specific details.
