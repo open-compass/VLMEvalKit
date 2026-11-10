@@ -211,6 +211,13 @@ class TestZeroBenchAnswerProtocol(unittest.TestCase):
                              ['Question_ID', 'Ground_Truth', 'Model_Output', 'Correct?', 'orig_index'])
             self.assertEqual(details['orig_index'].tolist(), [10] * 3 + [20] * 3 + [30] * 3)
 
+    def test_primary_metric_prefers_pass_at_k(self):
+        cls = load_zerobench_class()
+
+        metrics = {'accuracy': 0.1, 'pass@5': 0.2, 'pass^5': 0.0}
+
+        self.assertEqual(cls.report_primary_metric(metrics), {'pass@5': 0.2})
+
 
 if __name__ == '__main__':
     unittest.main()

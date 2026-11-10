@@ -3381,6 +3381,16 @@ class ZEROBench(ImageVQADataset):
         dump(d2df(result), result_file)
         return result
 
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        for key in metrics:
+            if re.fullmatch(r'pass@\d+', str(key)):
+                return {str(key): metrics[key]}
+        return super().report_primary_metric(metrics)
+
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
