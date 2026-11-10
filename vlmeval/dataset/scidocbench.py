@@ -1488,7 +1488,7 @@ class SciDocBench(ImageBaseDataset):
 
         summary = pd.DataFrame(summary_rows)
         score_file = get_intermediate_file_path(
-            eval_file, f'_acc_{scorer_version}', 'csv')
+            eval_file, f'_{scorer_version}_acc', 'csv')
         dump(summary, score_file)
         logger.info(f'SciDocBench evaluation finished. Results saved to {score_file}')
         logger.info(f'\n{summary.to_string(index=False)}')

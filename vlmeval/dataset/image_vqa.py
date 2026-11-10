@@ -3325,13 +3325,26 @@ class ZEROBench(ImageVQADataset):
     DATASET_MD5 = {'ZEROBench': '600d5e89325f1dab5ad3fa2ea200cea6',
                    'ZEROBench_sub': '2d2131bffb7f09ca099fdd0f3ad0392b'}
 
+    def __init__(self, dataset='ZEROBench', skip_noimg=True, k=5):
+        self.k = k
+        super().__init__(dataset=dataset, skip_noimg=skip_noimg)
+
+    def post_build(self, dataset):
+        if not isinstance(self.k, int) or self.k < 1:
+            raise ValueError(f'k must be a positive integer, got {self.k!r}')
+        data = self.data.copy()
+        data['orig_index'] = data['index']
+        self.data = data.loc[data.index.repeat(self.k)].reset_index(drop=True)
+        self.data['index'] = range(len(self.data))
+
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file).sort_values(by='index')
         predictions = [str(x) for x in data['prediction']]
         answers = [str(x) for x in data['answers']]
         indexes = [str(x) for x in data['index']]
-        output_df = pd.DataFrame(columns=["Question_ID", "Ground_Truth", "Model_Output", "Correct?"])
-        for idx, (pred, ans, index) in enumerate(zip(predictions, answers, indexes)):
+        orig_indexes = [x for x in data['orig_index']]
+        output_df = pd.DataFrame(columns=["Question_ID", "Ground_Truth", "Model_Output", "Correct?", "orig_index"])
+        for idx, (pred, ans, index, orig_index) in enumerate(zip(predictions, answers, indexes, orig_indexes)):
             formatted_response = pred.strip()
             # convert to lowercase
             formatted_response = formatted_response.lower()
@@ -3349,13 +3362,34 @@ class ZEROBench(ImageVQADataset):
             results_row = {"Question_ID": idx,
                            "Ground_Truth": ans,
                            "Model_Output": pred,
-                           "Correct?": correct}
+                           "Correct?": correct,
+                           "orig_index": orig_index}
             output_df = pd.concat([output_df, pd.DataFrame([results_row])],
                                   ignore_index=True)
 
         # compute accuracy
         accuracy = output_df["Correct?"].mean()
-        return {"accuracy": accuracy}
+        grouped_correct = output_df.groupby('orig_index')["Correct?"]
+        result = {
+            "accuracy": accuracy,
+            f"pass@{self.k}": grouped_correct.any().mean(),
+            f"pass^{self.k}": grouped_correct.all().mean(),
+        }
+        detail_file = get_intermediate_file_path(eval_file, '_results', 'csv')
+        dump(output_df, detail_file)
+        result_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
+        dump(d2df(result), result_file)
+        return result
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        for key in metrics:
+            if re.fullmatch(r'pass@\d+', str(key)):
+                return {str(key): metrics[key]}
+        return super().report_primary_metric(metrics)
 
     def build_prompt(self, line):
         if isinstance(line, int):
