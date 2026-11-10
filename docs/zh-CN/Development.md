@@ -61,10 +61,10 @@ TSV 文件中的内容组成为：
 现有所有的模型都在 `vlmeval/vlm` 中实现。对于一个最基本的模型，你的模型类**应该实现方法** `generate_inner(msgs, dataset=None)`。这个函数将向 VLM 输入一个多模态数据，并返回 VLM 的预测（一个字符串）。可选参数 `dataset` 可以用作模型在不同推理策略之间切换的标志。
 
 其中多模态消息 `msgs` 是一个字典列表，每个字典有两个键：类型和值：
-- `type`：我们目前支持两种类型，选项是 ["image", "text"]。
-- `value`：当类型为 `text` 时，值是文本消息（一个字符串）；当类型为 `image` 时，值可以是图像文件的本地路径，或者是图像的URL。
+- `type`：支持的消息类型有 `"image"`、`"text"` 和 `"video"`。
+- `value`：`text` 的值为字符串；`image` 的值可以是图像文件本地路径或图像 URL；`video` 的值为本地视频路径，且模型实现必须支持视频输入。
 
-> 目前，一个多模态消息可能包含任意交错的图像和文本。如果你的模型不支持这一点，我们推荐的做法是取第一张图像和连接的文本消息作为模型的输入。你可以在模型的 class 中设置 `INTERLEAVE = False` 并调用 `self.message_to_promptimg(message, dataset=dataset)` 函数来获取你的 prompt 和第一张图片的地址。
+图像和文本消息可以交错排列。如果你的模型不支持这种方式，可以选择第一张图像，并将所有文本消息拼接后作为输入。你可以在模型的 class 中设置 `INTERLEAVE = False`，并使用 `self.message_to_promptimg(message, dataset=dataset)` 来构建 prompt 和第一张图像的路径。使用 `BaseModel.message_to_promptvideo` 的模型应设置 `VIDEO_LLM = True`；该 helper 使用列表中的第一个视频。使用多个视频或混合视频与图像前，请检查模型实现。
 
 一些多模态消息的例子:
 
@@ -81,6 +81,17 @@ msg2 = [
     dict(type='text', value='How many apples are there in these images?')
 ]
 response = model.generate(msg1)
+```
+
+支持视频输入的模型可以接收本地视频路径：
+
+```python
+VIDEO_PATH = 'assets/sample.mp4'
+video_msg = [
+    dict(type='video', value=VIDEO_PATH),
+    dict(type='text', value='What happens in this video?')
+]
+response = model.generate(video_msg)
 ```
 
 为了方便起见，我们还支持接受字符串列表作为输入。在这种情况下，我们将检查一个字符串是图像路径还是图像 URL，并自动将其转换为 `list[dict]` 格式：
