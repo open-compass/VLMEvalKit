@@ -8,7 +8,7 @@
 
 [English](/README.md) | [简体中文](/docs/zh-CN/README_zh-CN.md) | 日本語
 
-<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 OpenCompass Learderboard </a> •
+<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 OpenCompass Leaderboard </a> •
 <a href="#-データセットモデルおよび評価結果">📊Datasets & Models </a> •
 <a href="#️-クイックスタート">🏗️Quickstart </a> •
 <a href="#️-開発ガイド">🛠️Development </a> •
