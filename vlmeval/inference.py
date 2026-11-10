@@ -148,9 +148,11 @@ def infer_data(
     # (In VLMEvalKit, we use torchrun to launch multiple model instances on a single node).
     # To bypass this problem, we unset `WORLD_SIZE` before building the model to not use TP parallel.
     ws_bak = os.environ.pop('WORLD_SIZE', None)
-    model = supported_VLM[model_name](**kwargs) if isinstance(model, str) else model
-    if ws_bak:
-        os.environ['WORLD_SIZE'] = ws_bak
+    try:
+        model = supported_VLM[model_name](**kwargs) if isinstance(model, str) else model
+    finally:
+        if ws_bak is not None:
+            os.environ['WORLD_SIZE'] = ws_bak
 
     is_api = getattr(model, 'is_api', False)
     if is_api:
