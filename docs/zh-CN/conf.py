@@ -235,7 +235,9 @@ notfound_template = '404.html'
 
 
 def builder_inited_handler(app):
-    subprocess.run(['./cp_origin_docs.sh'])
+    docs_dir = os.path.dirname(os.path.abspath(__file__))
+    copy_script = os.path.join(docs_dir, 'cp_origin_docs.sh')
+    subprocess.run(['bash', copy_script], cwd=docs_dir, check=True)
 
 
 def setup(app):
