@@ -4,7 +4,9 @@ from .auto import auto_select_wrapper, register_rbln_auto  # noqa: E402
 from .base import RBLNVLMBase
 from .blip2 import RBLNBlip2
 from .cosmos_reason1 import RBLNCosmosReason1
+from .exaone4_5 import RBLNExaone4_5
 from .gemma3 import RBLNGemma3
+from .gemma4 import RBLNGemma4
 from .idefics3 import RBLNIdefics3
 from .llava import RBLNLlava
 from .llava_next import RBLNLlavaNext
@@ -12,6 +14,7 @@ from .paligemma import RBLNPaliGemma
 from .paligemma2 import RBLNPaliGemma2
 from .pixtral import RBLNPixtral
 from .qwen2_vl import RBLNQwen2VL
+from .qwen3_5 import RBLNQwen3_5
 from .qwen3_vl import RBLNQwen3VL
 
 __all__ = [
@@ -27,6 +30,9 @@ __all__ = [
     'RBLNPaliGemma2',
     'RBLNLlava',
     'RBLNCosmosReason1',
+    'RBLNQwen3_5',
+    'RBLNGemma4',
+    'RBLNExaone4_5',
     'auto_select_wrapper',
     'register_rbln_auto',
 ]

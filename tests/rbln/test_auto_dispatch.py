@@ -19,9 +19,9 @@ import json
 
 import pytest
 
-from vlmeval.vlm.rbln import (RBLNBlip2, RBLNCosmosReason1, RBLNGemma3, RBLNIdefics3, RBLNLlava,
-                              RBLNLlavaNext, RBLNPaliGemma, RBLNPaliGemma2, RBLNPixtral,
-                              RBLNQwen2VL, RBLNQwen3VL)
+from vlmeval.vlm.rbln import (RBLNBlip2, RBLNCosmosReason1, RBLNExaone4_5, RBLNGemma3,
+                              RBLNGemma4, RBLNIdefics3, RBLNLlava, RBLNLlavaNext, RBLNPaliGemma,
+                              RBLNPaliGemma2, RBLNPixtral, RBLNQwen2VL, RBLNQwen3_5, RBLNQwen3VL)
 from vlmeval.vlm.rbln.auto import auto_select_wrapper
 
 
@@ -37,6 +37,9 @@ def _make_model_dir(tmp_path, name: str, architectures):
 # (subdir name, architectures list, expected wrapper class)
 _CASES = [
     ('qwen3', ['Qwen3VLForConditionalGeneration'], RBLNQwen3VL),
+    ('qwen3_5', ['Qwen3_5ForConditionalGeneration'], RBLNQwen3_5),
+    ('gemma4', ['Gemma4ForConditionalGeneration'], RBLNGemma4),
+    ('exaone4_5', ['Exaone4_5_ForConditionalGeneration'], RBLNExaone4_5),
     ('qwen25', ['Qwen2_5_VLForConditionalGeneration'], RBLNQwen2VL),
     ('qwen2', ['Qwen2VLForConditionalGeneration'], RBLNQwen2VL),
     ('llavanext', ['LlavaNextForConditionalGeneration'], RBLNLlavaNext),
@@ -133,3 +136,14 @@ def test_missing_config_json_raises(tmp_path):
     d.mkdir()
     with pytest.raises(ValueError):
         auto_select_wrapper(str(d))
+
+
+def test_new_family_defaults(tmp_path):
+    """Qwen3.5 / Gemma4 / EXAONE-4.5 seed quant-model-zoo compile defaults."""
+    cls, d = auto_select_wrapper(_make_model_dir(tmp_path, 'q35', ['Qwen3_5ForConditionalGeneration']))
+    assert d['rbln_config']['max_seq_len'] == 262144
+    assert d['rbln_config']['visual']['max_seq_len'] == 16384
+    cls, d = auto_select_wrapper(_make_model_dir(tmp_path, 'g4', ['Gemma4ForConditionalGeneration']))
+    assert d['rbln_config']['language_model']['attn_impl'] == 'flash_attn'
+    cls, d = auto_select_wrapper(_make_model_dir(tmp_path, 'ex', ['Exaone4_5_ForConditionalGeneration']))
+    assert d['rbln_config']['kvcache_partition_len'] == 8192
