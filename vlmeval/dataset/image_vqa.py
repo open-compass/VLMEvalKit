@@ -3355,7 +3355,10 @@ class ZEROBench(ImageVQADataset):
 
         # compute accuracy
         accuracy = output_df["Correct?"].mean()
-        return {"accuracy": accuracy}
+        result = {"accuracy": accuracy}
+        result_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
+        dump(d2df(result), result_file)
+        return result
 
     def build_prompt(self, line):
         if isinstance(line, int):
