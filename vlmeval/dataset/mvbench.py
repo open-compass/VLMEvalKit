@@ -553,7 +553,7 @@ Based on your observations, select the best option that accurately addresses the
         max_frame = len(vr) - 1
 
         images_group = list()
-        if self.fps < 0:
+        if self.fps <= 0:
             frame_indices = self.get_index_by_frame(max_frame)
         else:
             frame_indices = self.get_index_by_fps(vr, self.fps)

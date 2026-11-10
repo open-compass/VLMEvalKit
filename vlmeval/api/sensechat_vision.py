@@ -218,7 +218,7 @@ class SenseChatVisionWrapper(BaseAPI):
         else:
             self.max_num = 6
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         assert isinstance(inputs, str) or isinstance(inputs, list)
         inputs = [inputs] if isinstance(inputs, str) else inputs
         dataset = kwargs.get("dataset", None)
@@ -361,10 +361,10 @@ class SenseChatVisionV2API(BaseAPI):
             content_list = [dict(type='text', text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(role='system', content=system_prompt))
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
         assert all(['type' in x for x in inputs]) or all(['role' in x for x in inputs]), inputs
         if 'role' in inputs[0]:
@@ -375,9 +375,9 @@ class SenseChatVisionV2API(BaseAPI):
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         import json
-        input_msgs = self.prepare_inputs(inputs)
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
 
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
 

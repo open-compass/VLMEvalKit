@@ -93,7 +93,7 @@ SUB_CATEGORIES = [
 ]
 
 
-def get_dimention_rating_open_ended(data_path):
+def get_dimension_rating_open_ended(data_path):
     # 读取数据
     df = load(data_path)
 
@@ -134,7 +134,7 @@ def get_dimention_rating_open_ended(data_path):
     return result
 
 
-def get_dimention_rating_mcq_grouding(data_path):
+def get_dimension_rating_mcq_grounding(data_path):
 
     # 读取数据
     df = load(data_path)
@@ -625,4 +625,4 @@ def unzip_hf_zip(target_dir):
         for file in tqdm(zip_ref.namelist(), desc="unzip subtitles"):
             zip_ref.extract(file, subtitles_dir)
 
-    print("sucessfully unzip all files.")
+    print("successfully unzip all files.")

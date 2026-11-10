@@ -28,7 +28,7 @@ class STIBench(VideoBaseDataset):
     LMUData_root = LMUDataRoot()
 
     DATASET_URL = {
-        'STI-Bench': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/STIBench.tsv',  # noqa: E501
+        'STI-Bench': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/STI-Bench.tsv',  # noqa: E501
     }
     DATASET_MD5 = {
         'STI-Bench': '9493f1a66374dbd7bf89992d6d1ff117',
@@ -136,7 +136,7 @@ class STIBench(VideoBaseDataset):
         indices = []
         sample_fps = None
 
-        if self.nframe > 0 and self.fps < 0:
+        if self.nframe > 0 and self.fps <= 0:
             indices = np.linspace(0, video_nframes - 1, self.nframe, dtype=int).tolist()
             frame_paths = self.frame_paths(video_path)
 

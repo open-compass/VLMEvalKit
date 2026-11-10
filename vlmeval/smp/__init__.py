@@ -1,6 +1,8 @@
 from .audio import (AUDIO_MEDIA_URL_PREFIXES, AUDIO_MIME_MAP,  # noqa: F401
                     atomic_write_audio_file, audio_mime_type, infer_audio_mime_type,
                     is_audio_media_url, is_valid_audio_file, normalize_audio, resolve_media_source)
+from .dataset_alias import (DatasetSpec, get_predefined_dataset_spec,  # noqa: F401
+                            resolve_dataset_alias_name, resolve_dataset_spec)
 from .file import *  # noqa: F401, F403
 from .log import *  # noqa: F401, F403
 from .misc import *  # noqa: F401, F403

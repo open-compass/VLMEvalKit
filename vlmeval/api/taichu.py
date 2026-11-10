@@ -154,7 +154,7 @@ class TaichuVLWrapper(BaseAPI):
         for x in inputs:
             if x['type'] == 'text':
                 if x['value'] == self.system_prompt:
-                    messages = [{'role': 'system', 'content': [{"type": "text", "text": x['value']}]}] + messages
+                    messages.insert(0, {'role': 'system', 'content': [{"type": "text", "text": x['value']}]})
                 elif self.mcq_prompt == x['value']:
                     is_mcq = True
                 else:
@@ -171,7 +171,7 @@ class TaichuVLWrapper(BaseAPI):
 
         return messages, is_mcq
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         messages, is_mcq = self.prompt_to_request_messages(inputs)
 
         data = {
@@ -310,7 +310,7 @@ class TaichuVLRWrapper(BaseAPI):
 
         return messages
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         messages = self.prompt_to_request_messages(inputs)
         if self.verbose:
             verbose_messages = copy.deepcopy(messages)

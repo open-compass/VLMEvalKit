@@ -204,11 +204,11 @@ class GeminiWrapper(BaseAPI):
                 )
         return super().preproc_content(inputs)
 
-    def build_msgs_genai(self, inputs):
+    def build_msgs_genai(self, inputs, system_prompt=None):
         """Build ordered GenerateContent parts, including native audio."""
         assert isinstance(inputs, list)
         video_in_msg = False
-        messages = [] if self.system_prompt is None else [self.system_prompt]
+        messages = [] if system_prompt is None else [system_prompt]
         audio_count = 0
 
         for inp in inputs:
@@ -251,9 +251,9 @@ class GeminiWrapper(BaseAPI):
 
         return messages, video_in_msg
 
-    def build_msgs_vertex(self, inputs):
+    def build_msgs_vertex(self, inputs, system_prompt=None):
         from vertexai.generative_models import Image, Part
-        messages = [] if self.system_prompt is None else [self.system_prompt]
+        messages = [] if system_prompt is None else [system_prompt]
         for inp in inputs:
             if inp['type'] == 'text':
                 messages.append(inp['value'])
@@ -265,11 +265,11 @@ class GeminiWrapper(BaseAPI):
                 )
         return messages
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         if self.backend == 'genai':
             assert isinstance(inputs, list)
             model = self.model
-            messages, video_in_msg = self.build_msgs_genai(inputs)
+            messages, video_in_msg = self.build_msgs_genai(inputs, system_prompt)
 
             # Configure generation parameters
             config_args = {
@@ -313,7 +313,7 @@ class GeminiWrapper(BaseAPI):
             vertexai.init(project=self.project_id, location='us-central1')
             model_name = 'gemini-1.0-pro-vision' if self.model == 'gemini-1.0-pro' else self.model
             model = GenerativeModel(model_name=model_name)
-            messages = self.build_msgs_vertex(inputs)
+            messages = self.build_msgs_vertex(inputs, system_prompt)
             try:
                 resp = model.generate_content(messages)
                 answer = resp.text

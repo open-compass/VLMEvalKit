@@ -128,7 +128,6 @@ class TeleMM2Thinking_Wrapper(BaseAPI):
 
         logger.info(f'using custom prompt {self.custom_prompt}')
         logger.info(f'Init temperature: {self.temperature}')
-        self.system_prompt = None
 
     def set_dump_image(self, dump_image_func):
         if self.custom_prompt in self.prompt_map:
@@ -170,10 +169,10 @@ class TeleMM2Thinking_Wrapper(BaseAPI):
             content_list = [dict(type='text', text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(role='system', content=system_prompt))
 
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
         assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
@@ -238,17 +237,17 @@ class TeleMM2Thinking_Wrapper(BaseAPI):
                 return result.strip()
             return text
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
         dataset = kwargs.pop('dataset', None)
         if listinstr(['MathVista'], dataset):
-            self.system_prompt = PREDEFINED_SYSTEM_PROMPT.format(START="<think>", END="</think>")
+            system_prompt = PREDEFINED_SYSTEM_PROMPT.format(START="<think>", END="</think>")
         elif listinstr(['MMMU_DEV_VAL'], dataset):
-            self.system_prompt = PREDEFINED_SYSTEM_PROMPT.format(START="<thinking>", END="</thinking>")
+            system_prompt = PREDEFINED_SYSTEM_PROMPT.format(START="<thinking>", END="</thinking>")
         else:
-            self.system_prompt = None
+            system_prompt = None
 
-        input_msgs = self.prepare_inputs(inputs)
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
 
         if listinstr(['MMMU_DEV_VAL'], dataset):
             do_sample = True

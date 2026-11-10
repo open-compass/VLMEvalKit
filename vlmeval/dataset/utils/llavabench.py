@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-from ..smp.log import get_logger
+from vlmeval.smp.log import get_logger
 
 logger = get_logger(__name__)
 
@@ -28,14 +28,14 @@ def parse_score(review):
     try:
         score_pair = review.split('\n')[0]
         score_pair = score_pair.replace(',', ' ')
-        sp = score_pair.split(' ')
+        sp = score_pair.split()
         if len(sp) == 2:
             return [float(sp[0]), float(sp[1])]
         else:
-            logger.error('error', review)
+            logger.error('Invalid score pair: %s', review)
             return [-1, -1]
     except Exception as e:
-        logger.error(e, 'error', review)
+        logger.error('Cannot parse score pair %s: %s', review, e)
         return [-1, -1]
 
 

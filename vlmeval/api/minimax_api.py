@@ -59,11 +59,11 @@ class MiniMaxAPI(BaseAPI):
 
         logger.info(f"MiniMaxAPI: model={self.model}, api_base={self.api_base}")
 
-    def _prepare_messages(self, inputs):
+    def _prepare_messages(self, inputs, system_prompt=None):
         """Build OpenAI-style messages from VLMEvalKit input format."""
         messages = []
-        if self.system_prompt:
-            messages.append({"role": "system", "content": self.system_prompt})
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
 
         # Handle multi-turn chat format
         if inputs and isinstance(inputs[0], dict) and "role" in inputs[0]:
@@ -82,11 +82,11 @@ class MiniMaxAPI(BaseAPI):
 
         return messages
 
-    def generate_inner(self, inputs, **kwargs):
+    def generate_inner(self, inputs, system_prompt=None, **kwargs):
         temperature = kwargs.pop("temperature", self.temperature)
         max_tokens = kwargs.pop("max_tokens", self.max_tokens)
 
-        messages = self._prepare_messages(inputs)
+        messages = self._prepare_messages(inputs, system_prompt)
         payload = {
             "model": self.model,
             "messages": messages,

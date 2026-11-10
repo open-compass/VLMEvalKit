@@ -77,7 +77,7 @@ print(ret)  # 提供的图片中有两个苹果
 
 ## 🛠️ 开发指南 <a id="development"></a>
 
-要开发自定义评测数据集，支持其他 VLMs，或为 VLMEvalKit 贡献代码，请参阅[**开发指南**](/docs/zh-CN/Development_zh-CN.md)。
+要开发自定义评测数据集，支持其他 VLMs，或为 VLMEvalKit 贡献代码，请参阅[**开发指南**](/docs/zh-CN/Development.md)。
 
 为激励来自社区的共享并分享相应的 credit，在下一次 report 更新中，我们将：
 

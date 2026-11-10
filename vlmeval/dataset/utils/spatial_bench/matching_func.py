@@ -18,6 +18,7 @@ TAGGED_ANSWER_BLOCK = re.compile(
     r'<\s*answer\b[^>]*>'  # <answer ...>
     r'\s*'
     r'([A-Ja-j])'
+    r'(?![A-Za-z])'  # A label must not be the first letter of a word.
     r'(?:\s*[\.．:：\)\]】、])?'  # Optional trailing punctuation, e.g. A. / A: / A) etc.
     r'.*?'
     r'<\s*/\s*answer\s*>',

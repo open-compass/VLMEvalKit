@@ -114,6 +114,19 @@ class TextMCQDataset(TextBaseDataset):
         return acc
 
 
+class MedXpertQAText(TextMCQDataset):
+
+    DATASET_URL = {
+        'MedXpertQA_Text_test': (
+            'http://opencompass.oss-cn-shanghai.aliyuncs.com/utils/VLMEval/MedXpertQA_Text_test.tsv'
+        ),
+    }
+
+    DATASET_MD5 = {
+        'MedXpertQA_Text_test': '354e00e77e865beb7ddf2132aabce45c',
+    }
+
+
 class CustomTextMCQDataset(TextMCQDataset):
 
     def load_data(self, dataset):

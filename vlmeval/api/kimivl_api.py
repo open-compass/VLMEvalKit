@@ -101,10 +101,10 @@ class KimiVLAPIWrapper(BaseAPI):
             content_list = [dict(type='text', text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(role='system', content=system_prompt))
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
         assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
         if 'role' in inputs[0]:
@@ -122,8 +122,8 @@ class KimiVLAPIWrapper(BaseAPI):
             logger.info("Add skip thinking pattern")
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> str:
-        input_msgs = self.prepare_inputs(inputs)
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 
