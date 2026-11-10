@@ -173,7 +173,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
         return frame_paths, indices, video_info
 
-    def build_prompt(self, line, video_llm):
+    def build_prompt(self, line, video_llm=False):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
@@ -196,6 +196,11 @@ Respond with only the letter (A, B, C, or D) of the correct option.
         if video_llm:
             message.append(dict(type='video', value=os.path.join(self.data_root, line['video'])))
         else:
+            if self.nframe <= 0 and self.fps <= 0:
+                raise ValueError(
+                    'DSRBench requires nframe > 0 or fps > 0 when the model does not '
+                    'support direct video input. Set one in the dataset configuration.'
+                )
             frames, _, _ = self.save_video_frames(line['video'], video_llm)
             for im in frames:
                 message.append(dict(type='image', value=im))

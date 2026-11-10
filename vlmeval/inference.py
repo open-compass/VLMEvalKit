@@ -1,4 +1,5 @@
 import argparse
+import inspect
 import os
 import os.path as osp
 import warnings
@@ -15,6 +16,14 @@ from vlmeval.utils import track_progress_rich
 
 logger = get_logger(__name__)
 FAIL_MSG = 'Failed to obtain answer via API.'
+
+
+def _build_dataset_prompt(dataset, item, model):
+    """Pass model video mode to dataset prompt builders that accept it."""
+    build_prompt = dataset.build_prompt
+    if 'video_llm' in inspect.signature(build_prompt).parameters:
+        return build_prompt(item, video_llm=getattr(model, 'VIDEO_LLM', False))
+    return build_prompt(item)
 
 
 def parse_args():
@@ -53,12 +62,12 @@ def infer_data_api(
     for i in range(lt):
         item = data.iloc[i]
         if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
-            struct = dataset.build_prompt(item)
+            struct = _build_dataset_prompt(dataset, item, model)
         elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
             assert hasattr(model, 'build_prompt')
             struct = model.build_prompt(item, dataset=dataset_name)
         else:
-            struct = dataset.build_prompt(item)
+            struct = _build_dataset_prompt(dataset, item, model)
         structs.append(struct)
 
     out_file = f'{work_dir}/{model_name}_{dataset_alias_name}_checkpoint.pkl'
@@ -180,11 +189,11 @@ def infer_data(
             continue
 
         if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
-            struct = dataset.build_prompt(data.iloc[i])
+            struct = _build_dataset_prompt(dataset, data.iloc[i], model)
         elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
             struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
         else:
-            struct = dataset.build_prompt(data.iloc[i])
+            struct = _build_dataset_prompt(dataset, data.iloc[i], model)
 
         # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered
         if os.environ.get('SKIP_ERR', False) == '1':
