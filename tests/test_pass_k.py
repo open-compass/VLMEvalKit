@@ -165,6 +165,23 @@ class TestPassK(unittest.TestCase):
                          {'pass@5': 0.2})
         self.assertEqual(_Toy.report_primary_metric({'accuracy': 0.1}), {'accuracy': 0.1})
 
+    def test_base_order_is_enforced(self):
+        # Listing the dataset first would let its __init__/post_build shadow the mixin.
+        with self.assertRaises(TypeError) as ctx:
+            type('_Swapped', (_Base, PassKMixin), {})
+
+        self.assertIn('PassKMixin', str(ctx.exception))
+        self.assertIn('_Base', str(ctx.exception))
+
+    def test_base_order_allows_cooperative_intermediate_class(self):
+        # A base listed after PassKMixin cannot shadow it, even one defining the hooks.
+        class _Ok(PassKMixin, _Base):
+            def post_build(self, dataset):
+                super().post_build(dataset)
+                self.post_built = True
+
+        self.assertTrue(_Ok(k=1).post_built)
+
 
 class TestZEROBenchPassK(unittest.TestCase):
 

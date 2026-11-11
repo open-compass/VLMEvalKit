@@ -54,6 +54,35 @@ class PassKMixin:
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
+
+        # ``PassKMixin`` has to come *first* in the bases: ``class X(PassKMixin, Dataset)``.
+        #
+        # This hook runs whenever ``PassKMixin`` appears anywhere in the bases, so the wrapping
+        # below happens even with the order flipped. But everything the wrapped ``evaluate`` relies
+        # on is resolved through the MRO: ``self.k`` comes from ``PassKMixin.__init__`` and the
+        # repeated rows from ``PassKMixin.post_build``. Under ``class X(Dataset, PassKMixin)`` the
+        # dataset's own ``__init__``/``post_build`` win, the mixin's never run, and ``k`` is left
+        # unset while ``evaluate`` still expects it -- the caller then sees the unrelated-looking
+        # ``TypeError: Dataset.__init__() got an unexpected keyword argument 'k'`` (or, if ``k`` was
+        # bypassed, ``AttributeError: 'X' object has no attribute 'k'``). Report the real cause here
+        # instead, before any of that can happen.
+        #
+        # The test is "no class between ``cls`` and ``PassKMixin`` defines these hooks", because
+        # such a class shadows the mixin unless it happens to chain to ``super()``; requiring the
+        # documented base order is clearer than trying to detect a cooperative ``super()`` call.
+        mro = cls.__mro__
+        if PassKMixin not in mro:
+            raise TypeError(f'{cls.__name__} must inherit from PassKMixin')
+        shadowing = [
+            base.__name__ for base in mro[1:mro.index(PassKMixin)]
+            if '__init__' in base.__dict__ or 'post_build' in base.__dict__
+        ]
+        if shadowing:
+            raise TypeError(
+                f'{cls.__name__} must list PassKMixin before {", ".join(shadowing)}: their '
+                '`__init__`/`post_build` would shadow the mixin, leaving `k` unset and the data '
+                f'unrepeated. Write `class {cls.__name__}(PassKMixin, ...)` instead.')
+
         # A dataset's own ``evaluate`` would shadow the mixin one; wrap it so it becomes the
         # single-sample scorer that the pass@k logic calls once per sample_id.
         own = cls.__dict__.get('evaluate')
