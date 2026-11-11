@@ -1,0 +1,200 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+import pandas as pd
+
+from vlmeval.dataset.utils.pass_k import PassKMixin
+
+
+class _Base:
+    """Minimal stand-in for ImageBaseDataset."""
+
+    def __init__(self, dataset='toy'):
+        self.data = pd.DataFrame({'index': ['a', 'b'], 'question': ['qa', 'qb']})
+        self.post_build(dataset)
+
+    def post_build(self, dataset):
+        pass
+
+    @classmethod
+    def report_primary_metric(cls, metrics):
+        return {'accuracy': metrics['accuracy']}
+
+
+class _Toy(PassKMixin, _Base):
+    PASS_K_HIT_COL = 'hit'
+
+    def evaluate(self, eval_file, **kwargs):
+        # Single-sample scorer; sees an un-repeated dataset and one prediction per question.
+        assert len(self.data) == 2, 'evaluate must see the un-repeated data'
+        df = pd.read_csv(eval_file, sep='\t', dtype=str).sort_values(by='index')
+        assert 'orig_index' not in df
+        detail = pd.DataFrame({'hit': (df['prediction'] == df['answer']).tolist()})
+        detail.to_csv(eval_file.rsplit('.', 1)[0] + '_results.csv', index=False)
+        return {'accuracy': detail['hit'].mean()}
+
+
+class _NoHitCol(_Toy):
+    PASS_K_HIT_COL = None
+
+
+class _BaseWithEval(_Base):
+    """Parent that implements evaluate; the mixin subclass below does not override it."""
+    calls = 0
+
+    def evaluate(self, eval_file, **kwargs):
+        type(self).calls += 1
+        assert len(self.data) == 2, 'evaluate must see the un-repeated data'
+        df = pd.read_csv(eval_file, sep='\t', dtype=str).sort_values(by='index')
+        detail = pd.DataFrame({'hit': (df['prediction'] == df['answer']).tolist()})
+        detail.to_csv(eval_file.rsplit('.', 1)[0] + '_results.csv', index=False)
+        return {'accuracy': detail['hit'].mean()}
+
+
+class _Inherit(PassKMixin, _BaseWithEval):
+    PASS_K_HIT_COL = 'hit'
+
+
+def _preds(k, hits):
+    rows = []
+    for orig, ans in [('a', '1'), ('b', '2')]:
+        for s in range(k):
+            ok = hits[orig][s]
+            rows.append(dict(index=len(rows), orig_index=orig, sample_id=s, answer=ans,
+                             prediction=ans if ok else 'x'))
+    return pd.DataFrame(rows)
+
+
+class TestPassK(unittest.TestCase):
+
+    def test_invalid_k(self):
+        for bad in (0, -1, 1.5, True, '3'):
+            with self.assertRaises(ValueError):
+                _Toy(k=bad)
+
+    def test_k1_is_noop(self):
+        ds = _Toy(k=1)
+        self.assertEqual(ds.data['index'].tolist(), ['a', 'b'])
+        self.assertNotIn('orig_index', ds.data)
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            pd.DataFrame({'index': ['a', 'b'], 'answer': ['1', '2'], 'prediction': ['1', 'x']}).to_csv(
+                f, sep='\t', index=False)
+            self.assertEqual(ds.evaluate(str(f)), {'accuracy': 0.5})
+
+    def test_post_build_repeats(self):
+        ds = _Toy(k=3)
+        self.assertEqual(ds.data['index'].tolist(), list(range(6)))
+        self.assertEqual(ds.data['orig_index'].tolist(), ['a'] * 3 + ['b'] * 3)
+        self.assertEqual(ds.data['sample_id'].tolist(), [0, 1, 2] * 2)
+        self.assertEqual(ds.data['question'].tolist(), ['qa'] * 3 + ['qb'] * 3)
+
+    def test_metrics(self):
+        ds = _Toy(k=3)
+        hits = {'a': [True, False, True], 'b': [False, False, False]}
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            _preds(3, hits).to_csv(f, sep='\t', index=False)
+            res = ds.evaluate(str(f))
+            self.assertAlmostEqual(res['accuracy'], 2 / 6)
+            self.assertAlmostEqual(res['pass@3'], 0.5)
+            self.assertAlmostEqual(res['pass^3'], 0.0)
+            self.assertEqual(len(ds.data), 6)  # self.data restored
+            acc = pd.read_csv(Path(d) / 'p_acc.csv').iloc[0]
+            self.assertAlmostEqual(acc['pass@3'], 0.5)
+            detail = pd.read_csv(Path(d) / 'p_results.csv')
+            self.assertEqual(len(detail), 6)
+            self.assertEqual(sorted(detail['orig_index'].unique()), ['a', 'b'])
+
+    def test_pass_all(self):
+        ds = _Toy(k=2)
+        hits = {'a': [True, True], 'b': [True, False]}
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            _preds(2, hits).to_csv(f, sep='\t', index=False)
+            res = ds.evaluate(str(f))
+            self.assertAlmostEqual(res['pass@2'], 1.0)
+            self.assertAlmostEqual(res['pass^2'], 0.5)
+
+    def test_no_hit_col_reports_average_only(self):
+        ds = _NoHitCol(k=2)
+        hits = {'a': [True, False], 'b': [False, False]}
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            _preds(2, hits).to_csv(f, sep='\t', index=False)
+            res = ds.evaluate(str(f))
+            self.assertEqual(list(res), ['accuracy'])
+            self.assertAlmostEqual(res['accuracy'], 0.25)
+
+    def test_inherited_evaluate_is_not_shadowed(self):
+        # No evaluate defined on the subclass: PassKMixin.evaluate must be used and delegate to the parent.
+        self.assertNotIn('evaluate', _Inherit.__dict__)
+        self.assertIs(_Inherit.evaluate, PassKMixin.evaluate)
+        ds = _Inherit(k=3)
+        hits = {'a': [True, False, True], 'b': [False, False, False]}
+        _BaseWithEval.calls = _Inherit.calls = 0
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            _preds(3, hits).to_csv(f, sep='\t', index=False)
+            res = ds.evaluate(str(f))
+            self.assertEqual(_Inherit.calls, 3)  # parent scorer called once per sample_id
+            self.assertAlmostEqual(res['accuracy'], 2 / 6)
+            self.assertAlmostEqual(res['pass@3'], 0.5)
+            self.assertAlmostEqual(res['pass^3'], 0.0)
+
+    def test_inherited_evaluate_k1_delegates_to_parent(self):
+        ds = _Inherit(k=1)
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            pd.DataFrame({'index': ['a', 'b'], 'answer': ['1', '2'], 'prediction': ['1', 'x']}).to_csv(
+                f, sep='\t', index=False)
+            self.assertEqual(ds.evaluate(str(f)), {'accuracy': 0.5})
+
+    def test_incomplete_predictions_rejected(self):
+        ds = _Toy(k=3)
+        hits = {'a': [True] * 3, 'b': [True] * 3}
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            _preds(3, hits).iloc[:-1].to_csv(f, sep='\t', index=False)
+            with self.assertRaises(ValueError):
+                ds.evaluate(str(f))
+
+    def test_primary_metric_prefers_pass_at_k(self):
+        self.assertEqual(_Toy.report_primary_metric({'accuracy': 0.1, 'pass@5': 0.2, 'pass^5': 0.0}),
+                         {'pass@5': 0.2})
+        self.assertEqual(_Toy.report_primary_metric({'accuracy': 0.1}), {'accuracy': 0.1})
+
+
+class TestZEROBenchPassK(unittest.TestCase):
+
+    def test_zerobench_wiring(self):
+        from vlmeval.dataset.image_vqa import ZEROBench
+        self.assertTrue(issubclass(ZEROBench, PassKMixin))
+        self.assertEqual(ZEROBench.PASS_K_DEFAULT, 5)
+        self.assertEqual(ZEROBench.PASS_K_HIT_COL, 'Correct?')
+
+    def test_zerobench_end_to_end_metrics(self):
+        from vlmeval.dataset.image_vqa import ZEROBench
+        ds = ZEROBench.__new__(ZEROBench)
+        ds.k = 3
+        ds.data = pd.DataFrame({'index': [10, 10, 10, 20, 20, 20, 30, 30, 30],
+                                'orig_index': [10] * 3 + [20] * 3 + [30] * 3,
+                                'sample_id': [0, 1, 2] * 3})
+        rows = []
+        for i, (o, ans, preds) in enumerate([(10, '1', ['{1}', '{2}', '{1}']),
+                                             (20, '2', ['{3}', '{4}', '{5}']),
+                                             (30, '6', ['{6}', '{6}', '{6}'])]):
+            for s, p in enumerate(preds):
+                rows.append(dict(index=len(rows), orig_index=o, sample_id=s, answers=ans, prediction=p))
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            pd.DataFrame(rows).to_csv(f, sep='\t', index=False)
+            res = ZEROBench.evaluate(ds, str(f))
+            self.assertAlmostEqual(res['accuracy'], 5 / 9)
+            self.assertAlmostEqual(res['pass@3'], 2 / 3)
+            self.assertAlmostEqual(res['pass^3'], 1 / 3)
+
+
+if __name__ == '__main__':
+    unittest.main()
