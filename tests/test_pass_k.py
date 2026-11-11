@@ -39,6 +39,25 @@ class _NoHitCol(_Toy):
     PASS_K_HIT_COL = None
 
 
+class _XlsxDetail(_Toy):
+    """Writes its detail in xlsx, as datasets using the default PRED_FORMAT do."""
+    PASS_K_DETAIL_FORMAT = None
+
+    def evaluate(self, eval_file, **kwargs):
+        assert len(self.data) == 2
+        df = pd.read_csv(eval_file, sep='\t', dtype=str).sort_values(by='index')
+        detail = pd.DataFrame({'hit': (df['prediction'] == df['answer']).tolist()})
+        detail.to_excel(eval_file.rsplit('.', 1)[0] + '_results.xlsx', index=False)
+        return {'accuracy': detail['hit'].mean()}
+
+
+class _NoDetail(_Toy):
+    """Declares PASS_K_HIT_COL but never writes the detail file."""
+
+    def evaluate(self, eval_file, **kwargs):
+        return {'accuracy': 0.5}
+
+
 class _BaseWithEval(_Base):
     """Parent that implements evaluate; the mixin subclass below does not override it."""
     calls = 0
@@ -126,6 +145,40 @@ class TestPassK(unittest.TestCase):
             res = ds.evaluate(str(f))
             self.assertEqual(list(res), ['accuracy'])
             self.assertAlmostEqual(res['accuracy'], 0.25)
+
+    def test_detail_format_is_probed(self):
+        # evaluate() decides the detail format itself (often PRED_FORMAT, i.e. xlsx); the mixin
+        # must read whatever was written instead of assuming csv.
+        ds = _XlsxDetail(k=2)
+        hits = {'a': [True, False], 'b': [False, False]}
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            _preds(2, hits).to_csv(f, sep='\t', index=False)
+            res = ds.evaluate(str(f))
+            self.assertAlmostEqual(res['pass@2'], 0.5)
+            self.assertAlmostEqual(res['pass^2'], 0.0)
+            self.assertEqual(len(pd.read_csv(Path(d) / 'p_results.csv')), 4)
+
+    def test_pinned_detail_format_wins(self):
+        ds = _XlsxDetail(k=2)
+        ds.PASS_K_DETAIL_FORMAT = 'csv'  # wrong on purpose: the dataset writes xlsx
+        hits = {'a': [True, False], 'b': [False, False]}
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            _preds(2, hits).to_csv(f, sep='\t', index=False)
+            with self.assertRaises(FileNotFoundError):
+                ds.evaluate(str(f))
+
+    def test_missing_detail_file_is_reported_clearly(self):
+        ds = _NoDetail(k=2)
+        hits = {'a': [True, False], 'b': [False, False]}
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            _preds(2, hits).to_csv(f, sep='\t', index=False)
+            with self.assertRaises(FileNotFoundError) as ctx:
+                ds.evaluate(str(f))
+            self.assertIn('PASS_K_DETAIL_FORMAT', str(ctx.exception))
+            self.assertIn('PASS_K_HIT_COL', str(ctx.exception))
 
     def test_inherited_evaluate_is_not_shadowed(self):
         # No evaluate defined on the subclass: PassKMixin.evaluate must be used and delegate to the parent.

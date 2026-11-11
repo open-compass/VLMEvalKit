@@ -27,9 +27,16 @@ class PassKMixin:
     # Name of the 0/1 (bool) column in the per-sample detail file written by ``evaluate``.
     # ``None`` -> only the averaged metrics are reported, pass@k / pass^k are skipped.
     PASS_K_HIT_COL = None
-    # Suffix / format of that detail file, as passed to ``get_intermediate_file_path``.
+    # Suffix of that detail file, as passed to ``get_intermediate_file_path``.
     PASS_K_DETAIL_SUFFIX = '_results'
-    PASS_K_DETAIL_FORMAT = 'csv'
+    # Format of that detail file. The dataset's ``evaluate`` writes it and decides that format
+    # itself -- most call ``get_intermediate_file_path(eval_file, '_results')`` without a format,
+    # which resolves through ``PRED_FORMAT`` (default xlsx), not ``EVAL_FORMAT``. So leave this
+    # ``None`` to read whichever format actually exists; set it only when the dataset hardcodes a
+    # format that the probe could get wrong, and keep it in sync with what ``evaluate`` writes.
+    PASS_K_DETAIL_FORMAT = None
+    # Formats tried in order when ``PASS_K_DETAIL_FORMAT`` is ``None``.
+    PASS_K_DETAIL_PROBE = ('csv', 'json', 'xlsx')
     # k used when the caller does not pass one.
     PASS_K_DEFAULT = 1
 
@@ -133,11 +140,7 @@ class PassKMixin:
                     raise TypeError(f'PassKMixin requires evaluate() to return a dict, got {type(res).__name__}')
                 results.append(res)
                 if self.PASS_K_HIT_COL:
-                    detail_file = get_intermediate_file_path(
-                        sub_file, self.PASS_K_DETAIL_SUFFIX, self.PASS_K_DETAIL_FORMAT)
-                    detail = load(detail_file)
-                    if len(detail) != len(sub):
-                        raise ValueError(f'{detail_file} has {len(detail)} rows, expected {len(sub)}')
+                    detail_file, detail = self._load_detail(sub_file, len(sub))
                     detail = detail.copy()
                     detail['orig_index'] = sub['index'].tolist()
                     detail['sample_id'] = s
@@ -156,10 +159,41 @@ class PassKMixin:
             grouped = hit.groupby(all_detail['orig_index'])
             final[f'pass@{self.k}'] = grouped.any().mean()
             final[f'pass^{self.k}'] = grouped.all().mean()
+            # The merged detail is a report artifact: pin its format so it does not move with
+            # PRED_FORMAT/EVAL_FORMAT, matching the `_acc` csv written below.
             dump(all_detail, get_intermediate_file_path(
-                eval_file, self.PASS_K_DETAIL_SUFFIX, self.PASS_K_DETAIL_FORMAT))
+                eval_file, self.PASS_K_DETAIL_SUFFIX, 'csv'))
         dump(d2df(final), get_intermediate_file_path(eval_file, '_acc', 'csv'))
         return final
+
+    def _load_detail(self, sub_file, expected_rows):
+        """Read the per-sample detail file ``evaluate`` wrote for one split.
+
+        The dataset owns the write side and picks its own format (often ``PRED_FORMAT``), so when
+        ``PASS_K_DETAIL_FORMAT`` is not pinned, probe the formats it could plausibly have used
+        instead of assuming one.
+        """
+        if self.PASS_K_DETAIL_FORMAT is not None:
+            candidates = [self.PASS_K_DETAIL_FORMAT]
+        else:
+            candidates = list(self.PASS_K_DETAIL_PROBE)
+        tried = []
+        for fmt in candidates:
+            detail_file = get_intermediate_file_path(sub_file, self.PASS_K_DETAIL_SUFFIX, fmt)
+            if not osp.exists(detail_file):
+                tried.append(detail_file)
+                continue
+            detail = load(detail_file)
+            if len(detail) != expected_rows:
+                raise ValueError(f'{detail_file} has {len(detail)} rows, expected {expected_rows}')
+            return detail_file, detail
+        raise FileNotFoundError(
+            'PassKMixin could not find the per-sample detail file that '
+            f'`{type(self).__name__}.evaluate` should have written for {sub_file}. Tried: '
+            f'{", ".join(tried)}. Either write it with `get_intermediate_file_path(eval_file, '
+            f"'{self.PASS_K_DETAIL_SUFFIX}')` or set PASS_K_DETAIL_FORMAT to the format used. "
+            f'Set PASS_K_HIT_COL = None if this dataset cannot expose a per-sample correctness '
+            'column; pass@k/pass^k are then skipped and only the averaged metrics are reported.')
 
     @classmethod
     def report_primary_metric(cls, metrics):
