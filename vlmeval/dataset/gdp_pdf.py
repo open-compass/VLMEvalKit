@@ -155,8 +155,8 @@ class GDPPDF(ImageBaseDataset):
 
     TYPE = 'VQA'
     DEFAULT_JUDGE_MODEL = 'gemini-3.5-flash'
-    HF_REPO_ID = 'surgeai/GDP.pdf'
-    HF_REVISION = 'main'
+    HF_REPO_ID = 'cloudybean/GDP.pdf'
+    HF_REVISION = '1b73b865da6be76dca2e4f3ad66a53d6709ac9f5'
     HF_PARQUET_MD5 = 'aa6d3ce9b6285b767c888da35c2cb7c8'
     force_use_dataset_prompt = True
     JUDGE_FAIL_MARKERS = (FAIL_MSG, UNSCORED)
