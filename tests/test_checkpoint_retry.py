@@ -118,3 +118,29 @@ def test_api_checkpoint_retries_failed_turn_answers(tmp_path, monkeypatch, retry
     assert result[0] == success
     assert model.calls == int(retry_failed)
     assert result[1] == (['renewed'] if retry_failed else failed)
+
+
+def test_video_job_forwards_policy_llm_to_infer_data(tmp_path, monkeypatch):
+    module, modules = _load_inference_module('inference_video')
+    seen = {}
+
+    def fake_infer_data(**kwargs):
+        seen.update(kwargs)
+        modules['vlmeval.smp.file'].dump({0: 'answer'}, kwargs['out_file'])
+        return kwargs['model']
+
+    monkeypatch.setattr(module, 'infer_data', fake_infer_data)
+
+    class Dataset:
+        dataset_name = 'Example'
+        nframe = 8
+        fps = -1
+        interactive_mt = True
+        data = pd.DataFrame({'index': [0]})
+
+    llm = object()
+    module.infer_data_job_video(
+        'model', str(tmp_path), 'mock', Dataset(), result_file=str(tmp_path / 'out.tsv'),
+        policy_llm=llm)
+
+    assert seen['policy_llm'] is llm

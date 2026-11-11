@@ -168,13 +168,25 @@ def _turn_kwargs(step):
     return kwargs
 
 
-def run_default_loop(dataset, case, caller, policy_kwargs):
-    """Standard case-level loop: one policy, one history, at most max_turns calls."""
+def policy_llm_kwargs(policy_llm):
+    """Keyword arguments that hand the shared policy LLM to ``build_policy``.
+
+    Datasets without a ``build_policy_llm`` hook never see the new keyword, so
+    a ``build_policy`` with a fixed signature keeps working.
+    """
+    return {} if policy_llm is None else {'policy_llm': policy_llm}
+
+
+def run_default_loop(dataset, case, caller, policy_llm=None):
+    """Standard case-level loop: one policy, one history, at most max_turns calls.
+
+    ``policy_llm`` is created once by the runner and shared by every case.
+    """
     messages = build_mt_prompt(caller.model, dataset, case, caller.dataset_name)
     if not messages or messages[-1].get('role') != 'user':
         raise ValueError('Initial MT messages must end with a user message.')
 
-    policy = dataset.build_policy(case, messages=messages, **deepcopy(policy_kwargs))
+    policy = dataset.build_policy(case, messages=messages, **policy_llm_kwargs(policy_llm))
     if policy.max_turns <= 0:
         raise ValueError('An MT policy must allow at least one turn.')
 
@@ -217,13 +229,16 @@ def run_default_loop(dataset, case, caller, policy_kwargs):
     return policy.finalize()
 
 
-def chat_interactive_mt(model, dataset, sample, dataset_name, *, policy_kwargs=None):
-    """Run every case produced by ``dataset.build_cases(sample)``."""
+def chat_interactive_mt(model, dataset, sample, dataset_name, *, policy_llm=None):
+    """Run every case produced by ``dataset.build_cases(sample)``.
+
+    ``policy_llm`` is created once by the runner and shared as is.
+    """
     caller = ModelCaller(model, dataset_name)
     cases = dataset.build_cases(sample)
     if not cases:
         raise ValueError('An MT sample must produce at least one case.')
     predictions = [
-        dataset.run_case(case, caller, **deepcopy(policy_kwargs or {})) for case in cases
+        dataset.run_case(case, caller, **policy_llm_kwargs(policy_llm)) for case in cases
     ]
     return predictions[0] if len(predictions) == 1 else predictions

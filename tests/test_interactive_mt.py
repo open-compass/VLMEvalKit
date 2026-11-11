@@ -391,3 +391,72 @@ def test_interactive_case_retry_and_finalized_prediction(
         assert second_model.calls == []
         assert second_dataset.policies == []
         assert second_dataset.evaluated == [completed, failed]
+
+
+def _policy_llm_dataset(mt, seen):
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
+
+    class Dataset(InteractiveMTMixin):
+        def build_cases(self, sample):
+            return [sample]
+
+        def build_prompt(self, sample):
+            return [{'role': 'user', 'content': 'q'}]
+
+        def build_policy(self, sample, messages, **kwargs):
+            seen.append(kwargs)
+            return mt.StaticTurnPolicy(messages, [])
+
+    return Dataset()
+
+
+class _OneShotModel:
+    def chat(self, history, dataset):
+        return 'answer'
+
+
+def test_policy_llm_is_the_same_object_in_every_case():
+    import vlmeval.interactive_mt as mt
+    seen = []
+    dataset = _policy_llm_dataset(mt, seen)
+    llm = object()
+
+    for index in range(3):
+        mt.chat_interactive_mt(
+            _OneShotModel(), dataset, {'index': index}, 'Example', policy_llm=llm)
+
+    # Nothing but the shared object reaches build_policy, and it is not copied.
+    assert [list(item) for item in seen] == [['policy_llm']] * 3
+    assert all(item['policy_llm'] is llm for item in seen)
+
+
+def test_policy_llm_keyword_is_omitted_when_dataset_has_no_llm():
+    import vlmeval.interactive_mt as mt
+    seen = []
+    dataset = _policy_llm_dataset(mt, seen)
+
+    mt.chat_interactive_mt(_OneShotModel(), dataset, {'index': 0}, 'Example')
+
+    assert seen == [{}]
+    assert dataset.build_policy_llm({'model': 'p'}) is None
+
+
+def test_custom_run_case_receives_policy_llm():
+    import vlmeval.interactive_mt as mt
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
+    received = []
+
+    class Dataset(InteractiveMTMixin):
+        def build_cases(self, sample):
+            return [sample]
+
+        def run_case(self, case, caller, **kwargs):
+            received.append(kwargs)
+            return 'done'
+
+    llm = object()
+    out = mt.chat_interactive_mt(
+        _OneShotModel(), Dataset(), {'index': 0}, 'Example', policy_llm=llm)
+
+    assert out == 'done'
+    assert received == [{'policy_llm': llm}]

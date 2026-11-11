@@ -70,7 +70,7 @@ class MMDUDataset(InteractiveMTMixin, ImageBaseDataset):
             raise ValueError('An MT sample must contain at least one question.')
         return messages[:1]
 
-    def build_policy(self, case, messages, **policy_kwargs):
+    def build_policy(self, case, messages):
         """Static MT: replay the remaining user turns in order."""
         all_messages = self._build_messages(case)
         return StaticTurnPolicy(messages, all_messages[2::2])

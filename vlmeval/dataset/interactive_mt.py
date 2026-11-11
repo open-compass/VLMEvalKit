@@ -44,14 +44,45 @@ class InteractiveMTMixin:
         """
         raise NotImplementedError
 
-    def build_policy(self, case, messages, **policy_kwargs):
-        """Build a single-use policy for this case."""
+    def build_policy_llm(self, policy_kwargs):
+        """Create the model(s) that policies call internally, or ``None``.
+
+        The runner calls this once per dataset, before inference, with the
+        ``--policy*`` options as a private dict. Those options are consumed
+        here and go no further: ``build_policy`` never sees them.
+
+        The return value is opaque to the framework (an API client, a local
+        model, or a dict of roles). It is shared by every case and every API
+        worker thread and is never copied, so it must hold no per-case state
+        and be safe to call concurrently.
+
+        One role is the default: ``--policy``, ``--policy-key``,
+        ``--policy-base-url``, ``--policy-retry`` and ``--policy-timeout``
+        configure it, and ``DEFAULT_POLICY_MODEL`` names its default model.
+
+        A dataset whose policy needs several LLMs (examiner + context
+        generator, ...) returns a dict keyed by role and reads per-role
+        settings from ``--policy-args``, e.g.
+        ``{"model": "m", "roles": {"examiner": {"model": "a"}, "context":
+        {"model": "b"}}}``. Top-level fields are shared defaults and each role
+        overrides them; role names and per-role default models are the
+        dataset's own convention. Roles that run before inference (data
+        preparation) or after it (evaluation) do not belong here.
+        """
+        return None
+
+    def build_policy(self, case, messages, *, policy_llm=None):
+        """Build a single-use policy for this case.
+
+        When ``build_policy_llm`` returned something, it arrives as the keyword
+        ``policy_llm`` (shared, not copied); otherwise the keyword is absent.
+        """
         raise NotImplementedError
 
     def get_default_policy_model(self, policy_kwargs=None):
         return self.DEFAULT_POLICY_MODEL
 
-    def run_case(self, case, caller, **policy_kwargs):
+    def run_case(self, case, caller, policy_llm=None):
         """Run one case and return its finalized prediction.
 
         Override only when a benchmark needs to control the number or order of
@@ -59,4 +90,4 @@ class InteractiveMTMixin:
         Inside an override, reach the model exclusively through ``caller`` so
         failure detection stays uniform.
         """
-        return run_default_loop(self, case, caller, policy_kwargs)
+        return run_default_loop(self, case, caller, policy_llm)

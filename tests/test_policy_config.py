@@ -58,7 +58,8 @@ def test_static_mt_does_not_require_policy_model(monkeypatch):
     sample = {'question': '["first", "second"]', 'image_path': '[]'}
     kwargs = runner.get_policy_kwargs(parse_args(monkeypatch), dataset=dataset)
     assert 'model' not in kwargs
-    policy = dataset.build_policy(sample, dataset.build_prompt(sample), **kwargs)
+    assert runner.build_policy_llm(parse_args(monkeypatch), dataset=dataset) is None
+    policy = dataset.build_policy(sample, dataset.build_prompt(sample))
     assert isinstance(policy, StaticTurnPolicy)
     assert policy.max_turns == 2
 
@@ -73,8 +74,10 @@ def test_run_cli_passes_policy_options_to_each_case(tmp_path, monkeypatch, mode)
 
         def __init__(self):
             self.data = pd.DataFrame({'index': [0, 1]})
-            self.received = []
             self.evaluated = []
+            self.llm = object()
+            self.llm_builds = []
+            self.llms = []
 
         def __len__(self):
             return len(self.data)
@@ -88,10 +91,12 @@ def test_run_cli_passes_policy_options_to_each_case(tmp_path, monkeypatch, mode)
         def build_prompt(self, sample):
             return [{'role': 'user', 'content': str(sample['index'])}]
 
-        def build_policy(self, sample, messages, **policy_kwargs):
-            self.received.append(deepcopy(policy_kwargs))
-            # Per-case configuration changes must not affect other cases.
-            policy_kwargs['extra_body']['case'] = int(sample['index'])
+        def build_policy_llm(self, policy_kwargs):
+            self.llm_builds.append(deepcopy(policy_kwargs))
+            return self.llm
+
+        def build_policy(self, sample, messages, *, policy_llm=None):
+            self.llms.append(policy_llm)
             return StaticTurnPolicy(messages, [{'role': 'user', 'content': 'next'}])
 
         def evaluate(self, result_file, **judge_kwargs):
@@ -143,7 +148,9 @@ def test_run_cli_passes_policy_options_to_each_case(tmp_path, monkeypatch, mode)
         'api_base': 'https://policy.invalid/v1/chat/completions', 'key': 'dummy-policy-key',
         'retry': 6, 'timeout': 600, 'verbose': False,
     }
-    assert dataset.received == [expected, expected]
+    # The policy LLM is created once from the --policy* options and shared.
+    assert dataset.llm_builds == [expected]
+    assert len(dataset.llms) == 2 and all(llm is dataset.llm for llm in dataset.llms)
     assert dataset.evaluated == [['answer', 'answer'], ['answer', 'answer']]
     result_files = list(tmp_path.glob('mock/*/mock_Example.tsv'))
     assert len(result_files) == 1

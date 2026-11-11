@@ -30,7 +30,7 @@ def parse_args():
 
 # Only API model is accepted
 def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_nproc=4, retry_failed=True,
-                   dataset_name=None, dataset_alias_name=None, policy_kwargs=None):
+                   dataset_name=None, dataset_alias_name=None, policy_llm=None):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset_name = dataset_name or dataset.dataset_name
@@ -107,7 +107,7 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
                 dataset=dataset,
                 sample=samples_dict[i],
                 dataset_name=dataset_name,
-                policy_kwargs=policy_kwargs,
+                policy_llm=policy_llm,
             )
             for i in indices
         ]
@@ -128,7 +128,7 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
 
 
 def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False,
-               retry_failed=True, dataset_name=None, dataset_alias_name=None, policy_kwargs=None):
+               retry_failed=True, dataset_name=None, dataset_alias_name=None, policy_llm=None):
     dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
     prev_file = f'{work_dir}/{model_name}_{dataset_alias_name}_PREV.pkl'
@@ -177,7 +177,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
             retry_failed=retry_failed,
             dataset_name=dataset_name,
             dataset_alias_name=dataset_alias_name,
-            policy_kwargs=policy_kwargs)
+            policy_llm=policy_llm)
         for k in sample_indices_subrem:
             assert k in supp
         res.update(supp)
@@ -233,7 +233,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         if interactive_mt:
             response = chat_interactive_mt(
                 model, dataset, dataset.data.iloc[sample_map[idx]], sample_dataset_name,
-                policy_kwargs=policy_kwargs)
+                policy_llm=policy_llm)
             torch.cuda.empty_cache()
             if verbose:
                 print(response, flush=True)
@@ -292,7 +292,7 @@ def infer_data_job_video(model,
                          api_nproc=4,
                          use_vllm=False,
                          retry_failed=True,
-                         policy_kwargs=None):
+                         policy_llm=None):
 
     dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
@@ -335,7 +335,8 @@ def infer_data_job_video(model,
         use_vllm=use_vllm,
         retry_failed=retry_failed,
         dataset_name=dataset_name,
-        dataset_alias_name=dataset_alias_name)
+        dataset_alias_name=dataset_alias_name,
+        policy_llm=policy_llm)
 
     if world_size > 1:
         dist.barrier()

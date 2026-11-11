@@ -443,6 +443,17 @@ def get_policy_kwargs(args, *, dataset):
     return policy_kwargs
 
 
+def build_policy_llm(args, *, dataset):
+    """Create the policy LLM once per dataset, like the model under test.
+
+    The ``--policy*`` options are consumed here and go no further; policies
+    only ever see the resulting object.
+    """
+    if not getattr(dataset, 'interactive_mt', False):
+        return None
+    return dataset.build_policy_llm(get_policy_kwargs(args, dataset=dataset))
+
+
 def parse_reuse_aux_arg(reuse_aux):
     if isinstance(reuse_aux, bool):
         return 'all' if reuse_aux else 'none'
@@ -869,10 +880,7 @@ def run_local_mode(args):
                     # Perform the Inference
                     # MT is a property of how a dataset runs, not of its media
                     # type; both modality paths dispatch on it internally.
-                    policy_kwargs = (
-                        get_policy_kwargs(args, dataset=dataset)
-                        if getattr(dataset, 'interactive_mt', False) else None
-                    )
+                    policy_llm = build_policy_llm(args, dataset=dataset)
                     if dataset.MODALITY == 'VIDEO':
                         model = infer_data_job_video(
                             model,
@@ -886,7 +894,7 @@ def run_local_mode(args):
                             api_nproc=args.api_nproc,
                             use_vllm=args.use_vllm,
                             retry_failed=not args.keep_failed,
-                            policy_kwargs=policy_kwargs)
+                            policy_llm=policy_llm)
                     else:
                         model = infer_data_job(
                             model,
@@ -900,7 +908,7 @@ def run_local_mode(args):
                             api_nproc=args.api_nproc,
                             retry_failed=not args.keep_failed,
                             use_vllm=args.use_vllm,
-                            policy_kwargs=policy_kwargs)
+                            policy_llm=policy_llm)
 
                 if WORLD_SIZE > 1:
                     dist.barrier()
@@ -1296,7 +1304,7 @@ def run_api_mode(args):
                 work_dir=str(pred_root),
                 result_file=result_file,
                 judge_kwargs=judge_kwargs,
-                policy_kwargs=get_policy_kwargs(args, dataset=dataset) if interactive_mt else {},
+                policy_llm=build_policy_llm(args, dataset=dataset),
                 verbose=args.verbose
             )
             dataset_configs.append(dataset_config)
