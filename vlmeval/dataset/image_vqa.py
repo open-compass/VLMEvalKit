@@ -25,7 +25,6 @@ from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE, build_judge
 from .utils.judge_cache import (get_judge_cache_file, get_judge_detail_file, get_judge_score_file,
                                 load_judge_cache, run_cached_tasks)
-from .utils.pass_k import PassKMixin
 from .utils.vqa_eval import istype
 
 
@@ -3320,14 +3319,14 @@ class TDBenchGrounding(ImageVQADataset):
         return msgs
 
 
-class ZEROBench(PassKMixin, ImageVQADataset):
+class ZEROBench(ImageVQADataset):
     DATASET_URL = {'ZEROBench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv',
                    'ZEROBench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench_sub.tsv'}
     DATASET_MD5 = {'ZEROBench': '600d5e89325f1dab5ad3fa2ea200cea6',
                    'ZEROBench_sub': '2d2131bffb7f09ca099fdd0f3ad0392b'}
 
+    DEFAULT_N_RUNS = 5
     PASS_K_HIT_COL = 'Correct?'
-    PASS_K_DEFAULT = 5
 
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file).sort_values(by='index')
@@ -3360,6 +3359,16 @@ class ZEROBench(PassKMixin, ImageVQADataset):
         dump(output_df, get_intermediate_file_path(eval_file, '_results', 'csv'))
         dump(d2df(result), get_intermediate_file_path(eval_file, '_acc', 'csv'))
         return result
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        for key in metrics:
+            if re.fullmatch(r'pass@\d+', str(key)):
+                return {str(key): metrics[key]}
+        return super().report_primary_metric(metrics)
 
     def build_prompt(self, line):
         if isinstance(line, int):

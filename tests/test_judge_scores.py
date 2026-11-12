@@ -72,7 +72,7 @@ def load_zerobench_class(image_vqa_dataset=object):
     tree = ast.parse(source.read_text())
     cls = next(node for node in tree.body
                if isinstance(node, ast.ClassDef) and node.name == 'ZEROBench')
-    namespace = {'ImageVQADataset': image_vqa_dataset, 'PassKMixin': type('PassKMixin', (), {}), 'pd': pd, 're': re,
+    namespace = {'ImageVQADataset': image_vqa_dataset, 'pd': pd, 're': re,
                  'load': lambda filename: pd.read_csv(
                      filename, keep_default_na=False,
                      sep='\t' if filename.endswith('.tsv') else ','),
