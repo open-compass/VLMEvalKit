@@ -58,6 +58,19 @@ class _NoDetail(_Toy):
         return {'accuracy': 0.5}
 
 
+class _ShuffledDetail(_Toy):
+    """Writes detail rows in reverse order with an index column, like GDP.pdf's self.data order."""
+
+    def evaluate(self, eval_file, **kwargs):
+        df = pd.read_csv(eval_file, sep='\t', dtype=str)
+        detail = pd.DataFrame({
+            'index': df['index'].tolist()[::-1],
+            'hit': (df['prediction'] == df['answer']).tolist()[::-1],
+        })
+        detail.to_csv(eval_file.rsplit('.', 1)[0] + '_results.csv', index=False)
+        return {'accuracy': float(detail['hit'].astype(bool).mean())}
+
+
 class _BaseWithEval(_Base):
     """Parent that implements evaluate; the mixin subclass below does not override it."""
     calls = 0
@@ -159,7 +172,24 @@ class TestPassK(unittest.TestCase):
             self.assertAlmostEqual(res['pass^2'], 0.0)
             self.assertEqual(len(pd.read_csv(Path(d) / 'p_results.csv')), 4)
 
+    def test_detail_rows_are_joined_on_index_not_position(self):
+        # The aggregate pass@k is invariant under permuting same-sized groups, so a positional
+        # match hides here; what breaks is the per-question attribution in the merged detail.
+        ds = _ShuffledDetail(k=2)
+        hits = {'a': [True, True], 'b': [False, False]}
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'p.tsv'
+            _preds(2, hits).to_csv(f, sep='\t', index=False)
+            ds.evaluate(str(f))
+            detail = pd.read_csv(Path(d) / 'p_results.csv')
+            for orig in ('a', 'b'):
+                rows = detail[detail['orig_index'] == orig]
+                self.assertEqual(len(rows), 2)
+                self.assertEqual(set(rows['hit'].astype(bool)), set(hits[orig]),
+                                 f'{orig} was matched to the wrong detail rows')
+
     def test_pinned_detail_format_wins(self):
+
         ds = _XlsxDetail(k=2)
         ds.PASS_K_DETAIL_FORMAT = 'csv'  # wrong on purpose: the dataset writes xlsx
         hits = {'a': [True, False], 'b': [False, False]}

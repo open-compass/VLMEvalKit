@@ -21,6 +21,7 @@ from .image_base import ImageBaseDataset
 from .utils.judge_cache import (get_judge_cache_file, get_judge_detail_file, get_judge_score_file,
                                 load_judge_cache, run_cached_tasks)
 from .utils.judge_util import build_judge
+from .utils.pass_k import PassKMixin
 
 JUDGE_PROMPT_TEMPLATE = """Read this json object:
 {
@@ -150,7 +151,7 @@ def _sample_scores(grades):
     }
 
 
-class GDPPDF(ImageBaseDataset):
+class GDPPDF(PassKMixin, ImageBaseDataset):
     """GDP.pdf (100 held-out tasks), rendered as complete PDF page images."""
 
     TYPE = 'VQA'
@@ -160,14 +161,17 @@ class GDPPDF(ImageBaseDataset):
     HF_PARQUET_MD5 = 'aa6d3ce9b6285b767c888da35c2cb7c8'
     force_use_dataset_prompt = True
     JUDGE_FAIL_MARKERS = (FAIL_MSG, UNSCORED)
+    # ``all_pass`` is 1.0/0.0 once every criterion was scored and NaN otherwise; NaN cannot pass.
+    PASS_K_HIT_COL = 'all_pass'
+    PASS_K_DEFAULT = 5
 
-    def __init__(self, dataset='GDP_pdf', dpi=144):
+    def __init__(self, dataset='GDP_pdf', dpi=144, k=None):
         if dataset not in self.supported_datasets():
             raise ValueError(f'Unsupported GDP.pdf dataset: {dataset}')
         if isinstance(dpi, bool) or not isinstance(dpi, int) or dpi <= 0:
             raise ValueError('dpi must be a positive integer')
         self.dpi = dpi
-        super().__init__(dataset=dataset, skip_noimg=False)
+        super().__init__(dataset=dataset, skip_noimg=False, k=k)
 
     @classmethod
     def supported_datasets(cls):
@@ -321,6 +325,7 @@ class GDPPDF(ImageBaseDataset):
         for column in scores:
             data[column] = scores[column].values
         data['judge_log'] = [json.dumps(row, ensure_ascii=False) for row in grades]
+        self._judge_name = judge_name
         dump(data, get_judge_detail_file(eval_file, 'rubric_v1', judge_name, 'tsv'))
 
         def summarize(frame):
@@ -341,6 +346,14 @@ class GDPPDF(ImageBaseDataset):
             })
         dump(result, get_judge_score_file(eval_file, judge_name, 'json'))
         return result
+
+    def _pass_k_detail_paths(self, sub_file):
+        # The detail file is named after the judge that produced it, so it cannot be derived from
+        # a fixed suffix; fall back to the generic probe if evaluate() was never reached.
+        judge_name = getattr(self, '_judge_name', None)
+        if judge_name is None:
+            return super()._pass_k_detail_paths(sub_file)
+        return [get_judge_detail_file(sub_file, 'rubric_v1', judge_name, 'tsv')]
 
     @classmethod
     def report_primary_metric(cls, metrics):

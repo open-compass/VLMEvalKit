@@ -19,6 +19,7 @@ import os.path as osp
 import re
 
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 from vlmeval.smp import d2df, dump, get_intermediate_file_path, load
 
@@ -141,10 +142,7 @@ class PassKMixin:
                 results.append(res)
                 if self.PASS_K_HIT_COL:
                     detail_file, detail = self._load_detail(sub_file, len(sub))
-                    detail = detail.copy()
-                    detail['orig_index'] = sub['index'].tolist()
-                    detail['sample_id'] = s
-                    details.append(detail)
+                    details.append(self._align_detail(detail, sub, s))
         finally:
             self.data = full_data
 
@@ -155,7 +153,7 @@ class PassKMixin:
                 final[key] = sum(vals) / len(vals)
         if details:
             all_detail = pd.concat(details, ignore_index=True)
-            hit = all_detail[self.PASS_K_HIT_COL].astype(bool)
+            hit = self._hit_mask(all_detail[self.PASS_K_HIT_COL])
             grouped = hit.groupby(all_detail['orig_index'])
             final[f'pass@{self.k}'] = grouped.any().mean()
             final[f'pass^{self.k}'] = grouped.all().mean()
@@ -166,6 +164,52 @@ class PassKMixin:
         dump(d2df(final), get_intermediate_file_path(eval_file, '_acc', 'csv'))
         return final
 
+    @staticmethod
+    def _align_detail(detail, sub, sample_id):
+        """Attach ``orig_index``/``sample_id`` to the rows ``evaluate`` wrote.
+
+        A detail file that carries an ``index`` column is matched on it, because the writer is free
+        to emit rows in its own order -- GDP.pdf writes them in ``self.data`` order, which need not
+        match the sorted prediction file, and positional matching there attributed every pass/fail
+        to the wrong question and silently corrupted pass@k.
+
+        Detail files without an ``index`` column (ZEROBench writes Question_ID/Correct? only) fall
+        back to positional alignment, which is what those evaluators already guarantee: they iterate
+        the eval file in its own row order. Give such an evaluator an ``index`` column to opt into
+        the safer join.
+        """
+        sub_keys = pd.Series(sub['index'].tolist()).astype(str)
+        detail = detail.copy()
+        if 'index' not in detail:
+            if len(detail) != len(sub_keys):
+                raise ValueError(f'The detail file has {len(detail)} rows, expected {len(sub_keys)}; '
+                                 'without an `index` column it is aligned positionally')
+            detail['orig_index'] = sub_keys.tolist()
+            detail['sample_id'] = sample_id
+            return detail
+
+        detail['index'] = detail['index'].astype(str)
+        if detail['index'].duplicated().any() or len(detail) != sub_keys.nunique():
+            raise ValueError('The detail file must contain each question exactly once')
+        missing = set(sub_keys) - set(detail['index'])
+        if missing:
+            raise ValueError(f'The detail file is missing {len(missing)} question(s), e.g. '
+                             f'{sorted(missing)[:3]}')
+        aligned = detail.set_index('index').loc[sub_keys.tolist()].reset_index(drop=True)
+        aligned['orig_index'] = sub_keys.tolist()
+        aligned['sample_id'] = sample_id
+        return aligned
+
+    def _pass_k_detail_paths(self, sub_file):
+        """Candidate paths of the per-sample detail file ``evaluate`` wrote for one split.
+
+        Override this when the dataset names its detail file differently (a judge-named artifact,
+        for example) instead of writing ``get_intermediate_file_path(eval_file, '_results')``.
+        """
+        formats = ([self.PASS_K_DETAIL_FORMAT] if self.PASS_K_DETAIL_FORMAT is not None
+                   else list(self.PASS_K_DETAIL_PROBE))
+        return [get_intermediate_file_path(sub_file, self.PASS_K_DETAIL_SUFFIX, fmt) for fmt in formats]
+
     def _load_detail(self, sub_file, expected_rows):
         """Read the per-sample detail file ``evaluate`` wrote for one split.
 
@@ -173,13 +217,8 @@ class PassKMixin:
         ``PASS_K_DETAIL_FORMAT`` is not pinned, probe the formats it could plausibly have used
         instead of assuming one.
         """
-        if self.PASS_K_DETAIL_FORMAT is not None:
-            candidates = [self.PASS_K_DETAIL_FORMAT]
-        else:
-            candidates = list(self.PASS_K_DETAIL_PROBE)
         tried = []
-        for fmt in candidates:
-            detail_file = get_intermediate_file_path(sub_file, self.PASS_K_DETAIL_SUFFIX, fmt)
+        for detail_file in self._pass_k_detail_paths(sub_file):
             if not osp.exists(detail_file):
                 tried.append(detail_file)
                 continue
@@ -191,9 +230,21 @@ class PassKMixin:
             'PassKMixin could not find the per-sample detail file that '
             f'`{type(self).__name__}.evaluate` should have written for {sub_file}. Tried: '
             f'{", ".join(tried)}. Either write it with `get_intermediate_file_path(eval_file, '
-            f"'{self.PASS_K_DETAIL_SUFFIX}')` or set PASS_K_DETAIL_FORMAT to the format used. "
-            f'Set PASS_K_HIT_COL = None if this dataset cannot expose a per-sample correctness '
-            'column; pass@k/pass^k are then skipped and only the averaged metrics are reported.')
+            f"'{self.PASS_K_DETAIL_SUFFIX}')`, override `_pass_k_detail_paths`, or set "
+            'PASS_K_DETAIL_FORMAT to the format used. Set PASS_K_HIT_COL = None if this dataset '
+            'cannot expose a per-sample correctness column; pass@k/pass^k are then skipped and '
+            'only the averaged metrics are reported.')
+
+    @staticmethod
+    def _hit_mask(series):
+        """Turn a correctness column into booleans; unresolved entries (NaN) count as not passed."""
+        if series.dtype == bool:
+            return series
+        if is_numeric_dtype(series):
+            # A NaN here means the sample was never fully scored, so it did not pass.
+            return series.fillna(0).astype(bool)
+        normalized = series.astype(str).str.strip().str.lower()
+        return normalized.isin({'1', '1.0', 'true', 'true.', 'yes'})
 
     @classmethod
     def report_primary_metric(cls, metrics):
