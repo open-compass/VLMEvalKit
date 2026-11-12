@@ -14,7 +14,9 @@ it wraps needs no knowledge of repetition:
   ``pass@N`` / ``pass^N`` computed from the per-sample detail files. A prediction file holding
   *more* than ``N`` samples per question (one written by a larger ``--n-runs``) is trimmed to its
   first ``N``, so ``--mode eval --n-runs k`` reports any ``k`` up to the number of samples already
-  generated; too few samples is an error.
+  generated; too few samples is an error. A run's files go in ``<stem>_runs/`` beside the
+  prediction file; ``--reuse`` copies that directory along with the other evaluation auxiliaries,
+  so the judge caches the wrapped dataset wrote are not paid for again.
 
 The wrapper reports the wrapped dataset's class as ``__class__`` so class-based lookups (status
 reports, ``report_primary_metric``, class names) resolve to the real dataset.

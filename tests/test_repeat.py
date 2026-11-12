@@ -9,6 +9,7 @@ import pandas as pd
 from vlmeval.dataset.image_base import ImageBaseDataset
 from vlmeval.dataset.utils.repeat import (RepeatedDataset, check_n_runs, merge_numeric_metrics,
                                           wrap_dataset_runs)
+from vlmeval.smp.file import _copy_eval_run_dir
 
 
 class _Toy(ImageBaseDataset):
@@ -97,6 +98,17 @@ def preds(ds, hits):
         rows.append(dict(index=row['index'], orig_index=row['orig_index'], sample_id=row['sample_id'],
                          answer=row['answer'], prediction=row['answer'] if ok else 'x'))
     return pd.DataFrame(rows)
+
+
+def _copy_to_new_run(work_dir, prediction_name, new_dir='new_run'):
+    """What --reuse-aux=all does for a repeated dataset: copy the prediction and its run directory."""
+    src_pred = Path(work_dir) / prediction_name
+    dst_dir = Path(work_dir) / new_dir
+    dst_dir.mkdir()
+    dst_pred = dst_dir / prediction_name
+    dst_pred.write_bytes(src_pred.read_bytes())
+    _copy_eval_run_dir(str(src_pred), str(dst_pred), str(dst_dir), 'all')
+    return dst_dir / f'{src_pred.stem}_runs'
 
 
 def evaluate(ds, table):
@@ -391,6 +403,40 @@ class TestEvaluate(unittest.TestCase):
         with self.assertRaises(ValueError):
             evaluate(make(_Toy, 5), table)
 
+    def test_each_run_writes_into_its_own_directory(self):
+        # All of a run's files go in one directory beside the prediction file. Keeping them out of
+        # the run directory's top level matters: scanners that pick a judge file out of the top
+        # level would otherwise choose one run's artifact for the whole dataset.
+        ds = make(_Toy, 2)
+        with tempfile.TemporaryDirectory() as d:
+            eval_file = Path(d) / 'm_D.tsv'
+            preds(ds, {'a': [True, False], 'b': [False, False]}).to_csv(eval_file, sep='\t', index=False)
+            ds.evaluate(str(eval_file))
+            names = sorted(p.name for p in Path(d).iterdir())
+            runs = Path(d) / 'm_D_runs'
+            inside = sorted(p.name for p in runs.iterdir())
+        self.assertEqual(names, ['m_D.tsv', 'm_D_acc.csv', 'm_D_results.csv', 'm_D_runs'])
+        # the per-run eval file and what the wrapped evaluate wrote for it are both here
+        for name in ('m_D_run0.tsv', 'm_D_run0_results.csv', 'm_D_run1.tsv', 'm_D_run1_results.csv'):
+            self.assertIn(name, inside)
+
+    def test_the_run_directory_is_what_reuse_copies(self):
+        # The judge cache the wrapped dataset writes per run has to survive --reuse, and the only
+        # way it does is inside the directory _copy_eval_run_dir takes over.
+        class Cached(_Toy):
+            def evaluate(self, eval_file, **kwargs):
+                res = super().evaluate(eval_file, **kwargs)
+                Path(eval_file.rsplit('.', 1)[0] + '_judge_cache.pkl').write_bytes(b'cache')
+                return res
+        ds = make(Cached, 2)
+        with tempfile.TemporaryDirectory() as d:
+            eval_file = Path(d) / 'm_D.tsv'
+            preds(ds, {'a': [True, False], 'b': [False, False]}).to_csv(eval_file, sep='\t', index=False)
+            ds.evaluate(str(eval_file))
+            copied = _copy_to_new_run(Path(d), 'm_D.tsv')
+            caches = sorted(p.name for p in copied.iterdir() if 'judge_cache' in p.name)
+        self.assertEqual(caches, ['m_D_run0_judge_cache.pkl', 'm_D_run1_judge_cache.pkl'])
+
     def test_prediction_file_from_a_plain_run_is_rejected(self):
         ds = make(_Toy, 2)
         with self.assertRaises(ValueError):
@@ -404,6 +450,34 @@ class TestEvaluate(unittest.TestCase):
         ds = make(Table, 2)
         out = evaluate(ds, preds(ds, {'a': [True, False], 'b': [False, False]}))
         self.assertEqual(list(out['res'].columns), ['split', 'acc'])
+
+
+class TestCopyEvalRunDir(unittest.TestCase):
+
+    def test_missing_run_directory_is_not_an_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = Path(d) / 'm_D.tsv'
+            src.write_text('index\tprediction\n')
+            dst_dir = Path(d) / 'new'
+            dst_dir.mkdir()
+            _copy_eval_run_dir(str(src), str(dst_dir / 'm_D.tsv'), str(dst_dir), 'all')
+            self.assertFalse((dst_dir / 'm_D_runs').exists())
+
+    def test_existing_destination_is_filled_not_rejected(self):
+        # A second --reuse into the same work dir: the destination already holds an earlier copy.
+        with tempfile.TemporaryDirectory() as d:
+            src_dir = Path(d) / 'src'
+            (src_dir / 'm_D_runs').mkdir(parents=True)
+            src = src_dir / 'm_D.tsv'
+            src.write_text('index\t')
+            (src_dir / 'm_D_runs' / 'm_D_run0.tsv').write_text('new')
+            dst = Path(d) / 'dst'
+            (dst / 'm_D_runs').mkdir(parents=True)
+            (dst / 'm_D_runs' / 'm_D_run0.tsv').write_text('stale')
+            (dst / 'm_D_runs' / 'm_D_run1.tsv').write_text('kept')
+            _copy_eval_run_dir(str(src), str(dst / 'm_D.tsv'), str(dst), 'all')
+            self.assertEqual((dst / 'm_D_runs' / 'm_D_run0.tsv').read_text(), 'new')
+            self.assertEqual((dst / 'm_D_runs' / 'm_D_run1.tsv').read_text(), 'kept')
 
 
 class TestRealDatasets(unittest.TestCase):
