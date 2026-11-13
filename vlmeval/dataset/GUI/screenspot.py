@@ -412,8 +412,12 @@ class ScreenSpot(ImageBaseDataset):
 
         raw_points = [item[4] for item in prepared]
         image_sizes = [item[2] for item in prepared]
+        boxes = [item[1] for item in prepared]
         coord_scale, scale_reason = resolve_click_scale(
-            raw_points, image_sizes, explicit=judge_kwargs.get("coord_scale")
+            raw_points,
+            image_sizes,
+            boxes=boxes,
+            explicit=judge_kwargs.get("coord_scale"),
         )
         if scale_reason:
             logger.warning("ScreenSpot click coordinates: %s (%s)", coord_scale, scale_reason)

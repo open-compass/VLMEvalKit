@@ -7,6 +7,13 @@ from unittest import mock
 import pandas as pd
 
 
+def norm_xywh(bbox, image_size):
+    """Inclusive xywh box in the same [0, 1] xyxy space ScreenSpot scores in."""
+    x, y, w, h = bbox
+    width, height = image_size
+    return [x / width, y / height, (x + w - 1) / width, (y + h - 1) / height]
+
+
 def load_click_coords():
     spec = importlib.util.spec_from_file_location('screenspot_click_coords',
                                                   'vlmeval/dataset/GUI/click_coords.py')
@@ -54,16 +61,25 @@ class TestClickScale(unittest.TestCase):
         self.assertFalse(out_of_range)
 
     def test_qwen_grid_on_a_larger_screenshot_is_divided_by_1000(self):
-        scale, reason = self.coords.infer_coord_scale([[220, 228]], [(1920, 1080)])
+        # Without a box the same numbers are also legal pixels, so auto keeps them.
+        # The annotated box contains only the 0-1000 reading, which is the Qwen case.
+        image = (1920, 1080)
+        box = norm_xywh([400, 200, 80, 80], image)
+        bare, bare_reason = self.coords.infer_coord_scale([[220, 228]], [image])
+        self.assertEqual(bare, self.coords.PIXEL)
+        self.assertIn('Keeping absolute pixels', bare_reason)
+        scale, reason = self.coords.infer_coord_scale([[220, 228]], [image], boxes=[box])
         self.assertEqual(scale, self.coords.NORM_1000)
         self.assertIn('0-1000', reason)
-        point, out_of_range = self.coords.normalize_click_point([220, 228], (1920, 1080), scale)
+        point, out_of_range = self.coords.normalize_click_point([220, 228], image, scale)
         self.assertEqual(point, [0.22, 0.228])
         self.assertFalse(out_of_range)
 
     def test_fraction_in_the_same_file_as_a_qwen_click_is_not_rescaled(self):
-        scale, _reason = self.coords.infer_coord_scale([[0.22, 0.228], [220, 228]], [(1920, 1080),
-                                                                                     (1920, 1080)])
+        image = (1920, 1080)
+        box = norm_xywh([400, 200, 80, 80], image)
+        scale, _reason = self.coords.infer_coord_scale(
+            [[0.22, 0.228], [220, 228]], [image, image], boxes=[box, box])
         self.assertEqual(scale, self.coords.NORM_1000)
         fraction, _ = self.coords.normalize_click_point([0.22, 0.228], (1920, 1080), scale)
         grid, _ = self.coords.normalize_click_point([220, 228], (1920, 1080), scale)
@@ -124,6 +140,30 @@ class TestClickScale(unittest.TestCase):
         with mock.patch.dict('os.environ', {'SCREENSPOT_COORD_SCALE': 'norm_1000'}, clear=True):
             scale, reason = self.coords.resolve_click_scale([[1500, 200]], [(1920, 1080)])
         self.assertEqual((scale, reason), (self.coords.NORM_1000, None))
+
+    def test_web_thumb_up_keeps_pixel_clicks_when_the_grid_also_fits(self):
+        image = (2560, 1440)
+        box = norm_xywh([542, 700, 107, 67], image)
+        scale, reason = self.coords.infer_coord_scale([[595, 733]], [image], boxes=[box])
+        self.assertEqual(scale, self.coords.PIXEL)
+        self.assertIn('Keeping absolute pixels', reason)
+        pixel, out_of_range = self.coords.normalize_click_point([595, 733], image, scale)
+        self.assertFalse(out_of_range)
+        self.assertTrue(box[0] <= pixel[0] <= box[2] and box[1] <= pixel[1] <= box[3])
+        # Dividing the same numbers by 1000 is the miss around pixel (1523, 1056).
+        grid, _ = self.coords.normalize_click_point([595, 733], image, self.coords.NORM_1000)
+        self.assertAlmostEqual(grid[0] * image[0], 1523.2, places=1)
+        self.assertAlmostEqual(grid[1] * image[1], 1055.52, places=1)
+        self.assertFalse(box[0] <= grid[0] <= box[2] and box[1] <= grid[1] <= box[3])
+        # (232, 509) is that click on the 0-1000 grid and still lands in the button.
+        same, _ = self.coords.normalize_click_point([232, 509], image, self.coords.NORM_1000)
+        self.assertTrue(box[0] <= same[0] <= box[2] and box[1] <= same[1] <= box[3])
+
+    def test_tie_between_pixel_and_grid_keeps_pixels(self):
+        image = (1920, 1080)
+        scale, _reason = self.coords.infer_coord_scale(
+            [[220, 228]], [image], boxes=[[0.0, 0.0, 1.0, 1.0]])
+        self.assertEqual(scale, self.coords.PIXEL)
 
 
 class TestScreenSpotScoring(unittest.TestCase):
@@ -253,6 +293,59 @@ class TestScreenSpotScoring(unittest.TestCase):
         self.assertEqual(score['Overall_Accuracy'], 100)
         self.assertEqual(score['Text_Accuracy'], 100)
         self.assertEqual(score['Out_Of_Range_Rate'], 0)
+
+    def _thumb_up_record(self, prediction):
+        # ScreenSpot Web web_b97bb6a3-999c-463a-b957-5584c14c8395.png is 2560x1440.
+        # The "thumb up" button is [542, 700, 107, 67] (x, y, w, h).
+        return {
+            'bbox': '[542, 700, 107, 67]',
+            'prediction': prediction,
+            'image_path': 'web_b97bb6a3-999c-463a-b957-5584c14c8395.png',
+            'question': 'thumb up',
+            'data_type': 'icon',
+            'data_source': 'gitlab',
+        }
+
+    def test_web_thumb_up_pixel_click_scores_under_auto_and_overrides(self):
+        image = (2560, 1440)
+        pixel_click = 'pyautogui.click(x=595, y=733)'
+        for coord_scale in (None, 'pixel'):
+            with self.subTest(coord_scale=coord_scale or 'auto'):
+                _module, score = self.evaluate(
+                    'screenspot', 'ScreenSpot', [self._thumb_up_record(pixel_click)], image,
+                    coord_scale=coord_scale)
+                self.assertEqual(score['Coord_Scale'], 'pixel')
+                self.assertEqual(score['Overall_Accuracy'], 100)
+                self.assertEqual(score['Icon_Accuracy'], 100)
+                self.assertEqual(score['Format_Err_Rate'], 0)
+                self.assertEqual(score['Out_Of_Range_Rate'], 0)
+
+        _module, forced_grid = self.evaluate(
+            'screenspot', 'ScreenSpot', [self._thumb_up_record(pixel_click)], image,
+            coord_scale='norm_1000')
+        self.assertEqual(forced_grid['Coord_Scale'], 'norm_1000')
+        self.assertEqual(forced_grid['Overall_Accuracy'], 0)
+
+        # The 0-1000 form of this click matches the button, so auto still divides by 1000.
+        _module, auto_grid = self.evaluate(
+            'screenspot',
+            'ScreenSpot',
+            [self._thumb_up_record('pyautogui.click(x=232, y=509)')],
+            image,
+        )
+        self.assertEqual(auto_grid['Coord_Scale'], 'norm_1000')
+        self.assertEqual(auto_grid['Overall_Accuracy'], 100)
+
+        _module, grid_form = self.evaluate(
+            'screenspot',
+            'ScreenSpot',
+            [self._thumb_up_record('pyautogui.click(x=232, y=509)')],
+            image,
+            coord_scale='norm_1000',
+        )
+        self.assertEqual(grid_form['Coord_Scale'], 'norm_1000')
+        self.assertEqual(grid_form['Overall_Accuracy'], 100)
+        self.assertEqual(grid_form['Out_Of_Range_Rate'], 0)
 
 
 if __name__ == '__main__':
