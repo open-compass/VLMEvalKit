@@ -49,10 +49,11 @@ def main():
 
     try:
         dataset_list = args.dataset.split()
+        if not dataset_list:
+            raise ValueError("--dataset must contain at least one dataset")
         base_score = ast.literal_eval(args.base_score)
     except Exception as e:
-        print(f"Parameter parsing error: {str(e)}")
-        return
+        raise SystemExit(f"Parameter parsing error: {e}") from e
 
     validate_scores(dataset_list, base_score, args.model_name)
 
