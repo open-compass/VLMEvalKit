@@ -1,3 +1,4 @@
+import ast
 import base64
 import copy
 import json
@@ -14,7 +15,26 @@ from tqdm import tqdm
 from vlmeval.smp import dump, get_intermediate_file_path, load
 from ..image_base import ImageBaseDataset
 
-# from ..utils import get_intermediate_file_path, load, dump
+
+def parse_omnidocbench_annotation(value):
+    """Parse annotations from both official OmniDocBench TSV versions.
+
+    The v1.0 TSV stores ``answer`` as JSON, while the published v1.5 TSV
+    stores the same dictionary as a Python literal. ``ast.literal_eval`` is
+    intentionally used only as a fallback so no arbitrary code can execute.
+    """
+    if isinstance(value, dict):
+        return value
+    if not isinstance(value, str):
+        raise TypeError(f'Expected a string or dictionary, got {type(value).__name__}')
+
+    try:
+        annotation = json.loads(value)
+    except json.JSONDecodeError:
+        annotation = ast.literal_eval(value)
+    if not isinstance(annotation, dict):
+        raise ValueError(f'Expected an annotation dictionary, got {type(annotation).__name__}')
+    return annotation
 
 
 class OmniDocBench(ImageBaseDataset):
@@ -22,9 +42,20 @@ class OmniDocBench(ImageBaseDataset):
     MODALITY = 'IMAGE'
     TYPE = 'QA'
 
-    DATASET_URL = {'OmniDocBench':'https://huggingface.co/datasets/ouyanglinke/OmniDocBench_tsv/resolve/main/OmniDocBench.tsv'}
-    DATASET_MD5 = {'OmniDocBench': '0fa5ccf31e682e219cb9ca83da741a59'}
-
+    DATASET_URL = {
+        'OmniDocBench': (
+            'https://huggingface.co/datasets/ouyanglinke/OmniDocBench_tsv/resolve/'
+            '9702d4ba9a0d30dc5e76789707650c9c54cb0b3b/OmniDocBench.tsv'
+        ),
+        'OmniDocBench_v1_0': (
+            'https://huggingface.co/datasets/ouyanglinke/OmniDocBench_tsv/resolve/'
+            '5c4d32624f2f828ce73be900cb86d9e3fabaf760/OmniDocBench.tsv'
+        ),
+    }
+    DATASET_MD5 = {
+        'OmniDocBench': '995f1af5b4e24ad0a6417cbff708b3fc',
+        'OmniDocBench_v1_0': '0fa5ccf31e682e219cb9ca83da741a59',
+    }
 
     system_prompt = r'''You are an AI assistant specialized in converting PDF images to Markdown format. Please follow these instructions for the conversion:
 
@@ -102,10 +133,10 @@ class end2end_evaluator():
         load_success,load_fail=0,0
         for i,ans in tqdm(enumerate(references),desc='Loading data'):
             try:
-                ans = json.loads(ans)
+                ans = parse_omnidocbench_annotation(ans)
                 load_success+=1
                 self.references.append(ans) #[{},{}]
-            except json.JSONDecodeError as e:
+            except (SyntaxError, TypeError, ValueError):
                 load_fail+=1
                 continue
         print(f'load_success:{load_success},load_fail:{load_fail}')
@@ -447,14 +478,14 @@ class table_evalutor():
         load_success,load_fail=0,0
         for i,gt_sample in tqdm(enumerate(gt_samples),desc='Loading data'):
             try:
-                ans=json.loads(gt_sample)
+                ans=parse_omnidocbench_annotation(gt_sample)
                 for item in ans['layout_dets']:
                     if item['category_type']=="table":
                         item['pred']=predictions[i]
                         load_success+=1
                         preds.append(ans)
 
-            except json.JSONDecodeError as e:
+            except (SyntaxError, TypeError, ValueError):
                 load_fail+=1
                 continue
         print(f'load_table_success:{load_success},load_table_fail:{load_fail}')
