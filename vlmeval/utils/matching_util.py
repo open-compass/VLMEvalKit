@@ -16,8 +16,13 @@ logger = get_logger(__name__)
 _VERBOSE_ANSWER_RE = re.compile(r"(?i)(?:correct\s+)?answer\s+is\s+\**(?!(?-i:a)\s+[a-z])([ABCD])\b\**")
 
 
+def _verbose_enabled():
+    # Any set value used to count as on, including VERBOSE=0 and VERBOSE=false.
+    return os.environ.get('VERBOSE', '').strip().lower() not in ('', '0', 'false', 'no', 'off')
+
+
 def can_infer_option(answer, choices):
-    verbose = os.environ.get('VERBOSE', 0)
+    verbose = _verbose_enabled()
     # Choices is a dictionary
     if 'Failed to obtain answer via API' in answer:
         return False
@@ -46,10 +51,10 @@ def can_infer_option(answer, choices):
     count = count_choice(splits, choices)
 
     if count == 1:
+        # Log only: VERBOSE must not change the result.
+        if 'A' in splits and len(splits) > 3 and verbose:
+            logger.info(f'A might be a quantifier in the string: {answer}.')
         for ch in choices:
-            if 'A' in splits and len(splits) > 3 and verbose:
-                logger.info(f'A might be a quantifier in the string: {answer}.')
-                return False
             if ch in splits and splits.index(ch) > (len(splits) - 5):
                 return ch
     elif count == 0 and count_choice(splits, {'Z', ''}) == 1:
