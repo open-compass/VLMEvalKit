@@ -128,6 +128,85 @@ def can_infer(answer, choices):
     return copt if copt else can_infer_text(answer, choices)
 
 
+# Explicit answer statements in chain-of-thought output, e.g.
+#   "Final Answer: **D. $77,490**", "### **Answer:**\n**B. Project B**",
+#   "the correct answer is (C)". Only the keywords are case-insensitive: the
+# option itself must be an upper-case letter not followed by another letter,
+# so "the answer is a horse" does not read as option A.
+_ANSWER_STATEMENT_RE = re.compile(
+    r"(?i:final\s+answer|correct\s+answer|answer)(?:\s+is)?\s*[:\uff1a]?[\s*#_]*"
+    r"(?i:option\s+)?[\(\[]?([A-Z])(?![A-Za-z])"
+)
+
+
+def parse_answer_statement(response, choices):
+    """Return the option named by the last explicit answer statement, else None."""
+    response = str(response)
+    found = None
+    for m in _ANSWER_STATEMENT_RE.finditer(response):
+        opt = m.group(1)
+        # "Answer: A company ..." / "Answer: I think ..." are words, not options.
+        if opt in 'AI' and re.match(r'\s+[a-z]', response[m.end():]):
+            continue
+        if opt in choices:
+            found = opt
+    return found
+
+
+def parse_mmmu_choice(response, choices):
+    """Rule-based MCQ parser from the official MMMU evaluation code.
+
+    Port of ``parse_multi_choice_response`` in MMMU-Benchmark/MMMU
+    (mmmu/utils/eval_utils.py), with one change: where MMMU picks a random
+    option when nothing matches, this returns None so the caller can count
+    the item as unanswered instead of scoring a coin flip.
+    """
+    response = str(response)
+    for char in [',', '.', '!', '?', ';', ':', "'"]:
+        response = response.strip(char)
+    response = ' ' + response + ' '
+
+    index_ans, ans_with_brack, candidates = True, False, []
+    for choice in choices:
+        if f'({choice})' in response:
+            candidates.append(choice)
+            ans_with_brack = True
+    if not candidates:
+        for choice in choices:
+            if f'{choice} ' in response:
+                candidates.append(choice)
+    if not candidates and len(response.split()) > 5:
+        for index, ans in choices.items():
+            if str(ans).lower() in response.lower():
+                candidates.append(index)
+                index_ans = False
+    if not candidates:
+        return None
+    if len(candidates) == 1:
+        return candidates[0]
+    if index_ans:
+        fmt = '({})' if ans_with_brack else ' {} '
+        positions = [response.rfind(fmt.format(c)) for c in candidates]
+    else:
+        positions = [response.lower().rfind(str(choices[c]).lower()) for c in candidates]
+    return candidates[positions.index(max(positions))]
+
+
+def rule_based_mcq_answer(response, choices):
+    """Judge-free fallback for MCQ answers that ``can_infer`` cannot read.
+
+    Tries an explicit answer statement first, then the official MMMU parser.
+    Returns ``(option, rule)`` or ``(None, None)``.
+    """
+    opt = parse_answer_statement(response, choices)
+    if opt:
+        return opt, 'answer statement'
+    opt = parse_mmmu_choice(response, choices)
+    if opt:
+        return opt, 'MMMU parser'
+    return None, None
+
+
 def can_infer_lego(answer, question_type, choices):
     answer = str(answer)
     if question_type == 'sort':

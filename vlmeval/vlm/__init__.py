@@ -75,6 +75,9 @@ from .qwen2_vl import Qwen2VLChat, Qwen2VLChatAguvis
 from .qwen3_vl import Qwen3VLChat
 from .qwen_vl import QwenVL, QwenVLChat
 from .rbdash import RBDash
+from .rbln import (RBLNBlip2, RBLNCosmosReason1, RBLNGemma3, RBLNIdefics3, RBLNLlava,
+                   RBLNLlavaNext, RBLNPaliGemma, RBLNPaliGemma2, RBLNPixtral, RBLNQwen2VL,
+                   RBLNQwen3VL)
 from .ristretto import Ristretto
 from .ross import Ross
 from .sail_vl import SailVL
