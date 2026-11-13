@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from vlmeval.dataset.image_base import ImageBaseDataset
 from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, get_logger, load, toliststr
+from .click_coords import normalize_click_point, resolve_click_scale
 
 logger = get_logger(__name__)
 
@@ -32,12 +33,33 @@ logger = get_logger(__name__)
 }
 """
 
-SYSTEM_PROMPT = """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform pyautogui click/moveTo action to complete the task. The answer format is `pyautogui.click(x=?, y=?), x and y is necessary`"""  # noqa: E501
+_COORD_HINT = (
+    "x and y are absolute pixel coordinates on the original screenshot "
+    "(top-left origin, not a 0-1 fraction and not a 0-1000 grid)"
+)
 
-USER_INSTRUCTION = """Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"""  # noqa: E501
+SYSTEM_PROMPT = (
+    "You are a GUI agent. You are given a task and a screenshot of the screen. "
+    "You need to perform pyautogui click/moveTo action to complete the task. "
+    "The answer format is `pyautogui.click(x=?, y=?)`, where "
+    f"{_COORD_HINT}. x and y are required"
+)
 
-SYSTEM_PROMPT_V2 = """You are a GUI agent. You are given a screenshot of the screen and the description of a target element. You need to click the target element using `pyautogui.click`. The answer format is `pyautogui.click(x=?, y=?), x and y is necessary`"""  # noqa: E501
-USER_INSTRUCTION_V2 = """Please click the following target element using `pyautogui.click`:\n{description}"""
+USER_INSTRUCTION = (
+    "Please complete the following tasks by clicking using `pyautogui.click`. "
+    f"{_COORD_HINT}:\n{{instruction}}"
+)
+
+SYSTEM_PROMPT_V2 = (
+    "You are a GUI agent. You are given a screenshot of the screen and the description of a target element. "
+    "You need to click the target element using `pyautogui.click`. "
+    "The answer format is `pyautogui.click(x=?, y=?)`, where "
+    f"{_COORD_HINT}. x and y are required"
+)
+USER_INSTRUCTION_V2 = (
+    "Please click the following target element using `pyautogui.click`. "
+    f"{_COORD_HINT}:\n{{description}}"
+)
 
 
 def parse_bbox_aguvis(response):
@@ -334,6 +356,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
         assert "bbox" in data and "prediction" in data
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
+        prepared = []
         for i in tqdm(range(len(lines))):
             line = lines[i]
             bbox = (
@@ -366,11 +389,35 @@ class ScreenSpot_Pro(ImageBaseDataset):
             key = line["category"] + ":" + line['ui_type']
             prediction = str(line["prediction"])
             try:
-                click_point = self.parse_response_func(prediction)
-                # Do Normalization By Default
-                if click_point[0] > 1 or click_point[1] > 1:
-                    click_point = (click_point[0] / img_size[0], click_point[1] / img_size[1])
+                raw_click = self.parse_response_func(prediction)
+                error = None
+            except Exception as e:
+                raw_click = None
+                error = e
+            prepared.append((line, bbox, img_size, key, raw_click, error))
 
+        raw_points = [item[4] for item in prepared]
+        image_sizes = [item[2] for item in prepared]
+        boxes = [item[1] for item in prepared]
+        coord_scale, scale_reason = resolve_click_scale(
+            raw_points,
+            image_sizes,
+            boxes=boxes,
+            explicit=judge_kwargs.get("coord_scale"),
+        )
+        if scale_reason:
+            logger.warning("ScreenSpot click coordinates: %s (%s)", coord_scale, scale_reason)
+
+        n_out_of_range = 0
+        for line, bbox, img_size, key, raw_click, error in prepared:
+            if error is not None:
+                logger.warning(f"exception in screenspot eval:{error}")
+                stats[key].append(-1)
+                match, is_wrong_format, click_point = False, True, None
+            else:
+                click_point, out_of_range = normalize_click_point(raw_click, img_size, coord_scale)
+                if out_of_range:
+                    n_out_of_range += 1
                 match = (bbox[0] <= click_point[0] <= bbox[2]) and \
                     (bbox[1] <= click_point[1] <= bbox[3])
 
@@ -379,11 +426,6 @@ class ScreenSpot_Pro(ImageBaseDataset):
                 else:
                     stats[key].append(0)
                 is_wrong_format = False
-
-            except Exception as e:
-                logger.warning(f"exception in screenspot eval:{e}")
-                stats[key].append(-1)
-                match, is_wrong_format, click_point = False, True, None
 
             result.append(
                 {
@@ -413,6 +455,15 @@ class ScreenSpot_Pro(ImageBaseDataset):
         final_score_dict['Text_Accuracy'] = np.mean([x > 0 for x in text_stats]) * 100
         icon_stats = [x for k, v in stats.items() if k.split(":")[1] == "icon" for x in v]
         final_score_dict['Icon_Accuracy'] = np.mean([x > 0 for x in icon_stats]) * 100
+        final_score_dict['Out_Of_Range_Rate'] = (100.0 * n_out_of_range / len(lines)) if lines else 0.0
+        final_score_dict['Coord_Scale'] = coord_scale
+        if n_out_of_range:
+            logger.warning(
+                "ScreenSpot: %d/%d clicks are still outside [0, 1] after %s normalization. "
+                "That is a coordinate-unit mismatch, not a measured miss. "
+                "Set SCREENSPOT_COORD_SCALE or coord_scale to pixel, norm_1000, or norm_1.",
+                n_out_of_range, len(lines), coord_scale,
+            )
         # Calculate the Accuracy of Each Category
         cates = list(set(data['category']))
         for c in cates:
