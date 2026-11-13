@@ -160,6 +160,9 @@ class GDPPDF(ImageBaseDataset):
     HF_PARQUET_MD5 = 'aa6d3ce9b6285b767c888da35c2cb7c8'
     force_use_dataset_prompt = True
     JUDGE_FAIL_MARKERS = (FAIL_MSG, UNSCORED)
+    # ``all_pass`` is 1.0/0.0 once every criterion was scored and NaN otherwise; NaN cannot pass.
+    PASS_K_HIT_COL = 'all_pass'
+    DEFAULT_N_RUNS = 5
 
     def __init__(self, dataset='GDP_pdf', dpi=144):
         if dataset not in self.supported_datasets():
@@ -321,6 +324,7 @@ class GDPPDF(ImageBaseDataset):
         for column in scores:
             data[column] = scores[column].values
         data['judge_log'] = [json.dumps(row, ensure_ascii=False) for row in grades]
+        self._judge_name = judge_name
         dump(data, get_judge_detail_file(eval_file, 'rubric_v1', judge_name, 'tsv'))
 
         def summarize(frame):
@@ -341,6 +345,11 @@ class GDPPDF(ImageBaseDataset):
             })
         dump(result, get_judge_score_file(eval_file, judge_name, 'json'))
         return result
+
+    def get_pass_k_detail_paths(self, sub_file):
+        # The detail file is named after the judge that produced it, so it cannot be derived from
+        # a fixed suffix.
+        return [get_judge_detail_file(sub_file, 'rubric_v1', self._judge_name, 'tsv')]
 
     @classmethod
     def report_primary_metric(cls, metrics):

@@ -34,6 +34,7 @@ VLMEvalKit 上手路线
 
    Development.md
    ConfigSystem.md
+   PassK.md
 
 .. .. _其他说明:
 .. .. toctree::
