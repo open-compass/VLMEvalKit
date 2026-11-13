@@ -57,6 +57,15 @@
     - 其他kwargs：其他kwargs是数据集特定的参数，请参考数据集类的定义以获取详细用法。通常，大多数数据集类都需要`dataset`参数。大多数视频数据集类都需要 `nframe` 或 `fps` 参数。
     - Tip：预定义视频 shortcut 可以直接通过 `--data MMBench_Video_8frame_nopack` 启动。如果想在 config 中使用自定义输出别名复用 shortcut，应写成 `my_alias: {'preset': 'MMBench_Video_8frame_nopack'}`。不再支持 `MMBench_Video_8frame_nopack: {}` 这种空字典 shortcut config。
 
+单次命令行运行也可以通过 `--data-config` 传入 JSON 字典字符串来设置数据集。字典的 key 必须与 `--data` 中使用的别名一致；每个 value 可以使用上面的 `class`/`dataset` 字段，也可以引用预定义的 `preset`：
+
+```bash
+python run.py --data Video-MME-custom --model GPT4o_20241120 \
+  --data-config '{"Video-MME-custom": {"class": "VideoMME", "dataset": "Video-MME", "nframe": 16}}'
+```
+
+`--data-config` 与 `--data`、`--model` 一起使用，不能与 `--config` 同时使用。别名用于命名输出产物；数据集行为由 `dataset` 字段或引用的 `preset` 决定。
+
 将示例配置json保存为`config.json`，您可以通过以下命令启动评估：
 
 ```bash

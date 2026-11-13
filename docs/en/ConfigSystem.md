@@ -55,6 +55,16 @@ Explanation of the config json:
     - `dataset`: The logical dataset name passed to the dataset class constructor. It is required when `class` is set.
     - Other kwargs: Other kwargs are dataset-specific parameters, please refer to the definition of the dataset class for detailed usage. Typically, the `dataset` argument is required by most dataset classes. It's noteworthy that the `nframe` argument or `fps` argument is required by most video dataset classes.
     - Tip: Predefined video shortcuts can be launched directly with `--data MMBench_Video_8frame_nopack`. To reuse a shortcut under an output alias in config, write `my_alias: {'preset': 'MMBench_Video_8frame_nopack'}`. Empty dict shortcut configs such as `MMBench_Video_8frame_nopack: {}` are not supported.
+
+For a single command-line run, pass dataset settings as a JSON dictionary string with `--data-config`. Its keys must match the aliases passed to `--data`; each value can use the same `class`/`dataset` fields or a predefined `preset` shown above:
+
+```bash
+python run.py --data Video-MME-custom --model GPT4o_20241120 \
+  --data-config '{"Video-MME-custom": {"class": "VideoMME", "dataset": "Video-MME", "nframe": 16}}'
+```
+
+Use `--data-config` with `--data` and `--model`; it cannot be combined with `--config`. The alias names the output artifacts, while `dataset` (or the referenced `preset`) selects the dataset behavior.
+
 Saving the example config json to `config.json`, you can launch the evaluation by:
 
 ```bash
