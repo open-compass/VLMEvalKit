@@ -33,7 +33,7 @@ def parse_bbox(text):
     if matches:
         return [float(coord) for coord in matches[-1]]
 
-    return [0, 0, 0, 0]
+    return None
 
 
 def compute_iou(box1, box2):
@@ -137,15 +137,18 @@ class GroundingME(ImageBaseDataset):
             if subtask_l1 == 'Rejection':
                 gt_bbox = [0, 0, 0, 0]
 
-            # Try different coordinate formats and pick the best one
-            pred_candidates = [
-                pred_bbox,
-                normalize_bbox(pred_bbox, width, height),
-            ]
+            if pred_bbox is None:
+                best_iou = 0
+            else:
+                # Try different coordinate formats and pick the best one
+                pred_candidates = [
+                    pred_bbox,
+                    normalize_bbox(pred_bbox, width, height),
+                ]
 
-            ious = [compute_iou(gt_bbox, pred) for pred in pred_candidates]
-            best_idx = ious.index(max(ious))
-            best_iou = ious[best_idx]
+                ious = [compute_iou(gt_bbox, pred) for pred in pred_candidates]
+                best_idx = ious.index(max(ious))
+                best_iou = ious[best_idx]
 
             # Compute metrics
             acc_50 = float(best_iou >= 0.5)
