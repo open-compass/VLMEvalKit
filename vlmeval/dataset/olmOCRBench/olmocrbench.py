@@ -43,4 +43,4 @@ class olmOCRBench(ImageBaseDataset):
             )
             raise e
         tsv_path = self.data_path
-        evaluator(tsv_path, eval_file)
+        return evaluator(tsv_path, eval_file)
