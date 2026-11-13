@@ -61,10 +61,10 @@ TSV 文件中的内容组成为：
 现有所有的模型都在 `vlmeval/vlm` 中实现。对于一个最基本的模型，你的模型类**应该实现方法** `generate_inner(msgs, dataset=None)`。这个函数将向 VLM 输入一个多模态数据，并返回 VLM 的预测（一个字符串）。可选参数 `dataset` 可以用作模型在不同推理策略之间切换的标志。
 
 其中多模态消息 `msgs` 是一个字典列表，每个字典有两个键：类型和值：
-- `type`：我们目前支持两种类型，选项是 ["image", "text"]。
-- `value`：当类型为 `text` 时，值是文本消息（一个字符串）；当类型为 `image` 时，值可以是图像文件的本地路径，或者是图像的URL。
+- `type`：消息支持 `text`、`image` 和 `video` 类型。模型需要实现视频处理才能接收视频输入；可参阅 `vlmeval/vlm/base.py` 中的 `VIDEO_LLM` 和 `message_to_promptvideo`。
+- `value`：类型为 `text` 时，值是字符串；类型为 `image` 时，值可以是本地图像路径或 URL；类型为 `video` 时，值可以是本地视频路径或 URL。
 
-> 目前，一个多模态消息可能包含任意交错的图像和文本。如果你的模型不支持这一点，我们推荐的做法是取第一张图像和连接的文本消息作为模型的输入。你可以在模型的 class 中设置 `INTERLEAVE = False` 并调用 `self.message_to_promptimg(message, dataset=dataset)` 函数来获取你的 prompt 和第一张图片的地址。
+> 消息可以交错包含图像和文本；支持视频的模型也可以接收视频项，请使用适合该模型的视频辅助函数或实现。如果模型不支持图像和文本交错输入，可设置 `INTERLEAVE = False`，并调用 `self.message_to_promptimg(message, dataset=dataset)` 来构建 prompt 并获取第一张图片路径。
 
 一些多模态消息的例子:
 

@@ -65,10 +65,10 @@ Example PR: **Support LLaVA-Next-Interleave** ([#294](https://github.com/open-co
 All existing models are implemented in `vlmeval/vlm`. For a minimal model, your model class **must implement the method** `generate_inner(msgs, dataset=None)`. In this function, you feed a multi-modal message to your VLM and return the VLM prediction (which is a string). The optional argument `dataset` can be used as the flag for the model to switch among various inference strategies.
 
 The multi-modal messages `msgs` is a list of dictionaries, each dictionary has two keys: type and value:
-- `type`: We currently support two types, choices are ["image", "text"].
-- `value`: When type=='text' , the value is the text message (a single string); when type=='image', the value can be the local path of an image file, or the image URL.
+- `type`: Messages support `text`, `image`, and `video` items. A model must implement video handling to accept video inputs; see `VIDEO_LLM` and `message_to_promptvideo` in `vlmeval/vlm/base.py`.
+- `value`: For `text`, the value is a string; for `image`, it can be a local image path or URL; for `video`, it can be a local video path or URL.
 
-Currently a multi-modal message may contain arbitrarily interleaved images and texts. If your model do not support that, a practice can be taking the 1st image and concatenated text messages as the input. You can set the `INTERLEAVE = False` in your model class and use `self.message_to_promptimg(message, dataset=dataset)` to build your prompt and the first image's path.
+Messages may interleave images and text. Video-capable models can also accept video items; use the video helper or implementation appropriate to your model. If your model does not support interleaved images and text, set `INTERLEAVE = False` and use `self.message_to_promptimg(message, dataset=dataset)` to build the prompt and first image path.
 
 Here are some examples of multi-modal messages:
 
