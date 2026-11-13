@@ -45,12 +45,7 @@ def prepare_chartcap():
         # Checking common keys for caption in such datasets
         answer = sample.get('caption', sample.get('text', ''))
 
-        row = {
-            'index': idx,
-            'image': img_b64,
-            'question': default_question,
-            'answer': answer
-        }
+        row = {'index': idx, 'image': img_b64, 'question': default_question, 'answer': answer}
 
         # Add all original data information
         for k, v in sample.items():
@@ -76,7 +71,7 @@ class ChartCapDataset(ImageBaseDataset):
 
     TYPE = 'Caption'
     DATASET_URL = {
-        'ChartCap': 'https://huggingface.co/datasets/alfassy/chart_cap_vlmevalkit/blob/main/ChartCap.tsv',
+        'ChartCap': 'https://huggingface.co/datasets/alfassy/chart_cap_vlmevalkit/resolve/main/ChartCap.tsv',
     }
 
     DATASET_MD5 = {
@@ -148,12 +143,7 @@ class ChartCapDataset(ImageBaseDataset):
             warnings.warn(f"Failed to compute BERTScore: {e}")
             bert_score_val = 0.0
 
-        results = {
-            'BLEU_4': bleu_score,
-            'ROUGE_L': rouge_l,
-            'METEOR': meteor_score,
-            'BERTScore': bert_score_val
-        }
+        results = {'BLEU_4': bleu_score, 'ROUGE_L': rouge_l, 'METEOR': meteor_score, 'BERTScore': bert_score_val}
 
         # Format as requested: dictionary composed of lists, organized into a pandas.DataFrame
         # or just a dictionary of scores?
