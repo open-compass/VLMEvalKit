@@ -1,4 +1,5 @@
 import copy as cp
+import math
 import os
 import re
 import string
@@ -110,25 +111,37 @@ def can_infer_text(answer, choices):
     if len(answer) > 2 * sum(len(str(v)) for v in choices.values()):
         return False
     assert isinstance(choices, dict)
-    for k in choices:
-        assert k in string.ascii_uppercase
-        choices[k] = str(choices[k]).lower()
     cands = []
-    for k in choices:
-        if choices[k] in answer:
+    for k, value in choices.items():
+        assert k in string.ascii_uppercase
+        value = str(value).lower()
+        if len(value) == 1 and value.isascii() and value.isalpha():
+            matched = answer.strip() == value
+        else:
+            pattern = rf'(?<![\w-]){re.escape(value)}(?![\w-])'
+            matched = re.search(pattern, answer) is not None
+        if matched:
             cands.append(k)
     if len(cands) == 1:
         return cands[0]
     return False
 
 
+def _is_missing_answer(answer):
+    return answer is None or (isinstance(answer, float) and math.isnan(answer))
+
+
 def can_infer(answer, choices):
+    if _is_missing_answer(answer):
+        return False
     answer = str(answer)
     copt = can_infer_option(answer, choices)
     return copt if copt else can_infer_text(answer, choices)
 
 
 def can_infer_lego(answer, question_type, choices):
+    if _is_missing_answer(answer):
+        return False
     answer = str(answer)
     if question_type == 'sort':
         copt = can_infer_sequence(answer, choices)
