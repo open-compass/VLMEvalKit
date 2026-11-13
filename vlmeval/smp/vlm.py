@@ -107,7 +107,16 @@ def encode_image_to_base64(img, target_size=-1, fmt='JPEG', max_file_size=1e9):
 
     # if target_size == -1, will not do resizing
     # else, will set the max_size ot (target_size, target_size)
-    if img.mode in ('RGBA', 'P', 'LA'):
+    # A plain convert('RGB') composites transparent pixels onto black. Paste the image onto a white
+    # background instead, so transparency is encoded as white rather than a black patch.
+    if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+        from PIL import Image
+
+        rgba = img.convert('RGBA')
+        background = Image.new('RGB', rgba.size, (255, 255, 255))
+        background.paste(rgba, mask=rgba.getchannel('A'))
+        img = background
+    elif img.mode == 'P':
         img = img.convert('RGB')
     if target_size > 0:
         ori_w, ori_h = img.size
