@@ -65,10 +65,10 @@ Example PR: **Support LLaVA-Next-Interleave** ([#294](https://github.com/open-co
 All existing models are implemented in `vlmeval/vlm`. For a minimal model, your model class **must implement the method** `generate_inner(msgs, dataset=None)`. In this function, you feed a multi-modal message to your VLM and return the VLM prediction (which is a string). The optional argument `dataset` can be used as the flag for the model to switch among various inference strategies.
 
 The multi-modal messages `msgs` is a list of dictionaries, each dictionary has two keys: type and value:
-- `type`: We currently support two types, choices are ["image", "text"].
-- `value`: When type=='text' , the value is the text message (a single string); when type=='image', the value can be the local path of an image file, or the image URL.
+- `type`: Supported message types are `"image"`, `"text"`, and `"video"`.
+- `value`: For `text`, use a string. For `image`, use a local image path or image URL. For `video`, use a local video path and a model implementation that supports video input.
 
-Currently a multi-modal message may contain arbitrarily interleaved images and texts. If your model do not support that, a practice can be taking the 1st image and concatenated text messages as the input. You can set the `INTERLEAVE = False` in your model class and use `self.message_to_promptimg(message, dataset=dataset)` to build your prompt and the first image's path.
+Image and text messages may be interleaved. If your model does not support that, a practice can be taking the 1st image and concatenated text messages as the input. You can set the `INTERLEAVE = False` in your model class and use `self.message_to_promptimg(message, dataset=dataset)` to build your prompt and the first image's path. For models using `BaseModel.message_to_promptvideo`, set `VIDEO_LLM = True`; that helper uses the first video entry. Check the model implementation before relying on multiple videos or mixing video and image inputs.
 
 Here are some examples of multi-modal messages:
 
@@ -85,6 +85,17 @@ msg2 = [
     dict(type='text', value='How many apples are there in these images?')
 ]
 response = model.generate(msg1)
+```
+
+For a model with video support, a message can include a local video path:
+
+```python
+VIDEO_PATH = 'assets/sample.mp4'
+video_msg = [
+    dict(type='video', value=VIDEO_PATH),
+    dict(type='text', value='What happens in this video?')
+]
+response = model.generate(video_msg)
 ```
 
 For convenience sake, we also support to take a list of string as inputs. In that case, we will check if a string is an image path or image URL and automatically convert it to the list[dict] format:
