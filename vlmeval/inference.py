@@ -8,6 +8,7 @@ import torch.distributed as dist
 from tqdm import tqdm
 
 from vlmeval.config import supported_VLM
+from vlmeval.inference_runner import dispatch_sample, get_inference_runner
 from vlmeval.smp import (dump, get_logger, get_pred_file_format, get_pred_file_path,
                          get_rank_and_world_size, load, load_prediction_file,
                          resolve_dataset_alias_name)
@@ -30,12 +31,13 @@ def parse_args():
 # Only API model is accepted
 def infer_data_api(
     model, work_dir, model_name, dataset, index_set=None, api_nproc=4, retry_failed=True,
-    dataset_name=None, dataset_alias_name=None
+    dataset_name=None, dataset_alias_name=None, policy_llm=None
 ):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
+    inference_runner = get_inference_runner(dataset)
     data = dataset.data
     if index_set is not None:
         data = data[data['index'].isin(index_set)]
@@ -52,13 +54,7 @@ def infer_data_api(
     structs = []
     for i in range(lt):
         item = data.iloc[i]
-        if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
-            struct = dataset.build_prompt(item)
-        elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
-            assert hasattr(model, 'build_prompt')
-            struct = model.build_prompt(item, dataset=dataset_name)
-        else:
-            struct = dataset.build_prompt(item)
+        struct = inference_runner.prepare_prompt(model, dataset, item, dataset_name)
         structs.append(struct)
 
     out_file = f'{work_dir}/{model_name}_{dataset_alias_name}_checkpoint.pkl'
@@ -80,18 +76,23 @@ def infer_data_api(
     if osp.exists(out_file):
         res = load(out_file)
         if retry_failed:
-            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+            res = {k: v for k, v in res.items() if not inference_runner.is_failed(v)}
         logger.info(f'Reuse {len(res)} inference results from previous run.')
 
+    rows = [data.iloc[pos] for pos, i in enumerate(indices) if str(i) not in res]
     structs = [s for i, s in zip(indices, structs) if str(i) not in res]
     indices = [i for i in indices if str(i) not in res]
 
-    gen_func = model.generate
-    structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
+    structs = [dict(
+        model=model, dataset=dataset, sample=row, dataset_name=dataset_name,
+        message=struct, policy_llm=policy_llm, inference_runner=inference_runner,
+    ) for row, struct in zip(rows, structs)]
 
     if len(structs):
         str_indices = [str(i) for i in indices]
-        track_progress_rich(gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=str_indices)
+        track_progress_rich(
+            dispatch_sample, structs, nproc=api_nproc, chunksize=api_nproc,
+            save=out_file, keys=str_indices)
 
     # Load the full accumulated results (str keys)
     if osp.exists(out_file):
@@ -105,10 +106,11 @@ def infer_data_api(
 
 def infer_data(
     model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False,
-    retry_failed=True, dataset_name=None, dataset_alias_name=None
+    retry_failed=True, dataset_name=None, dataset_alias_name=None, policy_llm=None
 ):
     dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
+    inference_runner = get_inference_runner(dataset)
     prev_file = f'{work_dir}/{model_name}_{dataset_alias_name}_PREV.pkl'
     res = load(prev_file) if osp.exists(prev_file) else {}
     if osp.exists(out_file):
@@ -164,7 +166,7 @@ def infer_data(
             api_nproc=api_nproc,
             retry_failed=retry_failed,
             dataset_name=dataset_name,
-            dataset_alias_name=dataset_alias_name)
+            dataset_alias_name=dataset_alias_name, policy_llm=policy_llm)
         for idx in indices:
             assert idx in supp
         res.update(supp)
@@ -179,24 +181,23 @@ def infer_data(
         if idx in res:
             continue
 
-        if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
-            struct = dataset.build_prompt(data.iloc[i])
-        elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
-            struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
-        else:
-            struct = dataset.build_prompt(data.iloc[i])
+        struct = inference_runner.prepare_prompt(model, dataset, data.iloc[i], dataset_name)
 
         # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered
         if os.environ.get('SKIP_ERR', False) == '1':
             FAIL_MSG = 'Failed to obtain answer'
             try:
-                response = model.generate(message=struct, dataset=dataset_name)
+                response = dispatch_sample(
+                    model, dataset, data.iloc[i], dataset_name,
+                    message=struct, policy_llm=policy_llm, inference_runner=inference_runner)
             except RuntimeError as err:
                 torch.cuda.synchronize()
                 warnings.warn(f'{type(err)} {str(err)}')
                 response = f'{FAIL_MSG}: {type(err)} {str(err)}'
         else:
-            response = model.generate(message=struct, dataset=dataset_name)
+            response = dispatch_sample(
+                model, dataset, data.iloc[i], dataset_name,
+                message=struct, policy_llm=policy_llm, inference_runner=inference_runner)
         torch.cuda.empty_cache()
 
         if verbose:
@@ -219,11 +220,13 @@ def _is_structured_record(v):
 # A wrapper for infer_data, do the pre & post processing
 def infer_data_job(
     model, work_dir, model_name, dataset, verbose=False, api_nproc=4, retry_failed=True, use_vllm=False,
-    result_file=None, dataset_name=None, dataset_alias_name=None
+    result_file=None, dataset_name=None, dataset_alias_name=None,
+    policy_llm=None
 ):
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
+    inference_runner = get_inference_runner(dataset)
     # 使用环境变量控制的文件格式
     if result_file is None:
         result_file = get_pred_file_path(work_dir, model_name, dataset_alias_name, use_env_format=True)
@@ -234,7 +237,7 @@ def infer_data_job(
             data = load_prediction_file(result_file)
             results = {k: v for k, v in zip(data['index'], data['prediction'])}
             if retry_failed:
-                results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
+                results = {k: v for k, v in results.items() if not inference_runner.is_failed(v)}
             dump(results, prev_file)
         if world_size > 1:
             dist.barrier()
@@ -245,7 +248,9 @@ def infer_data_job(
     model = infer_data(
         model=model, work_dir=work_dir, model_name=model_name, dataset=dataset,
         out_file=out_file, verbose=verbose, api_nproc=api_nproc, use_vllm=use_vllm,
-        retry_failed=retry_failed, dataset_name=dataset_name, dataset_alias_name=dataset_alias_name)
+        retry_failed=retry_failed, dataset_name=dataset_name,
+        dataset_alias_name=dataset_alias_name,
+        policy_llm=policy_llm)
     if world_size > 1:
         dist.barrier()
 

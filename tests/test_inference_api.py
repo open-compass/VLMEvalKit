@@ -71,6 +71,7 @@ def _exit_abruptly():
 
 
 class FakePromptDataset:
+    MODALITY = 'VIDEO'
 
     def build_prompt(self, index, video_llm=False):
         return {'index': index, 'video_llm': video_llm}

@@ -6,15 +6,25 @@ import pandas as pd
 
 from vlmeval.smp import dump, get_intermediate_file_path, load, toliststr
 from vlmeval.utils import track_progress_rich
+from ..inference_runner import InteractiveMTRunner
+from ..interactive_mt import StaticTurnPolicy
 from .image_base import ImageBaseDataset
 from .utils.judge_util import build_judge
 
 
-class ImageMTDataset(ImageBaseDataset):
+class MMDUDataset(ImageBaseDataset):
 
     TYPE = 'MT'
+    INFERENCE_RUNNER = InteractiveMTRunner
+    DEFAULT_JUDGE_MODEL = 'gpt-4o'
+    DATASET_URL = {'MMDU': 'https://opencompass.openxlab.space/utils/VLMEval/MMDU.tsv'}
+    DATASET_MD5 = {'MMDU': '848b635a88a078f49aebcc6e39792061'}
+    DIMS = [
+        'Creativity', 'Richness', 'Visual Perception', 'Logical Coherence',
+        'Answer Accuracy', 'Image Relationship Understanding', 'Overall Score'
+    ]
 
-    def build_prompt(self, line):
+    def _build_messages(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
@@ -54,16 +64,14 @@ class ImageMTDataset(ImageBaseDataset):
             dlgs.append(dict(role='assistant', content=content))
         return dlgs
 
+    def build_prompt(self, sample):
+        messages = self._build_messages(sample)
+        if not messages:
+            raise ValueError('An MT sample must contain at least one question.')
+        return messages[:1]
 
-class MMDUDataset(ImageMTDataset):
-
-    DEFAULT_JUDGE_MODEL = 'gpt-4o'
-    DATASET_URL = {'MMDU': 'https://opencompass.openxlab.space/utils/VLMEval/MMDU.tsv'}
-    DATASET_MD5 = {'MMDU': '848b635a88a078f49aebcc6e39792061'}
-    DIMS = [
-        'Creativity', 'Richness', 'Visual Perception', 'Logical Coherence',
-        'Answer Accuracy', 'Image Relationship Understanding', 'Overall Score'
-    ]
+    def build_policy(self, sample, messages):
+        return StaticTurnPolicy(messages, self._build_messages(sample)[2::2])
 
     def calculat_metric(self, ans):
         all = defaultdict(lambda: 0)

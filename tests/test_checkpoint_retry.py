@@ -77,7 +77,9 @@ def _load_inference_module(name):
 
 @pytest.mark.parametrize('retry_failed', [True, False])
 def test_api_checkpoint_retries_failed_turn_answers(tmp_path, monkeypatch, retry_failed):
-    module, modules = _load_inference_module('inference_mt')
+    module, modules = _load_inference_module('inference')
+    from vlmeval.inference_runner import InteractiveMTRunner
+    from vlmeval.interactive_mt import StaticTurnPolicy
     base = modules['vlmeval.api.base']
     monkeypatch.setattr(base.time, 'sleep', lambda delay: None)
     failed = ['ok', module.FAIL_MSG + 'rate limited']
@@ -86,8 +88,12 @@ def test_api_checkpoint_retries_failed_turn_answers(tmp_path, monkeypatch, retry
     modules['vlmeval.smp.file'].dump({'0': success, '1': failed}, str(checkpoint))
 
     class Dataset:
+        INFERENCE_RUNNER = InteractiveMTRunner
         dataset_name = 'Example'
         data = pd.DataFrame({'index': [0, 1]})
+
+        def dump_image(self, row):
+            return []
 
         def build_prompt(self, row):
             return [{
@@ -96,10 +102,10 @@ def test_api_checkpoint_retries_failed_turn_answers(tmp_path, monkeypatch, retry
                     'type': 'text',
                     'value': str(row['index'])
                 }]
-            }, {
-                'role': 'assistant',
-                'content': 'reference'
             }]
+
+        def build_policy(self, row, messages):
+            return StaticTurnPolicy(messages, [])
 
     class Model(base.BaseAPI):
         is_api = True

@@ -55,7 +55,7 @@ from vlmeval.config import supported_VLM
 from vlmeval.dataset import build_dataset
 from vlmeval.dataset.utils.repeat import wrap_dataset_runs
 from vlmeval.inference import infer_data_job
-from vlmeval.inference_mt import infer_data_job_mt
+from vlmeval.inference_runner import InteractiveMTRunner, get_inference_runner
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.smp import (MMBenchOfficialServer, build_eval_id, collect_run_benchmark_report,
                          get_eval_file_format, get_logger, get_pred_file_format,
@@ -419,6 +419,49 @@ def get_judge_kwargs(args, *, dataset):
     return judge_kwargs
 
 
+def get_policy_kwargs(args, *, dataset):
+    """Collect inference-time policy LLM options independently of the judge."""
+    policy_args = json.loads(args.policy_args) if args.policy_args else {}
+    if not isinstance(policy_args, dict):
+        raise ValueError('--policy-args must be a JSON object.')
+    policy_kwargs = {
+        'verbose': args.verbose,
+        'retry': args.policy_retry if args.policy_retry is not None else args.retry,
+        'timeout': args.policy_timeout,
+        **policy_args,
+    }
+    if args.policy_base_url:
+        policy_kwargs['api_base'] = f"{args.policy_base_url.rstrip('/')}/chat/completions"
+    if args.policy_key:
+        policy_kwargs['key'] = args.policy_key
+    if args.policy is not None:
+        policy_kwargs['model'] = args.policy
+    elif 'model' not in policy_args:
+        resolver = getattr(dataset, 'get_default_policy_model', None)
+        default_model = (resolver(policy_kwargs) if resolver is not None
+                         else getattr(dataset, 'DEFAULT_POLICY_MODEL', None))
+        if default_model is not None:
+            if not isinstance(default_model, str) or not default_model:
+                raise TypeError('A default policy model must be a non-empty string or None.')
+            policy_kwargs['model'] = default_model
+    return policy_kwargs
+
+
+def build_policy_llm(args, *, dataset):
+    """Create the policy LLM once per dataset, like the model under test.
+
+    The ``--policy*`` options are consumed here and go no further; policies
+    only ever see the resulting object.
+    """
+    if args.mode == 'eval':
+        return None
+    inference_runner = get_inference_runner(dataset)
+    hook = getattr(dataset, 'build_policy_llm', None)
+    if not isinstance(inference_runner, InteractiveMTRunner) or hook is None:
+        return None
+    return hook(get_policy_kwargs(args, dataset=dataset))
+
+
 def parse_reuse_aux_arg(reuse_aux):
     if isinstance(reuse_aux, bool):
         return 'all' if reuse_aux else 'none'
@@ -575,6 +618,17 @@ You can launch the evaluation by setting either --data and --model or --config.
                         help='Retry times for failed judgement (defaults to follow --retry)')
     parser.add_argument('--judge-timeout', type=int, default=600,
                         help='Max time in seconds for judgement.')
+
+    parser.add_argument('--policy', type=str, default=None, help='LLM used by the MT policy')
+    parser.add_argument('--policy-args', type=str, default=None,
+                        help='MT policy LLM arguments in JSON format')
+    parser.add_argument('--policy-base-url', type=str, default=None,
+                        help='Base URL of policy LLM API')
+    parser.add_argument('--policy-key', type=str, default=None, help='API key for policy LLM')
+    parser.add_argument('--policy-retry', type=int, default=None,
+                        help='Retry times for policy LLM requests (defaults to follow --retry)')
+    parser.add_argument('--policy-timeout', type=int, default=600,
+                        help='Max time in seconds for a policy LLM request.')
 
     # Inference Model Args (when --base-url is specified)
     parser.add_argument('--base-url', type=str, default=None,
@@ -838,6 +892,7 @@ def run_local_mode(args):
                             status='infer',
                         )
                     # Perform the Inference
+                    policy_llm = build_policy_llm(args, dataset=dataset)
                     if dataset.MODALITY == 'VIDEO':
                         model = infer_data_job_video(
                             model,
@@ -850,20 +905,8 @@ def run_local_mode(args):
                             verbose=args.verbose,
                             api_nproc=args.api_nproc,
                             use_vllm=args.use_vllm,
-                            retry_failed=not args.keep_failed)
-                    elif dataset.TYPE == 'MT':
-                        model = infer_data_job_mt(
-                            model,
-                            work_dir=pred_root,
-                            model_name=model_name,
-                            dataset=dataset,
-                            result_file=result_file,
-                            dataset_name=dataset_name,
-                            dataset_alias_name=dataset_alias_name,
-                            verbose=args.verbose,
-                            api_nproc=args.api_nproc,
                             retry_failed=not args.keep_failed,
-                            use_vllm=args.use_vllm)
+                            policy_llm=policy_llm)
                     else:
                         model = infer_data_job(
                             model,
@@ -876,7 +919,8 @@ def run_local_mode(args):
                             verbose=args.verbose,
                             api_nproc=args.api_nproc,
                             retry_failed=not args.keep_failed,
-                            use_vllm=args.use_vllm)
+                            use_vllm=args.use_vllm,
+                            policy_llm=policy_llm)
 
                 if WORLD_SIZE > 1:
                     dist.barrier()
@@ -1261,8 +1305,6 @@ def run_api_mode(args):
                 dataset_type = 'video'
             elif dataset.MODALITY == 'AUDIO':
                 dataset_type = 'audio'
-            elif dataset.TYPE == 'MT':
-                dataset_type = 'mt'
             else:
                 dataset_type = 'image'
             dataset_config = DatasetConfig(
@@ -1276,6 +1318,7 @@ def run_api_mode(args):
                 work_dir=str(pred_root),
                 result_file=result_file,
                 judge_kwargs=judge_kwargs,
+                policy_llm=build_policy_llm(args, dataset=dataset),
                 verbose=args.verbose
             )
             dataset_configs.append(dataset_config)
