@@ -475,6 +475,26 @@ vue_tr_dataset = {
     'VUE-TR-V2-Vision_256frame': _video_spec(VUETR, dataset='VUE-TR-V2-Vision', nframe=256, fps=-1),
 }
 
+momentseeker_dataset = {
+    # All 1,800 queries, or one query type: text (TMR), image-conditioned (IMR), video-conditioned (VMR).
+    'MomentSeeker_1fps': _video_spec(MomentSeeker, dataset='MomentSeeker', fps=1.0),
+    'MomentSeeker_2fps': _video_spec(MomentSeeker, dataset='MomentSeeker', fps=2.0),
+    'MomentSeeker_64frame': _video_spec(MomentSeeker, dataset='MomentSeeker', nframe=64, fps=-1),
+    'MomentSeeker_128frame': _video_spec(MomentSeeker, dataset='MomentSeeker', nframe=128, fps=-1),
+    'MomentSeeker-TMR_1fps': _video_spec(MomentSeeker, dataset='MomentSeeker-TMR', fps=1.0),
+    'MomentSeeker-TMR_2fps': _video_spec(MomentSeeker, dataset='MomentSeeker-TMR', fps=2.0),
+    'MomentSeeker-TMR_64frame': _video_spec(MomentSeeker, dataset='MomentSeeker-TMR', nframe=64, fps=-1),
+    'MomentSeeker-TMR_128frame': _video_spec(MomentSeeker, dataset='MomentSeeker-TMR', nframe=128, fps=-1),
+    'MomentSeeker-IMR_1fps': _video_spec(MomentSeeker, dataset='MomentSeeker-IMR', fps=1.0),
+    'MomentSeeker-IMR_2fps': _video_spec(MomentSeeker, dataset='MomentSeeker-IMR', fps=2.0),
+    'MomentSeeker-IMR_64frame': _video_spec(MomentSeeker, dataset='MomentSeeker-IMR', nframe=64, fps=-1),
+    'MomentSeeker-IMR_128frame': _video_spec(MomentSeeker, dataset='MomentSeeker-IMR', nframe=128, fps=-1),
+    'MomentSeeker-VMR_1fps': _video_spec(MomentSeeker, dataset='MomentSeeker-VMR', fps=1.0),
+    'MomentSeeker-VMR_2fps': _video_spec(MomentSeeker, dataset='MomentSeeker-VMR', fps=2.0),
+    'MomentSeeker-VMR_64frame': _video_spec(MomentSeeker, dataset='MomentSeeker-VMR', nframe=64, fps=-1),
+    'MomentSeeker-VMR_128frame': _video_spec(MomentSeeker, dataset='MomentSeeker-VMR', nframe=128, fps=-1),
+}
+
 dataset_groups = [
     video_eval_pro_dataset,
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset, video_odyssey_dataset,
@@ -483,7 +503,7 @@ dataset_groups = [
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
     video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset,
-    favor_bench_dataset, timelens_bench_dataset, vue_tr_dataset
+    favor_bench_dataset, timelens_bench_dataset, vue_tr_dataset, momentseeker_dataset
 ]
 
 # add by EASI team
