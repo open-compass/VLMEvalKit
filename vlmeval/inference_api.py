@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Literal
 import pandas as pd
 from tabulate import tabulate
 
+from vlmeval.inference_runner import InferenceRunner, dispatch_sample, get_inference_runner
 from vlmeval.smp import dump, get_logger, load, load_prediction_file, upsert_dataset_status
 from vlmeval.smp.log import setup_subprocess_logger
 from vlmeval.utils.mp_util import (async_recv_process_message, async_wait_process,
@@ -23,7 +24,7 @@ from vlmeval.utils.mp_util import (async_recv_process_message, async_wait_proces
 logger = get_logger(__name__)
 
 FAIL_MSG = 'Failed to obtain answer via API.'
-DatasetType = Literal["image", "video", "audio", "mt"]
+DatasetType = Literal["image", "video", "audio"]
 
 
 def _eval_subprocess_target(
@@ -70,12 +71,15 @@ def _eval_process_entry(
         conn.close()
 
 
-def _prompt_subprocess_target(dataset_obj, video_llm: bool, conn, parent_conn=None):
+def _prompt_subprocess_target(
+    dataset_obj, video_llm: bool, conn, parent_conn=None, dataset_name=None, model=None,
+):
     """Build video prompts sequentially in a subprocess main thread."""
     if parent_conn is not None:
         parent_conn.close()
 
     try:
+        inference_runner = get_inference_runner(dataset_obj)
         while True:
             try:
                 index = conn.recv()
@@ -86,7 +90,9 @@ def _prompt_subprocess_target(dataset_obj, video_llm: bool, conn, parent_conn=No
                 break
 
             try:
-                prompt_struct = dataset_obj.build_prompt(index, video_llm=video_llm)
+                prompt_struct = inference_runner.prepare_prompt(
+                    model, dataset_obj, index, dataset_name, video_llm=video_llm,
+                )
                 conn.send({'success': True, 'result': prompt_struct, 'error': None})
             except Exception as e:
                 import traceback
@@ -95,26 +101,6 @@ def _prompt_subprocess_target(dataset_obj, video_llm: bool, conn, parent_conn=No
     finally:
         conn.close()
 
-
-def chat_mt(model, messages: List[dict], dataset_name: str) -> List[str]:
-    """Infer function for multi-turn dataset."""
-    assert len(messages) % 2 == 0, "Messages should be pairs of user and assistant"
-    nturn = len(messages) // 2
-    utter_stack = []
-    predictions = []
-
-    for i in range(nturn):
-        utter = messages[2 * i]
-        utter_stack.append(utter)
-        try:
-            resp = model.chat(utter_stack, dataset=dataset_name)
-            utter_stack.append(dict(role='assistant', content=resp))
-        except Exception as e:
-            resp = FAIL_MSG + str(e)
-            utter_stack.append(dict(role='assistant', content=resp))
-        predictions.append(resp)
-
-    return predictions
 
 # ==========================================
 # Core Data Structures
@@ -139,6 +125,7 @@ class InferenceTask:
     dataset_alias_name: str
     model_name: str        # Model name (for naming task)
     dataset_type: DatasetType = "image"
+    sample: Any = None
 
 
 @dataclass
@@ -178,8 +165,11 @@ class DatasetConfig:
 
     # For final result assembly
     results_dict: Dict[str, Any] = field(default_factory=dict)
+    inference_runner: InferenceRunner = field(init=False, repr=False)
+    policy_llm: Any = None
 
     def __post_init__(self):
+        self.inference_runner = get_inference_runner(self.dataset_obj)
         if self.dataset_alias_name is None:
             self.dataset_alias_name = self.dataset_name
         self.total_samples = len(self.dataset_obj.data)
@@ -332,7 +322,8 @@ class APIEvalPipeline:
             try:
                 results = load(str(checkpoint_file))
                 if self.retry_failed:
-                    results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
+                    results = {k: v for k, v in results.items()
+                               if not cfg.inference_runner.is_failed(v)}
                 logger.info(f"   [{dataset_alias_name}] Loaded {len(results)} results from checkpoint")
             except Exception as e:
                 logger.warning(f"   [{dataset_alias_name}] Failed to load checkpoint: {e}")
@@ -347,7 +338,7 @@ class APIEvalPipeline:
                         existing_results = {
                             str(idx): pred
                             for idx, pred in zip(data['index'], data['prediction'])
-                            if FAIL_MSG not in str(pred)
+                            if not cfg.inference_runner.is_failed(pred)
                         }
                     else:
                         existing_results = {
@@ -492,8 +483,6 @@ class APIEvalPipeline:
             # 3. Dispatch according to dataset type.
             if dataset_type == "video":
                 tasks_generated = await self._produce_video_tasks(cfg, existing_results)
-            elif dataset_type == "mt":
-                tasks_generated = await self._produce_mt_tasks(cfg, existing_results)
             else:  # image or audio
                 tasks_generated = await self._produce_image_tasks(cfg, existing_results)
 
@@ -530,15 +519,6 @@ class APIEvalPipeline:
         if dataset_type == "image" and hasattr(model, 'set_dump_image'):
             model.set_dump_image(dataset.dump_image)
 
-        use_custom_prompt = (
-            hasattr(model, 'use_custom_prompt')
-            and model.use_custom_prompt(dataset_name)
-        )
-        if use_custom_prompt:
-            logger.info(f"   [{dataset_alias_name}] Using model custom prompt")
-        else:
-            logger.info(f"   [{dataset_alias_name}] Using vanilla dataset prompt")
-
         tasks_generated = 0
         for i in range(len(dataset)):
             item = dataset[i]
@@ -548,10 +528,8 @@ class APIEvalPipeline:
                 continue
 
             try:
-                if use_custom_prompt:
-                    prompt_struct = model.build_prompt(item, dataset=dataset_name)
-                else:
-                    prompt_struct = dataset.build_prompt(item)
+                prompt_struct = cfg.inference_runner.prepare_prompt(
+                    model, dataset, item, dataset_name)
             except Exception as e:
                 import traceback
                 logger.error(f"   [{dataset_alias_name}] Failed to build prompt "
@@ -566,7 +544,8 @@ class APIEvalPipeline:
                 model_name=cfg.model_name,
                 sample_index=idx_str,
                 prompt_struct=prompt_struct,
-                dataset_type=dataset_type
+                dataset_type=dataset_type,
+                sample=item,
             )
             await self.queue.put(task)
             tasks_generated += 1
@@ -591,7 +570,7 @@ class APIEvalPipeline:
         parent_conn, child_conn = mp.Pipe(duplex=True)
         process = mp.Process(
             target=_prompt_subprocess_target,
-            args=(dataset, video_llm, child_conn, parent_conn),
+            args=(dataset, video_llm, child_conn, parent_conn, dataset_name, model),
         )
         try:
             process.start()
@@ -637,7 +616,8 @@ class APIEvalPipeline:
                     model_name=cfg.model_name,
                     sample_index=idx_str,
                     prompt_struct=prompt_struct,
-                    dataset_type="video"
+                    dataset_type="video",
+                    sample=i,
                 )
                 await self.queue.put(task)
                 tasks_generated += 1
@@ -652,45 +632,6 @@ class APIEvalPipeline:
             if process.is_alive():
                 terminate_processes([process], name=process_name, logger=logger)
             parent_conn.close()
-
-        return tasks_generated
-
-    async def _produce_mt_tasks(self, cfg: DatasetConfig, existing_results: dict) -> int:
-        """Produce multi-turns dataset inference task."""
-        dataset = cfg.dataset_obj
-        dataset_name = cfg.dataset_name
-        dataset_alias_name = cfg.dataset_alias_name
-
-        logger.info(f"   [{dataset_alias_name}] Multi-turn dialogue mode")
-
-        tasks_generated = 0
-        for i in range(len(dataset)):
-            item = dataset[i]
-            idx_str = str(item['index'])
-
-            if idx_str in existing_results:
-                continue
-
-            try:
-                prompt_struct = dataset.build_prompt(item)
-            except Exception as e:
-                import traceback
-                logger.error(f"   [{dataset_alias_name}] Failed to build prompt "
-                             f"for sample {idx_str}: {repr(e)}")
-                logger.debug(traceback.format_exception(e))
-                # Skip dataset if has fatal sample.
-                return 0
-
-            task = InferenceTask(
-                dataset_name=dataset_name,
-                dataset_alias_name=dataset_alias_name,
-                model_name=cfg.model_name,
-                sample_index=idx_str,
-                prompt_struct=prompt_struct,
-                dataset_type="mt"
-            )
-            await self.queue.put(task)
-            tasks_generated += 1
 
         return tasks_generated
 
@@ -712,23 +653,17 @@ class APIEvalPipeline:
                 if not cfg.infer_start_time:
                     cfg.infer_start_time = start_time
 
-                # Select inference style according ot dataset type.
-                if task.dataset_type == "mt":
-                    output = await loop.run_in_executor(
-                        self.infer_executor,
-                        partial(chat_mt,
-                                model=model,
-                                messages=task.prompt_struct,
-                                dataset_name=task.dataset_name),
-                    )
-                else:
-                    def inference_call():
-                        return model.generate(
+                output = await loop.run_in_executor(
+                    self.infer_executor,
+                    partial(dispatch_sample,
+                            model=model,
+                            dataset=cfg.dataset_obj,
+                            sample=task.sample,
+                            dataset_name=task.dataset_name,
                             message=task.prompt_struct,
-                            dataset=task.dataset_name
-                        )
-
-                    output = await loop.run_in_executor(self.infer_executor, inference_call)
+                            inference_runner=cfg.inference_runner,
+                            policy_llm=cfg.policy_llm),
+                )
 
                 inference_time = time.time() - start_time
 

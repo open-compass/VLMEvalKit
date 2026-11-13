@@ -75,24 +75,32 @@ def _load_inference_module(name):
     return module, modules
 
 
-@pytest.mark.parametrize('name', ['inference', 'inference_mt', 'inference_video'])
-def test_public_inference_job_reuses_json_predictions(tmp_path, name):
+@pytest.mark.parametrize('name', ['inference', 'inference_video'])
+@pytest.mark.parametrize('interactive', [False, True])
+def test_public_inference_job_reuses_json_predictions(tmp_path, name, interactive):
     module, modules = _load_inference_module(name)
+    from vlmeval.inference_runner import InteractiveMTRunner, SingleTurnRunner
     file = modules['vlmeval.smp.file']
     target = tmp_path / 'mock_Example.json'
     file.dump(pd.DataFrame({'index': [0, 1], 'prediction': ['cached A', 'cached B']}), str(target))
 
     class Dataset:
+        INFERENCE_RUNNER = InteractiveMTRunner if interactive else SingleTurnRunner
         dataset_name = 'Example'
         data = pd.DataFrame({'index': [0, 1]})
 
         def __len__(self):
             return len(self.data)
 
+        def build_prompt(self, sample):
+            pytest.fail('Complete predictions must be reused without building a prompt.')
+
+        def build_policy(self, sample, messages):
+            pytest.fail('Complete predictions must be reused without building a policy.')
+
     model = object()
     entry = getattr(module, {
         'inference': 'infer_data_job',
-        'inference_mt': 'infer_data_job_mt',
         'inference_video': 'infer_data_job_video'
     }[name])
     result = entry(model, str(tmp_path), 'mock', Dataset(), result_file=str(target))

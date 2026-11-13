@@ -10,6 +10,7 @@ import torch.distributed as dist
 from tqdm import tqdm
 
 from vlmeval.config import supported_VLM
+from vlmeval.inference_runner import dispatch_sample, get_inference_runner
 from vlmeval.smp import (dump, get_pred_file_path, get_rank_and_world_size, load,
                          load_prediction_file, resolve_dataset_alias_name)
 from vlmeval.utils import track_progress_rich
@@ -29,11 +30,12 @@ def parse_args():
 
 # Only API model is accepted
 def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_nproc=4, retry_failed=True,
-                   dataset_name=None, dataset_alias_name=None):
+                   dataset_name=None, dataset_alias_name=None, policy_llm=None):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
+    inference_runner = get_inference_runner(dataset)
     model = supported_VLM[model_name]() if isinstance(model, str) else model
     assert getattr(model, 'is_api', False)
 
@@ -58,13 +60,15 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
         setattr(model, 'VIDEO_LLM', False)
 
     packstr = 'pack' if getattr(dataset, 'pack', False) else 'nopack'
-    build_prompt_input = [(samples_dict[idx], getattr(model, 'VIDEO_LLM', False)) for idx in indices]
     if dataset.nframe > 0:
         struct_tmp_file = f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.nframe}frame_{packstr}_structs.pkl'
     else:
         struct_tmp_file = f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.fps}fps_{packstr}_structs.pkl'
+    build_prompt_input = [dict(
+        model=model, dataset=dataset, sample=samples_dict[idx], dataset_name=dataset_name,
+    ) for idx in indices]
     structs = track_progress_rich(
-        dataset.build_prompt,
+        inference_runner.prepare_prompt,
         tasks=build_prompt_input,
         nproc=api_nproc,
         save=struct_tmp_file,
@@ -77,18 +81,22 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
         out_file = f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.fps}fps_{packstr}_checkpoint.pkl'
     res = load(out_file) if osp.exists(out_file) else {}
     if retry_failed:
-        res = {k: v for k, v in res.items() if FAIL_MSG not in str(v)}
+        res = {k: v for k, v in res.items() if not inference_runner.is_failed(v)}
 
     structs = [s for i, s in zip(indices, structs) if str(i) not in res]
     structs = [struct for struct in structs if struct is not None]
     indices = [i for i in indices if str(i) not in res]
 
-    gen_func = model.generate
-    structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
+    structs = [dict(
+        model=model, dataset=dataset, sample=samples_dict[idx], dataset_name=dataset_name,
+        message=struct, policy_llm=policy_llm, inference_runner=inference_runner,
+    ) for idx, struct in zip(indices, structs)]
 
     if len(structs):
         str_indices = [str(i) for i in indices]
-        track_progress_rich(gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=str_indices)
+        track_progress_rich(
+            dispatch_sample, structs, nproc=api_nproc, chunksize=api_nproc,
+            save=out_file, keys=str_indices)
 
     # Load the full accumulated results (str keys)
     if osp.exists(out_file):
@@ -99,9 +107,11 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
 
 
 def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False,
-               retry_failed=True, dataset_name=None, dataset_alias_name=None):
+               retry_failed=True, dataset_name=None, dataset_alias_name=None,
+               policy_llm=None):
     dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
+    inference_runner = get_inference_runner(dataset)
     prev_file = f'{work_dir}/{model_name}_{dataset_alias_name}_PREV.pkl'
     res = load(prev_file) if osp.exists(prev_file) else {}
     if osp.exists(out_file):
@@ -147,7 +157,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
             api_nproc=api_nproc,
             retry_failed=retry_failed,
             dataset_name=dataset_name,
-            dataset_alias_name=dataset_alias_name)
+            dataset_alias_name=dataset_alias_name, policy_llm=policy_llm)
         for k in sample_indices_subrem:
             assert k in supp
         res.update(supp)
@@ -195,16 +205,9 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         sample_dataset_name = dataset_name
         if 'SUB_DATASET' in dataset.data.iloc[sample_map[idx]]:
             sample_dataset_name = dataset.data.iloc[sample_map[idx]]['SUB_DATASET']
-        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(sample_dataset_name):
-            if dataset.nframe == 0:
-                raise ValueError(f'nframe must be set for custom prompt, fps is not suitable for {model_name}')
-            struct = model.build_prompt(
-                dataset.data.iloc[sample_map[idx]], dataset=dataset, video_llm=getattr(model, 'VIDEO_LLM', False)
-            )
-        else:
-            struct = dataset.build_prompt(
-                sample_map[idx], video_llm=getattr(model, 'VIDEO_LLM', False)
-            )
+
+        struct = inference_runner.prepare_prompt(
+            model, dataset, dataset.data.iloc[sample_map[idx]], sample_dataset_name)
         if struct is None:
             continue
 
@@ -212,13 +215,17 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         if os.environ.get('SKIP_ERR', False) == '1':
             FAIL_MSG = 'Failed to obtain answer'
             try:
-                response = model.generate(message=struct, dataset=sample_dataset_name)
+                response = dispatch_sample(
+                    model, dataset, dataset.data.iloc[sample_map[idx]], sample_dataset_name,
+                    message=struct, policy_llm=policy_llm, inference_runner=inference_runner)
             except RuntimeError as err:
                 torch.cuda.synchronize()
                 warnings.warn(f'{type(err)} {str(err)}')
                 response = f'{FAIL_MSG}: {type(err)} {str(err)}'
         else:
-            response = model.generate(message=struct, dataset=sample_dataset_name)
+            response = dispatch_sample(
+                model, dataset, dataset.data.iloc[sample_map[idx]], sample_dataset_name,
+                message=struct, policy_llm=policy_llm, inference_runner=inference_runner)
         torch.cuda.empty_cache()
 
         if verbose:
@@ -244,10 +251,12 @@ def infer_data_job_video(model,
                          verbose=False,
                          api_nproc=4,
                          use_vllm=False,
-                         retry_failed=True):
+                         retry_failed=True,
+                         policy_llm=None):
 
     dataset_name = dataset_name or dataset.dataset_name
     dataset_alias_name = resolve_dataset_alias_name(dataset_name, dataset_alias_name)
+    inference_runner = get_inference_runner(dataset)
     rank, world_size = get_rank_and_world_size()
 
     if result_file is None:
@@ -259,7 +268,7 @@ def infer_data_job_video(model,
             if rank == 0:
                 data = load_prediction_file(result_file)
                 results = {k: v for k, v in zip(data['index'], data['prediction'])}
-                results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
+                results = {k: v for k, v in results.items() if not inference_runner.is_failed(v)}
                 if len(results) == len(data):
                     return model
                 dump(results, prev_file)
@@ -282,7 +291,8 @@ def infer_data_job_video(model,
         use_vllm=use_vllm,
         retry_failed=retry_failed,
         dataset_name=dataset_name,
-        dataset_alias_name=dataset_alias_name)
+        dataset_alias_name=dataset_alias_name,
+        policy_llm=policy_llm)
 
     if world_size > 1:
         dist.barrier()
