@@ -14,8 +14,6 @@ New Qualified Contributors (2024.09):
 6. [PhoenixZ810](https://github.com/PhoenixZ810): The contributor helped support Video-ChatGPT, Chat-UniVI, and Llama-VID
 7. [Cuiunbo](https://github.com/Cuiunbo): The contributor helped support OmniLMM-12B, MiniCPM-V Series (V1, V2, V2.5)
 
-## Full Contributor List
+## Repository Contributor Activity
 
-> In this section, we list all the contributors as well as their corresponding contributions to the development of VLMEvalKit.
-
-TBD.
+The curated entries above highlight contributors with major contributions; they are not a complete contributor roster. For repository-level contributor activity, see [GitHub's contributors page](https://github.com/open-compass/VLMEvalKit/graphs/contributors). It lists contributor accounts but does not provide the curated descriptions of individual contributions shown above.
