@@ -254,6 +254,10 @@ def YOrN_match_prompt(line):
 
 def YOrN_Extraction(output):
     s = output.lower()
+    # process_punctuation strips the other markdown decorators (`_` and
+    # backticks) but not `*`, so an emphasised verdict such as "**yes**"
+    # would survive as a single token and extract as Unknown.
+    s = s.replace('*', ' ')
     words = process_punctuation(s).split()
     if 'yes' in words and 'no' not in words:
         return 'Yes'
