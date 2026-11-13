@@ -8,6 +8,7 @@ import pandas as pd
 from vlmeval.smp import (LMUDataRoot, dump, get_composite_child_eval_file,
                          get_intermediate_file_path, load, localize_df, read_ok, toliststr)
 from .activevision import ActiveVisionDataset
+from .aotbench import AoTBench
 from .asclepius import Asclepius
 from .audio_base import AudioBaseDataset
 from .av_speakerbench import AVSpeakerBench
@@ -359,7 +360,7 @@ IMAGE_DATASET += [
 ]
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench,
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench, AoTBench,
     LongVideoBench, WorldSense, VDC, MovieChat1k, MEGABench,
     MLVU, MLVU_MCQ, MLVU_OpenEnded,
     TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
