@@ -142,23 +142,23 @@ def build_model_from_config(cfg, model_name, use_vllm=False):
     import vlmeval.api
     import vlmeval.vlm
     ws_bak = os.environ.pop('WORLD_SIZE', None)
-
-    config = cp.deepcopy(cfg[model_name])
-    if use_vllm:
-        config['use_vllm'] = use_vllm
-    if 'class' not in config:
-        return supported_VLM[model_name](**config)
-    cls_name = config.pop('class')
-    if hasattr(vlmeval.api, cls_name):
-        model = getattr(vlmeval.api, cls_name)(**config)
-    elif hasattr(vlmeval.vlm, cls_name):
-        model = getattr(vlmeval.vlm, cls_name)(**config)
-    else:
-        raise ValueError(f'Class {cls_name} is not supported in `vlmeval.api` or `vlmeval.vlm`')
-
-    if ws_bak:
-        os.environ['WORLD_SIZE'] = ws_bak
-    return model
+    try:
+        config = cp.deepcopy(cfg[model_name])
+        if use_vllm:
+            config['use_vllm'] = use_vllm
+        if 'class' not in config:
+            return supported_VLM[model_name](**config)
+        cls_name = config.pop('class')
+        if hasattr(vlmeval.api, cls_name):
+            model = getattr(vlmeval.api, cls_name)(**config)
+        elif hasattr(vlmeval.vlm, cls_name):
+            model = getattr(vlmeval.vlm, cls_name)(**config)
+        else:
+            raise ValueError(f'Class {cls_name} is not supported in `vlmeval.api` or `vlmeval.vlm`')
+        return model
+    finally:
+        if ws_bak is not None:
+            os.environ['WORLD_SIZE'] = ws_bak
 
 
 def _require_non_empty_str(config, key, display_name):
