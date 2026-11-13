@@ -2606,5 +2606,67 @@
     "dataset_alias_name": "VUE-TR_256frame",
     "dataset_class_name": "VUETR",
     "dataset_name": "VUE-TR"
+  },
+  "ETBench-Subset_1fps": {
+    "build_config": {
+      "class": "ETBench",
+      "dataset": "ETBench-Subset",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "ETBench-Subset_1fps",
+    "dataset_class_name": "ETBench",
+    "dataset_name": "ETBench-Subset"
+  },
+  "ETBench-Subset_2fps": {
+    "build_config": {
+      "class": "ETBench",
+      "dataset": "ETBench-Subset",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "ETBench-Subset_2fps",
+    "dataset_class_name": "ETBench",
+    "dataset_name": "ETBench-Subset"
+  },
+  "ETBench_1fps": {
+    "build_config": {
+      "class": "ETBench",
+      "dataset": "ETBench",
+      "fps": 1.0
+    },
+    "dataset_alias_name": "ETBench_1fps",
+    "dataset_class_name": "ETBench",
+    "dataset_name": "ETBench"
+  },
+  "ETBench_2fps": {
+    "build_config": {
+      "class": "ETBench",
+      "dataset": "ETBench",
+      "fps": 2.0
+    },
+    "dataset_alias_name": "ETBench_2fps",
+    "dataset_class_name": "ETBench",
+    "dataset_name": "ETBench"
+  },
+  "ETBench-Subset_1fps_vid": {
+    "build_config": {
+      "class": "ETBench",
+      "dataset": "ETBench-Subset",
+      "fps": 1.0,
+      "prompt_style": "vid"
+    },
+    "dataset_alias_name": "ETBench-Subset_1fps_vid",
+    "dataset_class_name": "ETBench",
+    "dataset_name": "ETBench-Subset"
+  },
+  "ETBench_1fps_vid": {
+    "build_config": {
+      "class": "ETBench",
+      "dataset": "ETBench",
+      "fps": 1.0,
+      "prompt_style": "vid"
+    },
+    "dataset_alias_name": "ETBench_1fps_vid",
+    "dataset_class_name": "ETBench",
+    "dataset_name": "ETBench"
   }
 }
