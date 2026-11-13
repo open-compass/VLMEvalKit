@@ -108,11 +108,11 @@ class MedQBench_PairedDescription_Scorer:
         try:
             # Try JSON parsing
             j = _json.loads(text)
-            if isinstance(j, (int, float)) and 0 <= float(j) <= 2:
+            if isinstance(j, (int, float)) and not isinstance(j, bool) and 0 <= float(j) <= 2:
                 return float(j)
             if isinstance(j, dict):
                 for k in ['score', 'Score']:
-                    if k in j and 0 <= float(j[k]) <= 2:
+                    if k in j and not isinstance(j[k], bool) and 0 <= float(j[k]) <= 2:
                         return float(j[k])
         except Exception:
             pass
