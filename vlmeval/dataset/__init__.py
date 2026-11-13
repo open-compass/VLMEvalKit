@@ -125,6 +125,7 @@ from .ost_bench import OSTDataset
 from .perceptionbench import PerceptionBench
 from .plotqa import PlotQA
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
+from .qvhighlights import QVHighlights
 from .reasonmap_plus import ReasonMap_Plus
 from .refadv import RefAdvDataset
 from .refcoco import RefCOCODataset
@@ -369,7 +370,7 @@ VIDEO_DATASET = [
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
     VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset, FavorBench,
-    TimeLensBench, VideoOdysseyV, VUETR
+    TimeLensBench, VideoOdysseyV, VUETR, QVHighlights
 ]
 
 # add by EASI team

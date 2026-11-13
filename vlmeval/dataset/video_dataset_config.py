@@ -475,6 +475,14 @@ vue_tr_dataset = {
     'VUE-TR-V2-Vision_256frame': _video_spec(VUETR, dataset='VUE-TR-V2-Vision', nframe=256, fps=-1),
 }
 
+qvhighlights_dataset = {
+    # Official validation split; MR = moment retrieval, HD = highlight detection.
+    'QVHighlights-MR_2fps': _video_spec(QVHighlights, dataset='QVHighlights-MR', fps=2.0),
+    'QVHighlights-MR_1fps': _video_spec(QVHighlights, dataset='QVHighlights-MR', fps=1.0),
+    'QVHighlights-HD_2fps': _video_spec(QVHighlights, dataset='QVHighlights-HD', fps=2.0),
+    'QVHighlights-HD_1fps': _video_spec(QVHighlights, dataset='QVHighlights-HD', fps=1.0),
+}
+
 dataset_groups = [
     video_eval_pro_dataset,
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, sis_bench_dataset, video_odyssey_dataset,
@@ -483,7 +491,7 @@ dataset_groups = [
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
     video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset,
-    favor_bench_dataset, timelens_bench_dataset, vue_tr_dataset
+    favor_bench_dataset, timelens_bench_dataset, vue_tr_dataset, qvhighlights_dataset
 ]
 
 # add by EASI team
