@@ -10,7 +10,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 DATASET = "llamaindex/ParseBench-2"
-DATA_REVISION = "a12c9785cd8cd015b5284e0ad0d74722091762f2"
+DATA_REVISION = "d4e0eaa1b5181f7a84636149eb5717a7aad56c80"
 SCORER_VERSION = "2.0.1"
 RENDERER_VERSION = "4.30.0"
 SUBSETS = (

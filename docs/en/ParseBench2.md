@@ -1,6 +1,10 @@
 # ParseBench-2
 
-This adapter uses the public [llamaindex/ParseBench-2 dataset](https://huggingface.co/datasets/llamaindex/ParseBench-2) at revision `a12c9785cd8cd015b5284e0ad0d74722091762f2`: 4,317 cases in 13 subsets. It is separate from ParseBench-1.
+This adapter uses the public [llamaindex/ParseBench-2 dataset](https://huggingface.co/datasets/llamaindex/ParseBench-2), dataset release **v2.01** at revision `d4e0eaa1b5181f7a84636149eb5717a7aad56c80`: 4,317 cases in 13 subsets. It is separate from ParseBench-1. Dataset versions and scorer package versions are independent.
+
+Dataset v2.01 corrects eight page annotations and per-page scoring options; the source documents and case roster are unchanged. Re-score saved predictions against this same dataset revision before comparing scores. See the [versioned dataset changelog](https://huggingface.co/datasets/llamaindex/ParseBench-2/blob/d4e0eaa1b5181f7a84636149eb5717a7aad56c80/CHANGELOG.md).
+
+At validation on 2026-11-13, the [official leaderboard mapping](https://github.com/run-llama/ParseBench/blob/61d67a0d029a50ea2435a68fd729d46a7c83c082/leaderboard/results-v2.yaml) still pinned dataset v2.0 (`a12c9785cd8cd015b5284e0ad0d74722091762f2`). This adapter targets corrected dataset v2.01. Its scores are not directly interchangeable with those published rows; comparisons require matching dataset and scorer revisions.
 
 Use Python 3.12 or newer and install the optional scorer and renderer:
 
