@@ -3325,13 +3325,15 @@ class ZEROBench(ImageVQADataset):
     DATASET_MD5 = {'ZEROBench': '600d5e89325f1dab5ad3fa2ea200cea6',
                    'ZEROBench_sub': '2d2131bffb7f09ca099fdd0f3ad0392b'}
 
+    DEFAULT_N_RUNS = 5
+    PASS_K_HIT_COL = 'Correct?'
+
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file).sort_values(by='index')
         predictions = [str(x) for x in data['prediction']]
         answers = [str(x) for x in data['answers']]
-        indexes = [str(x) for x in data['index']]
         output_df = pd.DataFrame(columns=["Question_ID", "Ground_Truth", "Model_Output", "Correct?"])
-        for idx, (pred, ans, index) in enumerate(zip(predictions, answers, indexes)):
+        for idx, (pred, ans) in enumerate(zip(predictions, answers)):
             formatted_response = pred.strip()
             # convert to lowercase
             formatted_response = formatted_response.lower()
@@ -3353,9 +3355,20 @@ class ZEROBench(ImageVQADataset):
             output_df = pd.concat([output_df, pd.DataFrame([results_row])],
                                   ignore_index=True)
 
-        # compute accuracy
-        accuracy = output_df["Correct?"].mean()
-        return {"accuracy": accuracy}
+        result = {"accuracy": output_df["Correct?"].mean()}
+        dump(output_df, get_intermediate_file_path(eval_file, '_results', 'csv'))
+        dump(d2df(result), get_intermediate_file_path(eval_file, '_acc', 'csv'))
+        return result
+
+    @classmethod
+    def report_primary_metric(cls, metrics: dict | None) -> dict:
+        if not isinstance(metrics, dict) or not metrics:
+            return {}
+
+        for key in metrics:
+            if re.fullmatch(r'pass@\d+', str(key)):
+                return {str(key): metrics[key]}
+        return super().report_primary_metric(metrics)
 
     def build_prompt(self, line):
         if isinstance(line, int):

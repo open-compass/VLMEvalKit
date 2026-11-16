@@ -122,7 +122,18 @@ torchrun --nproc-per-node=8 run.py --data MMBench_Video_8frame_nopack --model id
 python run.py --data MMBench_Video_1fps_pack --model GPT4o
 ```
 
-The evaluation results will be printed as logs, besides. **Result Files** will also be generated in the directory `$YOUR_WORKING_DIRECTORY/{model_name}`. Files ending with `.csv` contain the evaluated metrics.
+<a id="audio-evaluation"></a>
+
+**Command for Evaluating Audio Benchmarks**
+
+```bash
+# Gemini-2.5-Flash (API model) on MMSU. Set GOOGLE_API_KEY first.
+python run.py --data MMSU --model GeminiFlash2-5 --api-mode --judge exact_matching
+# Qwen3-Omni on MMSU through a deployed vLLM service that supports audio input.
+python run.py --data MMSU --model Qwen3-Omni-30B-A3B-Instruct --api-mode --base-url http://127.0.0.1:8000/v1 --key EMPTY --max-tokens 16384 --judge exact_matching
+```
+
+For a self-hosted service, replace `--base-url` and `--key` with your service address and API key; `--model` must match an ID returned by `/v1/models`. Audio is sent as base64 by default. If the client and server share the audio files, add `--local-media` to send `file://` paths.
 
 ### Frequently Asked Questions
 

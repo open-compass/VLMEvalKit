@@ -265,6 +265,37 @@ class TestInferenceApiProcessHelpers(unittest.TestCase):
                 logging.disable(logging.NOTSET)
                 pipeline._shutdown_executors()
 
+    def test_audio_tasks_keep_dataset_alias_and_skip_image_setup(self):
+        inference_api = _load_inference_api()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model = FakeAliasModel()
+            model.set_dump_image = mock.Mock(side_effect=AssertionError('Audio must not set dump_image'))
+            cfg = inference_api.DatasetConfig(
+                dataset_name='LogicalEval',
+                dataset_alias_name='AliasAudio',
+                dataset_obj=FakeAliasDataset(),
+                dataset_type='audio',
+                model_name='mock',
+                model_obj=model,
+                work_dir=tmpdir,
+                result_file=str(Path(tmpdir) / 'mock_AliasAudio.tsv'),
+                judge_kwargs={},
+            )
+            pipeline = inference_api.APIEvalPipeline([cfg], concurrency=1, run_eval=False)
+
+            try:
+                self.assertEqual(asyncio.run(pipeline._produce_image_tasks(cfg, {})), 1)
+                task = pipeline.queue.get_nowait()
+                self.assertEqual(task.dataset_name, 'LogicalEval')
+                self.assertEqual(task.dataset_alias_name, 'AliasAudio')
+                self.assertEqual(task.dataset_type, 'audio')
+                self.assertEqual(model.use_custom_prompt_datasets, ['LogicalEval'])
+                self.assertEqual(model.build_prompt_datasets, ['LogicalEval'])
+                model.set_dump_image.assert_not_called()
+            finally:
+                pipeline._shutdown_executors()
+
     def test_dataset_config_separates_logical_name_from_output_alias(self):
         inference_api = _load_inference_api()
 

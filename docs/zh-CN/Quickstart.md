@@ -116,7 +116,19 @@ torchrun --nproc-per-node=8 run.py --data MMBench_Video_8frame_nopack --model id
 python run.py --data MMBench_Video_1fps_pack --model GPT4o
 ```
 
-评估结果将作为日志打印出来。此外，**结果文件**也会在目录 `$YOUR_WORKING_DIRECTORY/{model_name}` 中生成。以 `.csv` 结尾的文件包含评估的指标。
+<a id="audio-evaluation"></a>
+
+**用于评测音频多模态评测集的命令**
+
+```bash
+# 在 MMSU 上评测 Gemini-2.5-Flash（API 模型），需先设置 GOOGLE_API_KEY。
+python run.py --data MMSU --model GeminiFlash2-5 --api-mode --judge exact_matching
+# 通过已部署且支持音频输入的 vLLM 服务，在 MMSU 上评测 Qwen3-Omni。
+python run.py --data MMSU --model Qwen3-Omni-30B-A3B-Instruct --api-mode --base-url http://127.0.0.1:8000/v1 --key EMPTY --max-tokens 16384 --judge exact_matching
+```
+
+使用自部署服务时，将 `--base-url` 和 `--key` 替换为实际服务地址与密钥，`--model` 应与 `/v1/models` 返回的模型名称一致。默认将音频编码为 base64 发送；若评测端与服务端共享音频文件，可添加 `--local-media` 通过 `file://` 传递路径。
+
 ### 常见问题
 #### 构建输入prompt：`build_prompt()`函数
 如果您在评测某个benchmark时，发现模型输出的结果与预期不符，可能是因为您使用的模型没有正确构建输入prompt。
