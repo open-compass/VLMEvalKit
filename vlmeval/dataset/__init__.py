@@ -43,6 +43,7 @@ from .favor_bench import FavorBench
 from .flames import FlamesDataset
 from .foxbench import FoxBench
 from .gdp_pdf import GDPPDF
+from .gdp_pdf_aa import GDPPDFAA
 from .gobench import GOBenchDataset
 from .groundingme import GroundingME
 from .gsm8k_v import GSM8KVDataset
@@ -321,6 +322,7 @@ IMAGE_DATASET = [
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
     MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset, DUDE, DocScope,
     LongDocURL, GDPPDF,
+    GDPPDFAA,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
     OlympiadBench, SeePhys, WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,  # noqa: E501
