@@ -117,10 +117,11 @@ def test_streaming_returns_text_from_final_message(client_factory):
 
 
 @pytest.mark.parametrize('mode,suffix', [
-    ('RGB', '.jpg'), ('RGB', '.png'), ('RGBA', '.png'), ('P', '.png'), ('L', '.png'),
+    ('RGB', '.jpg'), ('RGB', '.png'), ('RGBA', '.png'), ('LA', '.png'), ('P', '.png'), ('L', '.png'),
     ('1', '.png'), ('CMYK', '.jpg'),
 ])
-def test_generate_encodes_images_as_matching_jpeg(client_factory, tmp_path, mode, suffix):
+@pytest.mark.parametrize('convert_rgb', [False, True])
+def test_generate_encodes_images_with_matching_mime(client_factory, tmp_path, mode, suffix, convert_rgb):
     _, client = client_factory
     path = tmp_path / ('image' + suffix)
     source = Image.new(mode, (240, 160))
@@ -128,7 +129,7 @@ def test_generate_encodes_images_as_matching_jpeg(client_factory, tmp_path, mode
         source.putpalette([0, 0, 0] + [0, 0, 0] * 255)
         source.info['transparency'] = 0
     source.save(path)
-    model = ClaudeSDKAPI(key='test-key', verbose=False)
+    model = ClaudeSDKAPI(key='test-key', verbose=False, convert_rgb=convert_rgb)
 
     assert model.generate([
         {'type': 'text', 'value': 'Describe this image.'},
@@ -139,9 +140,10 @@ def test_generate_encodes_images_as_matching_jpeg(client_factory, tmp_path, mode
     assert [part['type'] for part in content] == ['text', 'image']
     source = content[1]['source']
     assert source['type'] == 'base64'
-    assert source['media_type'] == 'image/jpeg'
+    fmt = 'JPEG' if convert_rgb or mode == 'CMYK' else 'PNG'
+    assert source['media_type'] == Image.MIME[fmt]
     with Image.open(io.BytesIO(base64.b64decode(source['data'], validate=True))) as encoded:
-        assert encoded.format == 'JPEG'
+        assert encoded.format == fmt
         assert encoded.size == (240, 160)
     with Image.open(path) as original:
         assert original.mode == mode

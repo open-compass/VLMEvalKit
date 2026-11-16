@@ -30,7 +30,7 @@ def _load_modules(*names):
     misc.toliststr = lambda value: value if isinstance(value, list) else [value]
     modules[misc.__name__] = misc
     sys.modules.update(modules)
-    for name in ('smp.log', 'smp.vlm', 'smp.file', 'api.base', *names):
+    for name in ('smp.log', 'smp.vlm', 'smp.file', 'smp.audio', 'api.base', *names):
         full_name = 'vlmeval.' + name
         spec = importlib.util.spec_from_file_location(full_name, root / (full_name.replace('.', '/') + '.py'))
         module = importlib.util.module_from_spec(spec)
