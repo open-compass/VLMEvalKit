@@ -41,9 +41,13 @@ def parse_multi_choice_response(response, all_choices, index2ans):
         if index_ans:
             if ans_with_brack:
                 for can in candidates:
-                    index = response.rfind(f'({can})')
-                    start_indexes.append(index)  # -1 will be ignored anyway
-                # start_indexes = [generated_response.index(f'({can})') for can in candidates]
+                    # A candidate can be matched through either spelling, so
+                    # take the later of the two positions. Looking only for
+                    # '(X)' leaves the 'X. ' matches at -1, and argmax over an
+                    # all-negative list then returns the first candidate.
+                    index = max(response.rfind(f'({can})'),
+                                response.rfind(f'{can}. '))
+                    start_indexes.append(index)
             else:
                 for can in candidates:
                     index = response.rfind(f" {can} ")
