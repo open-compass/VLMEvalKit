@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from typing import Any
 
@@ -16,6 +17,11 @@ def vlms_are_biased_process_results(org_file: str) -> list[dict[str, Any]]:
 
     for item in tqdm(meta, desc="Processing results for VLM Are Biased benchmark"):
         pred = str(item.get("prediction", "")).strip()
+        # The prompts ask for the answer in curly brackets, e.g. {5} or {Yes}.
+        # Score the last bracketed answer, as the benchmark's official scorer does.
+        bracketed = re.findall(r"\{([^{}]*)\}", pred)
+        if bracketed:
+            pred = bracketed[-1].strip()
         ground_truth = str(item.get("ground_truth", "")).strip()
         expected_bias = str(item.get("expected_bias", "")).strip()
         topic = item.get("topic", "unknown")
