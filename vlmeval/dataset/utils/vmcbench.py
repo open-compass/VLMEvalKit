@@ -1,7 +1,21 @@
-import random
+import hashlib
 
 import numpy as np
 import pandas as pd
+
+
+def _fallback_choice(response, all_choices):
+    """Pick an option deterministically when nothing in the response parses.
+
+    The previous implementation called ``random.choice`` on the global RNG, so
+    rescoring the same predictions file could return a different score. A fixed
+    seed would make the fallback reproducible but would send every unparsable
+    row to the same option, which biases the benchmark; hashing the response
+    keeps the guess spread over the options while staying identical across
+    runs, processes and machines.
+    """
+    digest = hashlib.sha256(response.encode('utf-8')).digest()
+    return all_choices[int.from_bytes(digest[:8], 'big') % len(all_choices)]
 
 
 def parse_multi_choice_response(response, all_choices, index2ans):
@@ -34,8 +48,8 @@ def parse_multi_choice_response(response, all_choices, index2ans):
                 candidates.append(index)
                 index_ans = False  # it's content ans.
 
-    if len(candidates) == 0:  # still not get answer, randomly choose one.
-        pred_index = random.choice(all_choices)
+    if len(candidates) == 0:  # still not get answer, guess deterministically.
+        pred_index = _fallback_choice(response, all_choices)
     elif len(candidates) > 1:
         start_indexes = []
         if index_ans:
