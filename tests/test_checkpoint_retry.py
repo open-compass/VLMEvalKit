@@ -52,9 +52,15 @@ def _load_inference_module(name):
     utils.__path__ = [str(Path(__file__).resolve().parents[1] / 'vlmeval/utils')]
 
     def track_progress(func, tasks, save, keys, **kwargs):
+        # Dispatch like vlmeval.utils.mp_util.new_func: dict -> **, sequence -> *.
         result = smp.load(save) if os.path.exists(save) else {}
         for key, task in zip(keys, tasks):
-            result[key] = func(**task)
+            if isinstance(task, dict):
+                result[key] = func(**task)
+            elif isinstance(task, (tuple, list)):
+                result[key] = func(*task)
+            else:
+                result[key] = func(task)
         smp.dump(result, save)
         return list(result.values())
 
@@ -144,3 +150,44 @@ def test_video_job_forwards_policy_llm_to_infer_data(tmp_path, monkeypatch):
         policy_llm=llm)
 
     assert seen['policy_llm'] is llm
+
+
+@pytest.mark.parametrize('video_llm', [True, False])
+def test_video_api_runner_builds_mt_prompt_like_single_turn(tmp_path, video_llm):
+    module, modules = _load_inference_module('inference_video')
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
+    from vlmeval.interactive_mt import StaticTurnPolicy
+
+    base = modules['vlmeval.api.base']
+    prompts, policies = [], []
+
+    class Dataset(InteractiveMTMixin):
+        dataset_name = 'Example'
+        nframe = 8
+        fps = -1
+        data = pd.DataFrame({'index': [0], 'question': ['q']})
+
+        def build_prompt(self, line, video_llm=None):
+            prompts.append((line, video_llm))
+            return [{'role': 'user', 'content': [{'type': 'text', 'value': 'q'}]}]
+
+        def build_policy(self, sample, messages):
+            policies.append((dict(sample), messages))
+            return StaticTurnPolicy(messages, [])
+
+    class Model(base.BaseAPI):
+        is_api = True
+        VIDEO_LLM = video_llm
+
+        def generate_inner(self, inputs, **kwargs):
+            return 0, 'answer', None
+
+    model = Model(retry=1, wait=0, verbose=False)
+    result = module.infer_data_api(model, str(tmp_path), 'mock', Dataset(), samples_dict={0: 0})
+
+    assert result == {0: ['answer']}
+    # build_prompt is called the single-turn video way: row position + video_llm.
+    assert prompts == [(0, video_llm)]
+    # The policy gets the row, as in the non-API video path, and that prompt.
+    assert policies == [({'index': 0, 'question': 'q'},
+                         [{'role': 'user', 'content': [{'type': 'text', 'value': 'q'}]}])]

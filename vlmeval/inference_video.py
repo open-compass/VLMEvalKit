@@ -59,28 +59,25 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
         setattr(model, 'VIDEO_LLM', False)
 
     packstr = 'pack' if getattr(dataset, 'pack', False) else 'nopack'
+    # Interactive MT builds the first prompt the single-turn way below and hands
+    # it to the case loop (chat_interactive_mt) instead of model.generate.
     interactive_mt = getattr(dataset, 'interactive_mt', False)
-    if interactive_mt:
-        # The MT runner owns prompt construction: one row may expand into
-        # several cases with different first contexts.
-        structs = [None] * len(indices)
-    else:
-        build_prompt_input = [(samples_dict[idx], getattr(model, 'VIDEO_LLM', False)) for idx in indices]
-        if dataset.nframe > 0:
-            struct_tmp_file = (
-                f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.nframe}frame_{packstr}_structs.pkl'
-            )
-        else:
-            struct_tmp_file = (
-                f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.fps}fps_{packstr}_structs.pkl'
-            )
-        structs = track_progress_rich(
-            dataset.build_prompt,
-            tasks=build_prompt_input,
-            nproc=api_nproc,
-            save=struct_tmp_file,
-            keys=indices,
+    build_prompt_input = [(samples_dict[idx], getattr(model, 'VIDEO_LLM', False)) for idx in indices]
+    if dataset.nframe > 0:
+        struct_tmp_file = (
+            f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.nframe}frame_{packstr}_structs.pkl'
         )
+    else:
+        struct_tmp_file = (
+            f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.fps}fps_{packstr}_structs.pkl'
+        )
+    structs = track_progress_rich(
+        dataset.build_prompt,
+        tasks=build_prompt_input,
+        nproc=api_nproc,
+        save=struct_tmp_file,
+        keys=indices,
+    )
 
     if dataset.nframe > 0:
         out_file = f'{work_dir}/{model_name}_{dataset_alias_name}_{dataset.nframe}frame_{packstr}_checkpoint.pkl'
@@ -96,22 +93,26 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
             res = {k: v for k, v in res.items() if FAIL_MSG not in str(v)}
 
     structs = [s for i, s in zip(indices, structs) if str(i) not in res]
-    structs = [struct for struct in structs if struct is not None]
     indices = [i for i in indices if str(i) not in res]
 
     if interactive_mt:
         gen_func = chat_interactive_mt
+        # Same row object as the non-API video path passes to the MT loop.
+        pending = [(i, s) for i, s in zip(indices, structs) if s is not None]
+        indices = [i for i, _ in pending]
         structs = [
             dict(
                 model=model,
                 dataset=dataset,
-                sample=samples_dict[i],
+                sample=dataset.data.iloc[samples_dict[i]],
+                messages=struct,
                 dataset_name=dataset_name,
                 policy_llm=policy_llm,
             )
-            for i in indices
+            for i, struct in pending
         ]
     else:
+        structs = [struct for struct in structs if struct is not None]
         gen_func = model.generate
         structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
 
@@ -228,21 +229,13 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         if 'SUB_DATASET' in dataset.data.iloc[sample_map[idx]]:
             sample_dataset_name = dataset.data.iloc[sample_map[idx]]['SUB_DATASET']
 
-        # Interactive MT replaces "build one prompt, call once" with the
-        # case-level loop; the runner asks the dataset for the media itself.
-        if interactive_mt:
-            response = chat_interactive_mt(
-                model, dataset, dataset.data.iloc[sample_map[idx]], sample_dataset_name,
-                policy_llm=policy_llm)
-            torch.cuda.empty_cache()
-            if verbose:
-                print(response, flush=True)
-            res[idx] = response
-            if (i + 1) % 20 == 0:
-                dump(res, out_file)
-            continue
-
-        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(sample_dataset_name):
+        # Like the image runners, a dataset that forces its own prompt (every
+        # interactive MT dataset does) never gets the model's custom prompt.
+        use_custom_prompt = (
+            not getattr(dataset, 'force_use_dataset_prompt', False)
+            and hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(sample_dataset_name)
+        )
+        if use_custom_prompt:
             if dataset.nframe == 0:
                 raise ValueError(f'nframe must be set for custom prompt, fps is not suitable for {model_name}')
             struct = model.build_prompt(
@@ -253,6 +246,20 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
                 sample_map[idx], video_llm=getattr(model, 'VIDEO_LLM', False)
             )
         if struct is None:
+            continue
+
+        # Interactive MT hands the first prompt to the case loop instead of
+        # model.generate: one row is one case, run as several model calls.
+        if interactive_mt:
+            response = chat_interactive_mt(
+                model, dataset, dataset.data.iloc[sample_map[idx]], struct, sample_dataset_name,
+                policy_llm=policy_llm)
+            torch.cuda.empty_cache()
+            if verbose:
+                print(response, flush=True)
+            res[idx] = response
+            if (i + 1) % 20 == 0:
+                dump(res, out_file)
             continue
 
         # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered

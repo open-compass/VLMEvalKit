@@ -50,8 +50,8 @@ def infer_data_api(
     # Build str→orig mapping for checkpoint key conversion
     index_str_to_orig = {str(i): i for i in indices}
 
-    # Interactive MT builds its prompt per case inside the runner, because one
-    # row may expand into several cases with different first contexts.
+    # Interactive MT builds the first prompt the single-turn way below and hands
+    # it to the case loop (chat_interactive_mt) instead of model.generate.
     interactive_mt = getattr(dataset, 'interactive_mt', False)
 
     rows = [data.iloc[i] for i in range(lt)]
@@ -81,30 +81,22 @@ def infer_data_api(
     rows = [s for i, s in zip(indices, rows) if str(i) not in res]
     indices = [i for i in indices if str(i) not in res]
 
-    if interactive_mt:
-        gen_func = chat_interactive_mt
-        structs = [
-            dict(
-                model=model,
-                dataset=dataset,
-                sample=sample,
-                dataset_name=dataset_name,
-                policy_llm=policy_llm,
-            )
-            for sample in rows
-        ]
-    else:
-        gen_func = model.generate
-        structs = []
-        for item in rows:
-            if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
-                struct = dataset.build_prompt(item)
-            elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
-                assert hasattr(model, 'build_prompt')
-                struct = model.build_prompt(item, dataset=dataset_name)
-            else:
-                struct = dataset.build_prompt(item)
+    structs = []
+    for item in rows:
+        if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
+            struct = dataset.build_prompt(item)
+        elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+            assert hasattr(model, 'build_prompt')
+            struct = model.build_prompt(item, dataset=dataset_name)
+        else:
+            struct = dataset.build_prompt(item)
+        if interactive_mt:
+            structs.append(dict(
+                model=model, dataset=dataset, sample=item, messages=struct,
+                dataset_name=dataset_name, policy_llm=policy_llm))
+        else:
             structs.append(dict(message=struct, dataset=dataset_name))
+    gen_func = chat_interactive_mt if interactive_mt else model.generate
 
     if len(structs):
         str_indices = [str(i) for i in indices]
@@ -192,8 +184,8 @@ def infer_data(
     else:
         model.set_dump_image(dataset.dump_image)
 
-    # Interactive MT replaces "build one prompt, call once" with the case-level
-    # loop, because one row may expand into several cases sharing no context.
+    # Interactive MT builds the first prompt the single-turn way and hands it to
+    # the case loop: one row is one case, run as several dependent model calls.
     interactive_mt = getattr(dataset, 'interactive_mt', False)
 
     for i in tqdm(range(lt), desc=f'Infer {model_name}/{dataset_name}, Rank {rank}/{world_size}'):
@@ -201,18 +193,17 @@ def infer_data(
         if idx in res:
             continue
 
-        if interactive_mt:
-            struct = None
-            response = chat_interactive_mt(
-                model, dataset, data.iloc[i], dataset_name, policy_llm=policy_llm)
+        if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
+            struct = dataset.build_prompt(data.iloc[i])
+        elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+            struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
         else:
-            if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
-                struct = dataset.build_prompt(data.iloc[i])
-            elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
-                struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
-            else:
-                struct = dataset.build_prompt(data.iloc[i])
+            struct = dataset.build_prompt(data.iloc[i])
 
+        if interactive_mt:
+            response = chat_interactive_mt(
+                model, dataset, data.iloc[i], struct, dataset_name, policy_llm=policy_llm)
+        else:
             # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered
             if os.environ.get('SKIP_ERR', False) == '1':
                 try:

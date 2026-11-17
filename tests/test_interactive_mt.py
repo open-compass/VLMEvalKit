@@ -42,6 +42,87 @@ def _load_inference_module(name):
     return helpers._load_inference_module(name)
 
 
+def _run_mt(model, dataset, sample, dataset_name, **kwargs):
+    """Do what the runners do: build the first prompt, then run the MT loop."""
+    from vlmeval.interactive_mt import chat_interactive_mt
+    return chat_interactive_mt(
+        model, dataset, sample, dataset.build_prompt(sample), dataset_name, **kwargs)
+
+
+def test_interactive_mt_requires_policy_hook():
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
+
+    class MissingPolicy(InteractiveMTMixin):
+        def build_prompt(self, sample):
+            return [{'role': 'user', 'content': 'question'}]
+
+    with pytest.raises(TypeError):
+        MissingPolicy()
+
+
+def test_mt_dataset_without_build_prompt_override_fails_on_first_case():
+    import vlmeval.interactive_mt as mt
+    from vlmeval.dataset.image_base import ImageBaseDataset
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
+
+    # The mixin does not shadow the base build_prompt, so a dataset that forgets
+    # to override it gets the single-turn prompt. That prompt has no roles and
+    # must be rejected loudly instead of being sent as the first MT turn.
+    class Dataset(InteractiveMTMixin, ImageBaseDataset):
+        def build_policy(self, sample, messages):
+            raise AssertionError('The policy must not be built.')
+
+        def evaluate(self, eval_file, **judge_kwargs):
+            pass
+
+    assert Dataset.build_prompt is ImageBaseDataset.build_prompt
+    dataset = Dataset.__new__(Dataset)
+    dataset.meta_only = True
+    sample = pd.Series({'index': 0, 'image_path': 'a.jpg', 'question': 'q?'})
+
+    class Model:
+        def chat(self, history, dataset):
+            raise AssertionError('The model must not be called.')
+
+    with pytest.raises(ValueError, match='must override build_prompt'):
+        mt.chat_interactive_mt(Model(), dataset, sample, dataset.build_prompt(sample), 'Example')
+
+
+def test_mt_loop_uses_the_runner_built_prompt():
+    import vlmeval.interactive_mt as mt
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
+    seen = []
+
+    class Dataset(InteractiveMTMixin):
+        def build_prompt(self, sample):
+            raise AssertionError('The MT loop must not rebuild the first prompt.')
+
+        def build_policy(self, sample, messages):
+            seen.append(messages)
+            return mt.StaticTurnPolicy(messages, [])
+
+        def run_case(self, case, messages, caller, **kwargs):
+            seen.append(kwargs)
+            return super().run_case(case, messages, caller, **kwargs)
+
+    class Model:
+        def __init__(self):
+            self.histories = []
+
+        def chat(self, history, dataset):
+            self.histories.append(deepcopy(history))
+            return 'answer'
+
+    messages = [{'role': 'user', 'content': 'built by the runner'}]
+    model = Model()
+    mt.chat_interactive_mt(model, Dataset(), {'index': 0}, messages, 'Example')
+
+    # No policy_llm keyword without a build_policy_llm hook, and no video_llm:
+    # that already went to build_prompt in the runner.
+    assert seen == [{}, messages]
+    assert model.histories == [messages]
+
+
 def test_static_policy_preserves_initial_context_and_replays_all_user_turns():
     import vlmeval.interactive_mt as mt
     from vlmeval.dataset.interactive_mt import InteractiveMTMixin
@@ -53,9 +134,6 @@ def test_static_policy_preserves_initial_context_and_replays_all_user_turns():
     follow_up = {'role': 'user', 'content': 'second question'}
 
     class Dataset(InteractiveMTMixin):
-        def build_cases(self, sample):
-            return [sample]
-
         def build_prompt(self, sample):
             return deepcopy(initial)
 
@@ -72,7 +150,7 @@ def test_static_policy_preserves_initial_context_and_replays_all_user_turns():
             return next(self.responses)
 
     model = Model()
-    prediction = mt.chat_interactive_mt(model, Dataset(), {'index': 1}, 'Example')
+    prediction = _run_mt(model, Dataset(), {'index': 1}, 'Example')
 
     assert prediction == ['answer one', 'answer two']
     assert model.histories == [
@@ -92,9 +170,6 @@ def test_failure_is_finalized_and_stops_remaining_turns(raises):
     follow_up = {'role': 'user', 'content': 'second question'}
 
     class Dataset(InteractiveMTMixin):
-        def build_cases(self, sample):
-            return [sample]
-
         def build_prompt(self, sample):
             return initial
 
@@ -112,7 +187,7 @@ def test_failure_is_finalized_and_stops_remaining_turns(raises):
             return mt.FAIL_MSG + ' rate limited'
 
     model = Model()
-    prediction = mt.chat_interactive_mt(model, Dataset(), {'index': 1}, 'Example')
+    prediction = _run_mt(model, Dataset(), {'index': 1}, 'Example')
 
     assert len(prediction) == 1
     assert prediction[0].startswith(mt.FAIL_MSG)
@@ -122,7 +197,6 @@ def test_failure_is_finalized_and_stops_remaining_turns(raises):
 
 def test_mmdu_static_policy_preserves_text_images_and_prediction_format():
     from vlmeval.dataset.image_mt import MMDUDataset
-    from vlmeval.interactive_mt import chat_interactive_mt
 
     dataset = MMDUDataset.__new__(MMDUDataset)
     dataset.meta_only = True
@@ -153,7 +227,7 @@ def test_mmdu_static_policy_preserves_text_images_and_prediction_format():
 
     assert dataset.build_prompt(sample) == [first]
     model = Model()
-    prediction = chat_interactive_mt(model, dataset, sample, 'MMDU')
+    prediction = _run_mt(model, dataset, sample, 'MMDU')
     assert prediction == ['answer 1', 'answer 2', 'answer 3']
     assert model.calls == [
         [first],
@@ -174,9 +248,6 @@ def test_failed_api_checkpoint_retries_case_from_first_turn(tmp_path):
     class Dataset(InteractiveMTMixin):
         dataset_name = 'Example'
         data = pd.DataFrame({'index': [0, 1]})
-
-        def build_cases(self, row):
-            return [row]
 
         def build_prompt(self, row):
             return [{'role': 'user', 'content': str(row['index'])}]
@@ -397,9 +468,6 @@ def _policy_llm_dataset(mt, seen):
     from vlmeval.dataset.interactive_mt import InteractiveMTMixin
 
     class Dataset(InteractiveMTMixin):
-        def build_cases(self, sample):
-            return [sample]
-
         def build_prompt(self, sample):
             return [{'role': 'user', 'content': 'q'}]
 
@@ -422,8 +490,7 @@ def test_policy_llm_is_the_same_object_in_every_case():
     llm = object()
 
     for index in range(3):
-        mt.chat_interactive_mt(
-            _OneShotModel(), dataset, {'index': index}, 'Example', policy_llm=llm)
+        _run_mt(_OneShotModel(), dataset, {'index': index}, 'Example', policy_llm=llm)
 
     # Nothing but the shared object reaches build_policy, and it is not copied.
     assert [list(item) for item in seen] == [['policy_llm']] * 3
@@ -435,7 +502,7 @@ def test_policy_llm_keyword_is_omitted_when_dataset_has_no_llm():
     seen = []
     dataset = _policy_llm_dataset(mt, seen)
 
-    mt.chat_interactive_mt(_OneShotModel(), dataset, {'index': 0}, 'Example')
+    _run_mt(_OneShotModel(), dataset, {'index': 0}, 'Example')
 
     assert seen == [{}]
     assert dataset.build_policy_llm({'model': 'p'}) is None
@@ -447,16 +514,47 @@ def test_custom_run_case_receives_policy_llm():
     received = []
 
     class Dataset(InteractiveMTMixin):
-        def build_cases(self, sample):
-            return [sample]
+        def build_prompt(self, sample):
+            raise AssertionError('The runner, not the MT loop, builds the prompt.')
 
-        def run_case(self, case, caller, **kwargs):
-            received.append(kwargs)
+        def build_policy(self, sample, messages):
+            raise AssertionError('Custom run_case must not build a policy.')
+
+        def run_case(self, case, messages, caller, **kwargs):
+            received.append((messages, kwargs))
             return 'done'
 
     llm = object()
+    messages = [{'role': 'user', 'content': 'q'}]
     out = mt.chat_interactive_mt(
-        _OneShotModel(), Dataset(), {'index': 0}, 'Example', policy_llm=llm)
+        _OneShotModel(), Dataset(), {'index': 0}, messages, 'Example', policy_llm=llm)
 
     assert out == 'done'
-    assert received == [{'policy_llm': llm}]
+    assert received == [(messages, {'policy_llm': llm})]
+
+
+def test_one_row_is_one_case():
+    import vlmeval.interactive_mt as mt
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
+    seen = []
+
+    class Dataset(InteractiveMTMixin):
+        def build_prompt(self, sample):
+            return [{'role': 'user', 'content': 'q'}]
+
+        def build_policy(self, sample, messages):
+            seen.append(sample)
+            return mt.StaticTurnPolicy(messages, [])
+
+    class Model:
+        def chat(self, history, dataset):
+            return 'answer'
+
+    sample = {'index': 7}
+    prediction = _run_mt(Model(), Dataset(), sample, 'Example')
+
+    # The row itself is the case, and the prediction is that case's finalize()
+    # value, never a list of per-case predictions.
+    assert not hasattr(InteractiveMTMixin, 'build_cases')
+    assert seen == [sample] and seen[0] is sample
+    assert prediction == ['answer']

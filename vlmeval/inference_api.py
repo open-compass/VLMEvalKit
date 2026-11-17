@@ -520,8 +520,8 @@ class APIEvalPipeline:
         if hasattr(model, 'set_dump_image'):
             model.set_dump_image(dataset.dump_image)
 
-        # Interactive MT builds its prompt per case inside the runner, because a
-        # row may expand into several cases with different first contexts.
+        # Interactive MT datasets force their own prompt: the first prompt is
+        # built below like any other and the worker hands it to the case loop.
         use_custom_prompt = False
         if not cfg.interactive_mt:
             use_custom_prompt = (
@@ -541,20 +541,18 @@ class APIEvalPipeline:
             if idx_str in existing_results:
                 continue
 
-            prompt_struct = None
-            if not cfg.interactive_mt:
-                try:
-                    if use_custom_prompt:
-                        prompt_struct = model.build_prompt(item, dataset=dataset_name)
-                    else:
-                        prompt_struct = dataset.build_prompt(item)
-                except Exception as e:
-                    import traceback
-                    logger.error(f"   [{dataset_alias_name}] Failed to build prompt "
-                                 f"for sample {idx_str}: {repr(e)}")
-                    logger.debug(traceback.format_exception(e))
-                    # Skip dataset if has fatal sample.
-                    return 0
+            try:
+                if use_custom_prompt:
+                    prompt_struct = model.build_prompt(item, dataset=dataset_name)
+                else:
+                    prompt_struct = dataset.build_prompt(item)
+            except Exception as e:
+                import traceback
+                logger.error(f"   [{dataset_alias_name}] Failed to build prompt "
+                             f"for sample {idx_str}: {repr(e)}")
+                logger.debug(traceback.format_exception(e))
+                # Skip dataset if has fatal sample.
+                return 0
 
             task = InferenceTask(
                 dataset_name=dataset_name,
@@ -682,6 +680,7 @@ class APIEvalPipeline:
                                 model=model,
                                 dataset=cfg.dataset_obj,
                                 sample=task.sample,
+                                messages=task.prompt_struct,
                                 dataset_name=task.dataset_name,
                                 policy_llm=cfg.policy_llm),
                     )

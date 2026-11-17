@@ -89,7 +89,12 @@ class TextBaseDataset:
     def post_build(self, dataset):
         pass
 
-    # Given one data record, return the built prompt (a multi-modal message), can override
+    # Given one data record, return the input of the first model call, can override.
+    # Single-turn datasets: that call is the only one, so this is the content
+    # of one user message, a flat list of dict(type=..., value=...).
+    # Interactive MT datasets (InteractiveMTMixin) override it to return the
+    # whole first-call context as role messages, [dict(role=..., content=[...])],
+    # ending with the user turn to answer; later turns come from the policy.
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
