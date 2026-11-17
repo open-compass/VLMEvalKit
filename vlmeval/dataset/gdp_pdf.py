@@ -356,3 +356,23 @@ class GDPPDF(ImageBaseDataset):
         if isinstance(metrics, dict) and pd.notna(metrics.get('all_pass')):
             return {'all_pass': metrics['all_pass']}
         return {}
+
+
+class GDPPDFForAC(GDPPDF):
+    """GDP.pdf for AC clients: pass the source PDF instead of rendered page images."""
+
+    def __init__(self, dataset='GDP_pdf_for_AC', dpi=144):
+        super().__init__(dataset=dataset, dpi=dpi)
+
+    @classmethod
+    def supported_datasets(cls):
+        return ['GDP_pdf_for_AC']
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        pdf_path = str(self.data_root / line['pdf_path'])
+        return [
+            dict(type='text', value=line['question']),
+            dict(type='file', value=pdf_path,),
+        ]
