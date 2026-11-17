@@ -254,25 +254,18 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
             response = chat_interactive_mt(
                 model, dataset, dataset.data.iloc[sample_map[idx]], struct, sample_dataset_name,
                 policy_llm=policy_llm)
-            torch.cuda.empty_cache()
-            if verbose:
-                print(response, flush=True)
-            res[idx] = response
-            if (i + 1) % 20 == 0:
-                dump(res, out_file)
-            continue
-
-        # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered
-        if os.environ.get('SKIP_ERR', False) == '1':
-            FAIL_MSG = 'Failed to obtain answer'
-            try:
-                response = model.generate(message=struct, dataset=sample_dataset_name)
-            except RuntimeError as err:
-                torch.cuda.synchronize()
-                warnings.warn(f'{type(err)} {str(err)}')
-                response = f'{FAIL_MSG}: {type(err)} {str(err)}'
         else:
-            response = model.generate(message=struct, dataset=sample_dataset_name)
+            # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered
+            if os.environ.get('SKIP_ERR', False) == '1':
+                FAIL_MSG = 'Failed to obtain answer'
+                try:
+                    response = model.generate(message=struct, dataset=sample_dataset_name)
+                except RuntimeError as err:
+                    torch.cuda.synchronize()
+                    warnings.warn(f'{type(err)} {str(err)}')
+                    response = f'{FAIL_MSG}: {type(err)} {str(err)}'
+            else:
+                response = model.generate(message=struct, dataset=sample_dataset_name)
         torch.cuda.empty_cache()
 
         if verbose:
