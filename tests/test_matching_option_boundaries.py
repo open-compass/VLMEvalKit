@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import sys
 import types
 import unittest
@@ -76,6 +77,33 @@ class TestVerboseOptionBoundaries(unittest.TestCase):
             with self.subTest(answer=answer):
                 self.assertIs(self.matching.can_infer_option(answer, self.choices()), False)
                 self.assertIs(self.matching.can_infer(answer, self.choices()), False)
+
+    # Results with VERBOSE unset, which every VERBOSE value must reproduce.
+    VERBOSE_CASES = [
+        ('A', 'A'), ('(A)', 'A'), ('The answer is A', 'A'), ('The answer is A.', 'A'), ('Answer: A', 'A'),
+        ('The correct answer is **A**.', 'A'), ('Looking at the image, the answer is A', 'A'), ('B', 'B'),
+        ('The answer is B', 'B'), ('Answer: C', 'C')
+    ]
+
+    def test_verbose_does_not_change_results(self):
+        # Any set VERBOSE, even "0" or "false", used to turn long answers of option A into False.
+        for value in [None, '1', '0', 'false']:
+            env = {k: v for k, v in os.environ.items() if k != 'VERBOSE'}
+            if value is not None:
+                env['VERBOSE'] = value
+            with mock.patch.dict(os.environ, env, clear=True):
+                for answer, expected in self.VERBOSE_CASES:
+                    with self.subTest(VERBOSE=value, answer=answer):
+                        self.assertEqual(self.matching.can_infer_option(answer, self.choices()), expected)
+                        self.assertEqual(self.matching.can_infer(answer, self.choices()), expected)
+
+    def test_verbose_only_controls_the_quantifier_log(self):
+        for value, logged in [('1', True), ('true', True), ('0', False), ('false', False), ('', False)]:
+            with self.subTest(VERBOSE=value):
+                with mock.patch.dict(os.environ, {'VERBOSE': value}), \
+                        mock.patch.object(self.matching.logger, 'info') as info:
+                    self.assertEqual(self.matching.can_infer_option('The answer is A', self.choices()), 'A')
+                self.assertEqual(info.called, logged)
 
 
 if __name__ == '__main__':
