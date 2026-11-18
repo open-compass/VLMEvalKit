@@ -298,19 +298,21 @@ class CMMMU(ImageBaseDataset):
                     norm_answers = normalize_str(line['answer'], line['answer'])
                     predicted_answer = get_fill_blank_prediction(line['prediction'], line['answer'])
 
+                    # A question is correct at most once, as in the official CMMMU evaluation,
+                    # however many of the candidate predictions contain the answer.
+                    correct = False
                     for pred in predicted_answer:
                         # already normalized
                         if isinstance(pred, str):  # if it's a string, then find if ans in the pred_i
-                            for norm_ans in norm_answers:
-                                # only see if the string answer in the string pred
-                                # print(norm_ans, pred)
-                                if isinstance(norm_ans, str) and norm_ans in pred:
-                                    correct_count += 1
-                                    correct_category[line['category']][1] += 1
+                            # only see if the string answer in the string pred
+                            correct = any(isinstance(norm_ans, str) and norm_ans in pred for norm_ans in norm_answers)
                         else:  # it's a number
-                            if pred in norm_answers:
-                                correct_count += 1
-                                correct_category[line['category']][1] += 1
+                            correct = pred in norm_answers
+                        if correct:
+                            break
+                    if correct:
+                        correct_count += 1
+                        correct_category[line['category']][1] += 1
 
             accuracyz = {}
             accuracyz['总准确率'] = correct_count / len(data)
