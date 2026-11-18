@@ -221,14 +221,15 @@ def report_topviewrs_acc(df):
     return pd.DataFrame(res)
 
 
-def build_prompt(question, options, prediction):
+def build_prompt(question, options, prediction, choice_labels=None):
+    valid_labels = ', '.join(choice_labels) if choice_labels is not None else 'A, B, C, D'
     tmpl = (
         'You are an AI assistant who will help me to match '
         'an answer with several options of a single-choice question. '
         'You are provided with a question, several options, and an answer, '
         'and you need to find which option is most similar to the answer. '
         'If the meaning of all options are significantly different from the answer, output Z. '
-        'Your should output a single uppercase character in A, B, C, D (if they are valid options), and Z. \n'
+        f'You should output a single uppercase character in {valid_labels} (the valid options), or Z. \n'
         'Example 1: \n'
         'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'
         'Answer: a cute teddy bear\nYour output: A\n'
@@ -302,12 +303,13 @@ def build_prompt_blink(question, options, prediction):
     return tmpl.format(question, options, prediction)
 
 
-def build_prompt_cn(question, options, prediction):
+def build_prompt_cn(question, options, prediction, choice_labels=None):
+    valid_labels = ', '.join(choice_labels) if choice_labels is not None else 'A, B, C, D'
     tmpl = (
         '你是一个帮助我匹配答案与单选题中多个选项的 AI 助手。'
         '你会被提供：一个问题，多个选项，一个答案。你的任务是找到与答案意义最相近的选项。'
         '如果所有选项的意义都与答案显著不同，则输出 Z。'
-        '你应该输出一个单个的大写字母，例如 A, B, C, D（如果它们是有效选项），或 Z。'
+        f'你应该输出一个单个的大写字母，取值为 {valid_labels}（有效选项），或 Z。'
         '例 1:'
         '问题: 图中最主要的物体是什么?\n选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n答案: 一只可爱的泰迪熊\n输出: A\n'
         '例 2: \n'
@@ -366,11 +368,11 @@ def extract_answer_from_item(model, item, dataset_name=None):
     elif dataset_name == 'WeMath':
         prompt = build_prompt_wemath(item['question'], option_str, item['prediction'])
     elif cn_string(item['question']):
-        prompt = build_prompt_cn(item['question'], option_str, item['prediction'])
+        prompt = build_prompt_cn(item['question'], option_str, item['prediction'], choice_labels=choices)
     elif dataset_name is not None and 'LEGO' in dataset_name:
         prompt = build_prompt_LEGO(item['question'], option_str, item['prediction'], item['question_type'])
     else:
-        prompt = build_prompt(item['question'], option_str, item['prediction'])
+        prompt = build_prompt(item['question'], option_str, item['prediction'], choice_labels=choices)
     retry = 3
 
     if dataset_name is not None and 'LEGO' in dataset_name:
