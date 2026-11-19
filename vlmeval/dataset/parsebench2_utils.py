@@ -10,8 +10,8 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 DATASET = "llamaindex/ParseBench-2"
-DATA_REVISION = "d4e0eaa1b5181f7a84636149eb5717a7aad56c80"
-SCORER_VERSION = "2.0.1"
+DATA_REVISION = "a728354a8a00038b54ef945651ffdb6368af0a73"
+SCORER_VERSION = "2.1.2"
 RENDERER_VERSION = "4.30.0"
 SUBSETS = (
     "text",
@@ -58,7 +58,7 @@ def require_scorer() -> None:
         installed = version("parse-bench")
     except PackageNotFoundError as exc:
         raise RuntimeError(
-            "Install parse-bench[llamaparse]==2.0.1 and pypdfium2==4.30.0 to score ParseBench-2."
+            "Install parse-bench[llamaparse]==2.1.2 and pypdfium2==4.30.0 to score ParseBench-2."
         ) from exc
     if installed != SCORER_VERSION:
         raise RuntimeError(
@@ -158,6 +158,7 @@ def doc_to_visual(doc: dict[str, Any]) -> list[Any]:
 @lru_cache(maxsize=32)
 def load_case(document: str) -> Any:
     """Load the official sidecar after generation, including local sidecar resolution."""
+    from huggingface_hub.errors import EntryNotFoundError
     from parse_bench.test_cases.loader import load_test_case
 
     source = Path(fetch(document))
@@ -165,6 +166,15 @@ def load_case(document: str) -> Any:
     case = load_test_case(source, sidecar, product_type_hint="PARSE")
     if case is None:
         raise ValueError(f"Missing reference test case: {document}")
+    # The loader resolves HF snapshot symlinks to blobs before looking for .md.
+    # Fetch the companion explicitly and attach it without depending on blob names.
+    if hasattr(case, "expected_markdown") and case.expected_markdown is None:
+        try:
+            markdown = Path(fetch(str(PurePosixPath(document).with_suffix(".md"))))
+            expected_markdown = markdown.read_text(encoding="utf-8")
+        except (EntryNotFoundError, FileNotFoundError):
+            expected_markdown = None
+        case = case.model_copy(update={"expected_markdown": expected_markdown})
     # HF snapshot paths can resolve to content-addressed blobs. The official
     # loader derives identity from filesystem names; the manifest is authoritative.
     identity = str(PurePosixPath(document).with_suffix(""))
@@ -181,7 +191,7 @@ def _native_result(doc: dict[str, Any], payload: dict[str, Any]) -> Any:
     # The official adapter deliberately ignores bbox-only attribution otherwise.
     for page in payload.get("layout_pages", []):
         if not isinstance(page, dict):
-            raise ValueError("Invalid layout page")
+            raise TypeError("Invalid layout page")
         if page.get("width") != 1 or page.get("height") != 1:
             raise ValueError("Native layout pages require normalized width=height=1")
         for item in page.get("items", []):

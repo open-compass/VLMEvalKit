@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from .image_base import ImageBaseDataset
-from . import parsebench2_utils as pb2
 from vlmeval.smp import dump, load
 from vlmeval.smp.file import INFER_FAIL_MSG
+from . import parsebench2_utils as pb2
+from .image_base import ImageBaseDataset
 
 
 class ParseBench2(ImageBaseDataset):

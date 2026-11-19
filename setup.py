@@ -100,7 +100,7 @@ def do_setup():
         install_requires=parse_requirements('requirements.txt'),
         extras_require={
             'parsebench2': [
-                'parse-bench[llamaparse]==2.0.1; python_version >= "3.12"',
+                'parse-bench[llamaparse]==2.1.2; python_version >= "3.12"',
                 'pypdfium2==4.30.0; python_version >= "3.12"',
             ],
         },

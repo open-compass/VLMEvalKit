@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from PIL import Image
 
-from vlmeval.dataset import ParseBench2, SUPPORTED_DATASETS, build_dataset
+from vlmeval.dataset import SUPPORTED_DATASETS, ParseBench2, build_dataset
 from vlmeval.dataset import parsebench2_utils as pb2
 
 
@@ -62,6 +62,23 @@ def test_native_registry_and_annotation_free_inputs(inputs):
     assert set(dataset.data.columns) == {"index", "example_id", "subset", "document", "question"}
     assert "SECRET" not in dataset.data.to_json()
     assert len(build_dataset("ParseBench2_forms")) == 1
+
+
+def test_markdown_reference_survives_content_addressed_source(inputs, monkeypatch):
+    # HF snapshots symlink source files to extensionless blobs. The official
+    # loader resolves that path, so it cannot discover the companion itself.
+    source = inputs / "text/example.pdf"
+    blob = inputs / "blob"
+    source.rename(blob)
+    source.symlink_to(blob)
+    (inputs / "text/example.test.json").write_text(json.dumps({"test_rules": []}))
+    (inputs / "text/example.md").write_text("Official corrected reference")
+    case = pb2.load_case("text/example.pdf")
+    assert case.expected_markdown == "Official corrected reference"
+    assert case.test_id == "text/example"
+    doc = {"example_id": "text/example", "document": "text/example.pdf", "subset": "text"}
+    item = pb2.score_document(doc, "Official corrected reference")
+    assert item["evaluation"]["metrics"]
 
 
 def test_native_prompt_all_pages_fixed_and_rgb(inputs):
