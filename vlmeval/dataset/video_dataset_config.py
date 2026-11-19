@@ -71,6 +71,11 @@ mmbench_video_dataset = {
     'MMBench_Video_1fps_pack': _video_spec(MMBenchVideo, dataset='MMBench-Video', fps=1.0, pack=True)
 }
 
+aotbench_dataset = {
+    f'{name}_16frame': _video_spec(AoTBench, dataset=name, nframe=16)
+    for name in AoTBench.DATA_FILES
+}
+
 mvbench_dataset = {
     'MVBench_8frame': _video_spec(MVBench, dataset='MVBench', nframe=8),
     'MVBench_64frame': _video_spec(MVBench, dataset='MVBench', nframe=64),
@@ -483,7 +488,7 @@ dataset_groups = [
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
     video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset, av_speakerbench_dataset,
-    favor_bench_dataset, timelens_bench_dataset, vue_tr_dataset
+    favor_bench_dataset, timelens_bench_dataset, vue_tr_dataset, aotbench_dataset
 ]
 
 # add by EASI team
