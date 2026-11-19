@@ -23,7 +23,8 @@ def process_punctuation(inText):
         ',', '?', '!'
     ]
     commaStrip = re.compile(r'(\d)(,)(\d)')
-    periodStrip = re.compile(r'(?<!\d)\.(?!\d)')
+    # Same pattern as the official VQA / TextVQA evaluators: also strips a period after a digit ('22.' -> '22').
+    periodStrip = re.compile(r'(?!<=\d)(\.)(?!\d)')
     for p in punct:
         if (p + ' ' in inText or ' ' + p in inText) or (re.search(commaStrip, inText) is not None):
             outText = outText.replace(p, '')
