@@ -1957,7 +1957,7 @@ class MME_CoT(ImageBaseDataset):
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
 
-    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+    DEFAULT_JUDGE_MODEL = 'gpt-5.6-sol'
 
     DATASET_URL = {
         'LLaVABench':
@@ -2120,7 +2120,7 @@ class VGRPBench(ImageBaseDataset):
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
 
-    DEFAULT_JUDGE_MODEL = 'gpt-4-turbo'
+    DEFAULT_JUDGE_MODEL = 'gpt-5.6-sol'
 
     DATASET_URL = {
         'MMVet':

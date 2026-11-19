@@ -135,7 +135,7 @@ def judge_aux(judge, row):
 
 class SGI_Bench_Experimental_Reasoning(ImageBaseDataset):
     TYPE = 'MCQ '
-    DEFAULT_JUDGE_MODEL = 'o4-mini'
+    DEFAULT_JUDGE_MODEL = 'gpt-5.6-terra'
 
     @classmethod
     def supported_datasets(cls):
