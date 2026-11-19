@@ -6,6 +6,27 @@ from vlmeval.smp import load_env
 INTERNAL = os.environ.get('INTERNAL', 0)
 
 
+def warn_judge_model_retirement(model):
+    retiring_models = {
+        'gpt-4o-2024-08-06',
+        'gpt-4o-2024-11-20',
+        'gpt-4o-mini-2024-07-18',
+        'gpt-4.1',
+        'gpt-4.1-2025-04-14',
+        'gpt-4.1-mini',
+        'gpt-4.1-mini-2025-04-14',
+    }
+    if model in retiring_models:
+        warnings.warn(
+            f'Judge model {model!r} is scheduled to shut down on January 14, 2027. '
+            'VLMEvalKit default judge models affected by this shutdown will be replaced '
+            'with gpt-6-luna after the shutdown; evaluation scores may change. '
+            'See https://developers.openai.com/api/docs/deprecations.',
+            UserWarning,
+            stacklevel=2,
+        )
+
+
 def warn_if_judge_model_changed(model, legacy_models, benchmark):
     """Warn when evaluation uses a judge outside the benchmark's legacy set."""
     if isinstance(legacy_models, str):
@@ -57,6 +78,8 @@ def build_judge(**kwargs):
         model_version = model_map[model] if model in model_map else model
     else:
         model_version = LOCAL_LLM
+
+    warn_judge_model_retirement(model_version)
 
     if model in ['qwen-7b', 'qwen-72b', 'deepseek']:
         model = SiliconFlowAPI(model_version, **kwargs)
