@@ -483,7 +483,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 raise ValueError(f"Invalid message type: {s['type']}, {s}")
         return content
 
-    def generate_inner_transformers(self, message, dataset=None, system_prompt=None):
+    def generate_inner_transformers(self, message, dataset=None, system_prompt=None, messages=None):
         if listinstr(['omni'], self.model_path.lower()):
             try:
                 from qwen_omni_utils import process_mm_info
@@ -497,7 +497,8 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")  # noqa: E501
                 raise err
 
-        messages = self._build_chat_messages(message, dataset=dataset, system_prompt=system_prompt)
+        if messages is None:
+            messages = self._build_chat_messages(message, dataset=dataset, system_prompt=system_prompt)
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
 
@@ -564,7 +565,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         response = response.text
         return response
 
-    def generate_inner_vllm(self, message, dataset=None, system_prompt=None):
+    def generate_inner_vllm(self, message, dataset=None, system_prompt=None, messages=None):
         from vllm import SamplingParams
 
         if listinstr(['omni'], self.model_path.lower()):
@@ -580,9 +581,10 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")  # noqa: E501
                 raise err
 
-        messages = self._build_chat_messages(
-            message, dataset=dataset, system_prompt=system_prompt, use_vllm=True
-        )
+        if messages is None:
+            messages = self._build_chat_messages(
+                message, dataset=dataset, system_prompt=system_prompt, use_vllm=True
+            )
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
 
@@ -666,6 +668,43 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             return self.generate_inner_lmdeploy(message, dataset=dataset, system_prompt=system_prompt)
         else:
             return self.generate_inner_transformers(message, dataset=dataset, system_prompt=system_prompt)
+
+    def _build_multi_turn_messages(self, message, dataset=None, use_vllm=False):
+        """Convert the turns passed to `chat` into Qwen2-VL chat messages.
+
+        `message` is a list of turns, each a dict with `role` (`system`, `user` or `assistant`) and
+        `content`, a list of dicts with `type` and `value`. User turns may hold images and videos;
+        assistant turns must be text only.
+        """
+        prepare_content = self._prepare_content_vllm if use_vllm else self._prepare_content
+        system_prompts = [self.system_prompt] if self.system_prompt else []
+        messages = []
+        for turn in message:
+            role = turn['role']
+            if role in ('system', 'assistant'):
+                if any(item['type'] != 'text' for item in turn['content']):
+                    raise ValueError(f'{role.capitalize()} turns must be text only.')
+                text = '\n'.join(item['value'] for item in turn['content'])
+                if role == 'system':
+                    if text and text not in system_prompts:
+                        system_prompts.append(text)
+                else:
+                    messages.append({'role': 'assistant', 'content': [{'type': 'text', 'text': text}]})
+            elif role == 'user':
+                messages.append({'role': 'user', 'content': prepare_content(turn['content'], dataset=dataset)})
+            else:
+                raise ValueError(f'Invalid role: {role}')
+        if system_prompts:
+            messages.insert(0, {'role': 'system', 'content': '\n'.join(system_prompts)})
+        return messages
+
+    def chat_inner(self, message, dataset=None):
+        if self.use_lmdeploy:
+            raise NotImplementedError('Multi-turn chat is not supported with lmdeploy.')
+        messages = self._build_multi_turn_messages(message, dataset=dataset, use_vllm=self.use_vllm)
+        if self.use_vllm:
+            return self.generate_inner_vllm(None, dataset=dataset, messages=messages)
+        return self.generate_inner_transformers(None, dataset=dataset, messages=messages)
 
 
 class Qwen2VLChatAguvis(Qwen2VLChat):
