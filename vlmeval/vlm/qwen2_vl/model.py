@@ -9,8 +9,9 @@ import torch
 from huggingface_hub import snapshot_download
 from transformers import StoppingCriteria
 
-from vlmeval.dataset import DATASET_MODALITY
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
 from vlmeval.smp import get_cache_path, get_gpu_memory, listinstr
+from vlmeval.smp.coords import MAX_PIXELS, MIN_PIXELS, rescale_click
 from ..base import BaseModel
 from .prompt import Qwen2VLPromptMixin
 
@@ -483,6 +484,46 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 raise ValueError(f"Invalid message type: {s['type']}, {s}")
         return content
 
+    def _effective_pixel_bounds(self):
+        """Return the (min_pixels, max_pixels) the image processor actually applies."""
+        size = getattr(getattr(self.processor, "image_processor", None), "size", None)
+        min_pixels, max_pixels = self.min_pixels, self.max_pixels
+        if isinstance(size, dict):
+            min_pixels = min_pixels or size.get("shortest_edge")
+            max_pixels = max_pixels or size.get("longest_edge")
+        return int(min_pixels or MIN_PIXELS), int(max_pixels or MAX_PIXELS)
+
+    def _rescale_gui_coordinates(self, response, message, dataset):
+        """Undo smart_resize for GUI click answers (see coords.py).
+
+        ``smart_resize`` changes the image the model sees, so an absolute
+        ``pyautogui.click(x=?, y=?)`` answer is in the resized frame while the
+        benchmark ground truth (and the evaluator's normalisation) is in the
+        original frame. Map the answer back before it leaves the wrapper.
+        """
+        if dataset is None or "x=" not in response:
+            return response
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                is_gui = DATASET_TYPE(dataset, default="") == "GUI"
+        except Exception:
+            return response
+        if not is_gui:
+            return response
+        images = [item.get("value") for item in message if item.get("type") == "image"]
+        if len(images) != 1 or not isinstance(images[0], str) or not os.path.exists(images[0]):
+            return response
+        try:
+            from PIL import Image
+            with Image.open(images[0]) as image:
+                original_size = image.size
+            min_pixels, max_pixels = self._effective_pixel_bounds()
+            return rescale_click(response, original_size, min_pixels, max_pixels)
+        except Exception as err:
+            logging.warning(f"failed to rescale GUI coordinates for {images[0]}: {err}")
+            return response
+
     def generate_inner_transformers(self, message, dataset=None, system_prompt=None):
         if listinstr(['omni'], self.model_path.lower()):
             try:
@@ -541,6 +582,8 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                     break
             if end is not None:
                 response = resp[:end]
+
+        response = self._rescale_gui_coordinates(response, message, dataset)
 
         if self.verbose:
             print(f'\033[32m{response}\033[0m')
