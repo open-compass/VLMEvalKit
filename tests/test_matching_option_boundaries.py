@@ -77,6 +77,23 @@ class TestVerboseOptionBoundaries(unittest.TestCase):
                 self.assertIs(self.matching.can_infer_option(answer, self.choices()), False)
                 self.assertIs(self.matching.can_infer(answer, self.choices()), False)
 
+    def test_missing_prediction_is_not_inferred_from_option_text(self):
+        choices = {'A': 'D', 'B': 'B', 'C': 'C', 'D': 'A'}
+        missing = float('nan')
+        self.assertIs(self.matching.can_infer(missing, choices), False)
+        self.assertIs(self.matching.can_infer_lego(missing, 'multiple-choice', choices), False)
+
+    def test_option_text_matching_respects_word_boundaries(self):
+        choices = {'A': 'Yes', 'B': 'No', 'C': 'Cannot be determined'}
+        self.assertIs(
+            self.matching.can_infer('I cannot answer this question.', choices), False)
+        self.assertEqual(self.matching.can_infer('No, thank you.', choices), 'B')
+
+    def test_single_letter_option_text_requires_an_exact_answer(self):
+        choices = {'A': 'A', 'B': 'horse'}
+        self.assertEqual(self.matching.can_infer('A', choices), 'A')
+        self.assertEqual(self.matching.can_infer('a horse', choices), 'B')
+
 
 if __name__ == '__main__':
     unittest.main()
