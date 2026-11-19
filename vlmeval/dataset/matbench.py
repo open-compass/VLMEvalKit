@@ -151,6 +151,7 @@ def mat_evaluate(tsv_path, eval_file):
     df_mean = pd.DataFrame(list(mean_results.items()), columns=['metric', 'mean_value'])
     df_mean.to_csv(csv_path, index=False)
     print(f"\n✅ saved to {csv_path}")
+    return mean_results
 
 
 class MATBench(ImageBaseDataset):
@@ -183,4 +184,4 @@ class MATBench(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         tsv_path = self.data_path
-        mat_evaluate(tsv_path, eval_file)
+        return mat_evaluate(tsv_path, eval_file)
