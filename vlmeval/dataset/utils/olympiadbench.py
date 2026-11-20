@@ -1,4 +1,5 @@
 import logging
+import math
 import re
 import sys
 from decimal import getcontext
@@ -356,8 +357,8 @@ class MathJudger:
         return epr.startswith(("(", "[")) and epr.endswith((")", "]"))
 
     # 在进行数值计算前，需要将sympy中的pi符号替换为pi的近似数值
-    # def sympy_sub_pi(self, expression_sympy):
-    #     return expression_sympy.subs(self.pi, math.pi)
+    def sympy_sub_pi(self, expression_sympy):
+        return expression_sympy.subs(self.pi, math.pi)
 
     # 默认第一个表达式是 ground_truth
     @timeout_decorator.timeout(30)
