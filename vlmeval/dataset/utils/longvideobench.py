@@ -64,9 +64,9 @@ def extract_characters_regex(s):
         'The correct answer is',
         'The answer is',
         'The answer',
-        'The best option is'
+        'The best option is',
         'The correct option is',
-        'Best answer:'
+        'Best answer:',
         'Best option:',
         'Answer:',
         'Option:',
