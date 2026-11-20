@@ -284,6 +284,9 @@ class ImageMCQDataset(ImageBaseDataset):
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
+                # Name the cache after what actually scored the items, so a rerun with a
+                # working judge does not reuse the exact-matching results.
+                name_str = 'exact_matching'
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
@@ -847,6 +850,9 @@ class GMAIMMBenchDataset(ImageMCQDataset):
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
+                # Name the cache after what actually scored the items, so a rerun with a
+                # working judge does not reuse the exact-matching results.
+                name_str = 'exact_matching'
 
         result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
 
@@ -2675,6 +2681,9 @@ class _3DSRBench(ImageMCQDataset):
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
+                # Name the cache after what actually scored the items, so a rerun with a
+                # working judge does not reuse the exact-matching results.
+                name_str = 'exact_matching'
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
@@ -3216,6 +3225,9 @@ class TopViewRS(ImageMCQDataset):
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 model = None
+                # Name the cache after what actually scored the items, so a rerun with a
+                # working judge does not reuse the exact-matching results.
+                name_str = 'exact_matching'
 
         result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
 
