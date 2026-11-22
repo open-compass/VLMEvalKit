@@ -51,6 +51,13 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 See [[QuickStart](/docs/en/Quickstart.md) | [快速开始](/docs/zh-CN/Quickstart.md)] for a quick start guide.
 
+**Judge model retirement:** OpenAI has announced that `gpt-4o-2024-08-06`,
+`gpt-4o-2024-11-20`, `gpt-4o-mini-2024-07-18`, `gpt-4.1-2025-04-14`, and
+`gpt-4.1-mini-2025-04-14` will shut down on January 14, 2027. VLMEvalKit will
+replace the affected default judge models with `gpt-6-luna` after the shutdown.
+Changing the judge may change evaluation scores and their comparability with
+earlier results. See [OpenAI's deprecation notice](https://developers.openai.com/api/docs/deprecations).
+
 ## 📊 Datasets, Models, and Evaluation Results
 
 ### Evaluation Results

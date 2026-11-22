@@ -42,7 +42,8 @@ from .erqabench import ERQABench
 from .favor_bench import FavorBench
 from .flames import FlamesDataset
 from .foxbench import FoxBench
-from .gdp_pdf import GDPPDF
+from .gdp_pdf import GDPPDF, GDPPDFForAC
+from .gdp_pdf_aa import GDPPDFAA
 from .gobench import GOBenchDataset
 from .groundingme import GroundingME
 from .gsm8k_v import GSM8KVDataset
@@ -319,8 +320,10 @@ IMAGE_DATASET = [
     VisualOverload,
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
-    MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset, DUDE, DocScope,
+    MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset,
+    DUDE, DocScope,
     LongDocURL, GDPPDF,
+    GDPPDFAA, GDPPDFForAC,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
     OlympiadBench, SeePhys, WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,  # noqa: E501
@@ -328,7 +331,8 @@ IMAGE_DATASET = [
     CreationMMBenchDataset, HLEDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
     LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot, VenusBench_GD,
-    ScreenSpotV2, OSWorld_G, PointerBench, VBGD, MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
+    ScreenSpotV2, OSWorld_G, PointerBench, VBGD, MMIFEval, Spatial457, VisuLogic, CVBench,
+    PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
@@ -346,7 +350,8 @@ IMAGE_DATASET = [
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
-    MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
+    MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision,
+    WildprobeDataset,
     PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset, E3VQA,
     MVHBench,
 ]
@@ -368,7 +373,8 @@ VIDEO_DATASET = [
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
-    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset, FavorBench,
+    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset,
+    FavorBench,
     TimeLensBench, VideoOdysseyV, VUETR
 ]
 

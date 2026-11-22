@@ -160,6 +160,9 @@ class GDPPDF(ImageBaseDataset):
     HF_PARQUET_MD5 = 'aa6d3ce9b6285b767c888da35c2cb7c8'
     force_use_dataset_prompt = True
     JUDGE_FAIL_MARKERS = (FAIL_MSG, UNSCORED)
+    # ``all_pass`` is 1.0/0.0 once every criterion was scored and NaN otherwise; NaN cannot pass.
+    PASS_K_HIT_COL = 'all_pass'
+    DEFAULT_N_RUNS = 5
 
     def __init__(self, dataset='GDP_pdf', dpi=144):
         if dataset not in self.supported_datasets():
@@ -321,6 +324,7 @@ class GDPPDF(ImageBaseDataset):
         for column in scores:
             data[column] = scores[column].values
         data['judge_log'] = [json.dumps(row, ensure_ascii=False) for row in grades]
+        self._judge_name = judge_name
         dump(data, get_judge_detail_file(eval_file, 'rubric_v1', judge_name, 'tsv'))
 
         def summarize(frame):
@@ -342,8 +346,33 @@ class GDPPDF(ImageBaseDataset):
         dump(result, get_judge_score_file(eval_file, judge_name, 'json'))
         return result
 
+    def get_pass_k_detail_paths(self, sub_file):
+        # The detail file is named after the judge that produced it, so it cannot be derived from
+        # a fixed suffix.
+        return [get_judge_detail_file(sub_file, 'rubric_v1', self._judge_name, 'tsv')]
+
     @classmethod
     def report_primary_metric(cls, metrics):
         if isinstance(metrics, dict) and pd.notna(metrics.get('all_pass')):
             return {'all_pass': metrics['all_pass']}
         return {}
+
+
+class GDPPDFForAC(GDPPDF):
+    """GDP.pdf for AC clients: pass the source PDF instead of rendered page images."""
+
+    def __init__(self, dataset='GDP_pdf_for_AC', dpi=144):
+        super().__init__(dataset=dataset, dpi=dpi)
+
+    @classmethod
+    def supported_datasets(cls):
+        return ['GDP_pdf_for_AC']
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        pdf_path = str(self.data_root / line['pdf_path'])
+        return [
+            dict(type='text', value=line['question']),
+            dict(type='file', value=pdf_path,),
+        ]

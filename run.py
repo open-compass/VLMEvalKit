@@ -53,6 +53,7 @@ if LOCAL_WORLD_SIZE > 1 and len(GPU_LIST):
 
 from vlmeval.config import supported_VLM
 from vlmeval.dataset import build_dataset
+from vlmeval.dataset.utils.repeat import wrap_dataset_runs
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.inference_video import infer_data_job_video
@@ -547,6 +548,11 @@ You can launch the evaluation by setting either --data and --model or --config.
         action='store_true',
         help='[Deprecated] Ignore failed indices, it is the default behavior now. '
         'Use `--keep-failed` to disable it.')
+    parser.add_argument(
+        '--n-runs', type=int, default=None,
+        help='Run every question N times and report the merged metrics (avg@N, plus pass@N / pass^N for '
+        'datasets that support it). Defaults to the dataset\'s own default (1 unless it says otherwise). '
+        'N > 1 needs a sampling model (temperature > 0).')
     parser.add_argument('--reuse', action='store_true')
     parser.add_argument(
         '--reuse-aux',
@@ -743,7 +749,8 @@ def run_local_mode(args):
                         dataset = build_dataset_from_spec(spec, extra_kwargs=dataset_kwargs)
                     dist.barrier()
 
-                dataset = build_dataset_from_spec(spec, extra_kwargs=dataset_kwargs)
+                dataset = wrap_dataset_runs(
+                    build_dataset_from_spec(spec, extra_kwargs=dataset_kwargs), args.n_runs)
                 dataset_class_name = get_effective_dataset_class_name(spec, dataset)
                 if dataset is None:
                     logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
@@ -1174,7 +1181,8 @@ def run_api_mode(args):
 
         try:
             dataset_kwargs = get_dataset_build_kwargs(ds_name, model_name)
-            dataset = build_dataset_from_spec(spec, extra_kwargs=dataset_kwargs)
+            dataset = wrap_dataset_runs(
+                build_dataset_from_spec(spec, extra_kwargs=dataset_kwargs), args.n_runs)
             dataset_class_name = get_effective_dataset_class_name(spec, dataset)
 
             if dataset is None:

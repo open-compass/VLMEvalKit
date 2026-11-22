@@ -32,6 +32,9 @@ class ClaudeSDKWrapper(BaseAPI):
 
     ``thinking`` accepts the SDK's thinking configuration dictionary. ``effort``
     is sent as ``output_config.effort`` without changing the thinking mode.
+
+    ``convert_rgb=False`` preserves image mode and transparency using PNG
+    (JPEG for CMYK). Set it to ``True`` for the legacy RGB/JPEG encoding.
     """
 
     is_api: bool = True
@@ -54,6 +57,7 @@ class ClaudeSDKWrapper(BaseAPI):
         model_adapter=None,
         thinking: dict = None,
         effort: str = None,
+        convert_rgb: bool = False,
         **kwargs,
     ):
         for unsupported in ('video_llm', 'local_media'):
@@ -77,6 +81,7 @@ class ClaudeSDKWrapper(BaseAPI):
         assert total_img_size > 0 or total_img_size == -1
         self.total_img_size = total_img_size
         self.max_file_size = max_file_size
+        self.convert_rgb = convert_rgb
 
         self.adapter = None
         adapter = custom_prompt if custom_prompt is not None else model_adapter
@@ -161,18 +166,20 @@ class ClaudeSDKWrapper(BaseAPI):
                 content_list.append(dict(type='text', text=msg['value']))
             elif msg['type'] == 'image':
                 with Image.open(msg['value']) as image:
+                    fmt = 'JPEG' if self.convert_rgb or image.mode == 'CMYK' else 'PNG'
                     b64 = encode_image_to_base64(
                         image,
                         target_size=target_size,
-                        fmt='JPEG',
+                        fmt=fmt,
                         max_file_size=self.max_file_size,
+                        convert_rgb=self.convert_rgb,
                     )
                 content_list.append(
                     dict(
                         type='image',
                         source=dict(
                             type='base64',
-                            media_type='image/jpeg',
+                            media_type=Image.MIME[fmt],
                             data=b64,
                         ),
                     )
