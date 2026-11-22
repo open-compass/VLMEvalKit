@@ -98,11 +98,13 @@ class TestVerboseOptionBoundaries(unittest.TestCase):
                         self.assertEqual(self.matching.can_infer(answer, self.choices()), expected)
 
     def test_verbose_only_controls_the_quantifier_log(self):
+        # Not a bare final line, so it reaches the split-word check that logs.
+        answer = 'Looking at the image, the answer is A'
         for value, logged in [('1', True), ('true', True), ('0', False), ('false', False), ('', False)]:
             with self.subTest(VERBOSE=value):
                 with mock.patch.dict(os.environ, {'VERBOSE': value}), \
                         mock.patch.object(self.matching.logger, 'info') as info:
-                    self.assertEqual(self.matching.can_infer_option('The answer is A', self.choices()), 'A')
+                    self.assertEqual(self.matching.can_infer_option(answer, self.choices()), 'A')
                 self.assertEqual(info.called, logged)
 
 
