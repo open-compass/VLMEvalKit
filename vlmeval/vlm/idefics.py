@@ -63,7 +63,11 @@ class IDEFICS2(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path='HuggingFaceM4/idefics2-8b', **kwargs):
-        from transformers import AutoModelForVision2Seq, AutoProcessor
+        try:
+            from transformers import AutoModelForVision2Seq, AutoProcessor
+        except ImportError:
+            from transformers import AutoModelForImageTextToText as AutoModelForVision2Seq
+            from transformers import AutoProcessor
         assert model_path is not None
         self.model_path = model_path
         if 'Idefics3' in self.model_path.lower():

@@ -84,9 +84,9 @@ class TogetherAPI(BaseAPI):
         text = "\n".join([x["value"] for x in inputs if x["type"] == "text"])
         return [{"type": "text", "text": text or ""}]
 
-    def _prepare_messages(self, inputs):
-        if self.system_prompt:
-            out = [{"role": "system", "content": self.system_prompt}]
+    def _prepare_messages(self, inputs, system_prompt=None):
+        if system_prompt:
+            out = [{"role": "system", "content": system_prompt}]
         else:
             out = []
         if inputs and "role" in inputs[0]:
@@ -99,11 +99,11 @@ class TogetherAPI(BaseAPI):
             out.append({"role": "user", "content": self._prepare_content(inputs)})
         return out
 
-    def generate_inner(self, inputs, **kwargs):
+    def generate_inner(self, inputs, system_prompt=None, **kwargs):
         temperature = kwargs.pop("temperature", self.temperature)
         max_tokens = kwargs.pop("max_tokens", self.max_tokens)
 
-        messages = self._prepare_messages(inputs)
+        messages = self._prepare_messages(inputs, system_prompt)
         payload = {
             "model": self.model,
             "messages": messages,

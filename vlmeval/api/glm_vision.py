@@ -46,7 +46,7 @@ class GLMVisionWrapper(BaseAPI):
         ret = [dict(role='user', content=content)]
         return ret
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         assert isinstance(inputs, str) or isinstance(inputs, list)
         inputs = [inputs] if isinstance(inputs, str) else inputs
 

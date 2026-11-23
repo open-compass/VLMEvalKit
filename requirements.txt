@@ -1,11 +1,11 @@
 accelerate
 anls>=0.0.2
+anthropic
 antlr4-python3-runtime==4.11.1
 apted>=1.0.3
 bert_score
 cairosvg
 cd-fvd
-chess>=1.11.2,<2
 colormath>=3.0.0
 datasets
 decord>=0.6.0

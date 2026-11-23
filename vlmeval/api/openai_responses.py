@@ -111,7 +111,11 @@ def _format_response_for_log(response):
 
 
 class OpenAIResponsesWrapper(BaseAPI):
-    """OpenAI Responses API wrapper using the official OpenAI Python SDK."""
+    """OpenAI Responses API wrapper using the official OpenAI Python SDK.
+
+    ``convert_rgb=False`` preserves image mode and transparency using PNG
+    (JPEG for CMYK). Set it to ``True`` for the legacy RGB/JPEG encoding.
+    """
 
     is_api: bool = True
 
@@ -132,6 +136,7 @@ class OpenAIResponsesWrapper(BaseAPI):
         img_detail: str = 'auto',
         custom_prompt=None,
         model_adapter=None,
+        convert_rgb: bool = False,
         **kwargs,
     ):
         for unsupported in ('video_llm', 'local_media'):
@@ -162,6 +167,7 @@ class OpenAIResponsesWrapper(BaseAPI):
         assert total_img_size > 0 or total_img_size == -1
         self.total_img_size = total_img_size
         self.max_file_size = max_file_size
+        self.convert_rgb = convert_rgb
         assert img_detail in ['high', 'low', 'auto']
         self.img_detail = img_detail
 
@@ -246,14 +252,17 @@ class OpenAIResponsesWrapper(BaseAPI):
                 elif msg['type'] == 'image':
                     from PIL import Image
                     img = Image.open(msg['value'])
+                    fmt = 'JPEG' if self.convert_rgb or img.mode == 'CMYK' else 'PNG'
                     b64 = encode_image_to_base64(
                         img,
                         target_size=image_target_size,
+                        fmt=fmt,
                         max_file_size=self.max_file_size,
+                        convert_rgb=self.convert_rgb,
                     )
                     img_struct = dict(
                         type='input_image',
-                        image_url=f'data:image/jpeg;base64,{b64}',
+                        image_url=f'data:{Image.MIME[fmt]};base64,{b64}',
                         detail=self.img_detail,
                     )
                     extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
@@ -303,14 +312,12 @@ class OpenAIResponsesWrapper(BaseAPI):
             answer = _extract_response_text(final_response)
         return answer, final_response
 
-    def generate_inner(self, inputs, dataset=None, **kwargs) -> tuple:
+    def generate_inner(self, inputs, dataset=None, system_prompt=None, **kwargs) -> tuple:
         if self.adapter is not None:
             model_args = self.adapter.override_model_args(dataset, kwargs)
-            system_prompt = model_args.pop('system_prompt', self.system_prompt)
+            system_prompt = model_args.pop('system_prompt', system_prompt)
             inputs = self.adapter.process_inputs(inputs, dataset)
             kwargs.update(model_args)
-        else:
-            system_prompt = self.system_prompt
 
         input_msgs = self.prepare_inputs(inputs, system_prompt)
         temperature = kwargs.pop('temperature', self.default_kwargs.get('temperature', None))

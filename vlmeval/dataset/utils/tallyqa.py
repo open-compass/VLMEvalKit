@@ -40,7 +40,8 @@ def text_to_int(text):
     }
 
     word_pattern = r"\b(" + "|".join(number_words.keys()) + r")\b"
-    digit_pattern = r"\b([0-9]|1[0-9]|20)\b"
+    # Keep signs/decimal parts attached so the numeric range check sees the whole value.
+    digit_pattern = r"(?<![\w.])[-+]?(?:20|1[0-9]|[0-9])(?:\.[0-9]+)?(?!\w|\.[0-9])"
 
     combined_pattern = f"({digit_pattern}|{word_pattern})"
 
@@ -48,8 +49,8 @@ def text_to_int(text):
 
     if match:
         found = match.group()
-        if found.isdigit():
-            return int(found)
+        if re.fullmatch(digit_pattern, found):
+            return text_to_int(float(found))
         return number_words.get(found, None)
 
     return None

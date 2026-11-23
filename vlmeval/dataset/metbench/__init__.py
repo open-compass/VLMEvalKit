@@ -10,9 +10,9 @@ from datasets import Image as DatasetImage
 from datasets import List, load_dataset
 
 from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.dataset.metbench_core import build_messages, clustered_ratio_interval, score
 from vlmeval.smp import LMUDataRoot, dump, load
 from vlmeval.smp.file import INFER_FAIL_MSG
+from .core import build_messages, clustered_ratio_interval, score
 
 EVALUATION_RELEASES = {
     "minecraft": (

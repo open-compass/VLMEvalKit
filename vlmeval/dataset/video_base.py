@@ -1,3 +1,4 @@
+import inspect
 import os
 import os.path as osp
 import warnings
@@ -16,6 +17,7 @@ from vlmeval.smp.log import get_logger
 from vlmeval.smp.status_report import is_number, to_number
 from .image_base import (_choose_primary_metric_key, _count_markers_in_obj,
                          _score_judge_file_candidate)
+from .utils.repeat import default_pass_k_detail_paths, merge_numeric_metrics
 
 logger = get_logger(__name__)
 
@@ -24,9 +26,45 @@ class VideoBaseDataset(metaclass=ABCMeta):
 
     MODALITY = 'VIDEO'
     DEFAULT_JUDGE_MODEL: str | None = None
+    # Independent runs per question (avg@n / pass@n); ``--n-runs`` overrides it, see utils/repeat.py.
+    DEFAULT_N_RUNS: int = 1
+    # Name of the 0/1 (bool) column in the per-sample detail file written by ``evaluate``.
+    # ``None`` -> only the merged metrics are reported, pass@n / pass^n are skipped.
+    PASS_K_HIT_COL: str | None = None
+    # Suffix of that detail file, as passed to ``get_intermediate_file_path``.
+    PASS_K_DETAIL_SUFFIX = '_results'
+    # Format of that detail file. The dataset's ``evaluate`` writes it and decides that format
+    # itself -- most call ``get_intermediate_file_path(eval_file, '_results')`` without a format,
+    # which resolves through ``PRED_FORMAT`` (default xlsx), not ``EVAL_FORMAT``. So leave this
+    # ``None`` to read whichever format actually exists; set it only when the dataset hardcodes a
+    # format that the probe could get wrong, and keep it in sync with what ``evaluate`` writes.
+    PASS_K_DETAIL_FORMAT: str | None = None
+    # Formats tried in order when ``PASS_K_DETAIL_FORMAT`` is ``None``.
+    PASS_K_DETAIL_PROBE = ('csv', 'json', 'xlsx')
 
     INFER_FAIL_MARKERS = (INFER_FAIL_MSG, )
     JUDGE_FAIL_MARKERS = (INFER_FAIL_MSG, )
+
+    @classmethod
+    def validate_build_config(cls, config: dict) -> None:
+        sig = inspect.signature(cls.__init__)
+
+        def get_sampling_value(name, fallback):
+            if name in config:
+                value = config[name]
+            else:
+                param = sig.parameters.get(name)
+                value = param.default if param is not None and param.default is not inspect._empty else fallback
+            if value is None:
+                raise ValueError(f'{name} should not be None')
+            return value
+
+        fps = get_sampling_value('fps', -1)
+        nframe = get_sampling_value('nframe', 0)
+        if fps > 0 and nframe > 0:
+            raise ValueError('fps and nframe should not be set at the same time')
+        if fps <= 0 and nframe <= 0:
+            warnings.warn('fps and nframe is not set, disable frame split (Use video file directly.)', stacklevel=2)
 
     def __init__(self,
                  dataset='MMBench-Video',
@@ -80,6 +118,19 @@ class VideoBaseDataset(metaclass=ABCMeta):
         else:
             assert idx < len(self.data)
             return dict(self.data.iloc[idx])
+
+    def get_pass_k_detail_paths(self, sub_file):
+        """Where ``evaluate`` wrote its per-sample detail for the run on ``sub_file``; override when
+        the file is named differently (e.g. after the judge)."""
+        return default_pass_k_detail_paths(self, sub_file)
+
+    def get_default_n_runs(self):
+        return getattr(self, 'DEFAULT_N_RUNS', 1)
+
+    def merge_metrics(self, results):
+        """Merge what ``evaluate`` returned for each of several runs; override for metrics that
+        cannot be averaged."""
+        return merge_numeric_metrics(results)
 
     def get_default_judge_model(self, judge_kwargs=None):
         default_model = getattr(self, 'DEFAULT_JUDGE_MODEL', None)

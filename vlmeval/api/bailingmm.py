@@ -57,7 +57,7 @@ class bailingMMWrapper(BaseAPI):
             content.append(msg)
         return content
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         assert isinstance(inputs, str) or isinstance(inputs, list)
         start = time.time()
         inputs = [inputs] if isinstance(inputs, str) else inputs

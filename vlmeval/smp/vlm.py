@@ -9,6 +9,11 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = 1e9
 
 
+def encode_file_to_base64(path):
+    with open(path, 'rb') as f:
+        return base64.b64encode(f.read()).decode('utf-8')
+
+
 def rescale_img(img, tgt=None):
     assert isinstance(tgt, tuple) and -1 in tgt
     w, h = img.size
@@ -40,7 +45,7 @@ def concat_images_vlmeval(images, target_size=-1, mode='h', return_image=False):
         new_w, new_h = max(ws), sum(hs)
         dst = Image.new('RGB', (new_w, new_h))
         for i, im in enumerate(ims):
-            dst.paste(im, (sum(ws[:i], 0)))
+            dst.paste(im, (0, sum(hs[:i])))
     if return_image:
         return dst
     else:
@@ -62,13 +67,15 @@ def mmqa_display(question, target_size=-1):
             images = eval(images)
         else:
             images = [images]
-    else:
+    elif 'image_path' in question:
         images = question.pop('image_path')
         if images[0] == '[' and images[-1] == ']':
             images = eval(images)
         else:
             images = [images]
         images = [encode_image_file_to_base64(x) for x in images]
+    else:
+        images = []
 
     idx = question.pop('index', 'XXX')
     print(f'INDEX: {idx}')
@@ -93,14 +100,15 @@ def resize_image_by_factor(img, factor=1):
     return img
 
 
-def encode_image_to_base64(img, target_size=-1, fmt='JPEG', max_file_size=1e9):
+def encode_image_to_base64(img, target_size=-1, fmt='JPEG', max_file_size=1e9, convert_rgb=True):
+    """Encode an image, optionally keeping its mode with a compatible ``fmt`` such as PNG."""
     from .log import get_logger
 
     logger = get_logger(__name__)
 
     # if target_size == -1, will not do resizing
     # else, will set the max_size ot (target_size, target_size)
-    if img.mode in ('RGBA', 'P', 'LA'):
+    if convert_rgb and img.mode in ('RGBA', 'P', 'LA'):
         img = img.convert('RGB')
     if target_size > 0:
         ori_w, ori_h = img.size
@@ -156,10 +164,14 @@ def encode_image_file_to_base64(image_path, target_size=-1, fmt='JPEG', max_file
 def decode_base64_to_image(base64_string, target_size=-1):
     image_data = base64.b64decode(base64_string)
     image = Image.open(io.BytesIO(image_data))
-    if image.mode in ('RGBA', 'P', 'LA'):
+    if image.mode in ('I;16', 'I;16L', 'I;16B', 'I;16N'):
+        image = image.convert('I')
+    elif image.mode not in ('1', 'L', 'I', 'RGB'):
         image = image.convert('RGB')
     if target_size > 0:
         image.thumbnail((target_size, target_size))
+    if image.mode == 'I':
+        image = image.convert('I;16')
     return image
 
 

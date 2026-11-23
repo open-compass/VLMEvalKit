@@ -14,7 +14,10 @@ def cpu_count():
     quota = Path('/sys/fs/cgroup/cpu/cpu.cfs_quota_us')
     try:
         if period.exists() and quota.exists():
-            return int(quota.read_text()) // int(period.read_text())
+            quota_us = int(quota.read_text())
+            period_us = int(period.read_text())
+            if quota_us > 0 and period_us > 0:
+                return max(1, quota_us // period_us)
     except Exception:
         pass
 
@@ -93,10 +96,11 @@ def track_progress_rich(
     from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
     from tqdm import tqdm
+    save_func = kwargs.pop('save_func', None) or dump
     if save is not None:
         assert osp.exists(osp.dirname(save)) or osp.dirname(save) == ''
         if not osp.exists(save):
-            dump({}, save)
+            save_func({}, save)
     if keys is not None:
         assert len(keys) == len(tasks)
     if not callable(func):
@@ -122,8 +126,8 @@ def track_progress_rich(
             results[idx] = result
             if keys is not None:
                 res[keys[idx]] = result
-                dump(res, save)
+                save_func(res, save)
 
     if save is not None:
-        dump(res, save)
+        save_func(res, save)
     return results

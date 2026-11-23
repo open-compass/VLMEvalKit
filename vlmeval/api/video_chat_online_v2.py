@@ -195,7 +195,7 @@ class VideoChatOnlineV2Wrapper(BaseAPI):
         }
         return send_data
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         assert isinstance(inputs, str) or isinstance(inputs, list)
         inputs = [inputs] if isinstance(inputs, str) else inputs
         dataset = kwargs.get('dataset', None)

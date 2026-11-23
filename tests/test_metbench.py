@@ -115,3 +115,16 @@ def test_chess_confidence_uses_whole_trials(monkeypatch, tmp_path):
     dump(predictions.iloc[:1], path)
     result = task.evaluate(path).iloc[0]
     assert pd.isna(result['ci_lower']) and pd.isna(result['ci_upper'])
+
+
+def test_non_chess_scoring_without_chess_dependency(monkeypatch):
+    """The optional Chess dependency is only needed when scoring Chess."""
+    import sys
+
+    from vlmeval.dataset.metbench.core import score
+
+    monkeypatch.setitem(sys.modules, 'chess', None)
+    assert score({'metbench_domain': 'shell', 'target': 2}, 'FINAL ANSWER: 2') == 1.0
+    assert score({'metbench_domain': 'minecraft', 'target': 2}, 'FINAL ANSWER: 2') == 1.0
+    with pytest.raises(ModuleNotFoundError, match='chess'):
+        score({'metbench_domain': 'chess', 'target': FEN}, f'FINAL ANSWER: {FEN}')

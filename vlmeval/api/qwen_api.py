@@ -52,10 +52,10 @@ class QwenAPI(BaseAPI):
             ret.append(dict(role=role, content=msg))
         return ret
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         assert isinstance(inputs, str) or isinstance(inputs, list)
         inputs = [inputs] if isinstance(inputs, str) else inputs
-        messages = self.build_msgs(msgs_raw=inputs, system_prompt=self.system_prompt)
+        messages = self.build_msgs(msgs_raw=inputs, system_prompt=system_prompt)
 
         import dashscope
         response = dashscope.Generation.call(

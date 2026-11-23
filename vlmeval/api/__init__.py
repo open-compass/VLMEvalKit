@@ -3,12 +3,13 @@ from .bailingmm import bailingMMAPI
 from .bedrock import BedrockAPI
 from .bluelm_api import BlueLM_API, BlueLMWrapper
 from .claude import Claude3V, Claude_Wrapper
+from .claude_sdk import ClaudeSDKAPI, ClaudeSDKWrapper
 from .cloudwalk import CWWrapper
 from .doubao_vl_api import DoubaoVL
 from .gcp_vertex import GCPVertexAPI
 from .gemini import Gemini, GeminiWrapper
 from .glm_vision import GLMVisionAPI
-from .gpt import GPT4V, OpenAIWrapper
+from .gpt import GPT4V, GPTAudio, OpenAIWrapper
 from .hf_chat_model import HFChatModel
 from .hunyuan import HunyuanVision
 from .jt_vl_chat import JTVLChatAPI
@@ -35,12 +36,13 @@ from .together import TogetherAPI
 from .video_chat_online_v2 import VideoChatOnlineV2API
 
 __all__ = [
-    'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V', 'Gemini', 'QwenVLWrapper',
+    'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V', 'GPTAudio', 'Gemini', 'QwenVLWrapper',
     'QwenVLAPI', 'QwenAPI', 'Claude3V', 'Claude_Wrapper', 'Reka', 'GLMVisionAPI', 'CWWrapper',
     'SenseChatVisionAPI', 'HunyuanVision', 'Qwen2VLAPI', 'BlueLMWrapper', 'BlueLM_API',
     'JTVLChatAPI', 'JTVLChatAPI_Mini', 'JTVLChatAPI_2B', 'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI',
     'SiliconFlowAPI', 'LMDeployAPI', 'ARM_thinker', 'OpenAISDKWrapper', 'LMDeployWrapper',
     'OpenAIResponsesAPI', 'OpenAIResponsesWrapper',
+    'ClaudeSDKAPI', 'ClaudeSDKWrapper',
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
     'VideoChatOnlineV2API', 'TeleMM2_API', 'TeleMM2Thinking_API', 'TogetherAPI', 'GCPVertexAPI',

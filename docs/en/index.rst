@@ -26,7 +26,7 @@ We always welcome users' PRs (Pull Requests) and Issues to improve VLMEvalKit!
 
    Development.md
    ConfigSystem.md
-   METBench.md
+   PassK.md
 
 .. _Other Notes:
 .. toctree::

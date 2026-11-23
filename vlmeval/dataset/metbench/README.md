@@ -14,9 +14,17 @@ MET-Bench evaluates entity tracking in Minecraft, Chess, and Shell Game through 
 
 Each domain contains 500 unique test inputs. Dataset revisions are pinned, and the text and image tasks use the same ordered example IDs. Text tasks download `evaluation_text_only`; image tasks download `evaluation`. Chess and Shell Game are deduplicated by initial state and ten-action prefix. Minecraft is deduplicated by initial state, action, and ordered candidate states.
 
+## Setup
+
+After installing VLMEvalKit, install the MET-Bench dependency from the repository root:
+
+```bash
+python -m pip install -r vlmeval/dataset/metbench/requirements.txt
+```
+
 ## Run
 
-After installing VLMEvalKit, select a model that supports multiple interleaved images:
+Select a model that supports multiple interleaved images:
 
 ```bash
 python run.py \
@@ -40,3 +48,11 @@ python run.py \
 ```
 
 Each task produces an `_acc.csv` file. `Overall` reports accuracy in percent: correct answer choices for Minecraft and Shell Game, and correctly predicted board squares for Chess. `ci_lower` and `ci_upper` give 95% confidence bounds: a normal approximation using the standard error across board scores for Chess, and Wilson intervals across answer choices for Minecraft and Shell Game. Chess bounds are unavailable for a single example; `examples` gives the evaluated example count. Prompts and answer parsing match the reference evaluator and the lmms-eval integration.
+
+## Tests
+
+With `pytest` installed, run from the repository root:
+
+```bash
+python -m pytest tests/test_metbench.py -q
+```

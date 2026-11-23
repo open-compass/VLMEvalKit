@@ -6,6 +6,27 @@ from vlmeval.smp import load_env
 INTERNAL = os.environ.get('INTERNAL', 0)
 
 
+def warn_judge_model_retirement(model):
+    retiring_models = {
+        'gpt-4o-2024-08-06',
+        'gpt-4o-2024-11-20',
+        'gpt-4o-mini-2024-07-18',
+        'gpt-4.1',
+        'gpt-4.1-2025-04-14',
+        'gpt-4.1-mini',
+        'gpt-4.1-mini-2025-04-14',
+    }
+    if model in retiring_models:
+        warnings.warn(
+            f'Judge model {model!r} is scheduled to shut down on January 14, 2027. '
+            'VLMEvalKit default judge models affected by this shutdown will be replaced '
+            'with gpt-6-luna after the shutdown; evaluation scores may change. '
+            'See https://developers.openai.com/api/docs/deprecations.',
+            UserWarning,
+            stacklevel=2,
+        )
+
+
 def warn_if_judge_model_changed(model, legacy_models, benchmark):
     """Warn when evaluation uses a judge outside the benchmark's legacy set."""
     if isinstance(legacy_models, str):
@@ -30,6 +51,12 @@ def build_judge(**kwargs):
     from vlmeval.api import HFChatModel, OpenAIWrapper, SiliconFlowAPI
     model = kwargs.pop('model', None)
     kwargs.pop('nproc', None)
+    model_class = kwargs.pop('model_class', None)
+
+    # eval-only flags, not API parameters
+    kwargs.pop('use_vllm', None)
+    kwargs.pop('use_verifier', None)
+
     load_env()
     LOCAL_LLM = os.environ.get('LOCAL_LLM', None)
     if LOCAL_LLM is None:
@@ -53,7 +80,15 @@ def build_judge(**kwargs):
     else:
         model_version = LOCAL_LLM
 
-    if model in ['qwen-7b', 'qwen-72b', 'deepseek']:
+    warn_judge_model_retirement(model_version)
+
+    if model_class is not None:
+        import vlmeval.api
+        wrapper = getattr(vlmeval.api, model_class, None)
+        if wrapper is None or not getattr(wrapper, 'is_api', False):
+            raise ValueError(f'Judge model class `{model_class}` is not an API model wrapper in `vlmeval.api`')
+        model = wrapper(model_version, **kwargs)
+    elif model in ['qwen-7b', 'qwen-72b', 'deepseek']:
         model = SiliconFlowAPI(model_version, **kwargs)
     elif model == 'llama31-8b':
         model = HFChatModel(model_version, **kwargs)

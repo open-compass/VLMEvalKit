@@ -274,8 +274,6 @@ class RBdashMMChat3Wrapper(BaseAPI):
         self.temperature = temperature
         logger.info(f'Init temperature: {self.temperature}')
 
-        self.system_prompt = None
-
     def set_dump_image(self, dump_image_func):
         if self.custom_prompt in self.prompt_map:
             self.prompt_map[self.custom_prompt].dump_image_func = dump_image_func
@@ -313,16 +311,11 @@ class RBdashMMChat3Wrapper(BaseAPI):
             content_list = [dict(type='text', text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs, dataset):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
 
-        if listinstr(['MMMU_DEV_VAL', 'MathVista_MINI'], dataset):
-            self.system_prompt = R1_SYSTEM_PROMPT
-        else:
-            self.system_prompt = None
-
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(role='system', content=system_prompt))
         else:
             input_msgs.append(dict(role='system', content="你是书生·万象，英文名是InternVL，是由上海人工智能实验室、清华大学及多家合作单位联合开发的多模态大语言模型。"))
 
@@ -336,13 +329,17 @@ class RBdashMMChat3Wrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         temperature = kwargs.pop('temperature', self.temperature)
         logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
         dataset = kwargs.pop('dataset', None)
+        if listinstr(['MMMU_DEV_VAL', 'MathVista_MINI'], dataset):
+            system_prompt = R1_SYSTEM_PROMPT
+        else:
+            system_prompt = None
 
-        input_msgs = self.prepare_inputs(inputs, dataset)
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
 
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(
@@ -424,8 +421,6 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
         self.temperature = temperature
         logger.info(f'Init temperature: {self.temperature}')
 
-        self.system_prompt = None
-
     def set_dump_image(self, dump_image_func):
         if self.custom_prompt in self.prompt_map:
             self.prompt_map[self.custom_prompt].dump_image_func = dump_image_func
@@ -464,19 +459,11 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
             content_list = [dict(type='text', text=text)]
         return content_list
 
-    def prepare_inputs(self, inputs, dataset):
+    def prepare_inputs(self, inputs, system_prompt=None):
         input_msgs = []
 
-        if listinstr([
-                'MMMU_DEV_VAL', 'MathVista_MINI', 'MMBench_V11',
-                'MMStar', 'DynaMath', 'MathVision', 'MathVerse',
-                'LogicVista', 'WeMath'], dataset):
-            self.system_prompt = R1_SYSTEM_PROMPT
-        else:
-            self.system_prompt = None
-
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+        if system_prompt is not None:
+            input_msgs.append(dict(role='system', content=system_prompt))
 
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
         assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
@@ -488,13 +475,20 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         temperature = kwargs.pop('temperature', self.temperature)
         logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
         dataset = kwargs.pop('dataset', None)
+        if listinstr([
+                'MMMU_DEV_VAL', 'MathVista_MINI', 'MMBench_V11',
+                'MMStar', 'DynaMath', 'MathVision', 'MathVerse',
+                'LogicVista', 'WeMath'], dataset):
+            system_prompt = R1_SYSTEM_PROMPT
+        else:
+            system_prompt = None
 
-        input_msgs = self.prepare_inputs(inputs, dataset)
+        input_msgs = self.prepare_inputs(inputs, system_prompt)
 
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(

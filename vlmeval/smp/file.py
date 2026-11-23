@@ -11,6 +11,7 @@ import re
 import shutil
 import time
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import numpy as np
 import pandas as pd
@@ -32,7 +33,8 @@ def decode_img_omni(tup):
     images = toliststr(im)
     paths = toliststr(p)
     if len(images) > 1 and len(paths) == 1:
-        paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
+        stem, suffix = osp.splitext(paths[0])
+        paths = [f'{stem}_{i}{suffix}' for i in range(len(images))]
 
     assert len(images) == len(paths)
     paths = [osp.join(root, p) for p in paths]
@@ -69,9 +71,8 @@ def localize_df(data, dname, nproc=32):
 
     tups = [(root, im, p) for p, im in zip(img_paths, images)]
 
-    pool = mp.Pool(32)
-    ret = pool.map(decode_img_omni, tups)
-    pool.close()
+    with mp.Pool(nproc) as pool:
+        ret = pool.map(decode_img_omni, tups)
     data.pop('image')
     if 'image_path' not in data:
         data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
@@ -91,7 +92,7 @@ def HFCacheRoot():
     cache_list = ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE', 'HF_HOME']
     for cache_name in cache_list:
         if cache_name in os.environ and osp.exists(os.environ[cache_name]):
-            if os.environ[cache_name].split('/')[-1] == 'hub':
+            if cache_name in ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE']:
                 return os.environ[cache_name]
             else:
                 return osp.join(os.environ[cache_name], 'hub')
@@ -132,9 +133,9 @@ class NumpyEncoder(json.JSONEncoder):
                       (np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, np.int64,
                        np.uint8, np.uint16, np.uint32, np.uint64)):
             return int(obj)
-        elif isinstance(obj, (np.float_, np.float16, np.float32, np.float64)):
+        elif isinstance(obj, (np.float16, np.float32, np.float64)):
             return float(obj)
-        elif isinstance(obj, (np.complex_, np.complex64, np.complex128)):
+        elif isinstance(obj, (np.complex64, np.complex128)):
             return {'real': obj.real, 'imag': obj.imag}
         elif isinstance(obj, (np.ndarray,)):
             return obj.tolist()
@@ -166,7 +167,7 @@ def dump(data, f, **kwargs):
         with pd.ExcelWriter(
             f,
             engine='xlsxwriter',
-            engine_kwargs={'options': {'strings_to_formulas': False}},
+            engine_kwargs={'options': {'strings_to_formulas': False, 'strings_to_urls': False}},
         ) as writer:
             data.to_excel(writer, index=False)
 
@@ -266,21 +267,28 @@ def load(f, fmt=None):
         return data
 
     def load_xlsx(f):
-        return pd.read_excel(f)
+        return pd.read_excel(f, keep_default_na=False, na_values=[''])
 
     def load_csv(f):
-        return pd.read_csv(f)
+        return pd.read_csv(f, keep_default_na=False, na_values=[''])
 
     def load_tsv(f):
-        return pd.read_csv(f, sep='\t')
+        return pd.read_csv(f, sep='\t', keep_default_na=False, na_values=[''])
 
     def load_parquet(f):
         return pd.read_parquet(f)
 
     import validators
     if validators.url(f):
-        tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
+        remote = urlsplit(f)
+        filename = osp.basename(remote.path)
+        if remote.query or remote.fragment:
+            stem, extension = osp.splitext(filename)
+            identity = hashlib.sha256(f.encode('utf-8')).hexdigest()
+            filename = f'{stem}_{identity}{extension}'
+        tgt = osp.join(LMUDataRoot(), 'files', filename)
         if not osp.exists(tgt):
+            os.makedirs(osp.dirname(tgt), exist_ok=True)
             download_file(f, tgt)
         f = tgt
 
@@ -399,14 +407,40 @@ def last_modified(pth):
     return t
 
 
-def parse_file(s):
+def _mime_from_pillow(path):
+    from PIL import Image
+
+    try:
+        with Image.open(path) as image:
+            return Image.MIME.get(image.format, 'unknown')
+    except Exception:
+        return 'unknown'
+
+
+def parse_file(s, **kwargs):
+    """Parse media values, using local paths as the audio intermediate protocol."""
+    from .audio import (UnsupportedAudioSourceError, audio_mime_type, infer_audio_mime_type,
+                        resolve_media_source)
+
+    audio_max_file_size = kwargs.get('audio_max_file_size')
+    probe_remote_audio = kwargs.get('probe_remote_audio', False)
+
+    def resolve_audio(value):
+        path = resolve_media_source(value, max_file_size=audio_max_file_size)
+        return audio_mime_type(path, default=None), path
+
     if osp.exists(s) and s != '.':
         assert osp.isfile(s)
         suffix = osp.splitext(s)[1].lower()
         # 添加对webp的支持
         if suffix == '.webp':
             return ('image/webp', s)
+        audio_mime = infer_audio_mime_type(s)
+        if audio_mime is not None:
+            return resolve_audio(s)
         mime = mimetypes.types_map.get(suffix, 'unknown')
+        if mime == 'unknown':
+            mime = _mime_from_pillow(s)
         return (mime, s)
     elif s.startswith('data:image/'):
         # To be compatible with OPENAI base64 format
@@ -420,18 +454,27 @@ def parse_file(s):
         tgt = osp.join(dname, md5(b64) + '.png')
         decode_base64_to_image_file(b64, tgt)
         return parse_file(tgt)
+    elif s.lower().startswith('data:audio/'):
+        audio_mime = infer_audio_mime_type(s)
+        if audio_mime is not None:
+            return resolve_audio(s)
+        return (None, s)
     elif validators.url(s):
-        suffix = osp.splitext(s)[1].lower()
-        # 添加对webp的支持
-        if suffix == '.webp':
-            mime = 'image/webp'
-        elif suffix in mimetypes.types_map:
-            mime = mimetypes.types_map[suffix]
+        suffix = osp.splitext(urlsplit(s).path)[1].lower()
+        if infer_audio_mime_type(s) is not None:
+            return resolve_audio(s)
+        mime = 'image/webp' if suffix == '.webp' else mimetypes.types_map.get(suffix)
+        if mime is not None:
             dname = osp.join(LMUDataRoot(), 'files')
             os.makedirs(dname, exist_ok=True)
             tgt = osp.join(dname, md5(s) + suffix)
             download_file(s, tgt)
             return (mime, tgt)
+        elif probe_remote_audio:
+            try:
+                return resolve_audio(s)
+            except UnsupportedAudioSourceError:
+                return 'url', s
         else:
             return ('url', s)
 
@@ -547,6 +590,14 @@ def _prediction_table(pred_file):
 
     if 'index' not in frame or 'prediction' not in frame:
         return None
+    return frame
+
+
+def load_prediction_file(pred_file):
+    """Load a prediction table from any supported file format."""
+    frame = _prediction_table(pred_file)
+    if frame is None:
+        raise ValueError(f'Invalid prediction table: {pred_file}')
     return frame
 
 
@@ -712,6 +763,13 @@ def get_intermediate_file_path(eval_file, suffix, target_format=None):
     return eval_file.replace(f'.{original_ext}', f'{suffix}.{target_format}')
 
 
+def get_composite_child_eval_file(eval_file, child_name):
+    path = Path(eval_file)
+    stem = path.stem
+    child_stem = f'_{stem}_SUB_{child_name}'
+    return str(path.with_name(f'{child_stem}{path.suffix}'))
+
+
 def prepare_reuse_files(
     pred_root_meta,
     eval_id,
@@ -792,4 +850,29 @@ def prepare_reuse_files(
             dst_file = osp.join(work_dir, base)
             shutil.copy2(src_file, dst_file)
             logger.info(f'--reuse-aux=all, will reuse evaluation auxiliary file {src_file}')
+        _copy_eval_run_dir(src_prediction_file, result_file, work_dir, reuse_aux)
     return context
+
+
+def eval_run_dir_name(prediction_file):
+    """Name of the directory holding a repeated dataset's per-run files, given its eval file."""
+    return f'{osp.splitext(osp.basename(prediction_file))[0]}_runs'
+
+
+def _copy_eval_run_dir(src_prediction_file, dst_prediction_file, work_dir, reuse_aux):
+    """Carry a repeated dataset's per-run evaluation files over to the new run.
+
+    ``RepeatedDataset.evaluate`` writes each single run's files -- including the judge cache the
+    wrapped dataset produced -- into a directory beside the prediction file. ``fetch_aux_files``
+    only lists files in that directory's parent, so without this step ``--reuse-aux=all`` brings
+    the predictions back but not the judging, and every run of the evaluation is paid for again.
+    The files are copied rather than merged because the run directory is wholly derived from the
+    prediction file it belongs to; a cache inside it is keyed by content, so entries for samples
+    that changed are simply not hit.
+    """
+    src_dir = osp.join(osp.dirname(src_prediction_file), eval_run_dir_name(src_prediction_file))
+    if not osp.isdir(src_dir):
+        return
+    dst_dir = osp.join(work_dir, eval_run_dir_name(dst_prediction_file))
+    shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+    logger.info(f'--reuse-aux={reuse_aux}, will reuse repeated-run evaluation files from {src_dir}')

@@ -64,7 +64,7 @@ class StepAPI_INT(BaseAPI):
         messages.append(message)
         return messages
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
         print(inputs, '\n')
         payload = dict(
             model=self.model,

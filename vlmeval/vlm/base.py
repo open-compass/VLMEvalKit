@@ -91,6 +91,7 @@ class BaseModel:
         elif self.check_content(inputs) == 'listdict':
             for item in inputs:
                 assert 'type' in item and 'value' in item
+                assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
                 mime, s = parse_file(item['value'])
                 if mime is None:
                     assert item['type'] == 'text'
@@ -120,7 +121,7 @@ class BaseModel:
 
     def chat(self, messages, dataset=None):
         """The main function for multi-turn chatting. Will call `chat_inner` with the preprocessed input messages."""
-        assert hasattr(self, 'chat_inner'), 'The API model should has the `chat_inner` method. '
+        assert hasattr(self, 'chat_inner'), 'The API model should have the `chat_inner` method. '
         for msg in messages:
             assert isinstance(msg, dict) and 'role' in msg and 'content' in msg, msg
             assert self.check_content(msg['content']) in ['str', 'dict', 'liststr', 'listdict'], msg

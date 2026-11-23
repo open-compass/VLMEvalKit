@@ -420,4 +420,4 @@ def unzip_hf_zip(target_dir):
     auto_merge_and_unzip_parts(target_dir, ref_videos_dir, zip_prefix="ref_videos")
     auto_merge_and_unzip_parts(target_dir, videos_dir, zip_prefix="videos")
 
-    print("sucessfully unzip all files.")
+    print("successfully unzip all files.")

@@ -159,14 +159,12 @@ class OpenAISDKWrapper(BaseAPI):
     # Core generation loop
     # ------------------------------------------------------------------
 
-    def generate_inner(self, inputs, dataset=None, **kwargs) -> tuple:
+    def generate_inner(self, inputs, dataset=None, system_prompt=None, **kwargs) -> tuple:
         if self.adapter is not None:
             model_args = self.adapter.override_model_args(dataset, kwargs)
-            system_prompt = model_args.pop('system_prompt', self.system_prompt)
+            system_prompt = model_args.pop('system_prompt', system_prompt)
             inputs = self.adapter.process_inputs(inputs, dataset)
             kwargs.update(model_args)
-        else:
-            system_prompt = self.system_prompt
 
         input_msgs = self.prepare_inputs(inputs, system_prompt)
 
