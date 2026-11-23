@@ -12,7 +12,29 @@ logger = get_logger(__name__)
 # Matches verbose chain-of-thought answers such as:
 #   "The correct answer is **B**. Here's why: ..."
 #   "The answer is C."
-_VERBOSE_ANSWER_RE = re.compile(r"(?i)(?:correct\s+)?answer\s+is\s+\**([ABCD])\**")
+# A lowercase "a" followed by a word is the English article ("the answer is a horse"), not option A.
+_VERBOSE_ANSWER_RE = re.compile(r"(?i)(?:correct\s+)?answer\s+is\s+\**(?!(?-i:a)\s+[a-z])([ABCD])\b\**")
+
+
+def can_infer_last_option(answer, choices):
+    """Prefer an explicit final option over letters or option text in reasoning."""
+    lines = [line.strip() for line in answer.splitlines() if line.strip()]
+    if not lines:
+        return False
+    final_line = re.sub(r'\\boxed\{\s*([A-Z])\s*\}', r'\1', lines[-1])
+    final_line = re.sub(r'[*`$]', '', final_line).strip()
+    label = r'[\(\[]?([A-Z])[\)\]]?[.。!]?'
+    patterns = [
+        label,
+        r'(?:the\s+)?(?:(?:final|correct|best)\s+)?(?:answer|option|choice)'
+        r'\s*(?:is\s+|[:：=]\s*)' + label,
+        r'.*(?:→|⇒|->)\s*(?:option|choice)\s+' + label,
+    ]
+    for pattern in patterns:
+        match = re.fullmatch(pattern, final_line, flags=re.IGNORECASE)
+        if match and match.group(1).upper() in choices:
+            return match.group(1).upper()
+    return False
 
 
 def can_infer_option(answer, choices):
@@ -28,6 +50,10 @@ def can_infer_option(answer, choices):
     for err in reject_to_answer:
         if err in answer:
             return 'Z'
+
+    final_option = can_infer_last_option(answer, choices)
+    if final_option:
+        return final_option
 
     def count_choice(splits, choices, prefix='', suffix=''):
         cnt = 0
@@ -49,7 +75,7 @@ def can_infer_option(answer, choices):
             if 'A' in splits and len(splits) > 3 and verbose:
                 logger.info(f'A might be a quantifier in the string: {answer}.')
                 return False
-            if ch in splits and splits.index(ch) > (len(splits) - 5):
+            if ch in splits[-4:]:
                 return ch
     elif count == 0 and count_choice(splits, {'Z', ''}) == 1:
         return 'Z'

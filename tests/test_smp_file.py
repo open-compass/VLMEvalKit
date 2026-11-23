@@ -77,6 +77,60 @@ def test_parse_file_keeps_unknown_when_pillow_rejects_image(tmp_path):
         assert module.parse_file(str(image_path)) == ('unknown', str(image_path))
 
 
+def test_decode_multiple_images_with_one_listed_path(tmp_path, monkeypatch):
+    import base64
+    import io
+
+    module = _load_file_module()
+    spec = importlib.util.spec_from_file_location('image_codec', 'vlmeval/smp/vlm.py')
+    codec = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(codec)
+    monkeypatch.setattr(module, 'decode_base64_to_image_file', codec.decode_base64_to_image_file)
+    encoded = []
+    for color in ('red', 'blue'):
+        buffer = io.BytesIO()
+        Image.new('RGB', (4, 4), color=color).save(buffer, format='PNG')
+        encoded.append(base64.b64encode(buffer.getvalue()).decode('ascii'))
+    paths = module.decode_img_omni((str(tmp_path), encoded, ['scene.png']))
+    assert paths == [str(tmp_path / 'scene_0.png'), str(tmp_path / 'scene_1.png')]
+    with Image.open(paths[0]) as red, Image.open(paths[1]) as blue:
+        assert red.getpixel((0, 0)) == (255, 0, 0)
+        assert blue.getpixel((0, 0)) == (0, 0, 255)
+
+
+def test_remote_query_urls_keep_table_format_and_distinct_cached_results(tmp_path, monkeypatch):
+    module = _load_file_module()
+    (tmp_path / 'files').mkdir()
+    monkeypatch.setattr(module, 'LMUDataRoot', lambda: str(tmp_path))
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+
+        def do_GET(self):
+            answer = 'first' if self.path.endswith('variant=first') else 'second'
+            payload = f'index,prediction\n1,{answer}\n'.encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Length', str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+    with http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler) as server:
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        root = f'http://127.0.0.1:{server.server_port}/samples.csv'
+        first, second = f'{root}?variant=first', f'{root}?variant=second'
+        try:
+            assert module.load(first)['prediction'].tolist() == ['first']
+            assert module.load(second)['prediction'].tolist() == ['second']
+        finally:
+            server.shutdown()
+            thread.join()
+    cached = list((tmp_path / 'files').iterdir())
+    assert len(cached) == 2
+    assert all(path.suffix == '.csv' for path in cached)
+    assert module.load(first)['prediction'].tolist() == ['first']
+    assert module.load(second)['prediction'].tolist() == ['second']
+
+
 def test_localization_honors_requested_worker_count(tmp_path, monkeypatch):
     module = _load_file_module()
     import pandas as pd

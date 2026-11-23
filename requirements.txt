@@ -1,5 +1,6 @@
 accelerate
 anls>=0.0.2
+anthropic
 antlr4-python3-runtime==4.11.1
 apted>=1.0.3
 bert_score

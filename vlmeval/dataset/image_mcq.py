@@ -1999,7 +1999,7 @@ class TDBench(ImageMCQDataset):
         data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
 
         # Save evaluation results
-        judged_result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result')
+        judged_result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'xlsx')
         dump(data, judged_result_file)
 
         acc = report_acc(data)

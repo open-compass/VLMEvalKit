@@ -3,6 +3,7 @@ import importlib.util
 import sys
 import threading
 import types
+import wave
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -45,13 +46,20 @@ def _load_modules(*names):
     return modules
 
 
-@pytest.mark.parametrize('filename', ['image.webp', 'image.png'])
+@pytest.mark.parametrize('filename', ['image.webp', 'image.png', 'audio.wav'])
 @pytest.mark.parametrize('query', ['', '?token=example#fragment'])
-def test_parse_remote_image_returns_downloaded_file(tmp_path, monkeypatch, filename, query):
+def test_parse_remote_media_returns_downloaded_file(tmp_path, monkeypatch, filename, query):
     module = _load_modules()['vlmeval.smp.file']
     media = tmp_path / 'media'
     media.mkdir()
-    Image.new('RGB', (12, 8), 'red').save(media / filename)
+    if filename.endswith('.wav'):
+        with wave.open(str(media / filename), 'wb') as audio:
+            audio.setparams((1, 2, 8000, 0, 'NONE', 'not compressed'))
+            audio.writeframes(b'\x00\x00' * 16)
+        expected_mime = 'audio/wav'
+    else:
+        Image.new('RGB', (12, 8), 'red').save(media / filename)
+        expected_mime = 'image/webp' if filename.endswith('webp') else 'image/png'
     cache = tmp_path / 'cache'
     cache.mkdir()
     monkeypatch.setenv('LMUData', str(cache))
@@ -61,14 +69,14 @@ def test_parse_remote_image_returns_downloaded_file(tmp_path, monkeypatch, filen
     try:
         url = f'http://127.0.0.1:{server.server_port}/{filename}' + query
         mime, path = module.parse_file(url)
-        assert mime == ('image/webp' if filename.endswith('webp') else 'image/png')
+        assert mime == expected_mime
         assert Path(path).is_file()
-        assert Path(path).parent == cache / 'files'
-        with Image.open(path) as image:
-            assert image.size == (12, 8)
+        assert cache in Path(path).parents
+        assert Path(path).read_bytes() == (media / filename).read_bytes()
         base = _load_modules()['vlmeval.api.base']
         wrapper = base.BaseAPI()
-        assert wrapper.preproc_content([url])[0]['type'] == 'image'
+        wrapper.allowed_types = [*wrapper.allowed_types, 'audio']
+        assert wrapper.preproc_content([url])[0]['type'] == expected_mime.split('/')[0]
     finally:
         server.shutdown()
         server.server_close()

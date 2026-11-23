@@ -34,6 +34,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 ## 🆕 News
 
+- **[2026-11-10]** Added **audio modality evaluation** with support for the [**MMSU**](https://github.com/dingdongwang/MMSU) benchmark. See the [**quickstart**](/docs/en/Quickstart.md#audio-evaluation) for usage examples. 🔥🔥🔥
 - **[2026-04-08]** Supported [**Video-MME-v2**](https://github.com/MME-Benchmarks/Video-MME-v2). Video-MME-v2 is an authoritative benchmark towards the next stage in video understanding evaluation. 🔥🔥🔥
 - **[2025-07-07]** Supported [**SeePhys**](https://seephys.github.io/), which is a ​full spectrum multimodal benchmark for evaluating physics reasoning across different knowledge levels. thanks to [**Quinn777**](https://github.com/Quinn777) 🔥🔥🔥
 - **[2025-07-02]** Supported [**OvisU1**](https://huggingface.co/AIDC-AI/Ovis-U1-3B), thanks to [**liyang-7**](https://github.com/liyang-7) 🔥🔥🔥
@@ -49,6 +50,13 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 ## 🏗️ QuickStart
 
 See [[QuickStart](/docs/en/Quickstart.md) | [快速开始](/docs/zh-CN/Quickstart.md)] for a quick start guide.
+
+**Judge model retirement:** OpenAI has announced that `gpt-4o-2024-08-06`,
+`gpt-4o-2024-11-20`, `gpt-4o-mini-2024-07-18`, `gpt-4.1-2025-04-14`, and
+`gpt-4.1-mini-2025-04-14` will shut down on January 14, 2027. VLMEvalKit will
+replace the affected default judge models with `gpt-6-luna` after the shutdown.
+Changing the judge may change evaluation scores and their comparability with
+earlier results. See [OpenAI's deprecation notice](https://developers.openai.com/api/docs/deprecations).
 
 ## 📊 Datasets, Models, and Evaluation Results
 

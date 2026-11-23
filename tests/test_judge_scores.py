@@ -61,7 +61,7 @@ class TestFiniteJudgeScores(unittest.TestCase):
             self.assertTrue(np.isfinite(result['score']))
 
 
-def load_zerobench_evaluator():
+def load_zerobench_class(image_vqa_dataset=object):
     import ast
     import re
     from pathlib import Path
@@ -72,10 +72,24 @@ def load_zerobench_evaluator():
     tree = ast.parse(source.read_text())
     cls = next(node for node in tree.body
                if isinstance(node, ast.ClassDef) and node.name == 'ZEROBench')
-    namespace = {'ImageVQADataset': object, 'pd': pd, 're': re,
-                 'load': lambda filename: pd.read_csv(filename, keep_default_na=False)}
+    namespace = {'ImageVQADataset': image_vqa_dataset, 'pd': pd, 're': re,
+                 'load': lambda filename: pd.read_csv(
+                     filename, keep_default_na=False,
+                     sep='\t' if filename.endswith('.tsv') else ','),
+                 'd2df': lambda result: pd.DataFrame({key: [value] for key, value in result.items()}),
+                 'get_intermediate_file_path':
+                 lambda eval_file, suffix, target_format: eval_file.replace(
+                     f'.{eval_file.split(".")[-1]}', f'{suffix}.{target_format}'),
+                 'dump': lambda data, filename: data.to_csv(filename, index=False)}
     exec(compile(ast.Module(body=[cls], type_ignores=[]), str(source), 'exec'), namespace)
-    return namespace['ZEROBench']()
+    return namespace['ZEROBench']
+
+
+def load_zerobench_evaluator(k=1):
+    cls = load_zerobench_class()
+    evaluator = cls.__new__(cls)
+    evaluator.k = k
+    return evaluator
 
 
 class TestZeroBenchAnswerProtocol(unittest.TestCase):
@@ -109,6 +123,23 @@ class TestZeroBenchAnswerProtocol(unittest.TestCase):
 
     def test_wrong_final_brace_answer_remains_incorrect(self):
         self.assertEqual(self.score('2', '{2} then {3}'), 0.0)
+
+    def test_accuracy_is_dumped_to_acc_csv(self):
+        import tempfile
+        from pathlib import Path
+
+        import pandas as pd
+
+        with tempfile.TemporaryDirectory() as directory:
+            table = Path(directory) / 'predictions.tsv'
+            row = {'index': 1, 'answers': '2', 'prediction': '{2}'}
+            pd.DataFrame([row]).to_csv(table, index=False, sep='\t')
+
+            load_zerobench_evaluator(k=1).evaluate(str(table))
+
+            score_file = Path(directory) / 'predictions_acc.csv'
+            self.assertTrue(score_file.exists())
+            self.assertEqual(pd.read_csv(score_file).iloc[0]['accuracy'], 1.0)
 
 
 if __name__ == '__main__':

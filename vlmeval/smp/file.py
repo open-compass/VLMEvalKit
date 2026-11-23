@@ -33,7 +33,8 @@ def decode_img_omni(tup):
     images = toliststr(im)
     paths = toliststr(p)
     if len(images) > 1 and len(paths) == 1:
-        paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
+        stem, suffix = osp.splitext(paths[0])
+        paths = [f'{stem}_{i}{suffix}' for i in range(len(images))]
 
     assert len(images) == len(paths)
     paths = [osp.join(root, p) for p in paths]
@@ -279,7 +280,13 @@ def load(f, fmt=None):
 
     import validators
     if validators.url(f):
-        tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
+        remote = urlsplit(f)
+        filename = osp.basename(remote.path)
+        if remote.query or remote.fragment:
+            stem, extension = osp.splitext(filename)
+            identity = hashlib.sha256(f.encode('utf-8')).hexdigest()
+            filename = f'{stem}_{identity}{extension}'
+        tgt = osp.join(LMUDataRoot(), 'files', filename)
         if not osp.exists(tgt):
             os.makedirs(osp.dirname(tgt), exist_ok=True)
             download_file(f, tgt)
@@ -410,13 +417,27 @@ def _mime_from_pillow(path):
         return 'unknown'
 
 
-def parse_file(s):
+def parse_file(s, **kwargs):
+    """Parse media values, using local paths as the audio intermediate protocol."""
+    from .audio import (UnsupportedAudioSourceError, audio_mime_type, infer_audio_mime_type,
+                        resolve_media_source)
+
+    audio_max_file_size = kwargs.get('audio_max_file_size')
+    probe_remote_audio = kwargs.get('probe_remote_audio', False)
+
+    def resolve_audio(value):
+        path = resolve_media_source(value, max_file_size=audio_max_file_size)
+        return audio_mime_type(path, default=None), path
+
     if osp.exists(s) and s != '.':
         assert osp.isfile(s)
         suffix = osp.splitext(s)[1].lower()
         # 添加对webp的支持
         if suffix == '.webp':
             return ('image/webp', s)
+        audio_mime = infer_audio_mime_type(s)
+        if audio_mime is not None:
+            return resolve_audio(s)
         mime = mimetypes.types_map.get(suffix, 'unknown')
         if mime == 'unknown':
             mime = _mime_from_pillow(s)
@@ -433,8 +454,15 @@ def parse_file(s):
         tgt = osp.join(dname, md5(b64) + '.png')
         decode_base64_to_image_file(b64, tgt)
         return parse_file(tgt)
+    elif s.lower().startswith('data:audio/'):
+        audio_mime = infer_audio_mime_type(s)
+        if audio_mime is not None:
+            return resolve_audio(s)
+        return (None, s)
     elif validators.url(s):
         suffix = osp.splitext(urlsplit(s).path)[1].lower()
+        if infer_audio_mime_type(s) is not None:
+            return resolve_audio(s)
         mime = 'image/webp' if suffix == '.webp' else mimetypes.types_map.get(suffix)
         if mime is not None:
             dname = osp.join(LMUDataRoot(), 'files')
@@ -442,6 +470,11 @@ def parse_file(s):
             tgt = osp.join(dname, md5(s) + suffix)
             download_file(s, tgt)
             return (mime, tgt)
+        elif probe_remote_audio:
+            try:
+                return resolve_audio(s)
+            except UnsupportedAudioSourceError:
+                return 'url', s
         else:
             return ('url', s)
 
@@ -817,4 +850,29 @@ def prepare_reuse_files(
             dst_file = osp.join(work_dir, base)
             shutil.copy2(src_file, dst_file)
             logger.info(f'--reuse-aux=all, will reuse evaluation auxiliary file {src_file}')
+        _copy_eval_run_dir(src_prediction_file, result_file, work_dir, reuse_aux)
     return context
+
+
+def eval_run_dir_name(prediction_file):
+    """Name of the directory holding a repeated dataset's per-run files, given its eval file."""
+    return f'{osp.splitext(osp.basename(prediction_file))[0]}_runs'
+
+
+def _copy_eval_run_dir(src_prediction_file, dst_prediction_file, work_dir, reuse_aux):
+    """Carry a repeated dataset's per-run evaluation files over to the new run.
+
+    ``RepeatedDataset.evaluate`` writes each single run's files -- including the judge cache the
+    wrapped dataset produced -- into a directory beside the prediction file. ``fetch_aux_files``
+    only lists files in that directory's parent, so without this step ``--reuse-aux=all`` brings
+    the predictions back but not the judging, and every run of the evaluation is paid for again.
+    The files are copied rather than merged because the run directory is wholly derived from the
+    prediction file it belongs to; a cache inside it is keyed by content, so entries for samples
+    that changed are simply not hit.
+    """
+    src_dir = osp.join(osp.dirname(src_prediction_file), eval_run_dir_name(src_prediction_file))
+    if not osp.isdir(src_dir):
+        return
+    dst_dir = osp.join(work_dir, eval_run_dir_name(dst_prediction_file))
+    shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+    logger.info(f'--reuse-aux={reuse_aux}, will reuse repeated-run evaluation files from {src_dir}')

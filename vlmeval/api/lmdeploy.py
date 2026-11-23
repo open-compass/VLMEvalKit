@@ -1,11 +1,11 @@
-import base64
 import math
 import os
 from pathlib import Path
 
 import numpy as np
 
-from ..smp import encode_image_to_base64, get_logger
+from ..smp import (audio_mime_type, encode_file_to_base64, encode_image_to_base64, get_logger,
+                   is_audio_media_url)
 from .adapters import build_adapter
 from .openai_sdk import OpenAISDKWrapper
 
@@ -18,12 +18,17 @@ class LMDeployWrapper(OpenAISDKWrapper):
     Handles lmdeploy-specific details:
 
     * ``LMDEPLOY_API_KEY`` / ``LMDEPLOY_API_BASE`` environment variables
-    * lmdeploy image-encoding format via :meth:`prepare_itlist`
+    * lmdeploy image/video/audio encoding format via :meth:`prepare_itlist`
 
     Model-specific prompt building and payload post-processing are
     delegated to a :class:`~vlmeval.api.adapters.ModelAdapter` that is
     selected automatically or specified via ``custom_prompt``.
+
+    ``convert_rgb=False`` preserves image mode and transparency using PNG
+    (JPEG for CMYK). Set it to ``True`` for the legacy RGB/JPEG encoding.
     """
+
+    allowed_types = ['text', 'image', 'video', 'audio']
 
     def __init__(self,
                  model,
@@ -41,6 +46,7 @@ class LMDeployWrapper(OpenAISDKWrapper):
                  img_size: int = -1,
                  total_img_size: int = -1,
                  max_file_size: int = 1e9,
+                 convert_rgb: bool = False,
                  **kwargs):
         self.fail_msg = 'Failed to obtain answer via API. '
         self.timeout = timeout
@@ -59,13 +65,15 @@ class LMDeployWrapper(OpenAISDKWrapper):
         assert total_img_size > 0 or total_img_size == -1
         self.total_img_size = total_img_size
         self.max_file_size = max_file_size
+        self.convert_rgb = convert_rgb
         if self.local_media:
             logger.info(
-                f'lmdeploy: `local_media={self.local_media}`, pass local media file path directly.')
-            if img_size != -1 or total_img_size != -1 or max_file_size != 1e9:
+                f'lmdeploy: `local_media={self.local_media}`, '
+                'pass local media file path directly.')
+            if img_size != -1 or total_img_size != -1 or max_file_size != 1e9 or convert_rgb:
                 logger.warning(
                     'lmdeploy: image encoding parameters `img_size`, `total_img_size`, '
-                    'and `max_file_size` will not take effect when `local_media=True`.')
+                    '`max_file_size`, and `convert_rgb` will not take effect when `local_media=True`.')
         else:
             logger.info(
                 f'lmdeploy: `local_media={self.local_media}`, pass media file base64.')
@@ -110,7 +118,7 @@ class LMDeployWrapper(OpenAISDKWrapper):
 
     def prepare_itlist(self, inputs):
         assert np.all([isinstance(x, dict) for x in inputs])
-        multimedia = sum(x['type'] in ('image', 'video') for x in inputs)
+        multimedia = sum(x['type'] in ('image', 'video', 'audio') for x in inputs)
         if multimedia:
             content_list = []
             image_num = sum(x['type'] == 'image' for x in inputs)
@@ -124,12 +132,15 @@ class LMDeployWrapper(OpenAISDKWrapper):
                     else:
                         from PIL import Image
                         img = Image.open(msg['value'])
+                        fmt = 'JPEG' if self.convert_rgb or img.mode == 'CMYK' else 'PNG'
                         b64 = encode_image_to_base64(
                             img,
                             target_size=image_target_size,
+                            fmt=fmt,
                             max_file_size=self.max_file_size,
+                            convert_rgb=self.convert_rgb,
                         )
-                        image_data_url = f'data:image/jpeg;base64,{b64}'
+                        image_data_url = f'data:{Image.MIME[fmt]};base64,{b64}'
                     extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
                     img_struct = dict(url=image_data_url, **extra_args)
                     content_list.append(dict(type='image_url', image_url=img_struct))
@@ -137,18 +148,31 @@ class LMDeployWrapper(OpenAISDKWrapper):
                     if self.local_media:
                         video_data_url = f"file://{Path(msg['value']).resolve()}"
                     else:
-                        with open(msg['value'], 'rb') as f:
-                            video_b64 = base64.b64encode(f.read()).decode("utf-8")
-                        ext = Path(msg['value']).suffix
+                        video_b64 = encode_file_to_base64(msg['value'])
+                        ext = Path(msg['value']).suffix.lower()
                         mime_map = {
                             ".mp4": "video/mp4", ".avi": "video/avi", ".mkv": "video/x-matroska",
-                            ".mov": "video/quicktime", ".webm": "video/webm", ".flv": "video/x-flv",
+                            ".mov": "video/quicktime", ".webm": "video/webm",
+                            ".flv": "video/x-flv",
                         }
                         mime = mime_map.get(ext, "video/mp4")
                         video_data_url = f"data:{mime};base64,{video_b64}"
                     extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
                     vid_struct = dict(url=video_data_url, **extra_args)
                     content_list.append(dict(type='video_url', video_url=vid_struct))
+                elif msg['type'] == 'audio':
+                    if is_audio_media_url(msg['value']):
+                        audio_data_url = msg['value']
+                    elif self.local_media:
+                        audio_data_url = Path(msg['value']).resolve().as_uri()
+                    else:
+                        audio_b64 = encode_file_to_base64(msg['value'])
+                        # Keep LMDeploy's historical data-URI fallback explicit.
+                        mime = audio_mime_type(msg['value'], default='audio/wav')
+                        audio_data_url = f'data:{mime};base64,{audio_b64}'
+                    extra_args = {k: v for k, v in msg.items() if k not in ('type', 'value')}
+                    aud_struct = dict(url=audio_data_url, **extra_args)
+                    content_list.append(dict(type='audio_url', audio_url=aud_struct))
         else:
             assert all(x['type'] == 'text' for x in inputs)
             text = '\n'.join(x['value'] for x in inputs)
