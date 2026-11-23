@@ -488,6 +488,12 @@ class RefCOCODataset(ImageBaseDataset):
 
     @staticmethod
     def _parse_prediction(text: str) -> Optional[np.ndarray]:
+        """Extract an explicit bounding box from common model answer formats.
+
+        Bracket lists retain precedence for compatibility. InternVL-style
+        ``<bbox>...</bbox>`` containers are checked next so numbers in a long
+        explanation do not win the legacy numeric fallback.
+        """
         if not isinstance(text, str):
             return None
 

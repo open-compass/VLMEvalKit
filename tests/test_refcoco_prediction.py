@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -16,8 +15,7 @@ def _load_refcoco_dataset():
     tree = ast.parse(path.read_text(encoding='utf-8'))
     definition = next(
         node for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == 'RefCOCODataset'
-    )
+        if isinstance(node, ast.ClassDef) and node.name == 'RefCOCODataset')
     namespace = {
         'Dict': Dict,
         'ImageBaseDataset': object,
@@ -42,12 +40,10 @@ def test_parses_bracketed_bbox():
 
 
 def test_parses_internvl_bbox_after_long_chain_of_thought():
-    prediction = (
-        '1. Locate the television.\n'
-        '2. Inspect the person near the center.\n'
-        '3. Compute the final region.\n'
-        '<bbox>470 402 742 847</bbox>'
-    )
+    prediction = ('1. Locate the television.\n'
+                  '2. Inspect the person near the center.\n'
+                  '3. Compute the final region.\n'
+                  '<bbox>470 402 742 847</bbox>')
 
     parsed = RefCOCODataset._parse_prediction(prediction)
 
@@ -68,11 +64,16 @@ def test_parses_tagged_bbox_number_and_separator_variants(prediction):
     np.testing.assert_array_equal(parsed, np.array([-1.5, 2, 300, 400], dtype=float))
 
 
+def test_tagged_bbox_flows_through_relative_coordinate_normalization():
+    parsed = RefCOCODataset._parse_prediction('The target is <bbox>0.25 0.5 0.75 1.0</bbox>.')
+    absolute = RefCOCODataset._to_absolute(parsed, width=200, height=100)
+
+    np.testing.assert_array_equal(absolute, np.array([50, 50, 150, 100], dtype=float))
+
+
 def test_bracketed_bbox_keeps_precedence_when_both_containers_are_present():
-    prediction = (
-        'The intermediate box is [1, 2, 3, 4]. '
-        'The final box is <bbox>10 20 30 40</bbox>.'
-    )
+    prediction = ('The intermediate box is [1, 2, 3, 4]. '
+                  'The final box is <bbox>10 20 30 40</bbox>.')
 
     parsed = RefCOCODataset._parse_prediction(prediction)
 
@@ -80,10 +81,8 @@ def test_bracketed_bbox_keeps_precedence_when_both_containers_are_present():
 
 
 def test_first_complete_tagged_bbox_is_used():
-    prediction = (
-        'Example: <bbox>1 2 3 4</bbox>. '
-        'Final answer: <bbox>10 20 30 40</bbox>'
-    )
+    prediction = ('Example: <bbox>1 2 3 4</bbox>. '
+                  'Final answer: <bbox>10 20 30 40</bbox>')
 
     parsed = RefCOCODataset._parse_prediction(prediction)
 
