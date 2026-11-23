@@ -60,10 +60,16 @@ class TestVerboseOptionBoundaries(unittest.TestCase):
 
     def test_plain_uppercase_option_labels_are_unchanged(self):
         for answer, expected in [('B', 'B'), ('The answer is B.', 'B'), ('Answer is D', 'D'),
-                                 ('The answer is C: horse', 'C'),
-                                 ('The answer is A because it looks like a horse.', 'A')]:
+                                 ('The answer is C: horse', 'C')]:
             with self.subTest(answer=answer):
                 self.assertEqual(self.matching.can_infer_option(answer, self.choices()), expected)
+
+    def test_long_a_sentences_are_rejected_as_possible_quantifiers(self):
+        for answer in ['The answer is A because it looks like a horse.',
+                       'Looking at the image, the answer is A']:
+            with self.subTest(answer=answer):
+                self.assertIs(self.matching.can_infer_option(answer, self.choices()), False)
+                self.assertIs(self.matching.can_infer(answer, self.choices()), False)
 
     def test_lowercase_article_a_is_not_option_a(self):
         # "a <word>" is the English article. Option text falls through to can_infer_text;
@@ -81,12 +87,12 @@ class TestVerboseOptionBoundaries(unittest.TestCase):
     # Results with VERBOSE unset, which every VERBOSE value must reproduce.
     VERBOSE_CASES = [
         ('A', 'A'), ('(A)', 'A'), ('The answer is A', 'A'), ('The answer is A.', 'A'), ('Answer: A', 'A'),
-        ('The correct answer is **A**.', 'A'), ('Looking at the image, the answer is A', 'A'), ('B', 'B'),
+        ('The correct answer is **A**.', 'A'), ('Looking at the image, the answer is A', False), ('B', 'B'),
         ('The answer is B', 'B'), ('Answer: C', 'C')
     ]
 
     def test_verbose_does_not_change_results(self):
-        # Any set VERBOSE, even "0" or "false", used to turn long answers of option A into False.
+        # Long A answers are rejected by the guard regardless of VERBOSE; VERBOSE only controls logging.
         for value in [None, '1', '0', 'false']:
             env = {k: v for k, v in os.environ.items() if k != 'VERBOSE'}
             if value is not None:
@@ -98,13 +104,13 @@ class TestVerboseOptionBoundaries(unittest.TestCase):
                         self.assertEqual(self.matching.can_infer(answer, self.choices()), expected)
 
     def test_verbose_only_controls_the_quantifier_log(self):
-        # Not a bare final line, so it reaches the split-word check that logs.
+        # Not a bare final line, so it reaches the guard. The result is always False; only logging varies.
         answer = 'Looking at the image, the answer is A'
         for value, logged in [('1', True), ('true', True), ('0', False), ('false', False), ('', False)]:
             with self.subTest(VERBOSE=value):
                 with mock.patch.dict(os.environ, {'VERBOSE': value}), \
                         mock.patch.object(self.matching.logger, 'info') as info:
-                    self.assertEqual(self.matching.can_infer_option(answer, self.choices()), 'A')
+                    self.assertIs(self.matching.can_infer_option(answer, self.choices()), False)
                 self.assertEqual(info.called, logged)
 
 

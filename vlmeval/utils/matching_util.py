@@ -76,9 +76,10 @@ def can_infer_option(answer, choices):
     count = count_choice(splits, choices)
 
     if count == 1:
-        # Log only: VERBOSE must not change the result.
-        if 'A' in splits and len(splits) > 3 and verbose:
-            logger.info(f'A might be a quantifier in the string: {answer}.')
+        if 'A' in splits and len(splits) > 3:
+            if verbose:
+                logger.info(f'A might be a quantifier in the string: {answer}.')
+            return False
         for ch in choices:
             if ch in splits[-4:]:
                 return ch
