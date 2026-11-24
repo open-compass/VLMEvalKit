@@ -106,6 +106,7 @@ from .molrecbench_wild import MolRecBenchWildDataset
 from .moviechat1k import MovieChat1k
 from .mrarebench import MRareBenchDiagnosis, MRareBenchEvidenceVerif
 from .mssbench import MSSBenchDataset
+from .mt_video_bench import MTVideoBench
 from .mvbench import MVBench, MVBench_MP4
 from .mvh_bench import MVHBench
 from .mvu_eval import MVUEval
@@ -363,7 +364,7 @@ VIDEO_DATASET = [
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
     VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset, FavorBench,
-    TimeLensBench, VideoOdysseyV, VUETR
+    TimeLensBench, VideoOdysseyV, VUETR, MTVideoBench
 ]
 
 # add by EASI team
