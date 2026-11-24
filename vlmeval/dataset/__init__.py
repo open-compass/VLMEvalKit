@@ -39,6 +39,7 @@ from .emma import EMMADataset
 from .eriq import ERIQBench
 from .erqa import ERQADataset
 from .erqabench import ERQABench
+from .etbench import ETBench
 from .favor_bench import FavorBench
 from .flames import FlamesDataset
 from .foxbench import FoxBench
@@ -375,7 +376,7 @@ VIDEO_DATASET = [
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
     VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset,
     FavorBench,
-    TimeLensBench, VideoOdysseyV, VUETR
+    TimeLensBench, VideoOdysseyV, VUETR, ETBench
 ]
 
 # add by EASI team
