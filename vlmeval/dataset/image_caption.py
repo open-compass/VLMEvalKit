@@ -1,3 +1,5 @@
+import ast
+
 from vlmeval.smp import dump, load
 from vlmeval.smp.file import get_intermediate_file_path
 from .image_base import ImageBaseDataset
@@ -73,7 +75,7 @@ class ImageCaptionDataset(ImageBaseDataset):
         ref, gt = {}, {}
         for i, line in enumerate(lines):
             ref[str(i)] = [str(line['prediction'])]
-            gt[str(i)] = eval(line['answer'])
+            gt[str(i)] = ast.literal_eval(line['answer'])
 
         scorer = COCO_Caption_Scorer(ref, gt)
         coco_caption_score_dict = scorer.compute_scores()
