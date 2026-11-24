@@ -169,6 +169,7 @@ from .v2pbench import V2PBench
 from .vcr import VCRDataset
 from .vcrbench import VCRBench
 from .vdc import VDC
+from .vials import VIALS
 from .video_concat_dataset import ConcatVideoDataset
 from .video_eval_pro import VideoEvalPro_MCQ, VideoEvalPro_OpenEnded
 from .video_holmes import Video_Holmes
@@ -355,6 +356,7 @@ IMAGE_DATASET = [
     WildprobeDataset,
     PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset, E3VQA,
     MVHBench,
+    VIALS,
 ]
 
 # add by EASI team
