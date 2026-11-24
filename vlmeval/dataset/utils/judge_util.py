@@ -51,6 +51,7 @@ def build_judge(**kwargs):
     from vlmeval.api import HFChatModel, OpenAIWrapper, SiliconFlowAPI
     model = kwargs.pop('model', None)
     kwargs.pop('nproc', None)
+    model_class = kwargs.pop('model_class', None)
 
     # eval-only flags, not API parameters
     kwargs.pop('use_vllm', None)
@@ -81,7 +82,13 @@ def build_judge(**kwargs):
 
     warn_judge_model_retirement(model_version)
 
-    if model in ['qwen-7b', 'qwen-72b', 'deepseek']:
+    if model_class is not None:
+        import vlmeval.api
+        wrapper = getattr(vlmeval.api, model_class, None)
+        if wrapper is None or not getattr(wrapper, 'is_api', False):
+            raise ValueError(f'Judge model class `{model_class}` is not an API model wrapper in `vlmeval.api`')
+        model = wrapper(model_version, **kwargs)
+    elif model in ['qwen-7b', 'qwen-72b', 'deepseek']:
         model = SiliconFlowAPI(model_version, **kwargs)
     elif model == 'llama31-8b':
         model = HFChatModel(model_version, **kwargs)
