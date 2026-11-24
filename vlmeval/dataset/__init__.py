@@ -115,6 +115,7 @@ from .mrarebench import MRareBenchDiagnosis, MRareBenchEvidenceVerif
 from .mssbench import MSSBenchDataset
 from .mvbench import MVBench, MVBench_MP4
 from .mvh_bench import MVHBench
+from .mvrobobench import MVRoboBench
 from .mvu_eval import MVUEval
 from .NPMM import NPMM
 from .oceanocr import OceanOCRBench
@@ -356,6 +357,7 @@ IMAGE_DATASET = [
     WildprobeDataset,
     PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset, E3VQA,
     MVHBench,
+    MVRoboBench,
     VIALS,
 ]
 
