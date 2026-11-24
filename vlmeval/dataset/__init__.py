@@ -127,6 +127,7 @@ from .ost_bench import OSTDataset
 from .perceptionbench import PerceptionBench
 from .plotqa import PlotQA
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
+from .reasonmap import ReasonMap
 from .reasonmap_plus import ReasonMap_Plus
 from .refadv import RefAdvDataset
 from .refcoco import RefCOCODataset
@@ -342,7 +343,7 @@ IMAGE_DATASET = [
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, MedQDEGBenchDataset,
-    ChartMuseum, ChartQAPro, ReasonMap_Plus,
+    ChartMuseum, ChartQAPro, ReasonMap, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
     RefAdvDataset,
     ERQADataset, SimpleVQA, HiPhODataset, MaCBench, WikiVQABench,
