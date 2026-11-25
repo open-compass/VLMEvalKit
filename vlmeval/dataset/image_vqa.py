@@ -609,16 +609,39 @@ class OCRBench(ImageBaseDataset):
         return final_score_dict
 
 
+MATHVISTA_SOURCE_COMMIT = '2b6ad69445fbb5695c9b165475e8decdbeb97747'
+MATHVISTA_SOURCE_TAG = MATHVISTA_SOURCE_COMMIT[:6]
+
+
 class MathVista(ImageBaseDataset):
     TYPE = 'VQA'
 
     DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
 
+    # Keep the original hosted TSV for backward compatibility. The regenerated
+    # variant uses the bytes stored in AI4Math/MathVista without RGB conversion.
     DATASET_URL = {
         'MathVista_MINI':
-        'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'
+        'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv',
+        f'MathVista_MINI_{MATHVISTA_SOURCE_TAG}':
+        'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI_2b6ad6.tsv',
     }
-    DATASET_MD5 = {'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464'}
+    DATASET_MD5 = {
+        'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464',
+        f'MathVista_MINI_{MATHVISTA_SOURCE_TAG}': 'd5f6f330680fc41d8f8c583838a2ac41',
+    }
+
+    def __init__(self, dataset='MathVista_MINI', **kwargs):
+        super().__init__(dataset=dataset, **kwargs)
+        # The regenerated TSV keeps the official image bytes. Preserve their
+        # alpha channel while dumping; the original hosted TSV keeps the legacy
+        # RGB conversion behavior.
+        if self.dataset_name == f'MathVista_MINI_{MATHVISTA_SOURCE_TAG}':
+            self.convert_to_rgb = False
+        else:
+            # The hosted MathVista_MINI is the legacy baseline and must keep
+            # the original dump_image RGB conversion.
+            self.convert_to_rgb = True
 
     def evaluate(self, eval_file, **judge_kwargs):
         if judge_kwargs.get('use_verifier', False):
@@ -741,6 +764,10 @@ class MathVista(ImageBaseDataset):
         return score
 
 
+MATHVERSE_SOURCE_COMMIT = '3bc86196678bad115a923d2851c6821dbe235939'
+MATHVERSE_SOURCE_TAG = MATHVERSE_SOURCE_COMMIT[:6]
+
+
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
 
@@ -761,6 +788,10 @@ class MathVerse(ImageBaseDataset):
         'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
         'MathVerse_MINI_Text_Dominant':
         'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
+        # Keep the hosted TSVs for backward compatibility. This variant preserves
+        # the official encoded image bytes and uses a fresh image root.
+        f'MathVerse_{MATHVERSE_SOURCE_TAG}':
+        f'https://opencompass.openxlab.space/utils/VLMEval/MathVerse_{MATHVERSE_SOURCE_TAG}.tsv',
     }
     DATASET_MD5 = {
         'MathVerse_MINI': '5017caca32b7fa110c350a1bea861b65',
@@ -770,7 +801,19 @@ class MathVerse(ImageBaseDataset):
         'MathVerse_MINI_Vision_Intensive': '01cbd35be202bb0c4873a4186a63bc19',
         'MathVerse_MINI_Text_Lite': '19e4b13bdd30b89a03b2e358bcfefa04',
         'MathVerse_MINI_Text_Dominant': '4f5cd2fa6630ea00bb11d6fde1f6fe6a',
+        f'MathVerse_{MATHVERSE_SOURCE_TAG}': 'a3fc7c5db7caf86cc59e2359ec46d80f',
     }
+
+    def __init__(self, dataset='MathVerse_MINI', **kwargs):
+        super().__init__(dataset=dataset, **kwargs)
+        if self.dataset_name == f'MathVerse_{MATHVERSE_SOURCE_TAG}':
+            self.img_root = osp.join(
+                LMUDataRoot(), 'images', f'MathVerse_{MATHVERSE_SOURCE_TAG}')
+            self.convert_to_rgb = False
+        else:
+            # Every hosted MathVerse variant is the legacy baseline and must
+            # keep the original dump_image RGB conversion.
+            self.convert_to_rgb = True
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
@@ -2117,6 +2160,13 @@ class VGRPBench(ImageBaseDataset):
         return ret
 
 
+MMVET_SOURCE_COMMIT = '2df56155a024929e29ebc01efe288d67eca17f62'
+MMVET_SOURCE_TAG = MMVET_SOURCE_COMMIT[:6]
+MMVET_ALPHA_DATASET = f'MMVet_{MMVET_SOURCE_TAG}'
+MMVET_ALPHA_TSV = 'https://opencompass.openxlab.space/utils/VLMEval/MMVet_2df561.tsv'
+MMVET_ALPHA_MD5 = '2e91f6fc15288ce4b67c913fafbf8d2c'
+
+
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
 
@@ -2126,12 +2176,27 @@ class MMVet(ImageBaseDataset):
         'MMVet':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
         'MMVet_Hard':
-        'https://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
+        'https://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv',
+        MMVET_ALPHA_DATASET: MMVET_ALPHA_TSV,
     }
     DATASET_MD5 = {
         'MMVet': '748aa6d4aa9d4de798306a63718455e3',
-        'MMVet_Hard': '63a598819a936a2e77c410a78a21ff16'
+        'MMVet_Hard': '63a598819a936a2e77c410a78a21ff16',
+        MMVET_ALPHA_DATASET: MMVET_ALPHA_MD5,
     }
+
+    def __init__(self, dataset='MMVet', **kwargs):
+        super().__init__(dataset=dataset, **kwargs)
+        # Keep the hosted MMVet entries on their legacy RGB/JPEG path. The
+        # regenerated entry uses official bytes and a distinct image root so
+        # already-dumped hosted JPEGs cannot be reused.
+        if self.dataset_name == MMVET_ALPHA_DATASET:
+            self.convert_to_rgb = False
+            self.img_root = osp.join(LMUDataRoot(), 'images', MMVET_ALPHA_DATASET)
+        else:
+            # Hosted MMVet/MMVet_Hard are the legacy baseline and must keep the
+            # original dump_image RGB conversion.
+            self.convert_to_rgb = True
 
     # It returns a DataFrame
     @classmethod

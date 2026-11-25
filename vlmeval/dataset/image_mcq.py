@@ -498,17 +498,47 @@ class MedXpertQA_MM_test(ImageMCQDataset):
     }
 
 
+MMMU_SOURCE_COMMIT = '876ce5cb130f7f7e290ce4d9984357737d4db5cf'
+MMMU_SOURCE_TAG = MMMU_SOURCE_COMMIT[:6]
+
+
 class MMMUDataset(ImageMCQDataset):
 
+    # Keep the original hosted TSVs for backward compatibility.
+    # The new *_876ce5 entries point to regenerated TSVs built from
+    # MMMU/MMMU@876ce5cb130f7f7e290ce4d9984357737d4db5cf; their images are
+    # stored as PNG so RGBA alpha is preserved.
     DATASET_URL = {
         'MMMU_DEV_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_DEV_VAL.tsv',
         'MMMU_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_TEST.tsv',
+        f'MMMU_DEV_VAL_{MMMU_SOURCE_TAG}':
+        'https://opencompass.openxlab.space/utils/VLMEval/MMMU_DEV_VAL_876ce5.tsv',
+        f'MMMU_TEST_{MMMU_SOURCE_TAG}':
+        'https://opencompass.openxlab.space/utils/VLMEval/MMMU_TEST_876ce5.tsv',
     }
 
     DATASET_MD5 = {
         'MMMU_DEV_VAL': '585e8ad75e73f75dcad265dfd0417d64',
         'MMMU_TEST': 'c19875d11a2d348d07e5eb4bdf33166d',
+        f'MMMU_DEV_VAL_{MMMU_SOURCE_TAG}': 'b3d313cd9dfefe438fdfcfa643daac96',
+        f'MMMU_TEST_{MMMU_SOURCE_TAG}': '60e7b18a7a947272b35e9f2b05a559df',
     }
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        regenerated = (f'MMMU_TEST_{MMMU_SOURCE_TAG}', f'MMMU_DEV_VAL_{MMMU_SOURCE_TAG}')
+        # The regenerated MMMU TSVs store original PNG images and preserve alpha;
+        # the hosted MMMU_DEV_VAL/MMMU_TEST entries remain the legacy RGB baseline.
+        self.convert_to_rgb = self.dataset_name not in regenerated
+
+    def load_data(self, dataset):
+        regenerated = (f'MMMU_TEST_{MMMU_SOURCE_TAG}', f'MMMU_DEV_VAL_{MMMU_SOURCE_TAG}')
+        if dataset in regenerated:
+            # MMMU_TEST_876ce5 is >1GB; the generic LOCALIZE step would dump its
+            # images with convert('RGB') and drop alpha, so load the TSV directly.
+            return self.prepare_tsv(
+                self.DATASET_URL[dataset], self.DATASET_MD5[dataset], localize=False)
+        return super().load_data(dataset)
 
     @staticmethod
     def split_MMMU(msgs):
@@ -555,8 +585,22 @@ class MMMUProDataset(MMMUDataset):
 
     TYPE = 'MCQ_MMMU_Pro'
 
+    # Current official MMMU-Pro revision. The "_rgba" entry keeps the official
+    # image bytes/modes (alpha preserved). MMMU_Pro_V is not regenerated because
+    # its official images contain no transparent pixels.
+    SOURCE_COMMIT = '0d7426df4ccb3d8704a992fe6850abee7c262127'
+    SOURCE_TAG = SOURCE_COMMIT[:6]
+    RGBA_DATASETS = (
+        f'MMMU_Pro_10c_{SOURCE_TAG}_rgba',
+    )
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        if self.dataset_name in self.RGBA_DATASETS:
+            self.convert_to_rgb = False
+        else:
+            # Hosted MMMU-Pro entries use the legacy plain RGB dump behavior.
+            self.convert_to_rgb = True
         if 'MMMU_Pro_V' in self.dataset_name:
             self.data['question'] = ['placeholder'] * len(self.data)
 
@@ -565,6 +609,8 @@ class MMMUProDataset(MMMUDataset):
         'MMMU_Pro_10c_COT': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
         'MMMU_Pro_V': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_V.tsv',
         'MMMU_Pro_V_COT': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_V.tsv',
+        f'MMMU_Pro_10c_{SOURCE_TAG}_rgba':
+        'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c_0d7426_rgba.tsv',
     }
 
     DATASET_MD5 = {
@@ -572,6 +618,7 @@ class MMMUProDataset(MMMUDataset):
         'MMMU_Pro_10c_COT': '22cee868fe6b680d14b99bfff6db8172',
         'MMMU_Pro_V': 'd01441a87b3dbe721b5a04652ae38009',
         'MMMU_Pro_V_COT': 'd01441a87b3dbe721b5a04652ae38009',
+        f'MMMU_Pro_10c_{SOURCE_TAG}_rgba': '909b0631c0f1d80f97dd7e1add91ca8e',
     }
 
     def build_prompt(self, line):

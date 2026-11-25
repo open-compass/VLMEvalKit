@@ -114,13 +114,19 @@ class Dynamath(ImageBaseDataset):
     TYPE = 'VQA'
 
     DEFAULT_JUDGE_MODEL = 'gpt-4o-mini'
+    # Keep the hosted TSV for backward compatibility. The regenerated variant
+    # uses the PNG bytes from DynaMath/DynaMath@598c3c without RGB conversion.
+    SOURCE_COMMIT = '598c3c3d732422d29580e9ecf8f2a7928a068fdd'
+    SOURCE_TAG = SOURCE_COMMIT[:6]
     DATASET_URL = {
         'DynaMath': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath.tsv',
         'DynaMath_noprompt': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath.tsv',
+        f'DynaMath_{SOURCE_TAG}': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath_598c3c.tsv',
     }
     DATASET_MD5 = {
         'DynaMath': 'b8425ad9a7114571fc9366e013699494',
         'DynaMath_noprompt': 'b8425ad9a7114571fc9366e013699494',
+        f'DynaMath_{SOURCE_TAG}': 'bc07e9a07aea5e13218275c80fced98e',
     }
     GUIDE = """
 ## Answer Instruction Please provide an answer to the question outlined above. Your response should adhere \
@@ -135,6 +141,18 @@ Example of expected JSON response format:
         "short answer": "[Concise Answer]"
     }
     TEXT_EXAMPLE = json.dumps(EXAMPLE, indent=4)
+
+    def __init__(self, dataset='DynaMath', **kwargs):
+        super().__init__(dataset=dataset, **kwargs)
+        # The default image root already appends the dataset name, keeping old
+        # JPEG/RGB dumps under images/DynaMath and regenerated PNG dumps under
+        # images/DynaMath_598c3c. Only the regenerated entry preserves alpha.
+        if self.dataset_name == f'DynaMath_{self.SOURCE_TAG}':
+            self.convert_to_rgb = False
+        else:
+            # Hosted DynaMath/DynaMath_noprompt are the legacy baseline and
+            # must keep the original dump_image RGB conversion.
+            self.convert_to_rgb = True
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):

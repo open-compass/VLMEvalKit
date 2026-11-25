@@ -892,7 +892,7 @@ def run_local_mode(args):
                             status='eval',
                         )
                     # Prepare Submission Files for MMMU_TEST AND MMT-Bench_ALL
-                    if dataset_name in ['MMMU_TEST']:
+                    if dataset_name.startswith('MMMU_TEST'):
                         result_json = MMMU_result_transfer(result_file)
                         logger.info(f'Transfer MMMU_TEST result to json for official evaluation, '
                                     f'json file saved in {result_json}')
@@ -1194,7 +1194,7 @@ def run_api_mode(args):
                 pred_root, model_name, dataset_alias_name, use_env_format=True)
 
             # Skip special datasets.
-            if ds_name in ['MMMU_TEST']:
+            if ds_name.startswith('MMMU_TEST'):
                 logger.info(f'{ds_name} requires special handling, skipped in pipeline.')
                 continue
             if 'MMT-Bench_ALL' in ds_name:
