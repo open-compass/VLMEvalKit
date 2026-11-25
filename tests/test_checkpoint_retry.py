@@ -152,6 +152,36 @@ def test_video_job_forwards_policy_llm_to_infer_data(tmp_path, monkeypatch):
     assert seen['policy_llm'] is llm
 
 
+@pytest.mark.parametrize('custom_prompt', [True, False])
+def test_video_local_prompt_follows_model_choice(tmp_path, monkeypatch, custom_prompt):
+    module, modules = _load_inference_module('inference_video')
+    monkeypatch.setattr(module.torch, 'cuda', types.SimpleNamespace(empty_cache=lambda: None), raising=False)
+
+    class Dataset:
+        dataset_name = 'Example'
+        force_use_dataset_prompt = True
+        nframe = 8
+        fps = -1
+        data = pd.DataFrame({'index': [0]})
+
+        def build_prompt(self, line, video_llm=False):
+            return 'dataset prompt'
+
+    class Model:
+        def use_custom_prompt(self, dataset):
+            return custom_prompt
+
+        def build_prompt(self, row, dataset, video_llm=False):
+            return 'model prompt'
+
+        def generate(self, message, dataset):
+            return message
+
+    output = str(tmp_path / 'out.pkl')
+    module.infer_data(Model(), 'mock', str(tmp_path), Dataset(), output)
+    assert modules['vlmeval.smp.file'].load(output) == {0: 'model prompt' if custom_prompt else 'dataset prompt'}
+
+
 @pytest.mark.parametrize('video_llm', [True, False])
 def test_video_api_runner_builds_mt_prompt_like_single_turn(tmp_path, video_llm):
     module, modules = _load_inference_module('inference_video')

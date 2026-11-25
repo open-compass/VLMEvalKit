@@ -229,13 +229,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         if 'SUB_DATASET' in dataset.data.iloc[sample_map[idx]]:
             sample_dataset_name = dataset.data.iloc[sample_map[idx]]['SUB_DATASET']
 
-        # Like the image runners, a dataset that forces its own prompt (every
-        # interactive MT dataset does) never gets the model's custom prompt.
-        use_custom_prompt = (
-            not getattr(dataset, 'force_use_dataset_prompt', False)
-            and hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(sample_dataset_name)
-        )
-        if use_custom_prompt:
+        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(sample_dataset_name):
             if dataset.nframe == 0:
                 raise ValueError(f'nframe must be set for custom prompt, fps is not suitable for {model_name}')
             struct = model.build_prompt(
