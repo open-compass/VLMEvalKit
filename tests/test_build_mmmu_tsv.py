@@ -52,8 +52,7 @@ def test_mmmu_tsv_load_and_dump_preserves_text_and_expected_image_mode(monkeypat
 
 
 @pytest.mark.parametrize('regenerated', [False, True])
-@pytest.mark.parametrize('explicit_path', [False, True])
-def test_large_mmmu_tsv_localizes_images(monkeypatch, tmp_path, regenerated, explicit_path):
+def test_large_mmmu_tsv_localizes_images(monkeypatch, tmp_path, regenerated):
     name = f'MMMU_TEST_{MMMU_SOURCE_TAG}' if regenerated else 'MMMU_TEST'
     monkeypatch.setenv('LMUData', str(tmp_path))
     monkeypatch.setenv('LMURoot', str(tmp_path))
@@ -74,8 +73,6 @@ def test_large_mmmu_tsv_localizes_images(monkeypatch, tmp_path, regenerated, exp
         'A': 'red',
         'B': 'blue',
     }
-    if explicit_path:
-        row['image_path'] = 'example.jpg'
     pd.DataFrame([row]).to_csv(tmp_path / f'{name}.tsv', sep='\t', index=False)
 
     if regenerated:
@@ -95,7 +92,7 @@ def test_large_mmmu_tsv_localizes_images(monkeypatch, tmp_path, regenerated, exp
             assert localized.getpixel((1, 1)) == (255, 0, 0, 255)
 
 
-@pytest.mark.parametrize('mode', ['RGBA', 'P', 'CMYK'])
+@pytest.mark.parametrize('mode', ['RGBA', 'P'])
 def test_localize_preserves_modes_and_image_references(monkeypatch, tmp_path, mode):
     monkeypatch.setenv('LMUData', str(tmp_path))
     image = Image.new(mode, (2, 2))
@@ -113,32 +110,3 @@ def test_localize_preserves_modes_and_image_references(monkeypatch, tmp_path, mo
         assert result.mode == mode
         if mode == 'P':
             assert result.convert('RGBA').getpixel((0, 0))[3] == 0
-
-
-def test_large_mmmu_tsv_localizes_multiple_images_in_order(monkeypatch, tmp_path):
-    name = f'MMMU_TEST_{MMMU_SOURCE_TAG}'
-    monkeypatch.setenv('LMUData', str(tmp_path))
-    monkeypatch.setenv('LMURoot', str(tmp_path))
-    monkeypatch.setitem(MMMUDataset.DATASET_MD5, name, None)
-    monkeypatch.setattr(image_base, 'file_size', lambda *args: 2)
-    original_pool = smp_file.mp.Pool
-    monkeypatch.setattr(smp_file.mp, 'Pool', lambda nproc: original_pool(1))
-
-    encoded = []
-    for color in ((255, 0, 0, 128), (0, 0, 255, 0)):
-        buffer = io.BytesIO()
-        Image.new('RGBA', (2, 2), color).save(buffer, format='PNG')
-        encoded.append(base64.b64encode(buffer.getvalue()).decode('ascii'))
-    pd.DataFrame([{
-        'index': 1,
-        'question': 'Compare <image 1> and <image 2>',
-        'image': encoded,
-        'image_path': ['one.jpg', 'two.png'],
-    }]).to_csv(tmp_path / f'{name}.tsv', sep='\t', index=False)
-
-    dataset = MMMUDataset(dataset=name)
-    paths = [message['value'] for message in dataset.build_prompt(0) if message['type'] == 'image']
-    assert len(paths) == 2
-    with Image.open(paths[0]) as first, Image.open(paths[1]) as second:
-        assert first.getpixel((0, 0)) == (255, 0, 0, 128)
-        assert second.getpixel((0, 0)) == (0, 0, 255, 0)

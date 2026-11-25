@@ -20,7 +20,7 @@ import validators
 
 from .log import get_logger
 from .misc import toliststr
-from .vlm import decode_base64_to_image, decode_base64_to_image_file
+from .vlm import decode_base64_to_image_file
 
 NEW_EVAL_ID_PATTERN = re.compile(r'^T\d{8}-\d{6}$')
 LEGACY_EVAL_ID_PATTERN = re.compile(r'^T\d{8}_G([0-9a-fA-F]+)$')
@@ -38,25 +38,13 @@ def decode_img_omni(tup, convert_rgb=True):
         paths = [f'{stem}_{i}{suffix}' for i in range(len(images))]
 
     assert len(images) == len(paths)
-    result = []
-    for path, encoded in zip(paths, images):
-        image = None
-        if not convert_rgb and isinstance(encoded, str) and len(encoded) > 64:
-            image = decode_base64_to_image(encoded, convert_rgb=False)
-            # PNG preserves alpha; CMYK must use a format that supports its mode.
-            extensions = ('.jpg', '.jpeg') if image.mode == 'CMYK' else ('.png',)
-            if not path.lower().endswith(extensions):
-                path += extensions[0]
-        path = osp.join(root, path)
-        result.append(path)
-        if osp.exists(path) or not isinstance(encoded, str) or len(encoded) <= 64:
+    paths = [osp.join(root, p) for p in paths]
+    for p, im in zip(paths, images):
+        if osp.exists(p):
             continue
-        if image is None:
-            decode_base64_to_image_file(encoded, path, convert_rgb=convert_rgb)
-        else:
-            os.makedirs(osp.dirname(path), exist_ok=True)
-            image.save(path)
-    return result
+        if isinstance(im, str) and len(im) > 64:
+            decode_base64_to_image_file(im, p, convert_rgb=convert_rgb)
+    return paths
 
 
 def localize_df(data, dname, nproc=32, convert_rgb=True):
@@ -83,16 +71,13 @@ def localize_df(data, dname, nproc=32, convert_rgb=True):
             else:
                 img_paths.append(f'{i}.{ext}')
 
-    tups = []
-    for p, im in zip(img_paths, images):
-        if not convert_rgb and isinstance(im, str) and 0 < len(im) <= 64 and im in image_map:
-            im = image_map[im]
-        tups.append((root, im, p))
+    tups = [(root, im, p) for p, im in zip(img_paths, images)]
 
     with mp.Pool(nproc) as pool:
         ret = pool.map(functools.partial(decode_img_omni, convert_rgb=convert_rgb), tups)
     data.pop('image')
-    data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
+    if 'image_path' not in data:
+        data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
     return data
 
 
