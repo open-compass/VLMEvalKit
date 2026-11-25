@@ -633,15 +633,9 @@ class MathVista(ImageBaseDataset):
 
     def __init__(self, dataset='MathVista_MINI', **kwargs):
         super().__init__(dataset=dataset, **kwargs)
-        # The regenerated TSV keeps the official image bytes. Preserve their
-        # alpha channel while dumping; the original hosted TSV keeps the legacy
-        # RGB conversion behavior.
-        if self.dataset_name == f'MathVista_MINI_{MATHVISTA_SOURCE_TAG}':
-            self.convert_to_rgb = False
-        else:
-            # The hosted MathVista_MINI is the legacy baseline and must keep
-            # the original dump_image RGB conversion.
-            self.convert_to_rgb = True
+
+    def get_convert_to_rgb(self, dataset):
+        return dataset != f'MathVista_MINI_{MATHVISTA_SOURCE_TAG}'
 
     def evaluate(self, eval_file, **judge_kwargs):
         if judge_kwargs.get('use_verifier', False):
@@ -809,11 +803,9 @@ class MathVerse(ImageBaseDataset):
         if self.dataset_name == f'MathVerse_{MATHVERSE_SOURCE_TAG}':
             self.img_root = osp.join(
                 LMUDataRoot(), 'images', f'MathVerse_{MATHVERSE_SOURCE_TAG}')
-            self.convert_to_rgb = False
-        else:
-            # Every hosted MathVerse variant is the legacy baseline and must
-            # keep the original dump_image RGB conversion.
-            self.convert_to_rgb = True
+
+    def get_convert_to_rgb(self, dataset):
+        return dataset != f'MathVerse_{MATHVERSE_SOURCE_TAG}'
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
@@ -2191,12 +2183,10 @@ class MMVet(ImageBaseDataset):
         # regenerated entry uses official bytes and a distinct image root so
         # already-dumped hosted JPEGs cannot be reused.
         if self.dataset_name == MMVET_ALPHA_DATASET:
-            self.convert_to_rgb = False
             self.img_root = osp.join(LMUDataRoot(), 'images', MMVET_ALPHA_DATASET)
-        else:
-            # Hosted MMVet/MMVet_Hard are the legacy baseline and must keep the
-            # original dump_image RGB conversion.
-            self.convert_to_rgb = True
+
+    def get_convert_to_rgb(self, dataset):
+        return dataset != MMVET_ALPHA_DATASET
 
     # It returns a DataFrame
     @classmethod

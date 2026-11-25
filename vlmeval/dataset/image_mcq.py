@@ -524,21 +524,11 @@ class MMMUDataset(ImageMCQDataset):
         f'MMMU_TEST_{MMMU_SOURCE_TAG}': '60e7b18a7a947272b35e9f2b05a559df',
     }
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def get_convert_to_rgb(self, dataset):
         regenerated = (f'MMMU_TEST_{MMMU_SOURCE_TAG}', f'MMMU_DEV_VAL_{MMMU_SOURCE_TAG}')
         # The regenerated MMMU TSVs store original PNG images and preserve alpha;
         # the hosted MMMU_DEV_VAL/MMMU_TEST entries remain the legacy RGB baseline.
-        self.convert_to_rgb = self.dataset_name not in regenerated
-
-    def load_data(self, dataset):
-        regenerated = (f'MMMU_TEST_{MMMU_SOURCE_TAG}', f'MMMU_DEV_VAL_{MMMU_SOURCE_TAG}')
-        if dataset in regenerated:
-            # MMMU_TEST_876ce5 is >1GB; the generic LOCALIZE step would dump its
-            # images with convert('RGB') and drop alpha, so load the TSV directly.
-            return self.prepare_tsv(
-                self.DATASET_URL[dataset], self.DATASET_MD5[dataset], localize=False)
-        return super().load_data(dataset)
+        return dataset not in regenerated
 
     @staticmethod
     def split_MMMU(msgs):
@@ -594,16 +584,6 @@ class MMMUProDataset(MMMUDataset):
         f'MMMU_Pro_10c_{SOURCE_TAG}_rgba',
     )
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if self.dataset_name in self.RGBA_DATASETS:
-            self.convert_to_rgb = False
-        else:
-            # Hosted MMMU-Pro entries use the legacy plain RGB dump behavior.
-            self.convert_to_rgb = True
-        if 'MMMU_Pro_V' in self.dataset_name:
-            self.data['question'] = ['placeholder'] * len(self.data)
-
     DATASET_URL = {
         'MMMU_Pro_10c': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
         'MMMU_Pro_10c_COT': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
@@ -620,6 +600,14 @@ class MMMUProDataset(MMMUDataset):
         'MMMU_Pro_V_COT': 'd01441a87b3dbe721b5a04652ae38009',
         f'MMMU_Pro_10c_{SOURCE_TAG}_rgba': '909b0631c0f1d80f97dd7e1add91ca8e',
     }
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if 'MMMU_Pro_V' in self.dataset_name:
+            self.data['question'] = ['placeholder'] * len(self.data)
+
+    def get_convert_to_rgb(self, dataset):
+        return dataset not in self.RGBA_DATASETS
 
     def build_prompt(self, line):
         if isinstance(line, int):

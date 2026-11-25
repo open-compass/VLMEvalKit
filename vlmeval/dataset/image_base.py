@@ -204,7 +204,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
         # Whether decoded base64 images should be converted to RGB when dumped.
         # Preserve the original mode/alpha by default; legacy entries that need
         # the historical RGB/JPEG behavior can opt in by setting this to True.
-        self.convert_to_rgb = False
+        self.convert_to_rgb = self.get_convert_to_rgb(dataset)
 
         data = self.load_data(dataset)
         data = restore_image_default_na(data)
@@ -239,6 +239,9 @@ class ImageBaseDataset(metaclass=ABCMeta):
 
         self.data = data
         self.post_build(dataset)
+
+    def get_convert_to_rgb(self, dataset):
+        return False
 
     def __len__(self):
         return len(self.data)
@@ -296,7 +299,7 @@ class ImageBaseDataset(metaclass=ABCMeta):
         candidates.sort(key=lambda path: _score_judge_file_candidate(path, judge_model), reverse=True)
         return candidates[0]
 
-    def prepare_tsv(self, url, file_md5=None, localize=True):
+    def prepare_tsv(self, url, file_md5=None):
         data_root = LMUDataRoot()
         os.makedirs(data_root, exist_ok=True)
         update_flag = False
@@ -325,11 +328,12 @@ class ImageBaseDataset(metaclass=ABCMeta):
                 download_file(url, data_path)
                 update_flag = True
 
-        if localize and file_size(data_path, 'GB') > 1:
-            local_path = data_path.replace('.tsv', '_local.tsv')
+        if file_size(data_path, 'GB') > 1:
+            suffix = '_local.tsv' if self.convert_to_rgb else '_local_alpha.tsv'
+            local_path = data_path.replace('.tsv', suffix)
             if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
                 from ..tools import LOCALIZE
-                LOCALIZE(data_path, local_path)
+                LOCALIZE(data_path, local_path, convert_rgb=self.convert_to_rgb)
             data_path = local_path
         return load(data_path)
 

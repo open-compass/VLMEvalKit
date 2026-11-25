@@ -1,5 +1,6 @@
 import csv
 import datetime
+import functools
 import hashlib
 import json
 import mimetypes
@@ -19,7 +20,7 @@ import validators
 
 from .log import get_logger
 from .misc import toliststr
-from .vlm import decode_base64_to_image_file
+from .vlm import decode_base64_to_image, decode_base64_to_image_file
 
 NEW_EVAL_ID_PATTERN = re.compile(r'^T\d{8}-\d{6}$')
 LEGACY_EVAL_ID_PATTERN = re.compile(r'^T\d{8}_G([0-9a-fA-F]+)$')
@@ -28,25 +29,39 @@ INFER_FAIL_MSG = 'Failed to obtain answer'
 logger = get_logger(__name__)
 
 
-def decode_img_omni(tup):
-    root, im, p = tup
+def decode_img_omni(tup, convert_rgb=True):
+    root, im, p = tup[:3]
     images = toliststr(im)
+    sources = toliststr(tup[3]) if len(tup) > 3 else images
     paths = toliststr(p)
     if len(images) > 1 and len(paths) == 1:
         stem, suffix = osp.splitext(paths[0])
         paths = [f'{stem}_{i}{suffix}' for i in range(len(images))]
 
     assert len(images) == len(paths)
-    paths = [osp.join(root, p) for p in paths]
-    for p, im in zip(paths, images):
-        if osp.exists(p):
+    assert len(sources) == len(images)
+    result = []
+    for path, encoded, source in zip(paths, images, sources):
+        image = None
+        if not convert_rgb and isinstance(source, str) and len(source) > 64:
+            image = decode_base64_to_image(source, convert_rgb=False)
+            # PNG preserves alpha; CMYK must use a format that supports its mode.
+            extensions = ('.jpg', '.jpeg') if image.mode == 'CMYK' else ('.png',)
+            if not path.lower().endswith(extensions):
+                path += extensions[0]
+        path = osp.join(root, path)
+        result.append(path)
+        if osp.exists(path) or not isinstance(encoded, str) or len(encoded) <= 64:
             continue
-        if isinstance(im, str) and len(im) > 64:
-            decode_base64_to_image_file(im, p)
-    return paths
+        if image is None:
+            decode_base64_to_image_file(encoded, path, convert_rgb=convert_rgb)
+        else:
+            os.makedirs(osp.dirname(path), exist_ok=True)
+            image.save(path)
+    return result
 
 
-def localize_df(data, dname, nproc=32):
+def localize_df(data, dname, nproc=32, convert_rgb=True):
     assert 'image' in data
     indices = list(data['index'])
     indices_str = [str(x) for x in indices]
@@ -61,21 +76,26 @@ def localize_df(data, dname, nproc=32):
         img_paths = list(data['image_path'])
     else:
         img_paths = []
+        ext = 'jpg' if convert_rgb else 'png'
         for i in indices_str:
             if len(image_map[i]) <= 64 and isinstance(image_map[i], str):
                 idx = image_map[i]
                 assert idx in image_map and len(image_map[idx]) > 64
-                img_paths.append(f'{idx}.jpg')
+                img_paths.append(f'{idx}.{ext}')
             else:
-                img_paths.append(f'{i}.jpg')
+                img_paths.append(f'{i}.{ext}')
 
-    tups = [(root, im, p) for p, im in zip(img_paths, images)]
+    tups = []
+    for p, im in zip(img_paths, images):
+        if not convert_rgb and isinstance(im, str) and 0 < len(im) <= 64 and im in image_map:
+            tups.append((root, im, p, image_map[im]))
+        else:
+            tups.append((root, im, p))
 
     with mp.Pool(nproc) as pool:
-        ret = pool.map(decode_img_omni, tups)
+        ret = pool.map(functools.partial(decode_img_omni, convert_rgb=convert_rgb), tups)
     data.pop('image')
-    if 'image_path' not in data:
-        data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
+    data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
     return data
 
 

@@ -144,15 +144,9 @@ Example of expected JSON response format:
 
     def __init__(self, dataset='DynaMath', **kwargs):
         super().__init__(dataset=dataset, **kwargs)
-        # The default image root already appends the dataset name, keeping old
-        # JPEG/RGB dumps under images/DynaMath and regenerated PNG dumps under
-        # images/DynaMath_598c3c. Only the regenerated entry preserves alpha.
-        if self.dataset_name == f'DynaMath_{self.SOURCE_TAG}':
-            self.convert_to_rgb = False
-        else:
-            # Hosted DynaMath/DynaMath_noprompt are the legacy baseline and
-            # must keep the original dump_image RGB conversion.
-            self.convert_to_rgb = True
+
+    def get_convert_to_rgb(self, dataset):
+        return dataset != f'DynaMath_{self.SOURCE_TAG}'
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
