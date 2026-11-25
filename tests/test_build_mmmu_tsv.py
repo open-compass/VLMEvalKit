@@ -95,7 +95,7 @@ def test_large_mmmu_tsv_localizes_images(monkeypatch, tmp_path, regenerated, exp
             assert localized.getpixel((1, 1)) == (255, 0, 0, 255)
 
 
-@pytest.mark.parametrize('mode', ['P', 'CMYK'])
+@pytest.mark.parametrize('mode', ['RGBA', 'P', 'CMYK'])
 def test_localize_preserves_modes_and_image_references(monkeypatch, tmp_path, mode):
     monkeypatch.setenv('LMUData', str(tmp_path))
     image = Image.new(mode, (2, 2))

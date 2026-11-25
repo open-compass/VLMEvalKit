@@ -30,21 +30,19 @@ logger = get_logger(__name__)
 
 
 def decode_img_omni(tup, convert_rgb=True):
-    root, im, p = tup[:3]
+    root, im, p = tup
     images = toliststr(im)
-    sources = toliststr(tup[3]) if len(tup) > 3 else images
     paths = toliststr(p)
     if len(images) > 1 and len(paths) == 1:
         stem, suffix = osp.splitext(paths[0])
         paths = [f'{stem}_{i}{suffix}' for i in range(len(images))]
 
     assert len(images) == len(paths)
-    assert len(sources) == len(images)
     result = []
-    for path, encoded, source in zip(paths, images, sources):
+    for path, encoded in zip(paths, images):
         image = None
-        if not convert_rgb and isinstance(source, str) and len(source) > 64:
-            image = decode_base64_to_image(source, convert_rgb=False)
+        if not convert_rgb and isinstance(encoded, str) and len(encoded) > 64:
+            image = decode_base64_to_image(encoded, convert_rgb=False)
             # PNG preserves alpha; CMYK must use a format that supports its mode.
             extensions = ('.jpg', '.jpeg') if image.mode == 'CMYK' else ('.png',)
             if not path.lower().endswith(extensions):
@@ -88,9 +86,8 @@ def localize_df(data, dname, nproc=32, convert_rgb=True):
     tups = []
     for p, im in zip(img_paths, images):
         if not convert_rgb and isinstance(im, str) and 0 < len(im) <= 64 and im in image_map:
-            tups.append((root, im, p, image_map[im]))
-        else:
-            tups.append((root, im, p))
+            im = image_map[im]
+        tups.append((root, im, p))
 
     with mp.Pool(nproc) as pool:
         ret = pool.map(functools.partial(decode_img_omni, convert_rgb=convert_rgb), tups)
