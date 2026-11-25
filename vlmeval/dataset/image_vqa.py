@@ -3320,10 +3320,18 @@ class TDBenchGrounding(ImageVQADataset):
 
 
 class ZEROBench(ImageVQADataset):
-    DATASET_URL = {'ZEROBench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv',
-                   'ZEROBench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench_sub.tsv'}
-    DATASET_MD5 = {'ZEROBench': '600d5e89325f1dab5ad3fa2ea200cea6',
-                   'ZEROBench_sub': '2d2131bffb7f09ca099fdd0f3ad0392b'}
+    DATASET_URL = {
+        'ZEROBench': 'https://opencompass.openxlab.space/utils/VLMEval/ZEROBench.tsv',
+        'ZEROBench_v3': 'https://opencompass.openxlab.space/utils/VLMEval/ZEROBench_v3.tsv',
+        'ZEROBench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/ZEROBench_sub.tsv',
+        'ZEROBench_sub_v3': 'https://opencompass.openxlab.space/utils/VLMEval/ZEROBench_sub_v3.tsv',
+    }
+    DATASET_MD5 = {
+        'ZEROBench': '5a04a75da6258dd558e89002925db456',
+        'ZEROBench_v3': 'ea980a05d8a6ad8058693aea42a3c4de',
+        'ZEROBench_sub': '7775abf7da9c85a24d42d0e4ed25c2d2',
+        'ZEROBench_sub_v3': '848347e947adcb24c28aeaaa4b5505e3',
+    }
 
     DEFAULT_N_RUNS = 5
     PASS_K_HIT_COL = 'Correct?'

@@ -16,6 +16,11 @@ logger = get_logger(__name__)
 _VERBOSE_ANSWER_RE = re.compile(r"(?i)(?:correct\s+)?answer\s+is\s+\**(?!(?-i:a)\s+[a-z])([ABCD])\b\**")
 
 
+def _verbose_enabled():
+    # Any set value used to count as on, including VERBOSE=0 and VERBOSE=false.
+    return os.environ.get('VERBOSE', '').strip().lower() not in ('', '0', 'false', 'no', 'off')
+
+
 def can_infer_last_option(answer, choices):
     """Prefer an explicit final option over letters or option text in reasoning."""
     lines = [line.strip() for line in answer.splitlines() if line.strip()]
@@ -38,7 +43,7 @@ def can_infer_last_option(answer, choices):
 
 
 def can_infer_option(answer, choices):
-    verbose = os.environ.get('VERBOSE', 0)
+    verbose = _verbose_enabled()
     # Choices is a dictionary
     if 'Failed to obtain answer via API' in answer:
         return False
@@ -71,10 +76,11 @@ def can_infer_option(answer, choices):
     count = count_choice(splits, choices)
 
     if count == 1:
-        for ch in choices:
-            if 'A' in splits and len(splits) > 3 and verbose:
+        if 'A' in splits and len(splits) > 3:
+            if verbose:
                 logger.info(f'A might be a quantifier in the string: {answer}.')
-                return False
+            return False
+        for ch in choices:
             if ch in splits[-4:]:
                 return ch
     elif count == 0 and count_choice(splits, {'Z', ''}) == 1:

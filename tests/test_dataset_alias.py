@@ -128,6 +128,7 @@ class TestDatasetAlias(unittest.TestCase):
             judge_timeout=600,
             judge_args=None,
             judge_base_url=None,
+            judge_model_class=None,
             judge_key=None,
             judge=None,
             use_verifier=False,

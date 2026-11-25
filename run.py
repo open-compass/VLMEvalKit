@@ -396,6 +396,8 @@ def get_judge_kwargs(args, *, dataset):
         judge_kwargs['api_base'] = f"{args.judge_base_url.rstrip('/')}/chat/completions"
     if args.judge_key:
         judge_kwargs['key'] = args.judge_key
+    if args.judge_model_class is not None:
+        judge_kwargs['model_class'] = args.judge_model_class
 
     if args.judge is not None:
         judge_kwargs['model'] = args.judge
@@ -604,6 +606,9 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--judge', type=str, default=None)
     parser.add_argument('--judge-args', type=str, default=None, help='Judge arguments in JSON format')
     parser.add_argument('--judge-base-url', type=str, default=None, help='Base URL of judge API')
+    parser.add_argument('--judge-model-class', type=str, default=None,
+                        help='API model class in vlmeval.api used to build the judge model '
+                             '(default: None, chosen automatically from the judge model name).')
     parser.add_argument('--judge-key', type=str, default=None, help='API key for judge model')
     parser.add_argument('--judge-api-nproc', type=int, default=None,
                         help='Parallel API calling for judger (defaults to follow --api-nproc)')

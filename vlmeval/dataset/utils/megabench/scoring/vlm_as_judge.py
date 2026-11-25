@@ -8,6 +8,8 @@ from mimetypes import guess_type
 import requests
 from PIL import Image
 
+from vlmeval.dataset.utils.judge_util import warn_judge_model_retirement
+
 
 class OpenAIVLMJudger(abc.ABC):
     """
@@ -22,6 +24,7 @@ class OpenAIVLMJudger(abc.ABC):
         resize=True,
         max_side=1000,
     ):
+        warn_judge_model_retirement(model)
         if metric_config is not None and metric_config != {}:
             self.judge_model_type = metric_config["judge_model_type"]
             self.eval_prompt = metric_config["eval_criteria_prompt"]

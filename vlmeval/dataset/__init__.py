@@ -39,6 +39,7 @@ from .emma import EMMADataset
 from .eriq import ERIQBench
 from .erqa import ERQADataset
 from .erqabench import ERQABench
+from .etbench import ETBench
 from .favor_bench import FavorBench
 from .flames import FlamesDataset
 from .foxbench import FoxBench
@@ -169,6 +170,7 @@ from .v2pbench import V2PBench
 from .vcr import VCRDataset
 from .vcrbench import VCRBench
 from .vdc import VDC
+from .vials import VIALS
 from .video_concat_dataset import ConcatVideoDataset
 from .video_eval_pro import VideoEvalPro_MCQ, VideoEvalPro_OpenEnded
 from .video_holmes import Video_Holmes
@@ -356,6 +358,7 @@ IMAGE_DATASET = [
     WildprobeDataset,
     PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset, E3VQA,
     MVHBench,
+    VIALS,
 ]
 
 # add by EASI team
@@ -377,7 +380,7 @@ VIDEO_DATASET = [
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
     VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset,
     FavorBench,
-    TimeLensBench, VideoOdysseyV, VUETR, MTVideoBench
+    TimeLensBench, VideoOdysseyV, VUETR, MTVideoBench, ETBench
 ]
 
 # add by EASI team
