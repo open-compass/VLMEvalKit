@@ -337,10 +337,10 @@ def wrap_dataset_runs(dataset, n_runs=None):
     if n_runs == 1:
         return dataset
     name = type(dataset).__name__
-    if getattr(dataset, 'TYPE', None) == 'MT' or getattr(dataset, 'interactive_mt', False):
+    if getattr(dataset, 'interactive_mt', False):
         raise NotImplementedError(
-            f'Running {name} {n_runs} times is not supported: multi-turn datasets use their own '
-            'inference pipeline (pass --n-runs 1).')
+            f'Running {name} {n_runs} times is not supported for interactive multi-turn datasets '
+            '(pass --n-runs 1).')
     if getattr(dataset, 'MODALITY', None) == 'VIDEO' and getattr(dataset, 'pack', False):
         raise NotImplementedError(
             f'Running {name} {n_runs} times is not supported in pack mode: inference there is one request '

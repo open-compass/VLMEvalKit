@@ -182,10 +182,7 @@ class TestWrapDatasetRuns(unittest.TestCase):
     def test_multi_turn_datasets_are_rejected(self):
         multi_turn = make(_Toy)
         multi_turn.TYPE = 'MT'
-        with self.assertRaises(NotImplementedError):
-            wrap_dataset_runs(multi_turn, 2)
-        self.assertIs(wrap_dataset_runs(multi_turn, 1), multi_turn)
-        multi_turn.TYPE = 'VQA'
+        self.assertEqual(wrap_dataset_runs(multi_turn, 2).n_runs, 2)
         multi_turn.interactive_mt = True
         with self.assertRaises(NotImplementedError):
             wrap_dataset_runs(multi_turn, 2)
