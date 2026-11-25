@@ -2177,14 +2177,6 @@ class MMVet(ImageBaseDataset):
         MMVET_ALPHA_DATASET: MMVET_ALPHA_MD5,
     }
 
-    def __init__(self, dataset='MMVet', **kwargs):
-        super().__init__(dataset=dataset, **kwargs)
-        # Keep the hosted MMVet entries on their legacy RGB/JPEG path. The
-        # regenerated entry uses official bytes and a distinct image root so
-        # already-dumped hosted JPEGs cannot be reused.
-        if self.dataset_name == MMVET_ALPHA_DATASET:
-            self.img_root = osp.join(LMUDataRoot(), 'images', MMVET_ALPHA_DATASET)
-
     def get_convert_to_rgb(self, dataset):
         return dataset != MMVET_ALPHA_DATASET
 
