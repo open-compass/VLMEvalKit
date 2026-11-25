@@ -150,13 +150,6 @@ def img_root_map(dataset):
         return 'COCO'
     if "QSpatial" in dataset:
         return "QSpatial"
-    # Regenerated MMMU variants (e.g. MMMU_TEST_876ce5) share the original
-    # image directory so already-dumped PNG images can be reused.
-    if dataset.startswith('MMMU_TEST'):
-        return 'MMMU_TEST'
-    if dataset.startswith('MMMU_DEV_VAL'):
-        return 'MMMU_DEV_VAL'
-
     mmbench_root_map = {
         'MMBench_DEV_EN': 'MMBench', 'MMBench_TEST_EN': 'MMBench',
         'MMBench_DEV_CN': 'MMBench', 'MMBench_TEST_CN': 'MMBench',
