@@ -63,11 +63,12 @@ def parse_time_intervals(text: str, strict: bool = False) -> List[List[float]]:
     # 3: Other formats
     patterns = [
         (
-            r"starts\s+at\s+(\S+?)(?:\s+seconds?)?\s+and\s+ends\s+at\s+(\S+?)(?:\s+seconds?)?",
+            r"starts\s+at\s+(\S+?)(?:\s+seconds?)?\s+and\s+ends\s+at\s+(\d+(?::\d+){0,2}(?:\.\d+)?)(?:\s+seconds?)?",
             parse_time_to_seconds,
         ),
         (
-            r"start\s+is\s+at\s+(\S+?)(?:\s+seconds?)?\s+and\s+(?:the\s+)?end\s+is\s+at\s+(\S+?)(?:\s+seconds?)?",
+            r"start\s+is\s+at\s+(\S+?)(?:\s+seconds?)?\s+and\s+(?:the\s+)?end\s+is\s+at\s+"
+            r"(\d+(?::\d+){0,2}(?:\.\d+)?)(?:\s+seconds?)?",
             parse_time_to_seconds,
         ),
         (r"(\d+(?:\.\d+)?)\s+to\s+(\d+(?:\.\d+)?)", float),

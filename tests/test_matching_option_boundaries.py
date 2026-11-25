@@ -59,9 +59,23 @@ class TestVerboseOptionBoundaries(unittest.TestCase):
 
     def test_plain_uppercase_option_labels_are_unchanged(self):
         for answer, expected in [('B', 'B'), ('The answer is B.', 'B'), ('Answer is D', 'D'),
-                                 ('The answer is C: horse', 'C')]:
+                                 ('The answer is C: horse', 'C'),
+                                 ('The answer is A because it looks like a horse.', 'A')]:
             with self.subTest(answer=answer):
                 self.assertEqual(self.matching.can_infer_option(answer, self.choices()), expected)
+
+    def test_lowercase_article_a_is_not_option_a(self):
+        # "a <word>" is the English article. Option text falls through to can_infer_text;
+        # a word that is not an option stays unresolved.
+        for answer, expected in [('The answer is a horse.', 'C'), ('The correct answer is a rabbit.', 'D')]:
+            with self.subTest(answer=answer):
+                self.assertIs(self.matching.can_infer_option(answer, self.choices()), False)
+                self.assertEqual(self.matching.can_infer(answer, self.choices()), expected)
+
+        for answer in ['The answer is a dog.', 'The answer is a bit unclear, but it looks like a horse.']:
+            with self.subTest(answer=answer):
+                self.assertIs(self.matching.can_infer_option(answer, self.choices()), False)
+                self.assertIs(self.matching.can_infer(answer, self.choices()), False)
 
 
 if __name__ == '__main__':

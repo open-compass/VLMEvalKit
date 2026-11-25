@@ -9,6 +9,7 @@ from vlmeval.smp import (LMUDataRoot, dump, get_composite_child_eval_file,
                          get_intermediate_file_path, load, localize_df, read_ok, toliststr)
 from .activevision import ActiveVisionDataset
 from .asclepius import Asclepius
+from .audio_base import AudioBaseDataset
 from .av_speakerbench import AVSpeakerBench
 from .babyvision import BabyVision
 from .c4_bench import C4Bench
@@ -41,10 +42,13 @@ from .erqabench import ERQABench
 from .favor_bench import FavorBench
 from .flames import FlamesDataset
 from .foxbench import FoxBench
+from .gdp_pdf import GDPPDF, GDPPDFForAC
+from .gdp_pdf_aa import GDPPDFAA
 from .gobench import GOBenchDataset
 from .groundingme import GroundingME
 from .gsm8k_v import GSM8KVDataset
 from .GUI.osworld_g import OSWorld_G
+from .GUI.pointerbench import PointerBench
 from .GUI.screenspot import ScreenSpot
 from .GUI.screenspot_pro import ScreenSpot_Pro
 from .GUI.screenspot_v2 import ScreenSpotV2
@@ -70,6 +74,7 @@ from .image_vqa import (BMMR, CRPE, LENS, MMNIAH, AyaVisionBench, CoreCognition,
                         QSpatial, SeePhys, TableVQABench, TallyQA, TDBenchGrounding, VGRPBench,
                         VizWiz, VLMsAreBiased, VTCBench, WildDocBenchmark, ZEROBench)
 from .image_yorn import ImageYORNDataset
+from .imgmt import ImgMT
 from .longdocurl import LongDocURL
 from .longvideobench import LongVideoBench
 from .m3oralbench import M3oralBenchDataset
@@ -101,6 +106,7 @@ from .mmrarebench import (MMRarebenchCrossmodal, MMRarebenchDiagnosis, MMRareben
                           MMRarebenchTreatment)
 from .mmsafetybench import MMSafetyBenchDataset
 from .mmsibench import MMSIBench, MMSIVideoBench
+from .mmsu import MMSUDataset
 from .moat import MOAT
 from .molrecbench_wild import MolRecBenchWildDataset
 from .moviechat1k import MovieChat1k
@@ -312,11 +318,14 @@ class ConcatDataset(ImageBaseDataset):
 
 # Add new supported dataset class here
 IMAGE_DATASET = [
+    ImgMT,
     VisualOverload,
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
-    MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset, DUDE, DocScope,
-    LongDocURL, VisChainBench,
+    MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset,
+    DUDE, DocScope,
+    LongDocURL, VisChainBench, GDPPDF,
+    GDPPDFAA, GDPPDFForAC,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
     OlympiadBench, SeePhys, WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,  # noqa: E501
@@ -324,7 +333,8 @@ IMAGE_DATASET = [
     CreationMMBenchDataset, HLEDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
     LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot, VenusBench_GD,
-    ScreenSpotV2, OSWorld_G, VBGD, MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
+    ScreenSpotV2, OSWorld_G, PointerBench, VBGD, MMIFEval, Spatial457, VisuLogic, CVBench,
+    PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
@@ -342,7 +352,8 @@ IMAGE_DATASET = [
     Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning, MMOral_OPG_OPEN, MMOral_OPG_CLOSED,  # noqa: E501
     SciDocBench, OmniMat,
     MMRarebenchDiagnosis, MMRarebenchTreatment, MMRarebenchCrossmodal, MMRarebenchExamination,
-    MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision, WildprobeDataset,
+    MRareBenchDiagnosis, MRareBenchEvidenceVerif, MolRecBenchWildDataset, BabyVision,
+    WildprobeDataset,
     PerceptionBench, SUPERChemDataset, C4Bench, ActiveVisionDataset, E3VQA,
     MVHBench,
 ]
@@ -364,7 +375,8 @@ VIDEO_DATASET = [
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
-    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset, FavorBench,
+    VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset,
+    FavorBench,
     TimeLensBench, VideoOdysseyV, VUETR, MTVideoBench
 ]
 
@@ -372,6 +384,8 @@ VIDEO_DATASET = [
 VIDEO_DATASET += [
     SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench
 ]  # noqa: E501
+
+AUDIO_DATASET = [MMSUDataset]
 
 TEXT_DATASET = [
     TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment,
@@ -385,7 +399,7 @@ CUSTOM_DATASET = [
 
 DATASET_COLLECTION = [ConcatDataset, ConcatVideoDataset]
 
-DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + CUSTOM_DATASET + DATASET_COLLECTION  # noqa: E501
+DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + AUDIO_DATASET + TEXT_DATASET + CUSTOM_DATASET + DATASET_COLLECTION  # noqa: E501
 SUPPORTED_DATASETS = []
 for DATASET_CLS in DATASET_CLASSES:
     SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
@@ -424,9 +438,12 @@ def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
         assert np.all([x == MODALITIES[0] for x in MODALITIES]), (dataset_list, MODALITIES)
         return MODALITIES[0]
 
-    if 'VIDEO' in dataset.lower():
+    dataset_lower = dataset.lower()
+    if 'audio' in dataset_lower:
+        return 'AUDIO'
+    if 'video' in dataset_lower:
         return 'VIDEO'
-    elif 'IMAGE' in dataset.lower():
+    elif 'image' in dataset_lower:
         return 'IMAGE'
     warnings.warn(f'Dataset {dataset} is a custom one, will treat modality as {default}. ')
     return default
@@ -469,6 +486,7 @@ def infer_dataset_basename(dataset_name):
 
 
 __all__ = [
+    'AudioBaseDataset',
     'build_dataset',
     'img_root_map',
     'build_judge',
