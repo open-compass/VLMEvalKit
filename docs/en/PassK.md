@@ -80,6 +80,31 @@ class ZEROBench(ImageVQADataset):
         return result
 ```
 
+### ZeroBench semantic judging
+
+All ZeroBench variants default to `gpt-6-luna` for responses that fail the original
+curly-brace exact match. They reuse the ShortQA judge with the question, literal reference
+answer and **full model response**, so a missing brace or an equivalent answer format need
+not count as wrong. Exact matches stay correct; empty predictions and API failure markers
+stay incorrect without calling the judge. Judge request/parse failures stop evaluation and
+can be retried from the cache; they do not become incorrect answers.
+
+```bash
+python run.py --data ZEROBench_v3 --model YourModel --mode eval --reuse \
+  --judge-base-url "$JUDGE_API_BASE" --judge-key "$JUDGE_API_KEY"
+# Reproduce the original scorer instead:
+python run.py --data ZEROBench_v3 --model YourModel --mode eval --reuse --judge exact_matching
+```
+
+`--judge` overrides the default model. Judge caches, detailed reasons and scores have
+model-specific filenames; cache entries also depend on the question, reference, response and
+judge system prompt. The prompt requests explicit verdict tags and requires checking ordered
+sequences after expanding repetitions.
+The usual `_results.csv` records `Answer_Extracted`, `Parsed_Answer`, `Exact_Match`,
+`Correct?`, `judge_method` and `judge_log`, and still feeds `pass@N` / `pass^N`.
+Semantic judge scores use a different scoring protocol from the original exact-match results;
+label the judge model when reporting them.
+
 ## The full set of knobs
 
 All three base classes (`ImageBaseDataset`, `TextBaseDataset`, `VideoBaseDataset`) declare the same

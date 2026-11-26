@@ -72,6 +72,26 @@ class ZEROBench(ImageVQADataset):
         return result
 ```
 
+### ZeroBench 语义判分
+
+所有 ZeroBench 变体默认用 `gpt-6-luna` 判断原花括号精确匹配未命中的回答。
+复用 ShortQA judge，输入为题目、原样参考答案和**模型完整回答**，因此缺少花括号或答案表达
+不同但含义相同的情况也可以判对。精确匹配成功的样本保持正确，空回答及 API 失败占位符
+直接计错，不请求 judge。judge 请求或解析失败会终止评分，之后可以利用缓存重试，不会当作答错。
+
+```bash
+python run.py --data ZEROBench_v3 --model YourModel --mode eval --reuse \
+  --judge-base-url "$JUDGE_API_BASE" --judge-key "$JUDGE_API_KEY"
+# 复现原评分方式：
+python run.py --data ZEROBench_v3 --model YourModel --mode eval --reuse --judge exact_matching
+```
+
+`--judge` 可以覆盖默认模型。judge 缓存、理由明细和分数文件按模型区分，缓存条目还绑定题目、
+参考答案、回答内容和 judge 系统提示词。提示词明确要求判分标签，并要求展开重复项后核对有序序列。
+通常的 `_results.csv` 会记录 `Answer_Extracted`、`Parsed_Answer`、
+`Exact_Match`、`Correct?`、`judge_method` 和 `judge_log`，继续用于计算 `pass@N` / `pass^N`。
+语义判分与原精确匹配采用不同评分协议，报告成绩时需注明 judge 模型。
+
 ## 全部可配置项
 
 三个基类（`ImageBaseDataset`、`TextBaseDataset`、`VideoBaseDataset`）声明的属性和钩子完全一致。

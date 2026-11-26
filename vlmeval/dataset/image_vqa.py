@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import json
 import multiprocessing as mp
 import os
@@ -3334,36 +3335,92 @@ class ZEROBench(ImageVQADataset):
     }
 
     DEFAULT_N_RUNS = 5
+    DEFAULT_JUDGE_MODEL = 'gpt-6-luna'
     PASS_K_HIT_COL = 'Correct?'
+    PASS_K_DETAIL_FORMAT = 'csv'
 
     def evaluate(self, eval_file, **judge_kwargs):
-        data = load(eval_file).sort_values(by='index')
-        predictions = [str(x) for x in data['prediction']]
-        answers = [str(x) for x in data['answers']]
-        output_df = pd.DataFrame(columns=["Question_ID", "Ground_Truth", "Model_Output", "Correct?"])
-        for idx, (pred, ans) in enumerate(zip(predictions, answers)):
-            formatted_response = pred.strip()
-            # convert to lowercase
-            formatted_response = formatted_response.lower()
-            # try to extract final answer from curly braces
-            parsed_answer = ''
-            try:
-                pattern = r"\{(.*?)\}"
-                parsed_answer = re.findall(pattern, formatted_response)[-1]
-            except IndexError:
-                pass
+        """Keep exact hits, then judge unmatched full responses with ShortQA.
 
-            # evaluate via exact matching
+        Use ``model='exact_matching'`` to reproduce the original scoring.
+        Judge errors raise rather than silently becoming incorrect answers.
+        """
+        from .image_shortqa import ShortQA_auxeval
+
+        data = load(eval_file).sort_values(by='index').reset_index(drop=True)
+        judge_name = judge_kwargs.pop('model', self.DEFAULT_JUDGE_MODEL)
+        nproc = judge_kwargs.pop('nproc', 4)
+        judge_kwargs.setdefault(
+            'system_prompt',
+            'Use the reference answer as given; do not change its numbers or signs. '
+            'For ordered lists and move sequences, expand repetitions and verify the order '
+            'and count of every item. Extra or missing items are incorrect. '
+            'Return your judgment using exactly these tags: '
+            '[Begin Correctness]yes or no[End Correctness]\n'
+            '[Begin Reason]A brief explanation[End Reason]')
+        rows, tasks, keys, positions = [], [], [], []
+        for idx, line in data.iterrows():
+            pred, ans = str(line['prediction']), str(line['answers'])
+            extracted = re.findall(r'\{(.*?)\}', pred.strip().lower())
+            parsed_answer = extracted[-1] if extracted else ''
             correct = ans.strip().lower() == parsed_answer.lower()
-            # store results
-            results_row = {"Question_ID": idx,
-                           "Ground_Truth": ans,
-                           "Model_Output": pred,
-                           "Correct?": correct}
-            output_df = pd.concat([output_df, pd.DataFrame([results_row])],
-                                  ignore_index=True)
+            unavailable = pd.isna(line['prediction']) or not pred.strip() or pred.strip() == (
+                'Failed to obtain answer via API.')
+            rows.append({
+                'index': line['index'], 'Question_ID': idx, 'question': line['question'],
+                'Ground_Truth': ans, 'Model_Output': pred, 'Parsed_Answer': parsed_answer,
+                'Exact_Match': correct, 'Answer_Extracted': bool(extracted), 'Correct?': correct,
+                'judge_model': judge_name,
+                'judge_method': 'unavailable_prediction' if unavailable else 'exact_matching',
+                'judge_log': '',
+            })
+            if judge_name != 'exact_matching' and not correct and not unavailable:
+                item = line.copy()
+                item['answer'] = ans
+                item['prediction'] = pred
+                # ZeroBench references are literal strings, not serialized ShortQA lists.
+                item['answer_type'] = 'exactMatch'
+                content = json.dumps(
+                    [str(line['index']), line['question'], ans, pred, judge_kwargs['system_prompt']],
+                    ensure_ascii=False)
+                keys.append(hashlib.sha256(content.encode('utf-8')).hexdigest())
+                tasks.append(item)
+                positions.append(idx)
 
+        if tasks:
+            cache_file = get_judge_cache_file(eval_file, 'shortqa_v2', judge_name)
+            cached = load_judge_cache(cache_file)
+
+            def failed(result):
+                return (not isinstance(result, dict) or result.get('hit') not in (0, 1)
+                        or result.get('log') == 'Fail to Judge')
+
+            pending = [i for i, key in enumerate(keys) if failed(cached.get(key))]
+            if pending:
+                judge = build_judge(model=judge_name, **judge_kwargs)
+                cached = run_cached_tasks(
+                    ShortQA_auxeval, [(judge, tasks[i]) for i in pending],
+                    [keys[i] for i in pending], cache_file, nproc=nproc)
+            failures = []
+            for position, key in zip(positions, keys):
+                judged = cached.get(key)
+                row = rows[position]
+                row['judge_method'] = 'llm'
+                if failed(judged):
+                    row['Correct?'] = None
+                    row['judge_log'] = 'Fail to Judge'
+                    failures.append(row['index'])
+                else:
+                    row['Correct?'] = bool(judged['hit'])
+                    row['judge_log'] = judged['log']
+            if failures:
+                dump(pd.DataFrame(rows), get_judge_detail_file(eval_file, 'shortqa_v2', judge_name, 'csv'))
+                raise RuntimeError(f'ZeroBench judge failed for {len(failures)} sample(s): {failures}')
+
+        output_df = pd.DataFrame(rows)
         result = {"accuracy": output_df["Correct?"].mean()}
+        dump(output_df, get_judge_detail_file(eval_file, 'shortqa_v2', judge_name, 'csv'))
+        dump(result, get_judge_score_file(eval_file, judge_name, 'json'))
         dump(output_df, get_intermediate_file_path(eval_file, '_results', 'csv'))
         dump(d2df(result), get_intermediate_file_path(eval_file, '_acc', 'csv'))
         return result
