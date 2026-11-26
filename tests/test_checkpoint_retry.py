@@ -52,9 +52,15 @@ def _load_inference_module(name):
     utils.__path__ = [str(Path(__file__).resolve().parents[1] / 'vlmeval/utils')]
 
     def track_progress(func, tasks, save, keys, **kwargs):
+        # Dispatch like vlmeval.utils.mp_util.new_func: dict -> **, sequence -> *.
         result = smp.load(save) if os.path.exists(save) else {}
         for key, task in zip(keys, tasks):
-            result[key] = func(**task)
+            if isinstance(task, dict):
+                result[key] = func(**task)
+            elif isinstance(task, (tuple, list)):
+                result[key] = func(*task)
+            else:
+                result[key] = func(task)
         smp.dump(result, save)
         return list(result.values())
 
@@ -77,7 +83,9 @@ def _load_inference_module(name):
 
 @pytest.mark.parametrize('retry_failed', [True, False])
 def test_api_checkpoint_retries_failed_turn_answers(tmp_path, monkeypatch, retry_failed):
-    module, modules = _load_inference_module('inference_mt')
+    module, modules = _load_inference_module('inference')
+    from vlmeval.interactive_mt import StaticTurnPolicy
+
     base = modules['vlmeval.api.base']
     monkeypatch.setattr(base.time, 'sleep', lambda delay: None)
     failed = ['ok', module.FAIL_MSG + 'rate limited']
@@ -85,7 +93,9 @@ def test_api_checkpoint_retries_failed_turn_answers(tmp_path, monkeypatch, retry
     checkpoint = tmp_path / 'mock_Example_checkpoint.pkl'
     modules['vlmeval.smp.file'].dump({'0': success, '1': failed}, str(checkpoint))
 
-    class Dataset:
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
+
+    class Dataset(InteractiveMTMixin):
         dataset_name = 'Example'
         data = pd.DataFrame({'index': [0, 1]})
 
@@ -96,10 +106,10 @@ def test_api_checkpoint_retries_failed_turn_answers(tmp_path, monkeypatch, retry
                     'type': 'text',
                     'value': str(row['index'])
                 }]
-            }, {
-                'role': 'assistant',
-                'content': 'reference'
             }]
+
+        def build_policy(self, row, messages):
+            return StaticTurnPolicy(messages, [])
 
     class Model(base.BaseAPI):
         is_api = True
@@ -114,3 +124,100 @@ def test_api_checkpoint_retries_failed_turn_answers(tmp_path, monkeypatch, retry
     assert result[0] == success
     assert model.calls == int(retry_failed)
     assert result[1] == (['renewed'] if retry_failed else failed)
+
+
+def test_video_job_forwards_policy_llm_to_infer_data(tmp_path, monkeypatch):
+    module, modules = _load_inference_module('inference_video')
+    seen = {}
+
+    def fake_infer_data(**kwargs):
+        seen.update(kwargs)
+        modules['vlmeval.smp.file'].dump({0: 'answer'}, kwargs['out_file'])
+        return kwargs['model']
+
+    monkeypatch.setattr(module, 'infer_data', fake_infer_data)
+
+    class Dataset:
+        dataset_name = 'Example'
+        nframe = 8
+        fps = -1
+        interactive_mt = True
+        data = pd.DataFrame({'index': [0]})
+
+    llm = object()
+    module.infer_data_job_video(
+        'model', str(tmp_path), 'mock', Dataset(), result_file=str(tmp_path / 'out.tsv'),
+        policy_llm=llm)
+
+    assert seen['policy_llm'] is llm
+
+
+@pytest.mark.parametrize('custom_prompt', [True, False])
+def test_video_local_prompt_follows_model_choice(tmp_path, monkeypatch, custom_prompt):
+    module, modules = _load_inference_module('inference_video')
+    monkeypatch.setattr(module.torch, 'cuda', types.SimpleNamespace(empty_cache=lambda: None), raising=False)
+
+    class Dataset:
+        dataset_name = 'Example'
+        force_use_dataset_prompt = True
+        nframe = 8
+        fps = -1
+        data = pd.DataFrame({'index': [0]})
+
+        def build_prompt(self, line, video_llm=False):
+            return 'dataset prompt'
+
+    class Model:
+        def use_custom_prompt(self, dataset):
+            return custom_prompt
+
+        def build_prompt(self, row, dataset, video_llm=False):
+            return 'model prompt'
+
+        def generate(self, message, dataset):
+            return message
+
+    output = str(tmp_path / 'out.pkl')
+    module.infer_data(Model(), 'mock', str(tmp_path), Dataset(), output)
+    assert modules['vlmeval.smp.file'].load(output) == {0: 'model prompt' if custom_prompt else 'dataset prompt'}
+
+
+@pytest.mark.parametrize('video_llm', [True, False])
+def test_video_api_runner_builds_mt_prompt_like_single_turn(tmp_path, video_llm):
+    module, modules = _load_inference_module('inference_video')
+    from vlmeval.dataset.interactive_mt import InteractiveMTMixin
+    from vlmeval.interactive_mt import StaticTurnPolicy
+
+    base = modules['vlmeval.api.base']
+    prompts, policies = [], []
+
+    class Dataset(InteractiveMTMixin):
+        dataset_name = 'Example'
+        nframe = 8
+        fps = -1
+        data = pd.DataFrame({'index': [0], 'question': ['q']})
+
+        def build_prompt(self, line, video_llm=None):
+            prompts.append((line, video_llm))
+            return [{'role': 'user', 'content': [{'type': 'text', 'value': 'q'}]}]
+
+        def build_policy(self, sample, messages):
+            policies.append((dict(sample), messages))
+            return StaticTurnPolicy(messages, [])
+
+    class Model(base.BaseAPI):
+        is_api = True
+        VIDEO_LLM = video_llm
+
+        def generate_inner(self, inputs, **kwargs):
+            return 0, 'answer', None
+
+    model = Model(retry=1, wait=0, verbose=False)
+    result = module.infer_data_api(model, str(tmp_path), 'mock', Dataset(), samples_dict={0: 0})
+
+    assert result == {0: ['answer']}
+    # build_prompt is called the single-turn video way: row position + video_llm.
+    assert prompts == [(0, video_llm)]
+    # The policy gets the row, as in the non-API video path, and that prompt.
+    assert policies == [({'index': 0, 'question': 'q'},
+                         [{'role': 'user', 'content': [{'type': 'text', 'value': 'q'}]}])]

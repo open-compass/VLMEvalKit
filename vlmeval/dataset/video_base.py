@@ -221,8 +221,18 @@ class VideoBaseDataset(metaclass=ABCMeta):
     def evaluate(self, eval_file, **judge_kwargs):
         pass
 
+    # Given one data record, return the input of the first model call.
+    # Single-turn datasets: that call is the only one, so this is the content
+    # of one user message, a flat list of dict(type=..., value=...).
+    # Interactive MT datasets (InteractiveMTMixin) override it to return the
+    # whole first-call context as role messages, [dict(role=..., content=[...])],
+    # ending with the user turn to answer; later turns come from the policy.
+    # ``line``: what the runners pass, the row position in ``self.data`` (an
+    # int), or the video name when ``self.pack`` is set.
+    # ``video_llm``: whether the model takes the raw video instead of sampled
+    # frames. The runners always pass it, for single-turn and MT datasets alike.
     @abstractmethod
-    def build_prompt(self, idx):
+    def build_prompt(self, line, video_llm):
         pass
 
     @abstractmethod

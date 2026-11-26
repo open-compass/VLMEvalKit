@@ -113,6 +113,7 @@ from .molrecbench_wild import MolRecBenchWildDataset
 from .moviechat1k import MovieChat1k
 from .mrarebench import MRareBenchDiagnosis, MRareBenchEvidenceVerif
 from .mssbench import MSSBenchDataset
+from .mt_video_bench import MTVideoBench
 from .mvbench import MVBench, MVBench_MP4
 from .mvh_bench import MVHBench
 from .mvu_eval import MVUEval
@@ -180,6 +181,7 @@ from .videommev2 import VideoMMEv2
 from .videommmu import VideoMMMU
 from .videott import VideoTT
 from .viewspatialbench import ViewSpatialBench
+from .vischainbench import VisChainBench
 from .visfactor import VisFactor
 from .visualoverload import VisualOverload
 from .vl_rewardbench import VLRewardBench
@@ -324,7 +326,7 @@ IMAGE_DATASET = [
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
     MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset,
     DUDE, DocScope,
-    LongDocURL, GDPPDF,
+    LongDocURL, VisChainBench, GDPPDF,
     GDPPDFAA, GDPPDFForAC,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
@@ -378,7 +380,7 @@ VIDEO_DATASET = [
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench, AVSpeakerBench,
     VideoMMEv2, ReVSI, SISBench, VideoEvalPro_MCQ, VideoEvalPro_OpenEnded, VRBenchDataset,
     FavorBench,
-    TimeLensBench, VideoOdysseyV, VUETR, ETBench
+    TimeLensBench, VideoOdysseyV, VUETR, MTVideoBench, ETBench
 ]
 
 # add by EASI team

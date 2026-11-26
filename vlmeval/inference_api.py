@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Literal
 import pandas as pd
 from tabulate import tabulate
 
+from vlmeval.interactive_mt import chat_interactive_mt
 from vlmeval.smp import dump, get_logger, load, load_prediction_file, upsert_dataset_status
 from vlmeval.smp.log import setup_subprocess_logger
 from vlmeval.utils.mp_util import (async_recv_process_message, async_wait_process,
@@ -23,7 +24,7 @@ from vlmeval.utils.mp_util import (async_recv_process_message, async_wait_proces
 logger = get_logger(__name__)
 
 FAIL_MSG = 'Failed to obtain answer via API.'
-DatasetType = Literal["image", "video", "audio", "mt"]
+DatasetType = Literal["image", "video", "audio"]
 
 
 def _eval_subprocess_target(
@@ -96,26 +97,6 @@ def _prompt_subprocess_target(dataset_obj, video_llm: bool, conn, parent_conn=No
         conn.close()
 
 
-def chat_mt(model, messages: List[dict], dataset_name: str) -> List[str]:
-    """Infer function for multi-turn dataset."""
-    assert len(messages) % 2 == 0, "Messages should be pairs of user and assistant"
-    nturn = len(messages) // 2
-    utter_stack = []
-    predictions = []
-
-    for i in range(nturn):
-        utter = messages[2 * i]
-        utter_stack.append(utter)
-        try:
-            resp = model.chat(utter_stack, dataset=dataset_name)
-            utter_stack.append(dict(role='assistant', content=resp))
-        except Exception as e:
-            resp = FAIL_MSG + str(e)
-            utter_stack.append(dict(role='assistant', content=resp))
-        predictions.append(resp)
-
-    return predictions
-
 # ==========================================
 # Core Data Structures
 # ==========================================
@@ -138,7 +119,9 @@ class InferenceTask:
     dataset_name: str      # Logical dataset name passed to model APIs.
     dataset_alias_name: str
     model_name: str        # Model name (for naming task)
-    dataset_type: DatasetType = "image"
+    dataset_type: DatasetType = "image"   # modality only: image | video | audio
+    interactive_mt: bool = False             # dataset implements InteractiveMTMixin
+    sample: Any = None     # Original dataset sample for policy-driven MT
 
 
 @dataclass
@@ -159,6 +142,11 @@ class DatasetConfig:
 
     dataset_type: DatasetType = "image"
 
+    # Whether the dataset is policy-driven multi-turn (InteractiveMTMixin.interactive_mt).
+    # Copied onto the config because these dataclasses cross a thread/process
+    # boundary and cannot carry the dataset object's class.
+    interactive_mt: bool = False
+
     # Configuration for Video dataset
     # Whether to pass raw video file to model. If None, follow model.
     video_llm: bool | None = None
@@ -178,6 +166,11 @@ class DatasetConfig:
 
     # For final result assembly
     results_dict: Dict[str, Any] = field(default_factory=dict)
+
+    # Built once per dataset by dataset.build_policy_llm from the --policy*
+    # options and shared by every worker, like ``model_obj``. Opaque to the
+    # framework; kept separate from the judge options.
+    policy_llm: Any = None
 
     def __post_init__(self):
         if self.dataset_alias_name is None:
@@ -452,7 +445,8 @@ class APIEvalPipeline:
             dataset_type = cfg.dataset_type
 
             logger.info(
-                f"   [{dataset_alias_name}] Start build prompt [type={dataset_type}]"
+                f"   [{dataset_alias_name}] Start build prompt "
+                f"[type={dataset_type}, interactive_mt={cfg.interactive_mt}]"
             )
             if self.run_infer:
                 self._upsert_dataset_status(dataset_alias_name, status='infer')
@@ -489,11 +483,10 @@ class APIEvalPipeline:
                     asyncio.create_task(self._trigger_eval(dataset_alias_name))
                 continue
 
-            # 3. Dispatch according to dataset type.
+            # 3. Dispatch by modality. Interactive MT is a flag on the task,
+            # not a third modality.
             if dataset_type == "video":
                 tasks_generated = await self._produce_video_tasks(cfg, existing_results)
-            elif dataset_type == "mt":
-                tasks_generated = await self._produce_mt_tasks(cfg, existing_results)
             else:  # image or audio
                 tasks_generated = await self._produce_image_tasks(cfg, existing_results)
 
@@ -509,7 +502,7 @@ class APIEvalPipeline:
             self.total_tasks_generated += tasks_generated
             logger.info(
                 f"   [{dataset_alias_name}] Generated {tasks_generated} tasks "
-                f"(Skipped {skipped}) [type={dataset_type}]"
+                f"(Skipped {skipped}) [type={dataset_type}, interactive_mt={cfg.interactive_mt}]"
             )
 
         # Stop sign
@@ -530,14 +523,18 @@ class APIEvalPipeline:
         if dataset_type == "image" and hasattr(model, 'set_dump_image'):
             model.set_dump_image(dataset.dump_image)
 
-        use_custom_prompt = (
-            hasattr(model, 'use_custom_prompt')
-            and model.use_custom_prompt(dataset_name)
-        )
-        if use_custom_prompt:
-            logger.info(f"   [{dataset_alias_name}] Using model custom prompt")
-        else:
-            logger.info(f"   [{dataset_alias_name}] Using vanilla dataset prompt")
+        # Interactive MT datasets force their own prompt: the first prompt is
+        # built below like any other and the worker hands it to the case loop.
+        use_custom_prompt = False
+        if not cfg.interactive_mt:
+            use_custom_prompt = (
+                hasattr(model, 'use_custom_prompt')
+                and model.use_custom_prompt(dataset_name)
+            )
+            if use_custom_prompt:
+                logger.info(f"   [{dataset_alias_name}] Using model custom prompt")
+            else:
+                logger.info(f"   [{dataset_alias_name}] Using vanilla dataset prompt")
 
         tasks_generated = 0
         for i in range(len(dataset)):
@@ -566,7 +563,9 @@ class APIEvalPipeline:
                 model_name=cfg.model_name,
                 sample_index=idx_str,
                 prompt_struct=prompt_struct,
-                dataset_type=dataset_type
+                dataset_type=dataset_type,
+                interactive_mt=cfg.interactive_mt,
+                sample=item if cfg.interactive_mt else None,
             )
             await self.queue.put(task)
             tasks_generated += 1
@@ -637,7 +636,9 @@ class APIEvalPipeline:
                     model_name=cfg.model_name,
                     sample_index=idx_str,
                     prompt_struct=prompt_struct,
-                    dataset_type="video"
+                    dataset_type="video",
+                    interactive_mt=cfg.interactive_mt,
+                    sample=item if cfg.interactive_mt else None,
                 )
                 await self.queue.put(task)
                 tasks_generated += 1
@@ -652,45 +653,6 @@ class APIEvalPipeline:
             if process.is_alive():
                 terminate_processes([process], name=process_name, logger=logger)
             parent_conn.close()
-
-        return tasks_generated
-
-    async def _produce_mt_tasks(self, cfg: DatasetConfig, existing_results: dict) -> int:
-        """Produce multi-turns dataset inference task."""
-        dataset = cfg.dataset_obj
-        dataset_name = cfg.dataset_name
-        dataset_alias_name = cfg.dataset_alias_name
-
-        logger.info(f"   [{dataset_alias_name}] Multi-turn dialogue mode")
-
-        tasks_generated = 0
-        for i in range(len(dataset)):
-            item = dataset[i]
-            idx_str = str(item['index'])
-
-            if idx_str in existing_results:
-                continue
-
-            try:
-                prompt_struct = dataset.build_prompt(item)
-            except Exception as e:
-                import traceback
-                logger.error(f"   [{dataset_alias_name}] Failed to build prompt "
-                             f"for sample {idx_str}: {repr(e)}")
-                logger.debug(traceback.format_exception(e))
-                # Skip dataset if has fatal sample.
-                return 0
-
-            task = InferenceTask(
-                dataset_name=dataset_name,
-                dataset_alias_name=dataset_alias_name,
-                model_name=cfg.model_name,
-                sample_index=idx_str,
-                prompt_struct=prompt_struct,
-                dataset_type="mt"
-            )
-            await self.queue.put(task)
-            tasks_generated += 1
 
         return tasks_generated
 
@@ -712,14 +674,18 @@ class APIEvalPipeline:
                 if not cfg.infer_start_time:
                     cfg.infer_start_time = start_time
 
-                # Select inference style according ot dataset type.
-                if task.dataset_type == "mt":
+                # Interactive MT overrides how a sample is run, whatever the
+                # modality. Everything else uses the single-call path.
+                if task.interactive_mt:
                     output = await loop.run_in_executor(
                         self.infer_executor,
-                        partial(chat_mt,
+                        partial(chat_interactive_mt,
                                 model=model,
+                                dataset=cfg.dataset_obj,
+                                sample=task.sample,
                                 messages=task.prompt_struct,
-                                dataset_name=task.dataset_name),
+                                dataset_name=task.dataset_name,
+                                policy_llm=cfg.policy_llm),
                     )
                 else:
                     def inference_call():

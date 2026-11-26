@@ -57,6 +57,7 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         presence_penalty: float = 1.5,
         use_custom_prompt: bool = True,
         system_prompt: str | None = None,
+        apply_chat_template_direct: bool = False,
         post_process: bool = False,
         verbose: bool = False,
         use_audio_in_video: bool = True,
@@ -88,6 +89,13 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
                 temperature=temperature,
             )
         self.system_prompt = system_prompt
+        self.apply_chat_template_direct = apply_chat_template_direct
+        if apply_chat_template_direct:
+            warnings.warn(
+                'apply_chat_template_direct=True: min_pixels, max_pixels, total_pixels, fps and nframe '
+                'have no effect; frame sampling and resizing fully follow the model processor config '
+                '(preprocessor_config.json / video_preprocessor_config.json).'
+            )
         self.verbose = verbose
         self.post_process = post_process
         self.fps = kwargs.pop('fps', 2)
@@ -223,7 +231,21 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             content.append(item)
         return content
 
+    def _build_messages(self, messages, dataset=None):
+        """Convert VLMEvalKit role messages to Qwen chat messages, keeping every turn's role and media."""
+        built = []
+        if self.system_prompt is not None and not any(msg['role'] == 'system' for msg in messages):
+            built.append({'role': 'system', 'content': self.system_prompt})
+        for msg in messages:
+            built.append({'role': msg['role'], 'content': self._prepare_content(msg['content'], dataset=dataset)})
+        if self.verbose:
+            print(f'\033[31m{built}\033[0m')
+        return built
+
     def generate_inner_transformers(self, message, dataset=None):
+        return self._generate_transformers([{'role': 'user', 'content': message}], dataset=dataset)
+
+    def _generate_transformers(self, messages, dataset=None):
         is_omni = listinstr(['omni'], self.model_path.lower())
         if is_omni:
             try:
@@ -238,14 +260,24 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
                 logging.critical("Please install it via 'pip install qwen-vl-utils'")
                 raise err
 
-        messages = []
-        if self.system_prompt is not None:
-            messages.append({'role': 'system', 'content': self.system_prompt})
-        messages.append({'role': 'user', 'content': self._prepare_content(message, dataset=dataset)})
-        if self.verbose:
-            print(f'\033[31m{messages}\033[0m')
+        messages = self._build_messages(messages, dataset=dataset)
 
-        if is_omni:
+        if self.apply_chat_template_direct and not is_omni:
+            # Match the official infer_qwen25vl.py path exactly:
+            # one apply_chat_template call with the video URL/path, no process_vision_info.
+            for msg in messages:
+                if not isinstance(msg['content'], list):
+                    continue
+                for item in msg['content']:
+                    if item.get('type') == 'video' and isinstance(item.get('video'), str):
+                        if item['video'].startswith('file://'):
+                            item['video'] = item['video'][len('file://'):]
+                        for key in ('fps', 'nframes', 'sample_fps'):
+                            item.pop(key, None)
+            inputs = self.processor.apply_chat_template(
+                messages, tokenize=True, add_generation_prompt=True,
+                return_dict=True, return_tensors='pt', padding=True)
+        elif is_omni:
             # For Qwen3-Omni, messages is a list of dicts
             text = self.processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
             audios, images, videos = process_mm_info(messages, use_audio_in_video=self.use_audio_in_video)
@@ -283,7 +315,7 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             )
         try:
             inputs = inputs.to(self.model.device)
-            if hasattr(self.model, 'dtype'):
+            if hasattr(self.model, 'dtype') and not self.apply_chat_template_direct:
                 inputs = inputs.to(self.model.dtype)
         except Exception:
             inputs = inputs.to('cuda')
@@ -342,6 +374,9 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         return response
 
     def generate_inner_vllm(self, message, dataset=None):
+        return self._generate_vllm([{'role': 'user', 'content': message}], dataset=dataset)
+
+    def _generate_vllm(self, messages, dataset=None):
         from vllm import SamplingParams
         is_omni = listinstr(['omni'], self.model_path.lower())
         if is_omni:
@@ -357,12 +392,7 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
                 logging.critical("qwen_vl_utils not found, 'pip install qwen-vl-utils'")
                 raise err
 
-        messages = []
-        if self.system_prompt is not None:
-            messages.append({'role': 'system', 'content': self.system_prompt})
-        messages.append({'role': 'user', 'content': self._prepare_content(message, dataset=dataset)})
-        if self.verbose:
-            print(f'\033[31m{messages}\033[0m')
+        messages = self._build_messages(messages, dataset=dataset)
 
         text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         if is_omni:
@@ -426,6 +456,12 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         if self.verbose:
             print(f'\033[32m{generated_text}\033[0m')
         return generated_text
+
+    def chat_inner(self, messages, dataset=None):
+        """Multi-turn chat on the full role message list (system / user / assistant turns, media kept)."""
+        if self.use_vllm:
+            return self._generate_vllm(messages, dataset=dataset)
+        return self._generate_transformers(messages, dataset=dataset)
 
     def generate_inner(self, message, dataset=None):
         if self.use_vllm:
