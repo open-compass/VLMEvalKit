@@ -16,7 +16,7 @@ import pandas as pd
 from vlmeval.smp import d2df, dump, get_intermediate_file_path, get_logger, load
 from .image_base import ImageBaseDataset
 from .reasonmap import (atomic_dump, ensure_map_images, hf_dataset_file, map_image_name,
-                        reasonmap_data_dir, reasonmap_maps_dir)
+                        reasonmap_data_dir, reasonmap_maps_dir, warn_truncated_predictions)
 from .utils.reasonmap import extract_plus_answer, plus_groups, plus_is_correct, plus_weight
 
 logger = get_logger(__name__)
@@ -94,6 +94,7 @@ class ReasonMap_Plus(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         preds = load(eval_file)
+        warn_truncated_predictions(eval_file, preds['prediction'])
         meta = self.data.set_index(self.data['index'].astype(str))
 
         records = []

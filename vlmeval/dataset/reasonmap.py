@@ -63,6 +63,27 @@ def atomic_dump(data, path):
     os.replace(tmp, path)
 
 
+# An .xlsx cell holds at most 32,767 characters; longer predictions are cut when the file is written.
+XLSX_CELL_LIMIT = 32767
+
+
+def warn_truncated_predictions(eval_file, predictions):
+    """Warn when predictions read from an .xlsx file were probably cut to the cell limit.
+
+    Thinking models often write more than 32,767 characters, so the cut drops the final answer and
+    the sample is scored as wrong. Saving predictions as TSV (``PRED_FORMAT=tsv``) avoids this.
+    """
+    if not str(eval_file).lower().endswith('.xlsx'):
+        return 0
+    n = int((predictions.astype(str).str.len() >= XLSX_CELL_LIMIT).sum())
+    if n:
+        logger.warning(
+            f'{n} of {len(predictions)} predictions in {eval_file} are {XLSX_CELL_LIMIT} characters long, '
+            'the .xlsx cell limit, so they were probably truncated and lost their final answer. '
+            'Rerun inference with PRED_FORMAT=tsv for long-output (e.g. thinking) models.')
+    return n
+
+
 def ensure_map_images(cities, maps_dir):
     """Write the map of every (country, city) to ``maps_dir`` (decoded from the ReasonMap test set).
 
@@ -187,6 +208,7 @@ class ReasonMap(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         preds = load(eval_file)
+        warn_truncated_predictions(eval_file, preds['prediction'])
         meta = self.data.set_index(self.data['index'].astype(str))
 
         records = []
