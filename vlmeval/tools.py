@@ -368,15 +368,18 @@ def CHECK(val):
             CHECK(m)
 
 
-def LOCALIZE(fname, new_fname=None):
+def LOCALIZE(fname, new_fname=None, convert_rgb=True):
     if new_fname is None:
-        new_fname = fname.replace('.tsv', '_local.tsv')
+        suffix = '_local.tsv' if convert_rgb else '_local_alpha.tsv'
+        new_fname = fname.replace('.tsv', suffix)
 
     base_name = osp.basename(fname)
     dname = osp.splitext(base_name)[0]
+    if not convert_rgb:
+        dname += '_alpha'
 
     data = load(fname)
-    data_new = localize_df(data, dname)
+    data_new = localize_df(data, dname, convert_rgb=convert_rgb)
     dump(data_new, new_fname)
     print(f'The localized version of data file is {new_fname}')
     return new_fname

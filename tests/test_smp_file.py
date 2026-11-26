@@ -26,6 +26,7 @@ def _load_file_module():
     misc.toliststr = lambda value: value if isinstance(value, list) else [value]
 
     vlm = types.ModuleType('vlmeval.smp.vlm')
+    vlm.decode_base64_to_image = mock.MagicMock()
     vlm.decode_base64_to_image_file = mock.MagicMock()
 
     validators = types.ModuleType('validators')

@@ -1,5 +1,6 @@
 import csv
 import datetime
+import functools
 import hashlib
 import json
 import mimetypes
@@ -28,7 +29,7 @@ INFER_FAIL_MSG = 'Failed to obtain answer'
 logger = get_logger(__name__)
 
 
-def decode_img_omni(tup):
+def decode_img_omni(tup, convert_rgb=True):
     root, im, p = tup
     images = toliststr(im)
     paths = toliststr(p)
@@ -42,11 +43,11 @@ def decode_img_omni(tup):
         if osp.exists(p):
             continue
         if isinstance(im, str) and len(im) > 64:
-            decode_base64_to_image_file(im, p)
+            decode_base64_to_image_file(im, p, convert_rgb=convert_rgb)
     return paths
 
 
-def localize_df(data, dname, nproc=32):
+def localize_df(data, dname, nproc=32, convert_rgb=True):
     assert 'image' in data
     indices = list(data['index'])
     indices_str = [str(x) for x in indices]
@@ -61,18 +62,19 @@ def localize_df(data, dname, nproc=32):
         img_paths = list(data['image_path'])
     else:
         img_paths = []
+        ext = 'jpg' if convert_rgb else 'png'
         for i in indices_str:
             if len(image_map[i]) <= 64 and isinstance(image_map[i], str):
                 idx = image_map[i]
                 assert idx in image_map and len(image_map[idx]) > 64
-                img_paths.append(f'{idx}.jpg')
+                img_paths.append(f'{idx}.{ext}')
             else:
-                img_paths.append(f'{i}.jpg')
+                img_paths.append(f'{i}.{ext}')
 
     tups = [(root, im, p) for p, im in zip(img_paths, images)]
 
     with mp.Pool(nproc) as pool:
-        ret = pool.map(decode_img_omni, tups)
+        ret = pool.map(functools.partial(decode_img_omni, convert_rgb=convert_rgb), tups)
     data.pop('image')
     if 'image_path' not in data:
         data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]

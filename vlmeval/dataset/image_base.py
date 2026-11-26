@@ -150,7 +150,6 @@ def img_root_map(dataset):
         return 'COCO'
     if "QSpatial" in dataset:
         return "QSpatial"
-
     mmbench_root_map = {
         'MMBench_DEV_EN': 'MMBench', 'MMBench_TEST_EN': 'MMBench',
         'MMBench_DEV_CN': 'MMBench', 'MMBench_TEST_CN': 'MMBench',
@@ -195,6 +194,10 @@ class ImageBaseDataset(metaclass=ABCMeta):
         # You can override this variable to save image files to a different directory
         self.dataset_name = dataset
         self.img_root = osp.join(ROOT, 'images', img_root_map(dataset))
+        # Whether decoded base64 images should be converted to RGB when dumped.
+        # Preserve the original mode/alpha by default; legacy entries that need
+        # the historical RGB/JPEG behavior can opt in by setting this to True.
+        self.convert_to_rgb = self.get_convert_to_rgb(dataset)
 
         data = self.load_data(dataset)
         data = restore_image_default_na(data)
@@ -229,6 +232,9 @@ class ImageBaseDataset(metaclass=ABCMeta):
 
         self.data = data
         self.post_build(dataset)
+
+    def get_convert_to_rgb(self, dataset):
+        return False
 
     def __len__(self):
         return len(self.data)
@@ -316,15 +322,20 @@ class ImageBaseDataset(metaclass=ABCMeta):
                 update_flag = True
 
         if file_size(data_path, 'GB') > 1:
-            local_path = data_path.replace('.tsv', '_local.tsv')
+            suffix = '_local.tsv' if self.convert_to_rgb else '_local_alpha.tsv'
+            local_path = data_path.replace('.tsv', suffix)
             if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
                 from ..tools import LOCALIZE
-                LOCALIZE(data_path, local_path)
+                LOCALIZE(data_path, local_path, convert_rgb=self.convert_to_rgb)
             data_path = local_path
         return load(data_path)
 
     def dump_image(self, line):
         os.makedirs(self.img_root, exist_ok=True)
+
+        def dump_base64(encoded, path):
+            decode_base64_to_image_file(
+                encoded, path, convert_rgb=self.convert_to_rgb)
 
         if 'image' in line:
             if isinstance(line['image'], list):
@@ -337,19 +348,19 @@ class ImageBaseDataset(metaclass=ABCMeta):
                 for img, im_name in zip(line['image'], image_path):
                     path = osp.join(self.img_root, im_name)
                     if not read_ok(path):
-                        decode_base64_to_image_file(img, path)
+                        dump_base64(img, path)
                     tgt_path.append(path)
 
             elif isinstance(line['image'], str) and 'image_path' in line:
                 assert isinstance(line['image_path'], str)
                 tgt_path = osp.join(self.img_root, line['image_path'])
                 if not read_ok(tgt_path):
-                    decode_base64_to_image_file(line['image'], tgt_path)
+                    dump_base64(line['image'], tgt_path)
                 tgt_path = [tgt_path]
             else:
                 tgt_path = osp.join(self.img_root, f"{line['index']}.png")
                 if not read_ok(tgt_path):
-                    decode_base64_to_image_file(line['image'], tgt_path)
+                    dump_base64(line['image'], tgt_path)
                 tgt_path = [tgt_path]
         else:
             assert 'image_path' in line

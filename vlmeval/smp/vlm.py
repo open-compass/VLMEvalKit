@@ -101,7 +101,11 @@ def resize_image_by_factor(img, factor=1):
 
 
 def encode_image_to_base64(img, target_size=-1, fmt='JPEG', max_file_size=1e9, convert_rgb=True):
-    """Encode an image, optionally keeping its mode with a compatible ``fmt`` such as PNG."""
+    """Encode an image, optionally keeping its mode with a compatible ``fmt`` such as PNG.
+
+    With ``convert_rgb=True``, RGBA/P/LA images use the legacy ``convert('RGB')``
+    behavior.  Set ``convert_rgb=False`` to preserve the original mode and alpha.
+    """
     from .log import get_logger
 
     logger = get_logger(__name__)
@@ -161,12 +165,18 @@ def encode_image_file_to_base64(image_path, target_size=-1, fmt='JPEG', max_file
         image, target_size=target_size, fmt=fmt, max_file_size=max_file_size)
 
 
-def decode_base64_to_image(base64_string, target_size=-1):
+def decode_base64_to_image(base64_string, target_size=-1, convert_rgb=True):
+    """Decode a base64 image.
+
+    When ``convert_rgb`` is True (default), non-RGB images use the legacy
+    ``convert('RGB')`` behavior. When False, the original mode and alpha channel
+    are preserved.
+    """
     image_data = base64.b64decode(base64_string)
     image = Image.open(io.BytesIO(image_data))
     if image.mode in ('I;16', 'I;16L', 'I;16B', 'I;16N'):
         image = image.convert('I')
-    elif image.mode not in ('1', 'L', 'I', 'RGB'):
+    elif convert_rgb and image.mode not in ('1', 'L', 'I', 'RGB'):
         image = image.convert('RGB')
     if target_size > 0:
         image.thumbnail((target_size, target_size))
@@ -175,8 +185,10 @@ def decode_base64_to_image(base64_string, target_size=-1):
     return image
 
 
-def decode_base64_to_image_file(base64_string, image_path, target_size=-1):
-    image = decode_base64_to_image(base64_string, target_size=target_size)
+def decode_base64_to_image_file(base64_string, image_path, target_size=-1, convert_rgb=True):
+    """Decode a base64 image to a file; alpha-preserving output needs a path such as .png."""
+    image = decode_base64_to_image(
+        base64_string, target_size=target_size, convert_rgb=convert_rgb)
     base_dir = osp.dirname(image_path)
     if not osp.exists(base_dir):
         os.makedirs(base_dir, exist_ok=True)
