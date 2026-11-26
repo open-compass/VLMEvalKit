@@ -3474,7 +3474,8 @@ class CountBenchQA(ImageVQADataset):
         total_count = len(predictions)
 
         for pred, ans in zip(predictions, answers):
-            if ans in pred:
+            # The count must stand as a whole number: '2' is not a hit in '12' or '20'.
+            if re.search(rf'(?<!\d){re.escape(ans)}(?!\d)', pred):
                 correct_count += 1
         accuracy = correct_count / total_count if total_count > 0 else 0
 
