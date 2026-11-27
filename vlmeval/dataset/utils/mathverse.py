@@ -175,7 +175,7 @@ def MathVerse_acc(result_file):
     df_metadata = pd.json_normalize(df['metadata'])
     df = pd.concat([df.drop('metadata', axis=1), df_metadata], axis=1)
 
-    subset = list(set(df['problem_version']))
+    subset = list(set(df['problem_version'])) + ['Overall']
 
     res = defaultdict(list)
     for p in subset:
