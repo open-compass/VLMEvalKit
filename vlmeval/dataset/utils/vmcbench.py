@@ -41,9 +41,12 @@ def parse_multi_choice_response(response, all_choices, index2ans):
         if index_ans:
             if ans_with_brack:
                 for can in candidates:
-                    index = response.rfind(f'({can})')
-                    start_indexes.append(index)  # -1 will be ignored anyway
-                # start_indexes = [generated_response.index(f'({can})') for can in candidates]
+                    # A candidate can enter the list through either spelling,
+                    # '(X)' or 'X. ', so resolve the position by the later of
+                    # the two; otherwise every restated option scores -1 and
+                    # np.argmax falls back to the first candidate (#1869).
+                    index = max(response.rfind(f'({can})'), response.rfind(f'{can}. '))
+                    start_indexes.append(index)
             else:
                 for can in candidates:
                     index = response.rfind(f" {can} ")
