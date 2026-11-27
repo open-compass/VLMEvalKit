@@ -124,6 +124,7 @@ from .omnimat import OmniMat
 from .omnispatialbench import OmniSpatialBench
 from .omtgbench import OMTGBench
 from .ost_bench import OSTDataset
+from .parsebench2 import ParseBench2
 from .perceptionbench import PerceptionBench
 from .plotqa import PlotQA
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
@@ -318,6 +319,7 @@ class ConcatDataset(ImageBaseDataset):
 
 # Add new supported dataset class here
 IMAGE_DATASET = [
+    ParseBench2,
     ImgMT,
     VisualOverload,
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
