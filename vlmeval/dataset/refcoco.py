@@ -488,6 +488,12 @@ class RefCOCODataset(ImageBaseDataset):
 
     @staticmethod
     def _parse_prediction(text: str) -> Optional[np.ndarray]:
+        """Extract an explicit bounding box from common model answer formats.
+
+        Bracket lists retain precedence for compatibility. InternVL-style
+        ``<bbox>...</bbox>`` containers are checked next so numbers in a long
+        explanation do not win the legacy numeric fallback.
+        """
         if not isinstance(text, str):
             return None
 
@@ -499,15 +505,23 @@ class RefCOCODataset(ImageBaseDataset):
             rf'{separator_pattern}({number_pattern})'
             rf'{separator_pattern}({number_pattern})\s*\]'
         )
+        bbox_tag_regex = re.compile(
+            rf'<bbox>\s*({number_pattern})'
+            rf'{separator_pattern}({number_pattern})'
+            rf'{separator_pattern}({number_pattern})'
+            rf'{separator_pattern}({number_pattern})\s*</bbox>',
+            re.IGNORECASE,
+        )
 
-        for match in bbox_regex.finditer(text):
-            try:
-                coords = np.array([float(match.group(i)) for i in range(1, 5)], dtype=float)
-            except ValueError:
-                continue
+        for regex in (bbox_regex, bbox_tag_regex):
+            for match in regex.finditer(text):
+                try:
+                    coords = np.array([float(match.group(i)) for i in range(1, 5)], dtype=float)
+                except ValueError:
+                    continue
 
-            if not np.isnan(coords).any():
-                return coords
+                if not np.isnan(coords).any():
+                    return coords
 
         matches = re.findall(number_pattern, text)
         if len(matches) < 4:
