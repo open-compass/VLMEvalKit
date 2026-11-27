@@ -41,6 +41,7 @@ from .erqa import ERQADataset
 from .erqabench import ERQABench
 from .etbench import ETBench
 from .favor_bench import FavorBench
+from .fermat_pink import FERMAT_PINK
 from .flames import FlamesDataset
 from .foxbench import FoxBench
 from .gdp_pdf import GDPPDF, GDPPDFForAC
@@ -320,6 +321,7 @@ class ConcatDataset(ImageBaseDataset):
 IMAGE_DATASET = [
     ImgMT,
     VisualOverload,
+    FERMAT_PINK,
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
     MathVision, LENS, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,  # noqa: E501
     MTVQADataset, TableVQABench, MMLongBench, MemLens, MMLongBenchDoc, VCRDataset, MMDUDataset,
