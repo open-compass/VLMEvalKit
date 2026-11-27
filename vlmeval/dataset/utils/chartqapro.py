@@ -324,7 +324,9 @@ def evaluate_predictions_chartqapro(predictions, pred_key='prediction'):
             match_nums_per_split[split] = []
 
         always_use_exact_match = True if split in ['Fact Checking', 'Multi Choice'] else False
-        score = relaxed_correctness_chartqapro(gt, pred, year_flags=year_flags_per_row)
+        score = relaxed_correctness_chartqapro(
+            gt, pred, year_flags=year_flags_per_row, always_use_exact_match=always_use_exact_match
+        )
         # print(gt, pred, year_flags_per_row, score)
         match_nums_per_split[split].append(score)
         match_nums.append(score)
