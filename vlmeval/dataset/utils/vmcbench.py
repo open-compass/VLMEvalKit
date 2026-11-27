@@ -1,4 +1,5 @@
 import random
+import re
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,11 @@ def parse_multi_choice_response(response, all_choices, index2ans):
     Return the predicted index e.g., A, B, C, D.
     """
     response = str(response)
+    # An explicit \boxed{} final answer (emitted by CoT-style prompts) takes precedence over
+    # option letters mentioned anywhere in the reasoning, mirroring the VRBench parser.
+    boxed_match = re.search(r'\\boxed\{\s*([A-Za-z])\s*\}', response, re.IGNORECASE)
+    if boxed_match and boxed_match.group(1).upper() in all_choices:
+        return boxed_match.group(1).upper()
     for char in [',', '.', '!', '?', ';', ':', "'"]:
         response = response.strip(char)
     response = " " + response + " "  # add space to avoid partial match
