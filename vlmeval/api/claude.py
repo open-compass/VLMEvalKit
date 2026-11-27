@@ -118,9 +118,12 @@ class Claude_Wrapper(BaseAPI):
         return input_msgs
 
     def generate_inner(self, inputs, system_prompt=None, **kwargs) -> str:
+        temperature = kwargs.pop('temperature', self.temperature)
+        max_tokens = kwargs.pop('max_tokens', self.max_tokens)
         payload = {
             'model': self.model,
-            'max_tokens': self.max_tokens,
+            'max_tokens': max_tokens,
+            'temperature': temperature,
             'messages': self.prepare_inputs(inputs),
             **kwargs
         }
